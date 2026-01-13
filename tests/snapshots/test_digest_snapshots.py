@@ -83,7 +83,7 @@ def test_critical_emails_digest_snapshot():
     - Links are pre-built (not hallucinated)
     - Importance levels are deterministic
     """
-    from mailq.digest.context_digest import generate_context_digest
+    from shopq.digest.context_digest import generate_context_digest
 
     # Fixed input: 3 critical emails
     emails = [
@@ -147,7 +147,7 @@ def test_mixed_importance_digest_snapshot():
     - Importance grouping is deterministic
     - Routine emails categorized correctly
     """
-    from mailq.digest.context_digest import generate_context_digest
+    from shopq.digest.context_digest import generate_context_digest
 
     emails = [
         {
@@ -200,7 +200,7 @@ def test_empty_digest_snapshot():
     - No errors on empty list
     - Renders "All caught up" message
     """
-    from mailq.digest.context_digest import generate_context_digest
+    from shopq.digest.context_digest import generate_context_digest
 
     emails = []
 
@@ -227,7 +227,7 @@ def test_single_email_digest_snapshot():
     - Singular/plural handling
     - Minimal structure
     """
-    from mailq.digest.context_digest import generate_context_digest
+    from shopq.digest.context_digest import generate_context_digest
 
     emails = [
         {
@@ -266,7 +266,7 @@ def test_temporal_decay_digest_snapshot():
     """
     from datetime import datetime, timedelta
 
-    from mailq.digest.context_digest import generate_context_digest
+    from shopq.digest.context_digest import generate_context_digest
 
     now = datetime.now()
     tomorrow = now + timedelta(days=1)

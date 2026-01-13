@@ -2,7 +2,7 @@
 
 **Generated:** 2025-12-05
 **Validator:** `scripts/validate_principles.py`
-**Scope:** `mailq/` (production) + `scripts/` (dev tools)
+**Scope:** `shopq/` (production) + `scripts/` (dev tools)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Area | Violations | Priority |
 |------|------------|----------|
-| `mailq/` (production) | 230 | HIGH |
+| `shopq/` (production) | 230 | HIGH |
 | `scripts/` (dev tools) | 518 | LOWER |
 
 ---
@@ -34,13 +34,13 @@
 | Missing parameter type | 133 | 26% |
 | Bare dict/list (not parameterized) | 46 | 9% |
 
-### Top Offenders (mailq/ only)
+### Top Offenders (shopq/ only)
 
-1. `mailq/infrastructure/database.py` - 24 violations
-2. `mailq/api/routes/debug.py` - 15 violations
-3. `mailq/api/app.py` - 11 violations
-4. `mailq/storage/__init__.py` - 9 violations
-5. `mailq/observability/structured.py` - 9 violations
+1. `shopq/infrastructure/database.py` - 24 violations
+2. `shopq/api/routes/debug.py` - 15 violations
+3. `shopq/api/app.py` - 11 violations
+4. `shopq/storage/__init__.py` - 9 violations
+5. `shopq/observability/structured.py` - 9 violations
 
 ### Action Required
 
@@ -145,15 +145,15 @@ This would eliminate ~74 false positives.
 
 ### 2. Add Type Hints to Production Code (Priority: HIGH)
 
-Focus on `mailq/` files with most violations:
+Focus on `shopq/` files with most violations:
 
 | File | Missing |
 |------|---------|
-| `mailq/infrastructure/database.py` | 24 type hints |
-| `mailq/api/routes/debug.py` | 15 type hints |
-| `mailq/api/app.py` | 11 type hints |
-| `mailq/storage/__init__.py` | 9 type hints |
-| `mailq/observability/structured.py` | 9 type hints |
+| `shopq/infrastructure/database.py` | 24 type hints |
+| `shopq/api/routes/debug.py` | 15 type hints |
+| `shopq/api/app.py` | 11 type hints |
+| `shopq/storage/__init__.py` | 9 type hints |
+| `shopq/observability/structured.py` | 9 type hints |
 
 ### 3. Document Real Side Effects (Priority: MEDIUM)
 
@@ -173,8 +173,8 @@ if not args.paths:
 
 Option B: Add `--strict` flag for production-only validation
 ```bash
-python scripts/validate_principles.py --strict  # Only mailq/
-python scripts/validate_principles.py           # mailq/ + scripts/
+python scripts/validate_principles.py --strict  # Only shopq/
+python scripts/validate_principles.py           # shopq/ + scripts/
 ```
 
 ---
@@ -184,17 +184,17 @@ python scripts/validate_principles.py           # mailq/ + scripts/
 | Subdirectory | Violations |
 |--------------|------------|
 | scripts/archive | 349 |
-| mailq/api | 86 |
+| shopq/api | 86 |
 | scripts/evals | 79 |
 | scripts/quality-monitor | 36 |
-| mailq/infrastructure | 33 |
-| mailq/classification | 32 |
+| shopq/infrastructure | 33 |
+| shopq/classification | 32 |
 | scripts/database | 28 |
-| mailq/digest | 21 |
-| mailq/storage | 20 |
-| mailq/observability | 11 |
-| mailq/gmail | 11 |
-| mailq/concepts | 6 |
-| mailq/llm | 4 |
-| mailq/runtime | 3 |
-| mailq/shared | 2 |
+| shopq/digest | 21 |
+| shopq/storage | 20 |
+| shopq/observability | 11 |
+| shopq/gmail | 11 |
+| shopq/concepts | 6 |
+| shopq/llm | 4 |
+| shopq/runtime | 3 |
+| shopq/shared | 2 |

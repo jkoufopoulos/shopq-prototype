@@ -9,7 +9,7 @@ import os
 os.environ["ANTHROPIC_API_KEY"] = (
     "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"
 )
-os.environ["MAILQ_API_URL"] = "http://localhost:8000"
+os.environ["SHOPQ_API_URL"] = "http://localhost:8000"
 
 import sys
 

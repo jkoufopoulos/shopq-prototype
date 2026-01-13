@@ -1,6 +1,6 @@
 # Quality Monitor - AI-Powered Classification Analysis
 
-Continuous background monitoring of MailQ classification quality with automated issue detection and GitHub integration.
+Continuous background monitoring of ShopQ classification quality with automated issue detection and GitHub integration.
 
 ## What It Does
 
@@ -65,7 +65,7 @@ tail -f quality_monitor.log
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   MailQ Quality Pipeline                     │
+│                   ShopQ Quality Pipeline                     │
 └─────────────────────────────────────────────────────────────┘
 
   Digest Sessions (Cloud Run API)
@@ -324,7 +324,7 @@ Can adjust `MIN_SESSIONS_FOR_ANALYSIS` to reduce frequency.
 
 ```bash
 # Check if sessions are being tracked
-curl https://mailq-api-*.run.app/api/tracking/sessions
+curl https://shopq-api-*.run.app/api/tracking/sessions
 
 # Check state DB
 sqlite3 quality_monitor.db "SELECT * FROM analyzed_sessions"
@@ -426,7 +426,7 @@ For **immediate analysis** instead of waiting for 30-minute polling, integrate w
 
 ### Backend Integration
 
-Add to your digest generation endpoint (e.g., `mailq/api_digest.py`):
+Add to your digest generation endpoint (e.g., `shopq/api_digest.py`):
 
 ```python
 import requests

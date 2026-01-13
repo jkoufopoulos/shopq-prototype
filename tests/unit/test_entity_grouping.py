@@ -1,4 +1,4 @@
-from mailq.digest.support import canonical_subject, entity_key, stable_sort_entities
+from shopq.digest.support import canonical_subject, entity_key, stable_sort_entities
 
 
 def test_canonical_subject_strips_html_and_punctuation():

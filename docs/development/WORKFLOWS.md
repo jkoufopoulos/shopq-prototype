@@ -1,4 +1,4 @@
-# MailQ Workflows & Commands
+# ShopQ Workflows & Commands
 
 Development workflows, iteration patterns, and quick command reference.
 
@@ -6,7 +6,7 @@ Development workflows, iteration patterns, and quick command reference.
 
 ```bash
 # Start backend
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # Run tests
 npm run test:e2e                    # E2E tests
@@ -190,13 +190,13 @@ After applying fixes:
 **Start Backend:**
 ```bash
 # Development (auto-reload)
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # With specific host/port
-uvicorn mailq.api:app --host 0.0.0.0 --port 8000 --reload
+uvicorn shopq.api:app --host 0.0.0.0 --port 8000 --reload
 
 # Production mode
-uvicorn mailq.api:app --host 0.0.0.0 --port 8000
+uvicorn shopq.api:app --host 0.0.0.0 --port 8000
 ```
 
 **Load Chrome Extension:**
@@ -233,10 +233,10 @@ pytest
 pytest -v
 
 # Specific test file
-pytest mailq/tests/test_classifier.py
+pytest shopq/tests/test_classifier.py
 
 # Specific test function
-pytest mailq/tests/test_classifier.py::test_classify_email
+pytest shopq/tests/test_classifier.py::test_classify_email
 
 # Run with coverage
 pytest --cov=mailq --cov-report=html
@@ -268,40 +268,40 @@ npm run test:report
 **Inspect Central Database:**
 ```bash
 # Open database
-sqlite3 mailq/data/mailq.db
+sqlite3 shopq/data/shopq.db
 
 # Count rules
-sqlite3 mailq/data/mailq.db "SELECT COUNT(*) FROM rules;"
+sqlite3 shopq/data/shopq.db "SELECT COUNT(*) FROM rules;"
 
 # View recent rules (last 10)
-sqlite3 mailq/data/mailq.db "SELECT sender, type, domains, confidence FROM rules ORDER BY created_at DESC LIMIT 10;"
+sqlite3 shopq/data/shopq.db "SELECT sender, type, domains, confidence FROM rules ORDER BY created_at DESC LIMIT 10;"
 
 # Find rule for specific sender
-sqlite3 mailq/data/mailq.db "SELECT * FROM rules WHERE sender LIKE '%amazon%';"
+sqlite3 shopq/data/shopq.db "SELECT * FROM rules WHERE sender LIKE '%amazon%';"
 
 # View high-confidence rules
-sqlite3 mailq/data/mailq.db "SELECT * FROM rules WHERE confidence > 0.90;"
+sqlite3 shopq/data/shopq.db "SELECT * FROM rules WHERE confidence > 0.90;"
 
 # Export all rules to CSV
-sqlite3 -header -csv mailq/data/mailq.db "SELECT * FROM rules;" > rules_export.csv
+sqlite3 -header -csv shopq/data/shopq.db "SELECT * FROM rules;" > rules_export.csv
 ```
 
 **Inspect Classification Logs:**
 ```bash
 # Count classification logs
-sqlite3 mailq/data/mailq.db "SELECT COUNT(*) FROM classification_logs;"
+sqlite3 shopq/data/shopq.db "SELECT COUNT(*) FROM classification_logs;"
 
 # View recent classifications
-sqlite3 mailq/data/mailq.db "SELECT timestamp, sender, type, confidence FROM classification_logs ORDER BY timestamp DESC LIMIT 10;"
+sqlite3 shopq/data/shopq.db "SELECT timestamp, sender, type, confidence FROM classification_logs ORDER BY timestamp DESC LIMIT 10;"
 
 # View classifications by type
-sqlite3 mailq/data/mailq.db "SELECT type, COUNT(*) as count FROM classification_logs GROUP BY type ORDER BY count DESC;"
+sqlite3 shopq/data/shopq.db "SELECT type, COUNT(*) as count FROM classification_logs GROUP BY type ORDER BY count DESC;"
 
 # View low-confidence classifications
-sqlite3 mailq/data/mailq.db "SELECT * FROM classification_logs WHERE confidence < 0.70 ORDER BY timestamp DESC LIMIT 20;"
+sqlite3 shopq/data/shopq.db "SELECT * FROM classification_logs WHERE confidence < 0.70 ORDER BY timestamp DESC LIMIT 20;"
 
 # Export logs to CSV
-sqlite3 -header -csv mailq/data/mailq.db "SELECT * FROM classification_logs;" > classification_logs.csv
+sqlite3 -header -csv shopq/data/shopq.db "SELECT * FROM classification_logs;" > classification_logs.csv
 ```
 
 ### Git & Deployment
@@ -328,10 +328,10 @@ git push
 ./deploy.sh
 
 # View deployment logs
-gcloud run services logs read mailq-api --limit=50
+gcloud run services logs read shopq-api --limit=50
 
 # Check service status
-gcloud run services describe mailq-api
+gcloud run services describe shopq-api
 ```
 
 ### API Endpoints
@@ -361,7 +361,7 @@ curl http://localhost:8000/api/debug/featured-selection
 curl http://localhost:8000/api/debug/category-summary
 
 # Label counts
-curl "http://localhost:8000/api/debug/label-counts?labels=MailQ-Uncategorized,MailQ-Notifications"
+curl "http://localhost:8000/api/debug/label-counts?labels=ShopQ-Uncategorized,ShopQ-Notifications"
 
 # Missed featured
 curl "http://localhost:8000/api/debug/missed-featured?k=20"
@@ -390,13 +390,13 @@ curl "http://localhost:8000/api/confidence/trend?days=30"
 
 **Classifier prompt:**
 ```bash
-nano mailq/prompts/classifier_prompt.txt
+nano shopq/prompts/classifier_prompt.txt
 # Changes load automatically on next classification
 ```
 
 **Verifier prompt:**
 ```bash
-nano mailq/prompts/verifier_prompt.txt
+nano shopq/prompts/verifier_prompt.txt
 # Changes load automatically on next verification
 ```
 
@@ -406,7 +406,7 @@ nano mailq/prompts/verifier_prompt.txt
 ```javascript
 // In Gmail console (F12)
 await chrome.storage.local.clear();
-indexedDB.deleteDatabase('MailQLogger');
+indexedDB.deleteDatabase('ShopQLogger');
 location.reload();
 ```
 
@@ -451,7 +451,7 @@ curl http://localhost:8000/health
 
 **Production (Cloud Run):**
 ```bash
-curl https://mailq-api-XXXXX-uc.a.run.app/health
+curl https://shopq-api-XXXXX-uc.a.run.app/health
 ```
 
 ---

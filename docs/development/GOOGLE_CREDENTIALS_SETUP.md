@@ -1,6 +1,6 @@
 # Google Credentials Setup Guide - Complete Rebuild
 
-You deleted all your Google credentials. Here's how to recreate **everything** you need for MailQ.
+You deleted all your Google credentials. Here's how to recreate **everything** you need for ShopQ.
 
 ## 🎯 What You Need to Create
 
@@ -62,7 +62,7 @@ GOOGLE_API_KEY=AIzaSy...your-new-key-here...
 1. Go to: https://console.cloud.google.com/apis/credentials/consent?project=mailq-467118
 2. Choose **"External"** (if asked) → Click **"Create"**
 3. Fill in:
-   - **App name**: `MailQ`
+   - **App name**: `ShopQ`
    - **User support email**: Your email
    - **Developer contact**: Your email
 4. Click **"Save and Continue"**
@@ -93,7 +93,7 @@ GOOGLE_API_KEY=AIzaSy...your-new-key-here...
 1. Go to: https://console.cloud.google.com/apis/credentials?project=mailq-467118
 2. Click **"Create Credentials"** → **"OAuth client ID"**
 3. Application type: **"Chrome app"**
-4. Name: `MailQ Chrome Extension`
+4. Name: `ShopQ Chrome Extension`
 5. Application ID:
    - If you have the extension ID already: Enter it
    - If you don't: Enter a placeholder like `abcdefghijklmnopqrstuvwxyz123456`
@@ -117,7 +117,7 @@ GOOGLE_API_KEY=AIzaSy...your-new-key-here...
 1. Go to: https://console.cloud.google.com/apis/credentials?project=mailq-467118
 2. Click **"Create Credentials"** → **"OAuth client ID"**
 3. Application type: **"Desktop app"**
-4. Name: `MailQ Backend Scripts`
+4. Name: `ShopQ Backend Scripts`
 5. Click **"Create"**
 6. **DOWNLOAD JSON** (click the download icon)
 7. A file named `client_secret_*.json` downloads
@@ -159,7 +159,7 @@ curl "https://generativelanguage.googleapis.com/v1beta/models?key=$(grep GOOGLE_
 1. Load extension in Chrome: `chrome://extensions`
 2. Enable Developer Mode
 3. Click "Load unpacked" → Select `extension/` folder
-4. Click the MailQ extension icon
+4. Click the ShopQ extension icon
 5. It should prompt for Gmail permissions
 
 ### Test 3: Backend Scripts OAuth
@@ -225,4 +225,4 @@ Once all three credentials are created and saved:
 2. Chrome Extension Client ID → `extension/manifest.json`
 3. Backend OAuth Credentials → `credentials/credentials.json`
 
-Your MailQ app is ready to run!
+Your ShopQ app is ready to run!

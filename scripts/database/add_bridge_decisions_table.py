@@ -13,7 +13,7 @@ Used for:
 - A/B testing different mapping strategies
 """
 
-from mailq.infrastructure.database import get_db_connection
+from shopq.infrastructure.database import get_db_connection
 
 SQL_CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS bridge_decisions (

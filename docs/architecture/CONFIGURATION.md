@@ -1,4 +1,4 @@
-# MailQ Configuration Guide
+# ShopQ Configuration Guide
 
 Complete guide to configuring confidence thresholds, feature gates, and test mode.
 
@@ -32,7 +32,7 @@ curl -X POST http://localhost:8000/api/features/digest_urgency_grouping/disable
 
 **Confidence scores** are probabilities (0.0-1.0) that indicate how certain the LLM is about its classification.
 
-MailQ uses **7 confidence gates** throughout the classification pipeline to filter low-quality results:
+ShopQ uses **7 confidence gates** throughout the classification pipeline to filter low-quality results:
 
 1. **Type Gate (0.70)** - Must be 70%+ confident in email type (verify-first strategy)
 2. **Label Gate (0.70)** - Individual labels must be 70%+ confident
@@ -44,10 +44,10 @@ MailQ uses **7 confidence gates** throughout the classification pipeline to filt
 
 ### Centralized Configuration
 
-All thresholds are defined in `config/mailq_policy.yaml` (single source of truth) and loaded by `mailq/observability/confidence.py`:
+All thresholds are defined in `config/shopq_policy.yaml` (single source of truth) and loaded by `shopq/observability/confidence.py`:
 
 ```yaml
-# config/mailq_policy.yaml
+# config/shopq_policy.yaml
 classification:
   min_type_conf: 0.70           # Type must be 70%+ confident (verify-first)
   min_label_conf: 0.70          # Labels must be 70%+ confident
@@ -69,10 +69,10 @@ verifier:
 
 #### Gate 1: Type Confidence (0.70)
 
-**Location**: `mailq/api/routes/organize.py`
+**Location**: `shopq/api/routes/organize.py`
 
 ```python
-from mailq.observability.confidence import TYPE_CONFIDENCE_MIN  # 0.70
+from shopq.observability.confidence import TYPE_CONFIDENCE_MIN  # 0.70
 
 if result['type_conf'] < TYPE_CONFIDENCE_MIN:
     filtered_labels = ['Uncategorized']
@@ -91,10 +91,10 @@ Result: "newsletter" (above 0.70, triggers verifier for second opinion)
 
 #### Gate 2: Label Confidence (0.70)
 
-**Location**: `mailq/api/routes/organize.py`
+**Location**: `shopq/api/routes/organize.py`
 
 ```python
-from mailq.observability.confidence import LABEL_CONFIDENCE_MIN  # 0.70
+from shopq.observability.confidence import LABEL_CONFIDENCE_MIN  # 0.70
 
 filtered = [label for label in labels
            if conf >= LABEL_CONFIDENCE_MIN]
@@ -110,21 +110,21 @@ Result: ["finance"] only (shopping below 0.70)
 
 #### Gate 3: Mapper Gates (0.70)
 
-**Location**: `mailq/classification/mapper.py`
+**Location**: `shopq/classification/mapper.py`
 
 ```python
-from mailq.observability.confidence import TYPE_GATE, DOMAIN_GATE, ATTENTION_GATE
+from shopq.observability.confidence import TYPE_GATE, DOMAIN_GATE, ATTENTION_GATE
 
 # All gates now 0.70 (verify-first strategy)
 if type_conf >= TYPE_GATE:
-    labels.append(f"MailQ-{type}")
+    labels.append(f"ShopQ-{type}")
 
 for domain, conf in domain_confs.items():
     if conf >= DOMAIN_GATE:
-        labels.append(f"MailQ-{domain}")
+        labels.append(f"ShopQ-{domain}")
 
 if attention == "action_required" and attention_conf >= ATTENTION_GATE:
-    labels.append("MailQ-Action-Required")
+    labels.append("ShopQ-Action-Required")
 ```
 
 **Purpose**: Apply gates when converting semantic labels to Gmail labels
@@ -133,10 +133,10 @@ if attention == "action_required" and attention_conf >= ATTENTION_GATE:
 
 #### Gate 4: Learning Gate (0.70)
 
-**Location**: `mailq/classification/memory_classifier.py`
+**Location**: `shopq/classification/memory_classifier.py`
 
 ```python
-from mailq.observability.confidence import LEARNING_MIN_CONFIDENCE  # 0.70
+from shopq.observability.confidence import LEARNING_MIN_CONFIDENCE  # 0.70
 
 if type_conf >= LEARNING_MIN_CONFIDENCE:
     rules.learn_from_classification(...)  # Create pending rule
@@ -148,10 +148,10 @@ if type_conf >= LEARNING_MIN_CONFIDENCE:
 
 #### Gate 5: Domain Boost (0.60 → 0.70)
 
-**Location**: `mailq/classification/vertex_gemini_classifier.py`
+**Location**: `shopq/classification/vertex_gemini_classifier.py`
 
 ```python
-from mailq.observability.confidence import DOMAIN_MIN_THRESHOLD, DOMAIN_BOOST_VALUE
+from shopq.observability.confidence import DOMAIN_MIN_THRESHOLD, DOMAIN_BOOST_VALUE
 
 for domain in result.get('domains', []):
     conf = domain_confs.get(domain, 0.0)
@@ -168,7 +168,7 @@ for domain in result.get('domains', []):
 **Location**: `extension/modules/verifier.js`
 
 ```python
-from mailq.observability.confidence import VERIFIER_LOW_CONFIDENCE, VERIFIER_HIGH_CONFIDENCE
+from shopq.observability.confidence import VERIFIER_LOW_CONFIDENCE, VERIFIER_HIGH_CONFIDENCE
 
 def should_verify(classification):
     conf = classification.get('type_conf', 1.0)
@@ -190,10 +190,10 @@ def should_verify(classification):
 
 #### Gate 7: Verifier Acceptance (0.15)
 
-**Location**: `mailq/api_verify.py`
+**Location**: `shopq/api_verify.py`
 
 ```python
-from mailq.config.confidence import VERIFIER_CORRECTION_DELTA  # 0.15
+from shopq.config.confidence import VERIFIER_CORRECTION_DELTA  # 0.15
 
 if verifier_verdict == "reject":
     confidence_delta = correction_conf - original_conf
@@ -237,7 +237,7 @@ curl http://localhost:8000/api/confidence/trend?days=30
 All classifications are logged to `confidence_logs` table via `ConfidenceLogger`:
 
 ```python
-from mailq.confidence_logger import ConfidenceLogger
+from shopq.confidence_logger import ConfidenceLogger
 
 logger = ConfidenceLogger()
 logger.log_classification(result, email_id, subject, filtered_labels)
@@ -245,7 +245,7 @@ logger.log_classification(result, email_id, subject, filtered_labels)
 
 **Query logs:**
 ```bash
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT subject, type_conf, domain_conf
   FROM confidence_logs
   WHERE type_conf < 0.85
@@ -347,7 +347,7 @@ export FEATURE_DIGEST_URGENCY_GROUPING=true
 export FEATURE_USE_VERIFIER=false
 
 # Start server with custom defaults
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 ```
 
 **Note:** Environment variables set the **default** state. API calls can still override during runtime.
@@ -429,10 +429,10 @@ curl -s http://localhost:8000/api/test/mode
 ```bash
 # Set before starting backend
 export TEST_MODE=true
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # Or inline
-TEST_MODE=true uvicorn mailq.api:app --reload
+TEST_MODE=true uvicorn shopq.api:app --reload
 ```
 
 ⚠️ **Requires backend restart to change**
@@ -459,7 +459,7 @@ When **either** method is enabled:
 # Enable test mode
 curl -X POST http://localhost:8000/api/features/test_mode/enable
 
-# Edit mailq/prompts/classifier_prompt.txt
+# Edit shopq/prompts/classifier_prompt.txt
 # Classify test emails
 # Review results
 
@@ -472,7 +472,7 @@ curl -X POST http://localhost:8000/api/features/test_mode/disable
 # Enable test mode (no rules interference)
 curl -X POST http://localhost:8000/api/features/test_mode/enable
 
-# Edit mailq/config/confidence.py
+# Edit shopq/config/confidence.py
 # Test with new thresholds
 # Check confidence stats
 
@@ -483,7 +483,7 @@ curl -X POST http://localhost:8000/api/features/test_mode/disable
 **3. Benchmark Classification Accuracy**
 ```bash
 # Clear rules, enable test mode
-python3 mailq/scripts/clear_rules.py
+python3 shopq/scripts/clear_rules.py
 curl -X POST http://localhost:8000/api/features/test_mode/enable
 
 # Classify 100 test emails
@@ -498,7 +498,7 @@ curl -X POST http://localhost:8000/api/features/test_mode/disable
 **1. Clear Existing Rules (Optional)**
 ```bash
 cd /Users/justinkoufopoulos/Projects/mailq-prototype
-python3 mailq/scripts/clear_rules.py
+python3 shopq/scripts/clear_rules.py
 ```
 
 Creates backup, then asks for confirmation before clearing rules, pending rules, corrections, and feedback.

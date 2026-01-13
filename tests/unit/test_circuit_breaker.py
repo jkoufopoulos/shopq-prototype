@@ -1,4 +1,4 @@
-from mailq.infrastructure.circuitbreaker import InvalidJSONCircuitBreaker
+from shopq.infrastructure.circuitbreaker import InvalidJSONCircuitBreaker
 
 
 def test_circuit_breaker_trips_at_threshold():

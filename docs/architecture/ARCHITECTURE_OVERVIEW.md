@@ -1,6 +1,6 @@
-# MailQ Architecture Overview
+# ShopQ Architecture Overview
 
-This guide ties the Chrome extension and Python backend together so you can reason about the full MailQ system at a glance. Use it alongside the regenerated diagrams in `code-graph/visuals/`—each section below is linked from the diagrams and vice‑versa.
+This guide ties the Chrome extension and Python backend together so you can reason about the full ShopQ system at a glance. Use it alongside the regenerated diagrams in `code-graph/visuals/`—each section below is linked from the diagrams and vice‑versa.
 
 ## Extension
 
@@ -18,7 +18,7 @@ This guide ties the Chrome extension and Python backend together so you can reas
 
 ### Auto-Organize Engine
 - **Source:** `extension/modules/auto-organize.js`
-- **Role:** Schedules regular inbox sweeping, fetches unlabeled threads, applies MailQ labels, and records digest pending state.
+- **Role:** Schedules regular inbox sweeping, fetches unlabeled threads, applies ShopQ labels, and records digest pending state.
 - **Key interactions:** Uses `gmail.js` for Gmail API calls, `classifier.js` for classification, `summary-email.js` for digest triggers.
 - **Tests:** Scenario coverage via `extension/tests/network.test.js`
 
@@ -30,50 +30,50 @@ This guide ties the Chrome extension and Python backend together so you can reas
 
 ### Digest & Summary Pipeline (Extension)
 - **Source:** `extension/modules/summary-email.js`, `extension/modules/context-digest.js`
-- **Role:** Collects classifications since the last digest, calls `/api/context-digest`, sends the email, labels it with `MailQ/Digest`, and updates timestamps.
+- **Role:** Collects classifications since the last digest, calls `/api/context-digest`, sends the email, labels it with `ShopQ/Digest`, and updates timestamps.
 - **Key interactions:** `summary-email.js` loads classifications from the logger IndexedDB and orchestrates Gmail API send + labeling.
 - **Tests:** `extension/tests/verifier.test.js` (verifier hooks), manual end-to-end via integration tests.
 
 ## Backend
 
 ### FastAPI Gateway
-- **Source:** `mailq/api.py`
+- **Source:** `shopq/api.py`
 - **Role:** Exposes `/api/organize`, `/api/verify`, `/api/context-digest`, and supporting endpoints; wires legacy services together.
 - **Key interactions:** Routes organize requests to `api_organize.py`, digest calls to `context_digest.py`, verification to `api_verify.py`.
 - **Tests:** `tests/integration/test_e2e_pipeline.py`
 
 ### Organize API Adapter
-- **Source:** `mailq/api_organize.py`
+- **Source:** `shopq/api_organize.py`
 - **Role:** Bridges the extension to the refactored pipeline, optionally falls back to legacy classifiers.
 - **Key interactions:** Wraps `pipeline_wrapper.classify_batch_refactored` and returns multi-dimensional Gmail labels.
 - **Tests:** `tests/integration/test_e2e_pipeline.py`
 
 ### Pipeline Coordinator
-- **Source:** `mailq/usecases/pipeline.py`
+- **Source:** `shopq/usecases/pipeline.py`
 - **Role:** Orchestrates fetch → parse → classify → assemble → checkpoint flow, enforces idempotency, and tracks telemetry.
 - **Key interactions:** Uses adapters (`adapters/gmail`, `adapters/storage`), domain models, and idempotency helpers.
 - **Tests:** `tests/integration/test_e2e_pipeline.py`, `tests/adapters/test_resilience.py`
 
 ### Classification Domain Logic
-- **Source:** `mailq/domain/classify.py`
+- **Source:** `shopq/domain/classify.py`
 - **Role:** Implements rules-based fallback, LLM invocation, schema validation, and idempotent `ClassifiedEmail` creation.
 - **Key interactions:** Calls `adapters/llm/client.py`, uses `infra/idempotency.py`, returns domain models consumed by the pipeline.
 - **Tests:** `tests/llm/test_fallback.py`
 
 ### Gmail Adapters
-- **Source:** `mailq/adapters/gmail/parser.py`, `mailq/adapters/gmail/client.py`
+- **Source:** `shopq/adapters/gmail/parser.py`, `shopq/adapters/gmail/client.py`
 - **Role:** Parse Gmail API payloads into domain models, handle retries/circuits, and batch fetching.
 - **Key interactions:** Called by the pipeline coordinator; logs schema validation counters.
 - **Tests:** `tests/contracts/test_gmail_parser.py`, `tests/adapters/test_resilience.py`
 
 ### Context Digest Engine
-- **Source:** `mailq/context_digest.py`, `mailq/context_enricher.py`, `mailq/narrative_generator.py`
+- **Source:** `shopq/context_digest.py`, `shopq/context_enricher.py`, `shopq/narrative_generator.py`
 - **Role:** Extract entities, synthesize timeline narratives, and enrich with weather/context data.
 - **Key interactions:** Consumed by `/api/context-digest` and the extension’s digest pipeline.
 - **Tests:** Covered indirectly via integration/digest scenarios.
 
 ### Digest Rendering & Delivery
-- **Source:** `mailq/card_renderer.py`, `mailq/digest_renderer.py`
+- **Source:** `shopq/card_renderer.py`, `shopq/digest_renderer.py`
 - **Role:** Render HTML cards for digests, build Gmail search links, assemble featured/overview sections.
 - **Key interactions:** Used by the context digest engine and summary email worker.
 - **Tests:** Integration coverage via digest flows.
@@ -126,11 +126,11 @@ When the extension sends classifications to `/api/context-digest`, each email it
 
 **Debug Mode:**
 - Extension: Set `CONFIG.DEBUG_CLASSIFICATION = true` in `config.js`
-- API: Set environment variable `MAILQ_DEBUG_CLASSIFICATION=true`
+- API: Set environment variable `SHOPQ_DEBUG_CLASSIFICATION=true`
 
 ## Cross-Cutting Data Flow
 
-1. **Extension auto-organize** uses `gmail.js` to fetch unlabeled threads, relays them to `/api/organize`, and applies MailQ labels.
+1. **Extension auto-organize** uses `gmail.js` to fetch unlabeled threads, relays them to `/api/organize`, and applies ShopQ labels.
 2. The **backend pipeline** parses Gmail payloads, classifies via rules/LLM, assembles digests, and checkpoints output.
 3. **Digest generation** pulls classifications since the last digest, calls `/api/context-digest`, and sends an HTML card via Gmail.
 4. Telemetry counters (`infra/telemetry.py`, `extension/modules/telemetry.js`) expose pipeline metrics for diagnostics.

@@ -18,9 +18,9 @@ import pytest
 
 # Import refactored pipeline (matches production)
 try:
-    from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+    from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 except ImportError:
-    pytest.skip("MailQ modules not available", allow_module_level=True)
+    pytest.skip("ShopQ modules not available", allow_module_level=True)
 
 
 @pytest.fixture(scope="module")
@@ -45,8 +45,8 @@ def classifier():
     to match the actual /api/organize code path that the extension uses.
     """
     try:
-        from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-        from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
+        from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+        from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
 
         base_classifier = RefactoredPipelineClassifier()
         guardrails = GuardrailMatcher()

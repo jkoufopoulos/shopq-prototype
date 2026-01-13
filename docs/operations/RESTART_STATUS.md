@@ -1,4 +1,4 @@
-# MailQ System Restart Status
+# ShopQ System Restart Status
 
 **Date**: November 6, 2025 @ 3:57 AM EST
 **Status**: ✅ Backend Restarted Successfully
@@ -13,7 +13,7 @@
 - **Started**: 3:57 AM EST
 - **Health**: Healthy
 - **Version**: 2.0.0-mvp
-- **Log**: `/tmp/mailq-api.log`
+- **Log**: `/tmp/shopq-api.log`
 
 ### ✅ Fix Applied
 - Digest HTML filename now uses `session_id` from result
@@ -35,7 +35,7 @@
 ```
 1. Open Chrome
 2. Go to: chrome://extensions
-3. Find "MailQ" extension
+3. Find "ShopQ" extension
 4. Click reload icon (circular arrow)
 5. Verify no errors in console
 ```
@@ -50,13 +50,13 @@
 curl http://127.0.0.1:8000/health
 
 # Expected:
-{"status":"healthy","service":"MailQ API","version":"2.0.0-mvp",...}
+{"status":"healthy","service":"ShopQ API","version":"2.0.0-mvp",...}
 ```
 ✅ **PASSED**
 
 ### Extension Test (After Reload)
 ```
-1. Click "Organize" in MailQ extension
+1. Click "Organize" in ShopQ extension
 2. Verify:
    - Labels appear on emails
    - Only ONE digest is sent
@@ -82,12 +82,12 @@ curl http://127.0.0.1:8000/health
 
 ### Next Digest Generation
 
-When you click "Organize" in the MailQ extension (after reloading it):
+When you click "Organize" in the ShopQ extension (after reloading it):
 
 1. **Classification**:
    - ✅ No mapper crash
    - ✅ Labels applied to all emails
-   - Example: `MailQ/Receipts`, `MailQ/Finance`, `MailQ/Events`
+   - Example: `ShopQ/Receipts`, `ShopQ/Finance`, `ShopQ/Events`
 
 2. **Digest Generation**:
    - ✅ Single digest sent (no duplicates)
@@ -105,7 +105,7 @@ When you click "Organize" in the MailQ extension (after reloading it):
 ✅ OAuth token obtained
 📧 Found 50 unlabeled emails to organize
 🤖 Classifying 50 emails...
-✅ Labels applied: MailQ/Receipts (10), MailQ/Finance (5), ...
+✅ Labels applied: ShopQ/Receipts (10), ShopQ/Finance (5), ...
 📧 [SUMMARY] Starting summary email generation...
 ✅ [SUMMARY] Digest generation lock acquired (ID: ..., session: 20251106_040000)
 ✅ [SUMMARY] Summary email sent successfully! Total time: 2500ms
@@ -139,10 +139,10 @@ If issues arise:
 kill 23712
 
 # Revert changes
-git checkout HEAD -- mailq/api.py
+git checkout HEAD -- shopq/api.py
 
 # Restart with old code
-uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 ### Extension Rollback
@@ -151,7 +151,7 @@ uvicorn mailq.api:app --host 127.0.0.1 --port 8000
 git checkout HEAD -- extension/modules/mapper.js extension/modules/summary-email.js
 
 # Reload extension in Chrome
-# Go to chrome://extensions → Reload MailQ
+# Go to chrome://extensions → Reload ShopQ
 ```
 
 ---
@@ -159,7 +159,7 @@ git checkout HEAD -- extension/modules/mapper.js extension/modules/summary-email
 ## Files Modified
 
 ### Backend (Active)
-- `mailq/api.py` (lines 404-408, 417)
+- `shopq/api.py` (lines 404-408, 417)
 
 ### Extension (Pending Reload)
 - `extension/modules/mapper.js` (line 64)

@@ -1,13 +1,13 @@
-# MailQ Architecture
+# ShopQ Architecture
 
 Detailed system design and implementation guide.
 
-> **📁 Repository Structure Update (Nov 2025)**: The `mailq/` backend has been restructured from 15 directories to 7 for clarity:
-> `api/`, `classification/`, `digest/`, `gmail/`, `llm/`, `storage/`, `shared/`. See [mailq/README.md](../../mailq/README.md) and [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for details.
+> **📁 Repository Structure Update (Nov 2025)**: The `shopq/` backend has been restructured from 15 directories to 7 for clarity:
+> `api/`, `classification/`, `digest/`, `gmail/`, `llm/`, `storage/`, `shared/`. See [shopq/README.md](../../shopq/README.md) and [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for details.
 
 ## System Overview
 
-MailQ is a hybrid email classification system with four tiers:
+ShopQ is a hybrid email classification system with four tiers:
 
 1. **T0 (Free)**: Type Mapper - Global deterministic type rules (NEW - 2025-11-10)
 2. **T0 (Free)**: Rules Engine - User-specific pattern matching
@@ -84,7 +84,7 @@ MailQ is a hybrid email classification system with four tiers:
 #### modules/gmail.js
 - **Purpose**: Gmail API operations
 - **Key Functions**:
-  - `getUnlabeledEmails()` - Fetch emails without MailQ-* labels
+  - `getUnlabeledEmails()` - Fetch emails without ShopQ-* labels
   - `getOrCreateLabel()` - Create/find labels with caching
   - `applyLabels()` - Apply labels and archive emails
 - **Label Cache**: In-memory Map to prevent 409 errors
@@ -152,21 +152,21 @@ MailQ is a hybrid email classification system with four tiers:
 #### vertex_gemini_classifier.py
 - **Purpose**: Gemini LLM integration
 - **Model**: gemini-2.0-flash
-- **Prompt Loading**: `mailq/prompts/classifier_prompt.txt`
+- **Prompt Loading**: `shopq/prompts/classifier_prompt.txt`
 - **Temperature**: 0.2 (consistent)
 - **Few-shot Examples**: 12 static + 5 learned
 - **Validation**: Ensures schema compliance
 
 #### api_verify.py
 - **Purpose**: Verifier logic
-- **Prompt Loading**: `mailq/prompts/verifier_prompt.txt`
+- **Prompt Loading**: `shopq/prompts/verifier_prompt.txt`
 - **Temperature**: 0.1 (conservative)
 - **Strategy**: Challenge first classification with strict rubrics
 - **Returns**: `verdict: "confirm"` or `"reject"` with correction
 
 #### rules_engine.py
 - **Purpose**: SQLite pattern matching
-- **Database**: `mailq/data/mailq.db` (rules table)
+- **Database**: `shopq/data/shopq.db` (rules table)
 - **Tables**:
   - `rules` - Confirmed patterns
   - `pending_rules` - Awaiting promotion (2+ consistent matches)
@@ -174,15 +174,15 @@ MailQ is a hybrid email classification system with four tiers:
 
 #### mapper.py
 - **Purpose**: Semantic → Gmail label mapping
-- **Confidence Gates** (from `mailq/config/confidence.py`):
+- **Confidence Gates** (from `shopq/config/confidence.py`):
   - Type: 0.92 (TYPE_GATE)
   - Domain: 0.75 (DOMAIN_GATE)
   - Attention: 0.85 (ATTENTION_GATE)
-- **Fallback**: "MailQ-Uncategorized" if no labels qualify
+- **Fallback**: "ShopQ-Uncategorized" if no labels qualify
 
 #### feedback_manager.py
 - **Purpose**: User correction storage
-- **Database**: `mailq/data/mailq.db` (feedback tables)
+- **Database**: `shopq/data/shopq.db` (feedback tables)
 - **Actions**:
   - Store corrections
   - Extract patterns for few-shot learning
@@ -223,13 +223,13 @@ from_unknown  - Unknown sender
 
 ## Confidence System
 
-> ✨ **NEW**: All confidence thresholds are now centralized in `mailq/config/confidence.py`
+> ✨ **NEW**: All confidence thresholds are now centralized in `shopq/config/confidence.py`
 >
 > See **[Confidence Flow Diagram](../code-graph/visuals/CONFIDENCE_FLOW.md)** for complete visualization of all gates and thresholds.
 
 ### Centralized Configuration
 
-All thresholds are imported from `mailq/config/confidence.py`:
+All thresholds are imported from `shopq/config/confidence.py`:
 
 ```python
 # Classification Gates
@@ -258,7 +258,7 @@ VERIFIER_CORRECTION_DELTA = 0.15 # Min delta to accept correction
 
 **api_organize.py** (Gate 1 & 2):
 ```python
-from mailq.config.confidence import TYPE_CONFIDENCE_MIN, LABEL_CONFIDENCE_MIN
+from shopq.config.confidence import TYPE_CONFIDENCE_MIN, LABEL_CONFIDENCE_MIN
 
 if result['type_conf'] < TYPE_CONFIDENCE_MIN:  # Gate 1
     filtered_labels = ['Uncategorized']
@@ -269,14 +269,14 @@ filtered = [label for label in labels
 
 **mapper.py** (Gate 3):
 ```python
-from mailq.config.confidence import TYPE_GATE, DOMAIN_GATE, ATTENTION_GATE
+from shopq.config.confidence import TYPE_GATE, DOMAIN_GATE, ATTENTION_GATE
 
 # Apply gates when mapping to Gmail labels
 ```
 
 **memory_classifier.py** (Gate 4):
 ```python
-from mailq.config.confidence import LEARNING_MIN_CONFIDENCE
+from shopq.config.confidence import LEARNING_MIN_CONFIDENCE
 
 if type_conf >= LEARNING_MIN_CONFIDENCE:
     rules.learn_from_classification(...)  # Create pending rule
@@ -284,7 +284,7 @@ if type_conf >= LEARNING_MIN_CONFIDENCE:
 
 **vertex_gemini_classifier.py** (Gate 5):
 ```python
-from mailq.config.confidence import DOMAIN_MIN_THRESHOLD, DOMAIN_BOOST_VALUE
+from shopq.config.confidence import DOMAIN_MIN_THRESHOLD, DOMAIN_BOOST_VALUE
 
 # Boost weak domain confidences
 ```
@@ -294,7 +294,7 @@ from mailq.config.confidence import DOMAIN_MIN_THRESHOLD, DOMAIN_BOOST_VALUE
 All classifications are logged to `confidence_logs` table via `ConfidenceLogger`:
 
 ```python
-from mailq.confidence_logger import ConfidenceLogger
+from shopq.confidence_logger import ConfidenceLogger
 
 logger = ConfidenceLogger()
 logger.log_classification(result, email_id, subject, filtered_labels)
@@ -335,7 +335,7 @@ Return: { type: "newsletter", type_conf: 0.92, ... }
   ↓
 Confidence filter: 0.92 >= 0.85 → PASS
   ↓
-mapper.py → ["MailQ-Newsletters"]
+mapper.py → ["ShopQ-Newsletters"]
   ↓
 Cost: ~$0.0001 (T3)
 ```
@@ -510,7 +510,7 @@ print(f"⚠️  Low confidence: {low_confidence}")
 ---
 
 **See Also**:
-- [MAILQ_REFERENCE.md](../MAILQ_REFERENCE.md) - Quick reference
+- [SHOPQ_REFERENCE.md](../SHOPQ_REFERENCE.md) - Quick reference
 - [QUICKSTART.md](../QUICKSTART.md) - Setup guide
 - [TESTING.md](TESTING.md) - Test procedures
 

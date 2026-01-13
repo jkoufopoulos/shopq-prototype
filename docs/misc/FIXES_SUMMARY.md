@@ -1,4 +1,4 @@
-# MailQ System Fixes - Nov 6, 2025
+# ShopQ System Fixes - Nov 6, 2025
 
 ## Issues Fixed
 
@@ -39,9 +39,9 @@ If digest generation is already in progress, subsequent calls will:
 
 **Root Cause:**
 The label mapper in `extension/modules/mapper.js` could create 3 labels:
-1. Type label (e.g., `MailQ/Receipts`)
-2. Domain label (e.g., `MailQ/Finance`)
-3. Action label (e.g., `MailQ/Action-Required`)
+1. Type label (e.g., `ShopQ/Receipts`)
+2. Domain label (e.g., `ShopQ/Finance`)
+3. Action label (e.g., `ShopQ/Action-Required`)
 
 Example: `type=receipt` + `domains=[finance]` + `attention=action_required`
 → Results in 3 labels
@@ -100,14 +100,14 @@ Added structured logging with DEBUG environment variable:
 
 **Files Changed:**
 
-1. **`mailq/context_digest.py`** (lines 40-83):
+1. **`shopq/context_digest.py`** (lines 40-83):
    - Added `os` import
    - Check `DEBUG` env var in `__init__`
    - Updated `_log()` method with level filtering
    - ERROR/WARN always shown
    - INFO/DEBUG conditional
 
-2. **`mailq/observability.py`** (lines 12, 29, 50-53, 80-85):
+2. **`shopq/observability.py`** (lines 12, 29, 50-53, 80-85):
    - Added `os` import
    - Added `self.verbose` flag based on `DEBUG` env var
    - Wrapped importance logging: `if self.verbose: print(...)`
@@ -131,7 +131,7 @@ Created `.reload-ignore` file to prevent uvicorn from restarting when:
 
 ### Test Fix #1 (Duplicate Digests)
 
-1. Open Chrome with MailQ extension
+1. Open Chrome with ShopQ extension
 2. Click "Organize Inbox" button twice rapidly
 3. **Expected**: Only ONE digest email created
 4. **Check logs**: Second call should show `🔒 Digest generation already in progress`
@@ -148,8 +148,8 @@ Created `.reload-ignore` file to prevent uvicorn from restarting when:
    ```
 2. Organize inbox
 3. **Expected**: Email has exactly 2 labels:
-   - `MailQ/Receipts` (type)
-   - `MailQ/Action-Required` (action)
+   - `ShopQ/Receipts` (type)
+   - `ShopQ/Action-Required` (action)
    - Domain label dropped (logged in console)
 
 ### Test Fix #3 (Log Verbosity)
@@ -163,7 +163,7 @@ Created `.reload-ignore` file to prevent uvicorn from restarting when:
 
 2. **Debug mode**:
    ```bash
-   DEBUG=true python -m mailq.api:app
+   DEBUG=true python -m shopq.api:app
    ```
    **Expected**: Full verbose logging with [Importance] and [Entity] logs
 
@@ -196,14 +196,14 @@ Created `.reload-ignore` file to prevent uvicorn from restarting when:
 
 ```bash
 # 1. Commit changes
-git add extension/modules/summary-email.js extension/modules/mapper.js mailq/context_digest.py mailq/observability.py
+git add extension/modules/summary-email.js extension/modules/mapper.js shopq/context_digest.py shopq/observability.py
 git commit -m "fix: prevent duplicate digests, enforce max 2 labels, reduce log verbosity"
 
 # 2. Deploy backend
 ./deploy.sh
 
 # 3. Reload extension
-# Chrome → Extensions → MailQ → Reload
+# Chrome → Extensions → ShopQ → Reload
 
 # 4. Test in production
 # Click organize → Check Gmail for single digest

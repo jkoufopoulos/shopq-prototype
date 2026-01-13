@@ -4,7 +4,7 @@ import base64
 
 import pytest
 
-from mailq.gmail.parser import GmailParsingError, parse_message_strict
+from shopq.gmail.parser import GmailParsingError, parse_message_strict
 
 
 def _sample_message(body: str = "Hello", mime_type: str = "text/plain"):

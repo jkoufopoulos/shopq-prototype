@@ -4,7 +4,7 @@ set -euo pipefail
 # Change to project root (one level up from code-graph)
 cd "$(dirname "$0")/../.."
 
-echo "🔍 Analyzing MailQ Codebase..."
+echo "🔍 Analyzing ShopQ Codebase..."
 echo "Working directory: $(pwd)"
 echo ""
 
@@ -29,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.cwd()))
 
 try:
-    from mailq.vertex_gemini_classifier import VertexGeminiClassifier
+    from shopq.vertex_gemini_classifier import VertexGeminiClassifier
 
     # Load analysis data
     with open('code-graph/analysis_data.json', 'r') as f:

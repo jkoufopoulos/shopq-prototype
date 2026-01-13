@@ -29,10 +29,10 @@ import pytest
 
 # Import temporal decay logic
 try:
-    from mailq.classification.enrichment import enrich_entity_with_temporal_decay
-    from mailq.classification.models import DeadlineEntity, Entity, EventEntity, NotificationEntity
+    from shopq.classification.enrichment import enrich_entity_with_temporal_decay
+    from shopq.classification.models import DeadlineEntity, Entity, EventEntity, NotificationEntity
 except ImportError:
-    pytest.skip("MailQ modules not available", allow_module_level=True)
+    pytest.skip("ShopQ modules not available", allow_module_level=True)
 
 
 @pytest.fixture(scope="module")

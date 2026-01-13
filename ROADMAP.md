@@ -1,4 +1,4 @@
-# MailQ Product Roadmap
+# ShopQ Product Roadmap
 
 **Vision**: A 100% local, privacy-first Gmail assistant powered by SLMs. No cloud, no servers, no data leaving your device. Ever.
 
@@ -80,7 +80,7 @@ Phase 5: Gmail Drawer UI           → Live agentic inbox view
 10. ✅ **Database Fixes Deployment** - Connection pool, WAL checkpoints
 11. ✅ **Architecture Improvements** - Principles score: 39/50 → 45/50
 12. ✅ **Template-Based Digest Cleanup** - V2 pipeline complete, deprecated files removed (-2,397 lines)
-13. ✅ **Importance System Consolidation** - ImportanceClassifier deleted, BridgeImportanceMapper simplified to guardrails-only, TYPE_FRIENDLY_NAMES centralized in `mailq/shared/constants.py`
+13. ✅ **Importance System Consolidation** - ImportanceClassifier deleted, BridgeImportanceMapper simplified to guardrails-only, TYPE_FRIENDLY_NAMES centralized in `shopq/shared/constants.py`
 
 ### 🟡 REMAINING (1 item)
 
@@ -129,7 +129,7 @@ SLM migration will touch `vertex_gemini_classifier.py` and the LLM pipeline. The
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
 | 1 | **Move Vertex AI config to env vars** | ✅ Done | `VERTEX_AI_PROJECT_ID`, `VERTEX_AI_LOCATION` |
-| 2 | **Resolve threshold conflict** | ✅ Done | `config/mailq_policy.yaml` is single source of truth |
+| 2 | **Resolve threshold conflict** | ✅ Done | `config/shopq_policy.yaml` is single source of truth |
 | 3 | **Add LLM output validation to all paths** | ✅ Done | Type mapper, rules, and LLM paths validated |
 
 ### ✅ Medium Priority (Completed)
@@ -199,7 +199,7 @@ Three docs previously had conflicting terminology. Now aligned:
 
 ### Week 4: Integration & Testing
 
-8. Create `mailq/llm/ollama_client.py`
+8. Create `shopq/llm/ollama_client.py`
 9. Feature flag: `LLM_BACKEND = "gemini" | "ollama"`
 10. Run full pipeline on your inbox (SLM mode)
 11. Update Golden Dataset tests for SLM
@@ -239,7 +239,7 @@ Three docs previously had conflicting terminology. Now aligned:
 │  • HTTP server (localhost:8080)     │
 │  • Ollama SLM client                │
 │  • Classification pipeline          │
-│  • SQLite DB (~/.mailq/mailq.db)    │
+│  • SQLite DB (~/.shopq/shopq.db)    │
 └─────────────────────────────────────┘
               │
               ▼
@@ -253,7 +253,7 @@ Three docs previously had conflicting terminology. Now aligned:
 ### Tasks
 
 **Week 1-2: Daemon Core**
-- Create `mailq_daemon/` package (FastAPI, reuse existing pipeline)
+- Create `shopq_daemon/` package (FastAPI, reuse existing pipeline)
 - API endpoints: `/api/classify`, `/api/organize`, `/api/digest`, `/health`
 - Launcher script with dependency checks
 
@@ -263,7 +263,7 @@ Three docs previously had conflicting terminology. Now aligned:
 - End-to-end flow: Gmail → Extension → Daemon → Labels
 
 **Week 4: Packaging**
-- One-liner installer (`curl -sSL https://mailq.ai/install.sh | bash`)
+- One-liner installer (`curl -sSL https://shopq.ai/install.sh | bash`)
 - Dogfood full system for 1 week
 - Performance tuning
 
@@ -338,7 +338,7 @@ Three docs previously had conflicting terminology. Now aligned:
 
 ```
 ┌────────────────────────────────────────────┐
-│ MailQ: Your AI Gmail Assistant             │
+│ ShopQ: Your AI Gmail Assistant             │
 │ 100% Local. 100% Private. 100% Yours.      │
 ├────────────────────────────────────────────┤
 │                                            │

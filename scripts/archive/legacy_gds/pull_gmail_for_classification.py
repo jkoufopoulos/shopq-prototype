@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pull emails from Gmail with MailQ labels for manual importance labeling.
+Pull emails from Gmail with ShopQ labels for manual importance labeling.
 
 Since your labels are email_type based (Events, Receipts, etc.) not importance-based,
 we'll pull emails and you can manually review/label them for the golden dataset.
@@ -53,21 +53,21 @@ def get_db_importance_for_thread(db_path: Path, thread_id: str) -> str:
 
 
 def fetch_gmail_emails(service, exclude_ids: set[str], db_path: Path, max_emails: int):
-    """Fetch emails from Gmail with MailQ labels."""
+    """Fetch emails from Gmail with ShopQ labels."""
     emails = []
     seen_ids = set()
 
-    # Pull from MailQ email type labels
-    mailq_labels = [
-        "MailQ/Events",
-        "MailQ/Receipts",
-        "MailQ/Notifications",
-        "MailQ/Finance",
-        "MailQ/Messages",
-        "MailQ/Action-Required",
+    # Pull from ShopQ email type labels
+    shopq_labels = [
+        "ShopQ/Events",
+        "ShopQ/Receipts",
+        "ShopQ/Notifications",
+        "ShopQ/Finance",
+        "ShopQ/Messages",
+        "ShopQ/Action-Required",
     ]
 
-    for label in mailq_labels:
+    for label in shopq_labels:
         print(f"📬 Searching: {label}")
 
         try:
@@ -134,7 +134,7 @@ def fetch_gmail_emails(service, exclude_ids: set[str], db_path: Path, max_emails
                         "domain_confidence": "",
                         "importance": importance,
                         "importance_reason": f"db_lookup_thread_{thread_id}",
-                        "decider": "mailq_db",
+                        "decider": "shopq_db",
                         "verifier_used": "",
                         "verifier_verdict": "",
                         "verifier_reason": "",
@@ -170,7 +170,7 @@ def main():
     parser.add_argument(
         "--existing-dataset", type=Path, default=Path("tests/golden_set/golden_dataset_cleaned.csv")
     )
-    parser.add_argument("--db", type=Path, default=Path("data/mailq_tracking.db"))
+    parser.add_argument("--db", type=Path, default=Path("data/shopq_tracking.db"))
     parser.add_argument("--output", type=Path, default=Path("tests/golden_set/gmail_emails.csv"))
     parser.add_argument("--max-emails", type=int, default=400)
 
@@ -201,7 +201,7 @@ def main():
     if not emails:
         print("❌ No new emails fetched!")
         print("\n💡 This likely means:")
-        print("   - All emails with MailQ labels are already in the dataset")
+        print("   - All emails with ShopQ labels are already in the dataset")
         print("   - OR emails with labels haven't been classified in the database yet")
         return
 

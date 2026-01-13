@@ -28,14 +28,14 @@ def generate_index_html(analysis_path: Path, output_path: Path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailQ Codebase Analysis</title>
+    <title>ShopQ Codebase Analysis</title>
     <style>
         {_get_index_css()}
     </style>
 </head>
 <body>
     <header>
-        <h1>📊 MailQ Codebase Analysis</h1>
+        <h1>📊 ShopQ Codebase Analysis</h1>
         <p class="subtitle">Generated {datetime.now().strftime("%B %d, %Y at %H:%M")}</p>
     </header>
 
@@ -95,7 +95,7 @@ def generate_index_html(analysis_path: Path, output_path: Path):
             <div class="insight-card">
                 <h3>📦 Project Structure</h3>
                 <ul>
-                    <li><strong>mailq/</strong> - Core Python backend ({stats.get("by_directory", {}).get("mailq", {}).get("files", 0)} files)</li>
+                    <li><strong>shopq/</strong> - Core Python backend ({stats.get("by_directory", {}).get("mailq", {}).get("files", 0)} files)</li>
                     <li><strong>extension/</strong> - Chrome extension ({stats.get("by_directory", {}).get("extension", {}).get("files", 0)} files)</li>
                     <li><strong>scripts/</strong> - Utility scripts ({stats.get("by_directory", {}).get("scripts", {}).get("files", 0)} files)</li>
                 </ul>
@@ -104,7 +104,7 @@ def generate_index_html(analysis_path: Path, output_path: Path):
     </main>
 
     <footer>
-        <p>MailQ Codebase Analyzer • Powered by Gemini Flash</p>
+        <p>ShopQ Codebase Analyzer • Powered by Gemini Flash</p>
     </footer>
 </body>
 </html>"""

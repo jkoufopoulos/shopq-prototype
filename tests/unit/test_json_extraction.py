@@ -15,7 +15,7 @@ class TestExtractJSON:
     def classifier(self):
         """Create classifier instance for testing _extract_json."""
         # Import here to avoid module-level import issues
-        from mailq.classification.vertex_gemini_classifier import VertexGeminiClassifier
+        from shopq.classification.vertex_gemini_classifier import VertexGeminiClassifier
 
         return VertexGeminiClassifier(None)
 

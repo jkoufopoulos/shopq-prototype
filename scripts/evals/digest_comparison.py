@@ -362,7 +362,7 @@ def generate_digest_for_emails(
         user_name: User's first name for personalized greeting (optional)
     """
     try:
-        from mailq.digest.context_digest import ContextDigest
+        from shopq.digest.context_digest import ContextDigest
 
         # Convert CSV format to expected email format
         formatted_emails = []

@@ -1,6 +1,6 @@
-# Contributing to MailQ
+# Contributing to ShopQ
 
-This document outlines conventions and best practices for contributing to the MailQ project.
+This document outlines conventions and best practices for contributing to the ShopQ project.
 
 ## Documentation Conventions
 
@@ -17,9 +17,9 @@ Every significant change should update the appropriate documentation files:
 | Database schema change | `docs/DATABASE_ARCHITECTURE.md` |
 | Deployment process | `docs/DEPLOYMENT_PLAYBOOK.md`, `QUICKSTART.md` |
 | Testing procedures | `docs/TESTING.md` |
-| Prompt changes | `mailq/prompts/README.md`, increment `PROMPT_VERSION` in `mailq/versioning.py` |
-| Model/prompt version change | `mailq/versioning.py`, `VERSIONS.md`, follow workflow in this file |
-| Rollback thresholds | `docs/ROLLBACK_CONDITIONS.md`, `config/mailq_policy.yaml` |
+| Prompt changes | `shopq/prompts/README.md`, increment `PROMPT_VERSION` in `shopq/versioning.py` |
+| Model/prompt version change | `shopq/versioning.py`, `VERSIONS.md`, follow workflow in this file |
+| Rollback thresholds | `docs/ROLLBACK_CONDITIONS.md`, `config/shopq_policy.yaml` |
 
 ### Documentation Structure
 
@@ -36,7 +36,7 @@ Every significant change should update the appropriate documentation files:
 │   ├── DEPLOYMENT_PLAYBOOK.md
 │   ├── TESTING.md
 │   └── WORKFLOWS.md
-└── mailq/prompts/README.md  # Prompt engineering guide
+└── shopq/prompts/README.md  # Prompt engineering guide
 ```
 
 ### Changelog Entries
@@ -46,7 +46,7 @@ When making significant changes, add a changelog entry below:
 ## Changelog
 
 ### 2025-11-09 - Version Tracking & Rollback Infrastructure
-- Added version stamping infrastructure (`mailq/versioning.py`)
+- Added version stamping infrastructure (`shopq/versioning.py`)
 - Created `VERSIONS.md` to track model/prompt version history
 - Added `docs/ROLLBACK_CONDITIONS.md` with exact rollback thresholds
 - Updated confidence logger to persist version metadata in all classifications
@@ -128,7 +128,7 @@ logger.error("error")
 ### Directory Structure
 
 ```
-mailq/                  # Backend Python package
+shopq/                  # Backend Python package
   ├── api*.py          # API endpoints
   ├── *_classifier.py  # Classification logic
   ├── prompts/         # LLM prompts (editable!)
@@ -216,7 +216,7 @@ Fixes #123
 
 ### Why Version Tracking Matters
 
-Every classification in MailQ is logged with three version identifiers:
+Every classification in ShopQ is logged with three version identifiers:
 - **model_name**: The LLM being used (e.g., `gemini-2.0-flash`)
 - **model_version**: Model version string (e.g., `2.0`)
 - **prompt_version**: Prompt template version (e.g., `v1`)
@@ -235,7 +235,7 @@ This enables:
    - Document the reason for the change
    - Identify what you're changing (model, prompt, or both)
 
-2. **Update version constants** in `mailq/versioning.py`:
+2. **Update version constants** in `shopq/versioning.py`:
    ```python
    MODEL_NAME = "gemini-2.0-flash"  # Change if switching models
    MODEL_VERSION = "2.0"             # Change if model provider updates
@@ -294,7 +294,7 @@ pytest tests/test_versioning.py -v
 
 Check recent classifications include versions:
 ```bash
-sqlite3 mailq.db "SELECT model_name, model_version, prompt_version, type, type_conf FROM confidence_logs ORDER BY timestamp DESC LIMIT 10"
+sqlite3 shopq.db "SELECT model_name, model_version, prompt_version, type, type_conf FROM confidence_logs ORDER BY timestamp DESC LIMIT 10"
 ```
 
 ## Testing Requirements
@@ -315,7 +315,7 @@ sqlite3 mailq.db "SELECT model_name, model_version, prompt_version, type, type_c
 
 ## Quality Monitoring
 
-MailQ has two quality monitoring systems:
+ShopQ has two quality monitoring systems:
 
 ### 1. Automated Quality Monitor (Production)
 
@@ -391,8 +391,8 @@ This project uses Claude Code. When working with AI:
 
 1. Reference `claude.md` for quick context
 2. Update `claude.md` when adding major features
-3. Keep prompts in `mailq/prompts/` directory (not hardcoded)
-4. Document prompt changes in `mailq/prompts/README.md`
+3. Keep prompts in `shopq/prompts/` directory (not hardcoded)
+4. Document prompt changes in `shopq/prompts/README.md`
 
 ## Questions?
 

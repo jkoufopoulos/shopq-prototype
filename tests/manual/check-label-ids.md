@@ -25,8 +25,8 @@ chrome.runtime.sendMessage({action: 'getToken'}, async (token) => {
 
       if (response.ok) {
         const label = await response.json();
-        const isMailQ = label.name && label.name.startsWith('MailQ');
-        console.log(`${isMailQ ? '✅' : '❌'} ${labelId} → "${label.name}"`);
+        const isShopQ = label.name && label.name.startsWith('ShopQ');
+        console.log(`${isShopQ ? '✅' : '❌'} ${labelId} → "${label.name}"`);
       } else {
         console.log(`⚠️ ${labelId} → Failed to fetch (${response.status})`);
       }
@@ -39,5 +39,5 @@ chrome.runtime.sendMessage({action: 'getToken'}, async (token) => {
 
 **This will show you what those Label_XXX IDs actually are.**
 
-If they're MailQ labels → Extension is working correctly (just confusing label IDs)
-If they're NOT MailQ labels → Extension has a bug in label checking logic
+If they're ShopQ labels → Extension is working correctly (just confusing label IDs)
+If they're NOT ShopQ labels → Extension has a bug in label checking logic

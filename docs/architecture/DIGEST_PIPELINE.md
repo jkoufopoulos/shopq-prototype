@@ -4,7 +4,7 @@
 
 ## Overview
 
-The MailQ digest pipeline transforms classified emails into a prioritized HTML summary. The V2 pipeline uses a 7-stage architecture that assigns sections BEFORE entity extraction, solving the problem where only 4.3% of emails were featured in the previous approach.
+The ShopQ digest pipeline transforms classified emails into a prioritized HTML summary. The V2 pipeline uses a 7-stage architecture that assigns sections BEFORE entity extraction, solving the problem where only 4.3% of emails were featured in the previous approach.
 
 ## Pipeline Flow
 
@@ -27,7 +27,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Filter emails more than 48 hours past their temporal deadline
 - Add temporal context dict to each email
 
-**File**: `mailq/digest/digest_stages_v2.py:TemporalExtractionStage`
+**File**: `shopq/digest/digest_stages_v2.py:TemporalExtractionStage`
 
 ### 2. T0SectionAssignmentStage
 
@@ -42,7 +42,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - time_sensitive → "today" section
 - routine → "everything_else" section
 
-**File**: `mailq/digest/section_assignment_t0.py`
+**File**: `shopq/digest/section_assignment_t0.py`
 
 ### 3. T1TemporalDecayStage
 
@@ -57,7 +57,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Purchases in past → routine
 - Future events within 24h → today
 
-**File**: `mailq/digest/temporal.py:apply_temporal_decay`
+**File**: `shopq/digest/temporal.py:apply_temporal_decay`
 
 ### 4. EntityStage
 
@@ -71,7 +71,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Link entities to emails via message_id
 - Build featured_items list for rendering
 
-**File**: `mailq/digest/digest_stages_v2.py:EntityStage`
+**File**: `shopq/digest/digest_stages_v2.py:EntityStage`
 
 ### 5. EnrichmentStage
 
@@ -85,7 +85,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Fetch weather for user's location
 - Generate personalized greeting
 
-**File**: `mailq/digest/digest_stages_v2.py:EnrichmentStage`
+**File**: `shopq/digest/digest_stages_v2.py:EnrichmentStage`
 
 ### 6. SynthesisAndRenderingStage
 
@@ -99,7 +99,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Generate Gmail thread links
 - Render responsive HTML template
 
-**File**: `mailq/digest/digest_stages_v2.py:SynthesisAndRenderingStage`
+**File**: `shopq/digest/digest_stages_v2.py:SynthesisAndRenderingStage`
 
 ### 7. ValidationStage
 
@@ -113,7 +113,7 @@ Emails → TemporalExtraction → T0SectionAssignment → T1TemporalDecay
 - Check section counts match expectations
 - Validate HTML structure
 
-**File**: `mailq/digest/digest_stages_v2.py:ValidationStage`
+**File**: `shopq/digest/digest_stages_v2.py:ValidationStage`
 
 ## Key Data Structures
 
@@ -179,7 +179,7 @@ result = digest._generate_fallback(
 ### Feature Flags
 
 ```python
-# mailq/runtime/flags.py
+# shopq/runtime/flags.py
 ENABLE_V2_PIPELINE = True  # Use 7-stage pipeline
 ENABLE_TEMPORAL_DECAY = True  # Apply T1 time-based decay
 ENABLE_WEATHER_ENRICHMENT = True  # Fetch weather data
@@ -188,7 +188,7 @@ ENABLE_WEATHER_ENRICHMENT = True  # Fetch weather data
 ### Temporal Thresholds
 
 ```python
-# mailq/digest/temporal.py
+# shopq/digest/temporal.py
 EVENT_GRACE_PERIOD = timedelta(hours=1)  # Events visible 1h after
 DELIVERY_DECAY_HOURS = 24  # Deliveries decay after 24h
 COMING_UP_WINDOW = timedelta(hours=72)  # "Coming up" = next 72h
@@ -245,12 +245,12 @@ Consolidated from original 9 stages for clarity:
 
 | File | Purpose |
 |------|---------|
-| `mailq/digest/context_digest.py` | Main ContextDigest class |
-| `mailq/digest/digest_pipeline.py` | Pipeline orchestration |
-| `mailq/digest/digest_stages_v2.py` | 7 pipeline stage implementations |
-| `mailq/digest/section_assignment_t0.py` | T0 intrinsic section logic |
-| `mailq/digest/temporal.py` | T1 temporal decay logic |
-| `mailq/digest/templates/` | Jinja2 HTML templates |
+| `shopq/digest/context_digest.py` | Main ContextDigest class |
+| `shopq/digest/digest_pipeline.py` | Pipeline orchestration |
+| `shopq/digest/digest_stages_v2.py` | 7 pipeline stage implementations |
+| `shopq/digest/section_assignment_t0.py` | T0 intrinsic section logic |
+| `shopq/digest/temporal.py` | T1 temporal decay logic |
+| `shopq/digest/templates/` | Jinja2 HTML templates |
 
 ## See Also
 

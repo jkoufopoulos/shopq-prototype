@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MailQ Quality Monitor Daemon
+ShopQ Quality Monitor Daemon
 
 Continuously monitors classification quality and reports issues.
 
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 # Import GCS storage client
 try:
-    from mailq.storage.cloud import get_storage_client
+    from shopq.storage.cloud import get_storage_client
 
     GCS_AVAILABLE = True
 except ImportError:
@@ -57,7 +57,7 @@ except ImportError:
     GCS_AVAILABLE = False
 
 # Configuration
-API_URL = os.getenv("MAILQ_API_URL", "https://mailq-api-488078904670.us-central1.run.app")
+API_URL = os.getenv("SHOPQ_API_URL", "https://shopq-api-488078904670.us-central1.run.app")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_REPO = "jkoufopoulos/mailq-prototype"  # Update with your repo
@@ -72,7 +72,7 @@ MAX_LLM_CALLS_PER_DAY = int(os.getenv("MAX_LLM_CALLS_PER_DAY", "100"))  # ~$1.50
 
 
 class QualityMonitor:
-    """Monitors MailQ classification quality and reports issues"""
+    """Monitors ShopQ classification quality and reports issues"""
 
     def __init__(self):
         self.init_state_db()
@@ -413,7 +413,7 @@ class QualityMonitor:
         ][:10]
         routine_examples = [t for t in all_threads if t.get("importance") == "routine"][:10]
 
-        return f"""You are a quality analyst for MailQ, an AI-powered email classification system.
+        return f"""You are a quality analyst for ShopQ, an AI-powered email classification system.
 
 Analyze the following classification data from the last {len(sessions_data)}
 digest sessions and identify systematic issues.
@@ -948,7 +948,7 @@ Return ONLY the JSON, no other text.
 
 
 def main():
-    parser = argparse.ArgumentParser(description="MailQ Quality Monitor")
+    parser = argparse.ArgumentParser(description="ShopQ Quality Monitor")
     parser.add_argument("--daemon", action="store_true", help="Run as daemon")
     parser.add_argument("--analyze-now", action="store_true", help="Run one-time analysis")
     parser.add_argument(

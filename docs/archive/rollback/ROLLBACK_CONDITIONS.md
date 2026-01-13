@@ -1,6 +1,6 @@
 # Rollback Conditions & Incident Response
 
-**Purpose:** Define exact thresholds and procedures for rolling back MailQ deployments when quality, performance, or cost metrics degrade beyond acceptable limits.
+**Purpose:** Define exact thresholds and procedures for rolling back ShopQ deployments when quality, performance, or cost metrics degrade beyond acceptable limits.
 
 **Last Updated:** 2025-11-09
 **Baseline Version:** gemini-2.0-flash/2.0/prompt-v1 (see VERSIONS.md)
@@ -33,7 +33,7 @@ These conditions trigger **automatic rollback without human approval**:
 **Detection:**
 ```bash
 # Check recent digest sessions for OTP in CRITICAL
-sqlite3 mailq/data/mailq_tracking.db "
+sqlite3 shopq/data/shopq_tracking.db "
   SELECT session_id, timestamp
   FROM digest_sessions
   WHERE critical_section LIKE '%verification code%'
@@ -59,7 +59,7 @@ sqlite3 mailq/data/mailq_tracking.db "
 **Detection:**
 ```bash
 # Check circuit breaker invalid JSON rate
-curl https://mailq-api.run.app/metrics | grep "invalid_json_rate"
+curl https://shopq-api.run.app/metrics | grep "invalid_json_rate"
 
 # Or check logs:
 gcloud logging read "resource.type=cloud_run_revision AND
@@ -68,7 +68,7 @@ gcloud logging read "resource.type=cloud_run_revision AND
 ```
 
 **Rollback action:**
-1. Circuit breaker trips automatically (see `mailq/circuitbreaker.py`)
+1. Circuit breaker trips automatically (see `shopq/circuitbreaker.py`)
 2. System falls back to rules-only classification
 3. If rules-only also failing: immediate version rollback
 4. Investigate schema changes, model behavior, or prompt corruption
@@ -120,7 +120,7 @@ PYTHONPATH=. pytest tests/test_importance_baseline.py --baseline=eval/baseline.j
 python scripts/check_importance_baseline.py --compare
 
 # Or manual calculation from recent sessions:
-sqlite3 mailq/data/mailq_tracking.db "
+sqlite3 shopq/data/shopq_tracking.db "
   SELECT
     COUNT(*) as total_critical,
     SUM(CASE WHEN user_corrected=1 THEN 1 ELSE 0 END) as incorrect
@@ -181,7 +181,7 @@ gcloud logging read "resource.type=cloud_run_revision AND
 **Detection:**
 ```bash
 # Check recent LLM costs
-sqlite3 mailq/data/mailq_tracking.db "
+sqlite3 shopq/data/shopq_tracking.db "
   SELECT
     DATE(timestamp) as date,
     COUNT(*) as emails_classified,
@@ -212,7 +212,7 @@ gcloud logging read "resource.type=cloud_run_revision AND
 
 ```bash
 # Quick sanity check (run every 5 minutes during deployment)
-curl https://mailq-api.run.app/health
+curl https://shopq-api.run.app/health
 
 # Expected response:
 # {"status": "healthy", "version": "gemini-2.0-flash/2.0/prompt-v1"}
@@ -222,7 +222,7 @@ curl https://mailq-api.run.app/health
 
 ```bash
 # Recent classification confidence distribution
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT
     CASE
       WHEN type_conf >= 0.9 THEN 'high (≥0.9)'
@@ -241,7 +241,7 @@ sqlite3 mailq/data/mailq.db "
 
 ```bash
 # Verify all recent classifications use expected version
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT
     model_name,
     model_version,
@@ -291,7 +291,7 @@ python scripts/check_importance_baseline.py --compare
 ```bash
 # Option A: Cloud Console (fastest)
 # 1. Go to https://console.cloud.google.com/run
-# 2. Click "mailq-api" service
+# 2. Click "shopq-api" service
 # 3. Click "Revisions" tab
 # 4. Find previous stable revision (check timestamp)
 # 5. Click "..." menu → "Manage Traffic"
@@ -299,13 +299,13 @@ python scripts/check_importance_baseline.py --compare
 # 7. Click "Save"
 
 # Option B: CLI
-gcloud run services update-traffic mailq-api \
+gcloud run services update-traffic shopq-api \
   --to-revisions PREVIOUS=100 \
   --platform managed \
   --region us-central1
 
 # Verify rollback
-gcloud run services describe mailq-api \
+gcloud run services describe shopq-api \
   --platform managed \
   --region us-central1 \
   --format="get(status.traffic)"
@@ -317,13 +317,13 @@ gcloud run services describe mailq-api \
 
 ```bash
 # Disable LLM, fall back to rules
-gcloud run services update mailq-api \
-  --update-env-vars MAILQ_USE_LLM=false \
+gcloud run services update shopq-api \
+  --update-env-vars SHOPQ_USE_LLM=false \
   --platform managed \
   --region us-central1
 
 # Verify flag updated
-gcloud run services describe mailq-api \
+gcloud run services describe shopq-api \
   --platform managed \
   --region us-central1 \
   --format="get(spec.template.spec.containers[0].env)"
@@ -335,7 +335,7 @@ gcloud run services describe mailq-api \
 
 ```bash
 # 1. Update versioning constants to previous version
-# Edit mailq/versioning.py:
+# Edit shopq/versioning.py:
 #   MODEL_VERSION = "1.5"  # or previous
 #   PROMPT_VERSION = "v0"  # or previous
 
@@ -343,12 +343,12 @@ gcloud run services describe mailq-api \
 echo "| $(date +%Y-%m-%d) | gemini-2.0-flash | 1.5 | v0 | ROLLBACK: Critical precision drop from v2.0/v1 |" >> VERSIONS.md
 
 # 3. Commit and deploy
-git add mailq/versioning.py VERSIONS.md
+git add shopq/versioning.py VERSIONS.md
 git commit -m "rollback: Revert to model v1.5/prompt v0 due to precision drop"
 git push origin main
 
 # 4. Deploy immediately (no canary)
-gcloud run deploy mailq-api \
+gcloud run deploy shopq-api \
   --source . \
   --platform managed \
   --region us-central1
@@ -375,13 +375,13 @@ git reset --hard <good-commit-hash>
 git push origin main --force  # ⚠️ Use with caution
 
 # 3. Redeploy
-gcloud run deploy mailq-api \
+gcloud run deploy shopq-api \
   --source . \
   --platform managed \
   --region us-central1
 
 # 4. Verify deployment
-curl https://mailq-api.run.app/health
+curl https://shopq-api.run.app/health
 ```
 
 ---
@@ -479,7 +479,7 @@ python scripts/check_importance_baseline.py --update
 - **DEPLOYMENT_PLAYBOOK.md** - Full deployment procedures including canary and monitoring
 - **VERSIONS.md** - Model and prompt version history
 - **CONTRIBUTING.md** - Version change workflow (shadow period, golden set replay)
-- **config/mailq_policy.yaml** - Runtime threshold configuration
+- **config/shopq_policy.yaml** - Runtime threshold configuration
 - **MONITORING_ALERTS.md** - Alert setup and escalation paths (if exists)
 
 ---

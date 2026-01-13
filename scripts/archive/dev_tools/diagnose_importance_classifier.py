@@ -12,7 +12,7 @@ import csv
 from collections import defaultdict
 from pathlib import Path
 
-from mailq.classification.importance_classifier import ImportanceClassifier
+from shopq.classification.importance_classifier import ImportanceClassifier
 
 
 def load_ground_truth():

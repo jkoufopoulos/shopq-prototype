@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from mailq.storage.models import (
+from shopq.storage.models import (
     ClassifiedEmail,
     Digest,
     DigestItem,

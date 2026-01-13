@@ -1,8 +1,8 @@
 /**
- * MailQ E2E Live Test
+ * ShopQ E2E Live Test
  *
  * Connects to an existing Chrome instance via CDP (Chrome DevTools Protocol)
- * to test the MailQ extension on a real Gmail account.
+ * to test the ShopQ extension on a real Gmail account.
  *
  * Prerequisites:
  * 1. Launch Chrome with debugging port:
@@ -14,19 +14,19 @@
  * 3. Find your extension ID:
  *    - Go to chrome://extensions
  *    - Enable "Developer mode" (top right toggle)
- *    - Find "MailQ" and copy the ID (long string like "abcdefghijklmnop...")
+ *    - Find "ShopQ" and copy the ID (long string like "abcdefghijklmnop...")
  *
- * 4. Set the MAILQ_EXTENSION_ID environment variable or edit this file
+ * 4. Set the SHOPQ_EXTENSION_ID environment variable or edit this file
  *
  * Usage:
- *   MAILQ_EXTENSION_ID=your_extension_id node tests/e2e-live.js
+ *   SHOPQ_EXTENSION_ID=your_extension_id node tests/e2e-live.js
  */
 
 const { chromium } = require('playwright');
 
 // Configuration
 const CDP_ENDPOINT = 'http://localhost:9222';
-const EXTENSION_ID = process.env.MAILQ_EXTENSION_ID || 'YOUR_EXTENSION_ID_HERE';
+const EXTENSION_ID = process.env.SHOPQ_EXTENSION_ID || 'YOUR_EXTENSION_ID_HERE';
 const GMAIL_URL = 'https://mail.google.com/mail/u/0/#inbox';
 
 // Test settings
@@ -35,17 +35,17 @@ const WAIT_AFTER_CLASSIFY_MS = 5000;
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('MailQ E2E Live Test');
+  console.log('ShopQ E2E Live Test');
   console.log('='.repeat(60));
 
   if (EXTENSION_ID === 'YOUR_EXTENSION_ID_HERE') {
     console.error('\n[ERROR] Please set your extension ID!');
-    console.error('Option 1: MAILQ_EXTENSION_ID=xxx node tests/e2e-live.js');
+    console.error('Option 1: SHOPQ_EXTENSION_ID=xxx node tests/e2e-live.js');
     console.error('Option 2: Edit EXTENSION_ID in this file');
     console.error('\nTo find your extension ID:');
     console.error('1. Go to chrome://extensions');
     console.error('2. Enable "Developer mode" (top right)');
-    console.error('3. Find MailQ and copy the ID');
+    console.error('3. Find ShopQ and copy the ID');
     process.exit(1);
   }
 
@@ -67,7 +67,7 @@ async function main() {
     console.log(`    Found ${pages.length} open tabs`);
 
     // Step 1.5: Reload the extension to pick up code changes
-    console.log('\n[1.5/5] Reloading MailQ extension...');
+    console.log('\n[1.5/5] Reloading ShopQ extension...');
     const extPage = await context.newPage();
     await extPage.goto('chrome://extensions', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await new Promise(r => setTimeout(r, 1000));
@@ -91,7 +91,7 @@ async function main() {
       await new Promise(r => setTimeout(r, 500));
     }
 
-    // Find and click reload button for MailQ
+    // Find and click reload button for ShopQ
     const reloaded = await extPage.evaluate((extId) => {
       const manager = document.querySelector('extensions-manager');
       if (!manager?.shadowRoot) return false;
@@ -134,7 +134,7 @@ async function main() {
       const client = await context.newCDPSession(freshPages[0]);
       client.on('Runtime.consoleAPICalled', (event) => {
         const text = event.args.map(a => a.value || a.description || '').join(' ');
-        if (text.includes('MailQ') || text.includes('organize') || text.includes('Organize') ||
+        if (text.includes('ShopQ') || text.includes('organize') || text.includes('Organize') ||
             text.includes('📊') || text.includes('❌') || text.includes('📬') || text.includes('✅')) {
           swLogs.push(`[SW ${event.type}] ${text}`);
         }
@@ -201,7 +201,7 @@ async function main() {
     const consoleLogs = [];
     gmailPage.on('console', msg => {
       const text = msg.text();
-      if (text.includes('MailQ') || text.includes('InboxSDK') || text.includes('organize') || text.includes('classify') || msg.type() === 'error') {
+      if (text.includes('ShopQ') || text.includes('InboxSDK') || text.includes('organize') || text.includes('classify') || msg.type() === 'error') {
         consoleLogs.push(`[${msg.type()}] ${text}`);
       }
     });
@@ -217,9 +217,9 @@ async function main() {
     console.log('    Checking OAuth authentication...');
     const authResult = await gmailPage.evaluate(() => {
       return new Promise(resolve => {
-        window.postMessage({ type: 'MAILQ_TEST_CHECK_AUTH' }, '*');
+        window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH' }, '*');
         const handler = (event) => {
-          if (event.data?.type === 'MAILQ_TEST_CHECK_AUTH_RESPONSE') {
+          if (event.data?.type === 'SHOPQ_TEST_CHECK_AUTH_RESPONSE') {
             window.removeEventListener('message', handler);
             resolve(event.data);
           }
@@ -234,9 +234,9 @@ async function main() {
     console.log('    Checking existing cache from previous classifications...');
     const existingCache = await gmailPage.evaluate(() => {
       return new Promise(resolve => {
-        window.postMessage({ type: 'MAILQ_TEST_GET_CACHE_STATUS' }, '*');
+        window.postMessage({ type: 'SHOPQ_TEST_GET_CACHE_STATUS' }, '*');
         const handler = (event) => {
-          if (event.data?.type === 'MAILQ_TEST_GET_CACHE_STATUS_RESPONSE') {
+          if (event.data?.type === 'SHOPQ_TEST_GET_CACHE_STATUS_RESPONSE') {
             window.removeEventListener('message', handler);
             resolve(event.data);
           }
@@ -255,9 +255,9 @@ async function main() {
       console.log('    No cached data. Triggering classification (may take 2+ minutes)...');
       const organizeResult = await gmailPage.evaluate(() => {
         return new Promise(resolve => {
-          window.postMessage({ type: 'MAILQ_TEST_ORGANIZE' }, '*');
+          window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE' }, '*');
           const handler = (event) => {
-            if (event.data?.type === 'MAILQ_TEST_ORGANIZE_RESPONSE') {
+            if (event.data?.type === 'SHOPQ_TEST_ORGANIZE_RESPONSE') {
               window.removeEventListener('message', handler);
               resolve(event.data);
             }
@@ -295,7 +295,7 @@ async function main() {
     consoleLogs.forEach(log => console.log(`      ${log}`));
 
     if (consoleLogs.length === 0) {
-      console.log('      (no MailQ/InboxSDK logs captured)');
+      console.log('      (no ShopQ/InboxSDK logs captured)');
     }
 
     console.log('\n    Service worker logs:');
@@ -336,7 +336,7 @@ async function main() {
         const senderEl = row.querySelector('.yW span[email], .bA4 span, .yP');
         const sender = senderEl?.textContent?.trim() || senderEl?.getAttribute('email') || '[Unknown]';
 
-        // Check for MailQ badges (InboxSDK labels)
+        // Check for ShopQ badges (InboxSDK labels)
         const badges = [];
         const labelEls = row.querySelectorAll('.inboxsdk__thread_row_label, [class*="mailq-badge"]');
         labelEls.forEach(el => {
@@ -351,11 +351,11 @@ async function main() {
         // Check for dimming
         const isDimmed = row.classList.contains('mailq-dimmed');
 
-        // Check for native MailQ labels (should be hidden)
+        // Check for native ShopQ labels (should be hidden)
         const nativeLabels = [];
         row.querySelectorAll('.ar, [data-tooltip]').forEach(el => {
           const text = el.textContent?.trim();
-          if (text && text.includes('MailQ')) {
+          if (text && text.includes('ShopQ')) {
             nativeLabels.push(text);
           }
         });
@@ -405,7 +405,7 @@ async function main() {
     console.log('='.repeat(60));
     console.log('\nSummary:');
     console.log(`  Total rows checked: ${results.length}`);
-    console.log(`  With MailQ badge:   ${withBadge} (${Math.round(withBadge/results.length*100)}%)`);
+    console.log(`  With ShopQ badge:   ${withBadge} (${Math.round(withBadge/results.length*100)}%)`);
     console.log(`  Without badge:      ${withoutBadge}`);
     console.log(`  Critical rows:      ${critical}`);
     console.log(`  Dimmed rows:        ${dimmed}`);
@@ -422,7 +422,7 @@ async function main() {
     }
 
     if (nativeVisible > 0) {
-      console.log('\n[WARN] Native MailQ labels are still visible.');
+      console.log('\n[WARN] Native ShopQ labels are still visible.');
       console.log('       Check styles.css for label hiding CSS.');
     }
 

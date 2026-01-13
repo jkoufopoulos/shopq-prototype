@@ -1,5 +1,5 @@
 /**
- * Playwright test fixtures for MailQ extension testing
+ * Playwright test fixtures for ShopQ extension testing
  * Provides reusable utilities for Gmail and extension interaction
  */
 
@@ -193,7 +193,7 @@ export const test = base.extend({
       },
 
       /**
-       * Trigger MailQ auto-organize by clicking extension icon
+       * Trigger ShopQ auto-organize by clicking extension icon
        */
       async triggerAutoOrganize() {
         // Get extension ID from background page
@@ -237,9 +237,9 @@ export const test = base.extend({
       },
 
       /**
-       * Remove all MailQ labels from an email
+       * Remove all ShopQ labels from an email
        */
-      async removeMailQLabels(emailElement) {
+      async removeShopQLabels(emailElement) {
         // Click on email to open
         await emailElement.click();
         await page.waitForTimeout(500);
@@ -253,8 +253,8 @@ export const test = base.extend({
         await labelButton.click();
         await page.waitForTimeout(500);
 
-        // Find all MailQ labels and uncheck them
-        const mailqLabels = await page.$$('div[role="menuitemcheckbox"]:has-text("MailQ")');
+        // Find all ShopQ labels and uncheck them
+        const mailqLabels = await page.$$('div[role="menuitemcheckbox"]:has-text("ShopQ")');
         for (const label of mailqLabels) {
           const isChecked = await label.getAttribute('aria-checked');
           if (isChecked === 'true') {

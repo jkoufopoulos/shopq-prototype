@@ -1,4 +1,4 @@
-# MailQ Scripts Directory
+# ShopQ Scripts Directory
 
 Utility scripts for development, testing, evaluation, quality monitoring, and data management.
 
@@ -86,7 +86,7 @@ Scripts for database operations and schema migrations.
 
 ## 🔍 Quality Monitoring Scripts
 
-MailQ includes an automated quality monitoring system that continuously checks digest quality and creates GitHub issues for problems.
+ShopQ includes an automated quality monitoring system that continuously checks digest quality and creates GitHub issues for problems.
 
 ### Quality System Control
 
@@ -150,16 +150,16 @@ See: `scripts/quality-monitor/README.md` for details.
 
 ## 🗄️ Database & Migration Scripts
 
-Database-related scripts are located in `mailq/scripts/` (package-level):
+Database-related scripts are located in `shopq/scripts/` (package-level):
 
 | Script | Purpose | Location |
 |--------|---------|----------|
-| **consolidate_databases.py** | Consolidate multiple .db files into single database | `mailq/scripts/` |
-| **inspect_databases.py** | Inspect database schema and contents | `mailq/scripts/` |
-| **migrate_pending_rules.py** | Migrate pending digest rules | `mailq/scripts/` |
-| **clear_rules.py** | Clear cached rules | `mailq/scripts/` |
+| **consolidate_databases.py** | Consolidate multiple .db files into single database | `shopq/scripts/` |
+| **inspect_databases.py** | Inspect database schema and contents | `shopq/scripts/` |
+| **migrate_pending_rules.py** | Migrate pending digest rules | `shopq/scripts/` |
+| **clear_rules.py** | Clear cached rules | `shopq/scripts/` |
 
-**Important**: Always use `mailq/config/database.py:get_db_connection()` for database access.
+**Important**: Always use `shopq/config/database.py:get_db_connection()` for database access.
 
 ---
 
@@ -262,10 +262,10 @@ python scripts/compare_actual_vs_ideal.py
 
 ```bash
 # Consolidate databases (if policy violated)
-python mailq/scripts/consolidate_databases.py
+python shopq/scripts/consolidate_databases.py
 
 # Inspect database
-python mailq/scripts/inspect_databases.py
+python shopq/scripts/inspect_databases.py
 
 # Clean up old data
 ./scripts/cleanup_old_data.sh
@@ -285,7 +285,7 @@ source scripts/load-env.sh
 - `ANTHROPIC_API_KEY` - For Claude API (debugging, quality monitoring)
 - `GOOGLE_API_KEY` - For Gemini API (classification)
 - `GITHUB_TOKEN` - For GitHub issue creation (quality monitoring)
-- `MAILQ_API_URL` - Backend API URL (default: http://localhost:8000)
+- `SHOPQ_API_URL` - Backend API URL (default: http://localhost:8000)
 
 See: `.env.example` for full list.
 
@@ -396,7 +396,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 **Fix**:
 1. Check running processes: `ps aux | grep python`
 2. Stop conflicting processes
-3. Use `mailq/config/database.py:get_db_connection()` (has retry logic)
+3. Use `shopq/config/database.py:get_db_connection()` (has retry logic)
 
 ### Quality Monitor Not Running
 
@@ -434,7 +434,7 @@ source scripts/load-env.sh
 ## Related Documentation
 
 - **Quality Monitoring**: `scripts/quality-monitor/README.md`
-- **Database Policy**: `mailq/config/database.py` (docstring)
+- **Database Policy**: `shopq/config/database.py` (docstring)
 - **Testing Guide**: `/docs/TESTING.md`
 - **Development Workflow**: `/CONTRIBUTING.md`
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Terminal viewer for Dataset 2 classification comparison: MailQ vs Ground Truth.
+Terminal viewer for Dataset 2 classification comparison: ShopQ vs Ground Truth.
 
 Shows T1 classifications (24h after most recent email) ordered by digest section.
 
@@ -26,7 +26,7 @@ import sys
 
 
 def load_dataset2_with_ground_truth(csv_path: str) -> list[dict]:
-    """Load Dataset 2 with both MailQ predictions and ground truth"""
+    """Load Dataset 2 with both ShopQ predictions and ground truth"""
     emails = []
 
     with open(csv_path) as f:
@@ -46,7 +46,7 @@ def load_dataset2_with_ground_truth(csv_path: str) -> list[dict]:
                 "received_date": row.get("received_date", ""),
                 "gds_type": row.get("gds_type", ""),
                 "gds_importance": row.get("gds_importance", "routine"),
-                "mailq_t1": row.get("mailq_t1", "noise"),
+                "shopq_t1": row.get("shopq_t1", "noise"),
                 "ground_truth_t1": ground_truth_t1,
                 # Check if temporal context was extracted (look for event times, delivery dates, etc.)
                 "has_temporal": "Yes" if _has_temporal_signal(row) else "No",
@@ -102,14 +102,14 @@ def sort_by_digest_order(emails: list[dict], sort_by: str = "mailq") -> list[dic
         "skip": 5,
     }
 
-    sort_key = "mailq_t1" if sort_by == "mailq" else "ground_truth_t1"
+    sort_key = "shopq_t1" if sort_by == "mailq" else "ground_truth_t1"
     return sorted(emails, key=lambda e: section_order.get(e[sort_key], 99))
 
 
 def print_legend():
     """Print legend explaining column meanings"""
     print("\n" + "=" * 100)
-    print("CLASSIFICATION COMPARISON: MailQ vs Ground Truth")
+    print("CLASSIFICATION COMPARISON: ShopQ vs Ground Truth")
     print("=" * 100)
     print("EVALUATION TIME: T1 = 24 hours after most recent email in dataset")
     print("  - Dataset: 70 emails from Nov 2-9, 2025")
@@ -119,7 +119,7 @@ def print_legend():
     print("GDS Type      = Gmail Data Science email type (event, receipt, notification, promotion)")
     print("GDS Imp       = Gmail importance level (critical, time_sensitive, routine)")
     print("Temporal      = Whether we extracted time info from email (Yes/No)")
-    print("MailQ Placed  = Where MailQ pipeline placed this email at T1")
+    print("ShopQ Placed  = Where ShopQ pipeline placed this email at T1")
     print("Ground Truth  = Where human annotator placed this email at T1")
     print("=" * 100)
     print("\nDIGEST SECTIONS (in digest order):")
@@ -137,7 +137,7 @@ def print_table(emails: list[dict], max_subject_len: int = 40):
 
     # Print header
     print(
-        f"\n{'Email ID':<12} {'Received':<16} {'Subject':<{max_subject_len}} {'GDS Type':<12} {'GDS Imp':<10} {'Temporal':<9} {'MailQ Placed':<15} {'Ground Truth':<15} {'Match':<6}"
+        f"\n{'Email ID':<12} {'Received':<16} {'Subject':<{max_subject_len}} {'GDS Type':<12} {'GDS Imp':<10} {'Temporal':<9} {'ShopQ Placed':<15} {'Ground Truth':<15} {'Match':<6}"
     )
     print("-" * (12 + 16 + max_subject_len + 12 + 10 + 9 + 15 + 15 + 6 + 18))
 
@@ -207,9 +207,9 @@ def print_table(emails: list[dict], max_subject_len: int = 40):
             else:
                 received_date = received_date[:20]  # Fallback
 
-        mailq_section = email["mailq_t1"]
+        shopq_section = email["shopq_t1"]
         ground_truth_section = email["ground_truth_t1"]
-        match = "✓" if mailq_section == ground_truth_section else "✗"
+        match = "✓" if shopq_section == ground_truth_section else "✗"
 
         print(
             f"{email['email_id']:<12} "
@@ -218,7 +218,7 @@ def print_table(emails: list[dict], max_subject_len: int = 40):
             f"{email['gds_type']:<12} "
             f"{email['gds_importance']:<10} "
             f"{email['has_temporal']:<9} "
-            f"{mailq_section:<15} "
+            f"{shopq_section:<15} "
             f"{ground_truth_section:<15} "
             f"{match:<6}"
         )
@@ -231,7 +231,7 @@ def print_summary(emails: list[dict]):
     from collections import Counter
 
     total = len(emails)
-    matches = sum(1 for e in emails if e["mailq_t1"] == e["ground_truth_t1"])
+    matches = sum(1 for e in emails if e["shopq_t1"] == e["ground_truth_t1"])
     accuracy = matches / total * 100 if total > 0 else 0
 
     print("\n" + "=" * 80)
@@ -241,12 +241,12 @@ def print_summary(emails: list[dict]):
     print(f"Overall Accuracy: {accuracy:.1f}% ({matches}/{total} correct)")
     print()
 
-    # MailQ section distribution
-    mailq_counts = Counter([e["mailq_t1"] for e in emails])
-    print("MailQ Section Distribution:")
+    # ShopQ section distribution
+    shopq_counts = Counter([e["shopq_t1"] for e in emails])
+    print("ShopQ Section Distribution:")
     print("-" * 40)
     for section in ["critical", "today", "coming_up", "worth_knowing", "noise", "skip"]:
-        count = mailq_counts.get(section, 0)
+        count = shopq_counts.get(section, 0)
         pct = count / total * 100 if total else 0
         print(f"  {section:<20} {count:>3} ({pct:>5.1f}%)")
 
@@ -266,11 +266,11 @@ def print_summary(emails: list[dict]):
     # Confusion matrix (simplified)
     print("Top Misclassification Patterns:")
     print("-" * 60)
-    mismatches = [e for e in emails if e["mailq_t1"] != e["ground_truth_t1"]]
-    mismatch_patterns = Counter([(e["ground_truth_t1"], e["mailq_t1"]) for e in mismatches])
+    mismatches = [e for e in emails if e["shopq_t1"] != e["ground_truth_t1"]]
+    mismatch_patterns = Counter([(e["ground_truth_t1"], e["shopq_t1"]) for e in mismatches])
 
     for (gt, mailq), count in mismatch_patterns.most_common(10):
-        print(f"  Ground Truth: {gt:<15} → MailQ: {mailq:<15} ({count} emails)")
+        print(f"  Ground Truth: {gt:<15} → ShopQ: {mailq:<15} ({count} emails)")
 
     print("=" * 80 + "\n")
 
@@ -285,14 +285,14 @@ def main():
     parser.add_argument(
         "--mismatches-only",
         action="store_true",
-        help="Show only emails where MailQ != Ground Truth",
+        help="Show only emails where ShopQ != Ground Truth",
     )
     parser.add_argument("--no-legend", action="store_true", help="Skip printing the legend")
     parser.add_argument(
         "--sort-by",
         choices=["mailq", "ground-truth"],
         default="ground-truth",
-        help="Sort by MailQ section or Ground Truth section (default: ground-truth)",
+        help="Sort by ShopQ section or Ground Truth section (default: ground-truth)",
     )
     args = parser.parse_args()
 
@@ -314,8 +314,8 @@ def main():
         print(f"Filtered to Ground Truth section: {args.filter}\n")
 
     if args.mismatches_only:
-        emails = [e for e in emails if e["mailq_t1"] != e["ground_truth_t1"]]
-        print("Filtered to mismatches only (MailQ != Ground Truth)\n")
+        emails = [e for e in emails if e["shopq_t1"] != e["ground_truth_t1"]]
+        print("Filtered to mismatches only (ShopQ != Ground Truth)\n")
 
     # Sort by digest order
     sort_by = "mailq" if args.sort_by == "mailq" else "ground-truth"

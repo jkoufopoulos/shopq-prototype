@@ -8,7 +8,7 @@ and encourage modular design.
 Usage:
     python scripts/check_file_size.py [--max-lines 500] [files...]
 
-If no files specified, checks all staged Python files in mailq/ directory.
+If no files specified, checks all staged Python files in shopq/ directory.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from pathlib import Path
 
 # Default configuration
 DEFAULT_MAX_LINES = 500
-CHECKED_DIRECTORIES = ["mailq/"]
+CHECKED_DIRECTORIES = ["shopq/"]
 EXCLUDED_PATTERNS = [
     "__init__.py",  # Init files can be large due to re-exports
     "test_",  # Test files can be long
@@ -97,7 +97,7 @@ def main() -> int:
         "files",
         nargs="*",
         type=Path,
-        help="Files to check (default: staged files in mailq/)",
+        help="Files to check (default: staged files in shopq/)",
     )
     args = parser.parse_args()
 

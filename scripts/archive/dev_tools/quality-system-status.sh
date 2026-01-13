@@ -1,12 +1,12 @@
 #!/bin/bash
-# Check MailQ Quality Monitor Status
+# Check ShopQ Quality Monitor Status
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MONITOR_PID_FILE="$SCRIPT_DIR/quality-monitor/.monitor.pid"
 MONITOR_LOG="$SCRIPT_DIR/quality-monitor/quality_monitor.log"
 DB_PATH="$SCRIPT_DIR/quality-monitor/quality_monitor.db"
 
-echo "🔍 MailQ Quality Monitor Status"
+echo "🔍 ShopQ Quality Monitor Status"
 echo "================================"
 echo ""
 

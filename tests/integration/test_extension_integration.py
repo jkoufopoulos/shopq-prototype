@@ -6,7 +6,7 @@ import pytest
 import requests
 
 
-@pytest.mark.skip(reason="Requires live API server - run manually with: uvicorn mailq.api.app:app")
+@pytest.mark.skip(reason="Requires live API server - run manually with: uvicorn shopq.api.app:app")
 def test_extension_api():
     """Simulate what the extension sends to API"""
 

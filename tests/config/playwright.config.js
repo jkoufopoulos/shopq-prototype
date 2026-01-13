@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 
 /**
- * Playwright configuration for MailQ Chrome Extension E2E testing
+ * Playwright configuration for ShopQ Chrome Extension E2E testing
  * Tests the full Gmail integration flow with real browser automation
  */
 export default defineConfig({

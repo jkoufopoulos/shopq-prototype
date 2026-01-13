@@ -1,5 +1,5 @@
 #!/bin/bash
-# MailQ Security Review Script
+# ShopQ Security Review Script
 # Invokes the mailq-security-reviewer agent to audit the codebase
 
 set -e
@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🔒 Starting MailQ Security Review${NC}"
+echo -e "${GREEN}🔒 Starting ShopQ Security Review${NC}"
 echo ""
 echo "This will audit:"
 echo "  - Authentication & OAuth implementation"
@@ -34,7 +34,7 @@ fi
 # Adjust the invocation method based on your setup
 
 claude-code agent run mailq-security-reviewer \
-    --prompt "Perform a comprehensive security audit of the MailQ codebase. ${FOCUS_AREA}
+    --prompt "Perform a comprehensive security audit of the ShopQ codebase. ${FOCUS_AREA}
 
 Key areas to review:
 1. **Authentication Security**: OAuth token handling, refresh logic, storage

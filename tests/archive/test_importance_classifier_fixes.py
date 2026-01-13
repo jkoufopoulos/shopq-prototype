@@ -16,7 +16,7 @@ import sys
 # Add parent directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from mailq.classification.importance_classifier import ImportanceClassifier
+from shopq.classification.importance_classifier import ImportanceClassifier
 
 
 def test_issue_13_shipment_notifications():

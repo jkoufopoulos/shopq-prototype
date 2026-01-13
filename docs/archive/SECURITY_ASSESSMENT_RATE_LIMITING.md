@@ -1,4 +1,4 @@
-# MailQ Rate Limiting Security Assessment
+# ShopQ Rate Limiting Security Assessment
 
 **Date:** 2025-12-05
 **Scope:** Rate limiting implementation and cost DoS attack vectors
@@ -29,7 +29,7 @@
 #### Evidence
 
 **Location 1: Rate Limiting Middleware**
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py:26-31`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py:26-31`
 
 ```python
 def __init__(
@@ -41,7 +41,7 @@ def __init__(
 ```
 
 **Location 2: Email Batch Model**
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/models.py:157-177`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/models.py:157-177`
 
 ```python
 class EmailBatch(BaseModel):
@@ -53,7 +53,7 @@ class EmailBatch(BaseModel):
 ```
 
 **Location 3: Classification Pipeline**
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/classification/memory_classifier.py:73-113`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/classification/memory_classifier.py:73-113`
 
 ```python
 # Still use LLM for domains/attention, but override type
@@ -83,14 +83,14 @@ semantic_result = self.llm_classifier.classify(subject, snippet, from_field)
 - Per minute: 60,000 emails × $0.0000144 = **$0.864/min** = **$51.84/hour**
 - Per day (sustained): $51.84 × 24 = **$1,244.16/day**
 
-**Note:** Original issue estimate of $8,640/day assumes higher token costs or output volume. Conservative estimate is $1,244/day, which is still **248× over the $5/day operational budget** (from mailq_policy.yaml:72).
+**Note:** Original issue estimate of $8,640/day assumes higher token costs or output volume. Conservative estimate is $1,244/day, which is still **248× over the $5/day operational budget** (from shopq_policy.yaml:72).
 
 #### Exploit Scenario
 
 ```bash
 # Attacker script (proof of concept - DO NOT RUN)
 while true; do
-  curl -X POST https://mailq-api-488078904670.us-central1.run.app/api/organize \
+  curl -X POST https://shopq-api-488078904670.us-central1.run.app/api/organize \
     -H "Content-Type: application/json" \
     -d @payload_1000_emails.json &
   sleep 1  # 60 requests/min
@@ -113,7 +113,7 @@ done
 ### [HIGH-1] IP Spoofing via X-Forwarded-For Header
 
 **Severity:** High
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py:37-50`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py:37-50`
 
 ```python
 def _get_client_ip(self, request: Request) -> str:
@@ -159,7 +159,7 @@ def _get_client_ip(self, request: Request) -> str:
     """Extract client IP from request headers or connection"""
 +   # Cloud Run deployment: trust X-Forwarded-For from GCP load balancer only
 +   # Validate that request came through trusted proxy
-+   if os.getenv("MAILQ_ENV") == "production":
++   if os.getenv("SHOPQ_ENV") == "production":
 +       # Use Cloud Run's verified forwarded IP
 +       forwarded = request.headers.get("X-Forwarded-For")
 +       if forwarded:
@@ -186,7 +186,7 @@ def _get_client_ip(self, request: Request) -> str:
 ### [HIGH-2] No Authentication on Cost-Sensitive Endpoint
 
 **Severity:** High
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py:311-347`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py:311-347`
 
 ```python
 @app.post("/api/organize", response_model=OrganizeResponse)
@@ -229,7 +229,7 @@ async def organize_emails(batch: EmailBatch) -> dict[str, Any]:
 ### [MEDIUM-1] Memory Exhaustion via Large Batch Size
 
 **Severity:** Medium
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/models.py:160-162`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/models.py:160-162`
 
 ```python
 emails: list[EmailInput] = Field(
@@ -294,7 +294,7 @@ def validate_emails(cls, v: list[EmailInput]) -> list[EmailInput]:
 ### [MEDIUM-2] No Rate Limit on /api/context-digest Endpoint
 
 **Severity:** Medium
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py:470-664`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py:470-664`
 
 ```python
 @app.post("/api/context-digest")
@@ -318,7 +318,7 @@ async def generate_context_digest(request: SummaryRequest) -> dict[str, Any]:
 **Observed Protections:**
 1. **Input validation:** max 1000 emails per digest (models.py:300)
 2. **A/B testing disabled by default** (would double costs) (app.py:501)
-3. **LLM synthesis can be disabled** via `MAILQ_LLM_SYNTHESIS=false` (.env.example:161)
+3. **LLM synthesis can be disabled** via `SHOPQ_LLM_SYNTHESIS=false` (.env.example:161)
 
 **Risk Mitigation:**
 - Lower priority than CRITICAL-1 (organize endpoint)
@@ -335,7 +335,7 @@ async def generate_context_digest(request: SummaryRequest) -> dict[str, Any]:
 ### [LOW-1] No Rate Limit Reset Mechanism
 
 **Severity:** Low
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py:15-146`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py:15-146`
 
 **Observation:**
 - Rate limits are in-memory per-instance (line 34-35)
@@ -370,7 +370,7 @@ async def generate_context_digest(request: SummaryRequest) -> dict[str, Any]:
    - ✅ Defense in depth for browser-based attacks
 
 4. **Admin Endpoint Protection** (app.py:167-179, auth.py:73-82)
-   - Requires `MAILQ_ADMIN_API_KEY` in production
+   - Requires `SHOPQ_ADMIN_API_KEY` in production
    - Uses timing-safe comparison (auth.py:60)
    - Fails closed in production if key not set (app.py:176-179)
    - ✅ Proper authentication for admin operations
@@ -398,7 +398,7 @@ async def generate_context_digest(request: SummaryRequest) -> dict[str, Any]:
 
 **Implementation:**
 
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py`
 
 ```python
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -523,7 +523,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 **Configuration Update:**
 
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py`
 
 ```diff
 # Rate limiting - prevent abuse and cost overruns
@@ -558,7 +558,7 @@ curl -X POST http://localhost:8000/api/organize \
 
 **Cost Impact After Fix:**
 - Max cost/min: 100 emails × $0.0000144 = **$0.00144/min** = **$2.07/day**
-- Within operational budget ($5/day from mailq_policy.yaml)
+- Within operational budget ($5/day from shopq_policy.yaml)
 - ✅ Reduces attack cost by 99.8% (from $1,244/day to $2/day)
 
 ---
@@ -583,7 +583,7 @@ See detailed patch in [HIGH-1] above.
 **Goal:** Reduce memory exhaustion risk and further limit cost DoS.
 
 ```diff
-# File: mailq/api/models.py
+# File: shopq/api/models.py
 emails: list[EmailInput] = Field(
 -   ..., min_length=1, max_length=1000, description="Batch of emails to classify"
 +   ..., min_length=1, max_length=100, description="Batch of emails to classify"
@@ -604,7 +604,7 @@ emails: list[EmailInput] = Field(
 
 **Implementation:**
 
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/observability/cost_monitor.py` (NEW)
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/observability/cost_monitor.py` (NEW)
 
 ```python
 """Cost monitoring and alerting for LLM API usage"""
@@ -645,8 +645,8 @@ class CostMonitor:
 
     def _trigger_alert(self, endpoint: str, cost_per_minute: float):
         """Trigger cost overrun alert"""
-        from mailq.observability.logging import get_logger
-        from mailq.observability.telemetry import log_event
+        from shopq.observability.logging import get_logger
+        from shopq.observability.telemetry import log_event
 
         logger = get_logger(__name__)
 
@@ -671,7 +671,7 @@ cost_monitor = CostMonitor()
 
 **Integration:**
 
-File: `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/classification/vertex_gemini_classifier.py`
+File: `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/classification/vertex_gemini_classifier.py`
 
 ```diff
 def classify(self, subject: str, snippet: str, from_field: str) -> dict[str, Any]:
@@ -682,7 +682,7 @@ def classify(self, subject: str, snippet: str, from_field: str) -> dict[str, Any
     response = self.model.generate_content(prompt)
 
 +   # Track cost for monitoring
-+   from mailq.observability.cost_monitor import cost_monitor
++   from shopq.observability.cost_monitor import cost_monitor
 +   input_tokens = len(prompt) // 4  # Rough estimate: 4 chars/token
 +   output_tokens = len(response.text) // 4
 +   cost_usd = (input_tokens / 1000 * 0.00001875) + (output_tokens / 1000 * 0.000075)
@@ -697,7 +697,7 @@ def classify(self, subject: str, snippet: str, from_field: str) -> dict[str, Any
 # Create alert policy in GCP
 gcloud alpha monitoring policies create \
   --notification-channels=CHANNEL_ID \
-  --display-name="MailQ Cost Overrun Alert" \
+  --display-name="ShopQ Cost Overrun Alert" \
   --condition-display-name="LLM Cost > $1/min" \
   --condition-threshold-value=1.0 \
   --condition-threshold-duration=60s \
@@ -713,7 +713,7 @@ gcloud alpha monitoring policies create \
 **Goal:** Require API key for high-cost endpoints (opt-in for Chrome extension users).
 
 **Design:**
-1. Extension user generates API key in MailQ dashboard
+1. Extension user generates API key in ShopQ dashboard
 2. Extension stores key in chrome.storage.sync
 3. Extension includes key in Authorization header
 4. Backend validates key and ties to user account (rate limits per-user, not per-IP)
@@ -724,7 +724,7 @@ gcloud alpha monitoring policies create \
 - Provides accountability for cost overruns
 - Allows blocking of abusive users without blocking IPs
 
-**Implementation:** See `mailq/api/middleware/auth.py` for pattern. Extend to support user-scoped API keys (not just admin key).
+**Implementation:** See `shopq/api/middleware/auth.py` for pattern. Extend to support user-scoped API keys (not just admin key).
 
 ---
 
@@ -810,7 +810,7 @@ gcloud alpha monitoring policies create \
 
 **Success Criteria:**
 - No 429 errors for legitimate Chrome extension users
-- Cost/day stays below $5 (target from mailq_policy.yaml)
+- Cost/day stays below $5 (target from shopq_policy.yaml)
 - Attack scenario from CRITICAL-1 returns 429 after 100 emails
 
 ### Phase 2: Defense in Depth (Deploy Week 1)
@@ -849,13 +849,13 @@ gcloud alpha monitoring policies create \
 
 ```
 ┌─────────────────────────┐
-│  MailQ API (Public)     │  ← /api/organize (high cost)
+│  ShopQ API (Public)     │  ← /api/organize (high cost)
 │  - Strict rate limiting │  ← /api/context-digest (high cost)
 │  - Required auth        │
 └─────────────────────────┘
 
 ┌─────────────────────────┐
-│  MailQ Admin (Private)  │  ← /api/categories (low cost)
+│  ShopQ Admin (Private)  │  ← /api/categories (low cost)
 │  - Admin API key only   │  ← /api/rules (low cost)
 │  - No rate limiting     │  ← /api/feedback (low cost)
 └─────────────────────────┘
@@ -904,7 +904,7 @@ gcloud alpha monitoring policies create \
    ```bash
    # Add Cloud Armor rule to block IP
    gcloud compute security-policies rules create 1000 \
-     --security-policy=mailq-api-policy \
+     --security-policy=shopq-api-policy \
      --expression="origin.ip == '1.2.3.4'" \
      --action=deny-403 \
      --description="Blocked for cost DoS attack"
@@ -914,7 +914,7 @@ gcloud alpha monitoring policies create \
    ```bash
    # Check cost metrics in Cloud Monitoring
    gcloud monitoring time-series list \
-     --filter='metric.type="custom.googleapis.com/mailq/llm_cost_per_minute"' \
+     --filter='metric.type="custom.googleapis.com/shopq/llm_cost_per_minute"' \
      --interval-end-time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
@@ -944,7 +944,7 @@ gcloud alpha monitoring policies create \
 
 ## Conclusion
 
-The MailQ API has a **critical cost-based DoS vulnerability** that can be exploited by unauthenticated attackers to generate $1,244/day in LLM costs. The primary fix (email-based rate limiting) can be implemented in 4 hours and reduces attack impact by 99.8%.
+The ShopQ API has a **critical cost-based DoS vulnerability** that can be exploited by unauthenticated attackers to generate $1,244/day in LLM costs. The primary fix (email-based rate limiting) can be implemented in 4 hours and reduces attack impact by 99.8%.
 
 The codebase shows evidence of security-conscious development (CORS, input validation, admin auth, prompt injection protection), but the rate limiting implementation has a critical gap between request-based limits and resource consumption.
 

@@ -105,7 +105,7 @@ The Architecture Explorer is a **solid MVP** with good bones, but has several UX
 ❌ **No bulk actions** - Can't "open all tests" or "compare components"
 
 **Recommendations:**
-1. Add **URL routing** - `?component=mailq/api.py&filter=backend`
+1. Add **URL routing** - `?component=shopq/api.py&filter=backend`
 2. Add **keyboard nav** - Arrow keys, Enter to select, Tab to cycle through links
 3. Make links **Cmd+Click friendly** - Add `target` handling
 4. **Highlight search matches** - Bold or underline matching text

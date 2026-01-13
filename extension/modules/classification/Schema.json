@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://mailq.dev/schemas/email_classification_mvp.v1.json",
-  "title": "MailQ Email Classification (MVP v1)",
+  "$id": "https://shopq.dev/schemas/email_classification_mvp.v1.json",
+  "title": "ShopQ Email Classification (MVP v1)",
   "description": "Schema for 4-label classification system. Note: domains/domain_conf removed.",
   "type": "object",
   "required": [

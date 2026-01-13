@@ -1,7 +1,7 @@
 /**
  * E2E Test: Classification Accuracy
  *
- * Comprehensive test suite that verifies MailQ correctly classifies
+ * Comprehensive test suite that verifies ShopQ correctly classifies
  * real emails in your Gmail inbox across all dimensions:
  * - Type (newsletter, notification, receipt, event, promotion, message)
  * - Domain (finance, shopping, professional, personal)
@@ -31,8 +31,8 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     await page.waitForTimeout(3000);
 
     // Step 2: Search for unlabeled emails
-    console.log('🔍 Step 2: Finding unlabeled emails (without MailQ labels)...');
-    await gmailPage.search('-label:MailQ-Newsletters -label:MailQ-Notifications -label:MailQ-Receipts -label:MailQ-Events -label:MailQ-Promotions -label:MailQ-Messages');
+    console.log('🔍 Step 2: Finding unlabeled emails (without ShopQ labels)...');
+    await gmailPage.search('-label:ShopQ-Newsletters -label:ShopQ-Notifications -label:ShopQ-Receipts -label:ShopQ-Events -label:ShopQ-Promotions -label:ShopQ-Messages');
     await page.waitForTimeout(2000);
 
     const unlabeledEmails = await gmailPage.getEmails();
@@ -90,8 +90,8 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     }
     console.log('');
 
-    // Step 5: Trigger MailQ auto-organize
-    console.log('🚀 Step 3: Triggering MailQ auto-organize...');
+    // Step 5: Trigger ShopQ auto-organize
+    console.log('🚀 Step 3: Triggering ShopQ auto-organize...');
 
     // Reload page to trigger extension
     await page.reload();
@@ -108,7 +108,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     await page.waitForTimeout(3000);
 
     // Search again for previously unlabeled emails
-    await gmailPage.search('-label:MailQ-Newsletters -label:MailQ-Notifications -label:MailQ-Receipts -label:MailQ-Events -label:MailQ-Promotions -label:MailQ-Messages');
+    await gmailPage.search('-label:ShopQ-Newsletters -label:ShopQ-Notifications -label:ShopQ-Receipts -label:ShopQ-Events -label:ShopQ-Promotions -label:ShopQ-Messages');
     await page.waitForTimeout(2000);
 
     const stillUnlabeled = await gmailPage.getEmails();
@@ -140,7 +140,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
 
       if (email) {
         const labels = await gmailPage.getEmailLabels(email);
-        const mailqLabels = labels.filter(l => l.includes('MailQ'));
+        const mailqLabels = labels.filter(l => l.includes('ShopQ'));
 
         verifiedResults.push({
           email: emailInfo.subject.substring(0, 50),
@@ -208,7 +208,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     await gmailPage.goto();
 
     // Search for newsletters
-    await gmailPage.search('label:MailQ-Newsletters');
+    await gmailPage.search('label:ShopQ-Newsletters');
     await page.waitForTimeout(2000);
 
     const newsletters = await gmailPage.getEmails();
@@ -226,7 +226,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     }
 
     // Search for receipts
-    await gmailPage.search('label:MailQ-Receipts');
+    await gmailPage.search('label:ShopQ-Receipts');
     await page.waitForTimeout(2000);
 
     const receipts = await gmailPage.getEmails();
@@ -243,7 +243,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     }
 
     // Search for action required
-    await gmailPage.search('label:MailQ-Action-Required');
+    await gmailPage.search('label:ShopQ-Action-Required');
     await page.waitForTimeout(2000);
 
     const actionRequired = await gmailPage.getEmails();
@@ -272,7 +272,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     const misclassifications = [];
 
     // Check: Receipts should be in Shopping domain
-    await gmailPage.search('label:MailQ-Receipts -label:MailQ-Shopping');
+    await gmailPage.search('label:ShopQ-Receipts -label:ShopQ-Shopping');
     await page.waitForTimeout(2000);
     const receiptsNotShopping = await gmailPage.getEmails();
 
@@ -282,7 +282,7 @@ test.describe('Classification Accuracy - Real Gmail', () => {
     }
 
     // Check: Promotions from known senders should not be newsletters
-    await gmailPage.search('label:MailQ-Promotions label:MailQ-Newsletters');
+    await gmailPage.search('label:ShopQ-Promotions label:ShopQ-Newsletters');
     await page.waitForTimeout(2000);
     const promoNewsletters = await gmailPage.getEmails();
 

@@ -19,14 +19,14 @@ def generate_summary_html(analysis_path: Path, output_path: Path):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MailQ Summary</title>
+    <title>ShopQ Summary</title>
     <style>
         {_get_summary_css()}
     </style>
 </head>
 <body>
     <header>
-        <h1>📝 MailQ Architecture Summary</h1>
+        <h1>📝 ShopQ Architecture Summary</h1>
         <nav>
             <a href="index.html">← Back to Dashboard</a>
         </nav>
@@ -36,7 +36,7 @@ def generate_summary_html(analysis_path: Path, output_path: Path):
         <section class="overview">
             <h2>What This System Does</h2>
             <p>
-                MailQ is an AI-powered email classification system that automatically
+                ShopQ is an AI-powered email classification system that automatically
                 organizes Gmail messages into categories. It combines rule-based logic
                 for common patterns with Gemini AI for complex emails.
             </p>
@@ -86,16 +86,16 @@ def generate_summary_html(analysis_path: Path, output_path: Path):
         <section>
             <h2>Where to Make Common Changes</h2>
             <ul class="changes-list">
-                <li><strong>Add new email type:</strong> Edit <code>mailq/mapper.py</code> schema</li>
-                <li><strong>Change AI model:</strong> Update <code>mailq/vertex_gemini_classifier.py</code></li>
-                <li><strong>Modify label formats:</strong> Edit <code>mailq/mapper.py</code></li>
-                <li><strong>Add classification domains:</strong> Update <code>mailq/config/sender_allowlist.py</code></li>
+                <li><strong>Add new email type:</strong> Edit <code>shopq/mapper.py</code> schema</li>
+                <li><strong>Change AI model:</strong> Update <code>shopq/vertex_gemini_classifier.py</code></li>
+                <li><strong>Modify label formats:</strong> Edit <code>shopq/mapper.py</code></li>
+                <li><strong>Add classification domains:</strong> Update <code>shopq/config/sender_allowlist.py</code></li>
             </ul>
         </section>
     </main>
 
     <footer>
-        <p>MailQ Codebase Analyzer</p>
+        <p>ShopQ Codebase Analyzer</p>
     </footer>
 </body>
 </html>"""

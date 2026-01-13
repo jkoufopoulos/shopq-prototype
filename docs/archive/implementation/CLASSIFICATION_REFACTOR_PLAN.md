@@ -1,7 +1,7 @@
 # Classification Architecture Refactor Plan
 
 **Status**: Ready for Execution ✅
-**Goal**: Refactor MailQ classification to LLM-first with thin guardrails, deterministic rendering, and no regressions
+**Goal**: Refactor ShopQ classification to LLM-first with thin guardrails, deterministic rendering, and no regressions
 **Timeline**: 8-phase migration (~4-6 weeks) with regression prevention
 **Rating**: ⭐⭐⭐⭐⭐ (5/5 - Production Ready)
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This plan migrates MailQ from pattern-based classification to **LLM-first with thin guardrails** via a fast **Bridge Mode** that gets 80% of benefits with minimal risk.
+This plan migrates ShopQ from pattern-based classification to **LLM-first with thin guardrails** via a fast **Bridge Mode** that gets 80% of benefits with minimal risk.
 
 ### Key Innovations
 
@@ -141,7 +141,7 @@ This plan migrates MailQ from pattern-based classification to **LLM-first with t
 
 ### Codex Prompt
 ```
-You are refactoring MailQ's classification pipeline. Phase 0 is prerequisite setup.
+You are refactoring ShopQ's classification pipeline. Phase 0 is prerequisite setup.
 
 1) BUILD REPO MAP:
    - List all files/modules: classification, rules, digest, feedback, time math
@@ -185,9 +185,9 @@ Constraints: Consider entire codebase; avoid tunnel vision to single directory.
 
 ### Deliverables ✅
 - ✅ `config/type_mapper_rules.yaml` (v1.0 - calendar events only)
-- ✅ `mailq/type_mapper.py` (TypeMapper class with singleton pattern)
-- ✅ `mailq/utils.py` (email address extraction utility)
-- ✅ `mailq/memory_classifier.py` (integrated type mapper Phase 0)
+- ✅ `shopq/type_mapper.py` (TypeMapper class with singleton pattern)
+- ✅ `shopq/utils.py` (email address extraction utility)
+- ✅ `shopq/memory_classifier.py` (integrated type mapper Phase 0)
 - ✅ `tests/test_type_mapper.py` (40+ unit tests)
 - ✅ `tests/test_type_mapper_gds.py` (golden dataset regression)
 - ✅ `tests/test_memory_classifier_integration.py` (20+ integration tests)
@@ -262,7 +262,7 @@ confidence_routing:
 
 ### Deliverables ✅
 - ✅ `config/guardrails.yaml` (3 categories with regex hygiene)
-- ✅ `mailq/bridge/guardrails.py` (GuardrailMatcher class reading YAML)
+- ✅ `shopq/bridge/guardrails.py` (GuardrailMatcher class reading YAML)
 - ✅ `tests/test_guardrails_precedence.py` (3 precedence tests)
 - ✅ Integration into production pipeline (context_digest.py, bridge/mapper.py)
 
@@ -315,10 +315,10 @@ Add tests: table-driven precedence including conflicts. No behavior drift allowe
 5. Add snapshot tests for byte-identical HTML rendering
 
 ### Deliverables
-- `mailq/ingest/normalize.py`
-- `mailq/digest/digest_dto_v3.py`
-- `mailq/digest/entity_grouping.py`
-- `mailq/links/gmail_link_builder.py`
+- `shopq/ingest/normalize.py`
+- `shopq/digest/digest_dto_v3.py`
+- `shopq/digest/entity_grouping.py`
+- `shopq/links/gmail_link_builder.py`
 - `tests/test_normalization_mime_html_tz.py`
 - `tests/test_entity_grouping.py`
 - `tests/test_gmail_link_builder.py`
@@ -378,8 +378,8 @@ class Classification(BaseModel):
 4. Add circuit breaker: if `invalid_json_rate >1%` over 1k msgs, auto-disable LLM path
 
 ### Deliverables
-- `mailq/contracts/classification.py`
-- `mailq/llm/classifier.py` (schema-enforced)
+- `shopq/contracts/classification.py`
+- `shopq/llm/classifier.py` (schema-enforced)
 - `tests/test_contract_validation.py`
 - `logs/llm_shadow/*.json` (gitignored)
 
@@ -417,8 +417,8 @@ Add circuit breaker if invalid_json_rate >1% over 1k messages.
 6. **Add CI test**: Prevent downstream importance mutation except via approved gates
 
 ### Deliverables
-- `mailq/rules_engine.py` (reduced to deterministic gates only)
-- `mailq/digest_categorizer.py` (no importance recompute)
+- `shopq/rules_engine.py` (reduced to deterministic gates only)
+- `shopq/digest_categorizer.py` (no importance recompute)
 - `tests/test_postprocess_time_confidence.py`
 - `tests/test_no_importance_mutation.py` (CI guard)
 - `tests/test_importance_distribution.py` (alert if critical% changes >5pp)
@@ -480,7 +480,7 @@ CREATE TABLE user_overrides (
 5. **Approve UI placement before implementation**: Digest footer links vs extension popup vs web dashboard
 
 ### Deliverables
-- `mailq/overrides/engine.py`
+- `shopq/overrides/engine.py`
 - `api/overrides_endpoints.py`
 - `ui/explainers` shows `{importance, reason, source}`
 - `ui/wireframes/override_ui.md` (approved before coding)
@@ -746,6 +746,6 @@ P0 (Bootstrap) ─┬─> B0 (Bridge Mode) ─> P1 (Guardrails) ─> P2 (Foundat
 ## References
 
 - [CLAUDE.md](../CLAUDE.md) - Line 89: "Classification: rules → LLM fallback"
-- [MAILQ_REFERENCE.md](../MAILQ_REFERENCE.md) - Architecture diagram
+- [SHOPQ_REFERENCE.md](../SHOPQ_REFERENCE.md) - Architecture diagram
 - [IMPORTANCE_LEARNING.md](../archive/docs/prds/IMPORTANCE_LEARNING.md) - Learning system design
-- [digest_rules.db](../mailq/digest_rules.db) - Current section assignment rules
+- [digest_rules.db](../shopq/digest_rules.db) - Current section assignment rules

@@ -1,4 +1,4 @@
-# MailQ Rate Limiting Security Review
+# ShopQ Rate Limiting Security Review
 
 **Date:** 2025-12-05
 **Scope:** Rate limiting implementation and cost DoS vulnerabilities
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-The MailQ API has a **critical cost DoS vulnerability** (Issue #68) that allows attackers to generate unbounded LLM classification costs. The current rate limiting implementation has several architectural weaknesses:
+The ShopQ API has a **critical cost DoS vulnerability** (Issue #68) that allows attackers to generate unbounded LLM classification costs. The current rate limiting implementation has several architectural weaknesses:
 
 ⚠️ **Critical Issues:**
 - **C1**: `/api/organize` endpoint allows 60K emails/min = $6,780/day in LLM costs
@@ -36,13 +36,13 @@ The MailQ API has a **critical cost DoS vulnerability** (Issue #68) that allows 
 ### [C1] Cost DoS via Batch Email Classification Without Per-Email Rate Limiting
 
 **Severity:** Critical
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py:311-348` (`/api/organize` endpoint)
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py:311-348` (`/api/organize` endpoint)
 **CVSS:** 9.1 (Critical) - AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
 **Issue Reference:** #68
 
 **Evidence:**
 
-**Current Rate Limiting** (`mailq/api/middleware/rate_limit.py:26-31`):
+**Current Rate Limiting** (`shopq/api/middleware/rate_limit.py:26-31`):
 ```python
 def __init__(
     self,
@@ -52,14 +52,14 @@ def __init__(
 ):
 ```
 
-**Batch Size Limit** (`mailq/api/models.py:160-162`):
+**Batch Size Limit** (`shopq/api/models.py:160-162`):
 ```python
 emails: list[EmailInput] = Field(
     ..., min_length=1, max_length=1000, description="Batch of emails to classify"
 )
 ```
 
-**Cost Calculation** (from `docs/MAILQ_REFERENCE.md:238-240`):
+**Cost Calculation** (from `docs/SHOPQ_REFERENCE.md:238-240`):
 ```
 Gemini 2.0 Flash pricing:
 - Input: $0.15 per 1M tokens (~250 tokens/email)
@@ -86,7 +86,7 @@ Even with conservative attack (50% of rate limit):
 **Current Mitigations:**
 - Global rate limit: 60 req/min, 1000 req/hour per IP
 - Batch size capped at 1000 emails
-- Daily cost cap configured: `$0.50/day` (from `mailq/infrastructure/settings.py:47`)
+- Daily cost cap configured: `$0.50/day` (from `shopq/infrastructure/settings.py:47`)
 
 **Gap:**
 The `$0.50/day` cost cap exists in **client-side extension code** (`extension/modules/budget.js`) but is **NOT enforced server-side**. An attacker bypassing the extension can ignore this limit entirely.
@@ -113,8 +113,8 @@ Monthly exposure: $2.9M (30 days × $97,630)
 
 **Step 1: Add Server-Side Email-Based Rate Limiting**
 ```diff
---- a/mailq/api/middleware/rate_limit.py
-+++ b/mailq/api/middleware/rate_limit.py
+--- a/shopq/api/middleware/rate_limit.py
++++ b/shopq/api/middleware/rate_limit.py
 @@ -23,10 +23,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
      def __init__(
          self,
@@ -212,8 +212,8 @@ Monthly exposure: $2.9M (30 days × $97,630)
 
 **Step 3: Apply Email-Based Limits in app.py**
 ```diff
---- a/mailq/api/app.py
-+++ b/mailq/api/app.py
+--- a/shopq/api/app.py
++++ b/shopq/api/app.py
 @@ -127,8 +127,10 @@ app.add_middleware(
  # Rate limiting - prevent abuse and cost overruns
  # 60 requests/minute, 1000 requests/hour per IP
@@ -246,7 +246,7 @@ Cost reduction: 99.8% ✅
 ### [H1] IP Spoofing via X-Forwarded-For Header Manipulation
 
 **Severity:** High
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py:37-50`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py:37-50`
 **CVSS:** 7.5 (High) - AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
 
 **Evidence:**
@@ -271,7 +271,7 @@ def _get_client_ip(self, request: Request) -> str:
 ```bash
 # Attacker bypasses rate limiting by rotating X-Forwarded-For header
 for i in {1..1000}; do
-  curl -X POST https://mailq-api.run.app/api/organize \
+  curl -X POST https://shopq-api.run.app/api/organize \
     -H "X-Forwarded-For: 1.2.3.$i" \
     -H "Content-Type: application/json" \
     -d '{"emails": [...1000 emails...]}'
@@ -282,9 +282,9 @@ done
 ```
 
 **Current Deployment Model:**
-MailQ runs on **Google Cloud Run** (from `mailq/infrastructure/settings.py:69`):
+ShopQ runs on **Google Cloud Run** (from `shopq/infrastructure/settings.py:69`):
 ```python
-MAILQ_API_URL = "https://mailq-api-pgccmbjxvq-uc.a.run.app"
+SHOPQ_API_URL = "https://shopq-api-pgccmbjxvq-uc.a.run.app"
 ```
 
 Cloud Run uses **Google's load balancer** which sets:
@@ -301,8 +301,8 @@ The code trusts **user-controlled headers** without validation:
 
 **Option 1: Trust Only Cloud Run's Rightmost X-Forwarded-For IP**
 ```diff
---- a/mailq/api/middleware/rate_limit.py
-+++ b/mailq/api/middleware/rate_limit.py
+--- a/shopq/api/middleware/rate_limit.py
++++ b/shopq/api/middleware/rate_limit.py
 @@ -37,11 +37,29 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
      def _get_client_ip(self, request: Request) -> str:
          """Extract client IP from request headers or connection"""
@@ -319,7 +319,7 @@ The code trusts **user-controlled headers** without validation:
 +
 +            # In production (Cloud Run), use rightmost IP from Google LB
 +            # In development (direct connection), use leftmost IP
-+            if os.getenv("MAILQ_ENV") == "production":
++            if os.getenv("SHOPQ_ENV") == "production":
 +                # Cloud Run: Google LB appends client IP at the end
 +                # Take 2nd-to-last IP (last is Google LB itself)
 +                if len(ips) >= 2:
@@ -351,7 +351,7 @@ Cloud Run provides **authenticated client IP** via Cloud Trace headers:
 +        # Cloud Run sets X-Cloud-Trace-Context which includes client IP
 +        # This is authenticated by Google's infrastructure (cannot be spoofed)
 +        trace_context = request.headers.get("X-Cloud-Trace-Context")
-+        if trace_context and os.getenv("MAILQ_ENV") == "production":
++        if trace_context and os.getenv("SHOPQ_ENV") == "production":
 +            # Format: "TRACE_ID/SPAN_ID;o=TRACE_TRUE"
 +            # Client IP is in request.client.host (validated by Cloud Run)
 +            return request.client.host if request.client else "unknown"
@@ -394,7 +394,7 @@ Cloud Run provides **authenticated client IP** via Cloud Trace headers:
 ### [H2] Memory Exhaustion via Unbounded Rate Limit Storage
 
 **Severity:** High
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/middleware/rate_limit.py:34-35`, `57-76`
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/middleware/rate_limit.py:34-35`, `57-76`
 **CVSS:** 7.5 (High) - AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
 
 **Evidence:**
@@ -444,7 +444,7 @@ import time
 # Phase 1: Fill memory with unique IPs
 for i in range(1_000_000):
     requests.post(
-        "https://mailq-api.run.app/api/organize",
+        "https://shopq-api.run.app/api/organize",
         headers={"X-Forwarded-For": f"1.2.{i//256}.{i%256}"},
         json={"emails": [{"subject": "test", "snippet": "", "from": "a@b.com"}]}
     )
@@ -489,8 +489,8 @@ for i in range(1_000_000):
 
 **Step 1: Add Hard Cap on Tracked IPs**
 ```diff
---- a/mailq/api/middleware/rate_limit.py
-+++ b/mailq/api/middleware/rate_limit.py
+--- a/shopq/api/middleware/rate_limit.py
++++ b/shopq/api/middleware/rate_limit.py
 @@ -23,10 +23,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
      def __init__(
          self,
@@ -592,16 +592,16 @@ class RedisRateLimiter:
 ### [M1] Missing Per-Endpoint Rate Limiting for Multi-LLM Digest Generation
 
 **Severity:** Medium
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py:470-664` (`/api/context-digest`)
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py:470-664` (`/api/context-digest`)
 **CVSS:** 5.3 (Medium) - AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L
 
 **Evidence:**
 
 The `/api/context-digest` endpoint makes **multiple sequential LLM calls** per request:
 
-**From `mailq/digest/digest_stages_v2.py`:**
+**From `shopq/digest/digest_stages_v2.py`:**
 1. **Entity Extraction** (Stage 3): Gemini call to extract events/deadlines
-2. **Section Assignment** (Stage 4): Optional Gemini call if `MAILQ_LLM_SECTION_FALLBACK=true`
+2. **Section Assignment** (Stage 4): Optional Gemini call if `SHOPQ_LLM_SECTION_FALLBACK=true`
 3. **Narrative Generation** (Stage 5): Gemini call via `digest_synthesis_prompt_v2.txt`
 4. **Verification** (Stage 6): Optional Gemini call for quality check
 
@@ -622,7 +622,7 @@ Total: ~$0.0004 per digest (4× classification cost)
 ```bash
 # Attacker targets digest endpoint (more expensive than classify)
 for i in {1..60}; do
-  curl -X POST https://mailq-api.run.app/api/context-digest \
+  curl -X POST https://shopq-api.run.app/api/context-digest \
     -H "Content-Type: application/json" \
     -d '{
       "current_data": [
@@ -645,8 +645,8 @@ done
 
 **Use per-endpoint rate limiting with `slowapi`:**
 ```diff
---- a/mailq/api/app.py
-+++ b/mailq/api/app.py
+--- a/shopq/api/app.py
++++ b/shopq/api/app.py
 @@ -1,4 +1,10 @@
  from fastapi import FastAPI, HTTPException, Request, status
 +from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -707,14 +707,14 @@ Cost reduction: 99.77% ✅
 ### [M2] No Authentication Required for Expensive LLM Endpoints
 
 **Severity:** Medium
-**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/mailq/api/app.py:311-348` (`/api/organize`), `470-664` (`/api/context-digest`)
+**Location:** `/Users/justinkoufopoulos/Projects/mailq-prototype/shopq/api/app.py:311-348` (`/api/organize`), `470-664` (`/api/context-digest`)
 **CVSS:** 5.3 (Medium) - AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L
 
 **Evidence:**
 
 **Current Authentication Status:**
 ```python
-# From mailq/api/app.py:311-348
+# From shopq/api/app.py:311-348
 @app.post("/api/organize", response_model=OrganizeResponse)
 async def organize_emails(batch: EmailBatch) -> dict[str, Any]:
     # NO authentication decorator (public endpoint)
@@ -722,7 +722,7 @@ async def organize_emails(batch: EmailBatch) -> dict[str, Any]:
 
 **Admin endpoints DO require auth:**
 ```python
-# From mailq/api/routes/categories.py:42-45
+# From shopq/api/routes/categories.py:42-45
 @router.post("/categories")
 async def create_category(
     request: Request,
@@ -732,34 +732,34 @@ async def create_category(
 ```
 
 **Architecture Context:**
-MailQ uses **Chrome extension → Cloud Run API** architecture:
+ShopQ uses **Chrome extension → Cloud Run API** architecture:
 - Extension runs in user's browser (authenticated to Gmail via OAuth)
-- Extension calls MailQ API with email data
+- Extension calls ShopQ API with email data
 - API has **no direct user authentication** (trusts extension)
 
 **Current Security Model:**
-1. **CORS-based protection** (`mailq/api/app.py:93-125`):
+1. **CORS-based protection** (`shopq/api/app.py:93-125`):
    ```python
    ALLOWED_ORIGINS = [
        "https://mail.google.com",
-       "https://mailq-api-488078904670.us-central1.run.app",
+       "https://shopq-api-488078904670.us-central1.run.app",
    ]
 
    # Add Chrome extension origin if ID is configured
-   if MAILQ_EXTENSION_ID:
-       ALLOWED_ORIGINS.append(f"chrome-extension://{MAILQ_EXTENSION_ID}")
+   if SHOPQ_EXTENSION_ID:
+       ALLOWED_ORIGINS.append(f"chrome-extension://{SHOPQ_EXTENSION_ID}")
    ```
 
-2. **Admin endpoints use API key** (`mailq/api/middleware/auth.py:20-66`):
+2. **Admin endpoints use API key** (`shopq/api/middleware/auth.py:20-66`):
    ```python
-   self.api_key = os.getenv("MAILQ_ADMIN_API_KEY")
+   self.api_key = os.getenv("SHOPQ_ADMIN_API_KEY")
    ```
 
 **Gap:**
 - **CORS is NOT authentication** - Can be bypassed:
   ```bash
   # Attacker can call API directly (not from browser)
-  curl -X POST https://mailq-api.run.app/api/organize \
+  curl -X POST https://shopq-api.run.app/api/organize \
     -H "Content-Type: application/json" \
     -d '{"emails": [...]}'
 
@@ -772,25 +772,25 @@ MailQ uses **Chrome extension → Cloud Run API** architecture:
 
 **Option 1: Add API Key Authentication (Simplest)**
 ```diff
---- a/mailq/api/app.py
-+++ b/mailq/api/app.py
+--- a/shopq/api/app.py
++++ b/shopq/api/app.py
 @@ -1,3 +1,4 @@
 +import os
  from fastapi import FastAPI, HTTPException, Request, status, Header
 +from fastapi import Depends
 +
 +# Shared secret between extension and backend
-+MAILQ_EXTENSION_API_KEY = os.getenv("MAILQ_EXTENSION_API_KEY")
++SHOPQ_EXTENSION_API_KEY = os.getenv("SHOPQ_EXTENSION_API_KEY")
 +
 +def verify_extension_key(x_api_key: str = Header(None)) -> bool:
 +    """Verify extension API key"""
-+    if not MAILQ_EXTENSION_API_KEY:
++    if not SHOPQ_EXTENSION_API_KEY:
 +        # In development, allow unauthenticated access
-+        if os.getenv("MAILQ_ENV") != "production":
++        if os.getenv("SHOPQ_ENV") != "production":
 +            return True
 +        raise HTTPException(
 +            status_code=500,
-+            detail="MAILQ_EXTENSION_API_KEY not configured"
++            detail="SHOPQ_EXTENSION_API_KEY not configured"
 +        )
 +
 +    if not x_api_key:
@@ -799,7 +799,7 @@ MailQ uses **Chrome extension → Cloud Run API** architecture:
 +            detail="Missing X-API-Key header"
 +        )
 +
-+    if not secrets.compare_digest(x_api_key, MAILQ_EXTENSION_API_KEY):
++    if not secrets.compare_digest(x_api_key, SHOPQ_EXTENSION_API_KEY):
 +        raise HTTPException(
 +            status_code=403,
 +            detail="Invalid API key"
@@ -829,8 +829,8 @@ MailQ uses **Chrome extension → Cloud Run API** architecture:
 --- a/extension/modules/shared/config.js
 +++ b/extension/modules/shared/config.js
 @@ -1,5 +1,9 @@
- export const MAILQ_API_URL = 'https://mailq-api-488078904670.us-central1.run.app';
-+export const MAILQ_API_KEY = 'your-secure-api-key-here';  // Load from extension storage  # pragma: allowlist secret
+ export const SHOPQ_API_URL = 'https://shopq-api-488078904670.us-central1.run.app';
++export const SHOPQ_API_KEY = 'your-secure-api-key-here';  // Load from extension storage  # pragma: allowlist secret
 
 --- a/extension/modules/gmail/api.js
 +++ b/extension/modules/gmail/api.js
@@ -838,7 +838,7 @@ MailQ uses **Chrome extension → Cloud Run API** architecture:
      method: 'POST',
      headers: {
        'Content-Type': 'application/json',
-+      'X-API-Key': config.MAILQ_API_KEY,  // NEW
++      'X-API-Key': config.SHOPQ_API_KEY,  // NEW
      },
      body: JSON.stringify({ emails }),
    });
@@ -849,7 +849,7 @@ MailQ uses **Chrome extension → Cloud Run API** architecture:
 +# Extension API Key (Required for production)
 +# Shared secret between extension and backend for API authentication
 +# Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-+MAILQ_EXTENSION_API_KEY=your-secure-extension-api-key-here
++SHOPQ_EXTENSION_API_KEY=your-secure-extension-api-key-here
 ```
 
 **Option 2: OAuth 2.0 Token Validation (Most Secure)**
@@ -953,7 +953,7 @@ async def organize_emails(
 6. **Add Server-Side Cost Monitoring**
    ```python
    # Track actual LLM costs in real-time
-   from mailq.observability.telemetry import counter, gauge
+   from shopq.observability.telemetry import counter, gauge
 
    def track_llm_cost(endpoint: str, cost: float):
        counter("llm.requests", tags={"endpoint": endpoint})
@@ -1135,7 +1135,7 @@ done
 # tests/security/test_rate_limiting.py
 import pytest
 from fastapi.testclient import TestClient
-from mailq.api.app import app
+from shopq.api.app import app
 
 client = TestClient(app)
 
@@ -1248,7 +1248,7 @@ Before deploying rate limiting fixes to production:
 
 - [ ] **Documentation**
   - [ ] `.env.example` updated with new keys
-  - [ ] MAILQ_REFERENCE.md updated with rate limits
+  - [ ] SHOPQ_REFERENCE.md updated with rate limits
   - [ ] SECURITY_REVIEW.md updated with findings
   - [ ] Incident response plan documented
   - [ ] Cost cap enforcement validated
@@ -1336,7 +1336,7 @@ Before deploying rate limiting fixes to production:
 ### If API Key Compromised
 
 1. **Immediate**
-   - Rotate `MAILQ_EXTENSION_API_KEY`
+   - Rotate `SHOPQ_EXTENSION_API_KEY`
    - Push emergency extension update to Chrome Web Store
    - Block old key at API gateway
 
@@ -1354,7 +1354,7 @@ Before deploying rate limiting fixes to production:
 
 ## Conclusion
 
-MailQ's rate limiting implementation has **critical vulnerabilities** that expose the service to unbounded cost DoS attacks. The recommended fixes provide **6 layers of defense** and reduce cost exposure by **99.77%**.
+ShopQ's rate limiting implementation has **critical vulnerabilities** that expose the service to unbounded cost DoS attacks. The recommended fixes provide **6 layers of defense** and reduce cost exposure by **99.77%**.
 
 **Risk Summary:**
 - **Before fixes:** $97,630/day exposure (10 IPs) - **CRITICAL**

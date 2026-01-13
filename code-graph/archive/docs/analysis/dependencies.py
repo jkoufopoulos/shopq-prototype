@@ -32,7 +32,7 @@ def generate_dependencies_html(analysis_path: Path, output_path: Path):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dependency Graph - MailQ</title>
+    <title>Dependency Graph - ShopQ</title>
     <link rel="stylesheet" href="../assets/css/analysis.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 </head>
@@ -51,7 +51,7 @@ def generate_dependencies_html(analysis_path: Path, output_path: Path):
 
         <section>
             <h2>🐍 Python Dependencies</h2>
-            <p class="meta">Shows how Python modules in mailq/, scripts/, experiments/ connect</p>
+            <p class="meta">Shows how Python modules in shopq/, scripts/, experiments/ connect</p>
             <div class="graph-container">
                 <div class="mermaid">
 graph TD
@@ -101,8 +101,8 @@ def _render_mermaid_graph(edges):
         target_id = to_node_id(target)
 
         # Shorten labels for readability
-        source_label = source.replace("mailq/", "").replace("extension/", "")
-        target_label = target.replace("mailq/", "").replace("extension/", "")
+        source_label = source.replace("shopq/", "").replace("extension/", "")
+        target_label = target.replace("shopq/", "").replace("extension/", "")
 
         lines.append(f"        {source_id}[{source_label}] --> {target_id}[{target_label}]")
 

@@ -19,13 +19,13 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.digest.categorizer import DigestCategorizer
+from shopq.digest.categorizer import DigestCategorizer
 
-from mailq.classification.enrichment import enrich_entities_with_temporal_decay
-from mailq.classification.extractor import HybridExtractor
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.classification.enrichment import enrich_entities_with_temporal_decay
+from shopq.classification.extractor import HybridExtractor
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 
 
 def load_golden_dataset():

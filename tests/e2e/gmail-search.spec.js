@@ -30,7 +30,7 @@ test.describe('Gmail Search Functionality', () => {
 
     // Step 3: Test the exact search query the extension uses
     // From extension/modules/gmail.js:73-78
-    const searchQuery = 'in:inbox -in:sent -in:drafts -in:trash -in:spam -label:MailQ/*';
+    const searchQuery = 'in:inbox -in:sent -in:drafts -in:trash -in:spam -label:ShopQ/*';
     console.log(`🔍 Step 2: Testing search query: "${searchQuery}"`);
 
     await gmailPage.search(searchQuery);
@@ -78,7 +78,7 @@ test.describe('Gmail Search Functionality', () => {
 
         const tests = [
           { query: 'in:inbox', desc: 'Has INBOX label' },
-          { query: '-label:MailQ/*', desc: 'No MailQ labels' },
+          { query: '-label:ShopQ/*', desc: 'No ShopQ labels' },
           { query: `subject:"${subject.substring(0, 30)}"`, desc: 'Subject search' },
         ];
 
@@ -99,7 +99,7 @@ test.describe('Gmail Search Functionality', () => {
       );
     }
 
-    // Step 7: Verify search found some emails (or all have MailQ labels)
+    // Step 7: Verify search found some emails (or all have ShopQ labels)
     if (searchResultCount === 0) {
       console.log('✅ Search returned 0 results - all emails may already be labeled');
     } else {
@@ -110,18 +110,18 @@ test.describe('Gmail Search Functionality', () => {
     }
   });
 
-  test('should correctly identify emails without MailQ labels', async ({ page, gmailPage }) => {
-    console.log('🧪 Test: Verifying MailQ label detection...');
+  test('should correctly identify emails without ShopQ labels', async ({ page, gmailPage }) => {
+    console.log('🧪 Test: Verifying ShopQ label detection...');
 
     await gmailPage.goto();
 
     const emails = await gmailPage.getEmails();
     const sampleSize = Math.min(5, emails.length);
 
-    console.log(`📊 Checking ${sampleSize} emails for MailQ labels...`);
+    console.log(`📊 Checking ${sampleSize} emails for ShopQ labels...`);
 
-    let withMailQLabels = 0;
-    let withoutMailQLabels = 0;
+    let withShopQLabels = 0;
+    let withoutShopQLabels = 0;
 
     for (let i = 0; i < sampleSize; i++) {
       const email = emails[i];
@@ -129,22 +129,22 @@ test.describe('Gmail Search Functionality', () => {
       const subject = text?.split('\n')[0] || 'Unknown';
       const labels = await gmailPage.getEmailLabels(email);
 
-      const hasMailQLabel = labels.some(label => label.includes('MailQ'));
+      const hasShopQLabel = labels.some(label => label.includes('ShopQ'));
 
-      if (hasMailQLabel) {
-        withMailQLabels++;
-        console.log(`   ✅ Email ${i + 1}: Has MailQ labels - "${subject.substring(0, 40)}..."`);
+      if (hasShopQLabel) {
+        withShopQLabels++;
+        console.log(`   ✅ Email ${i + 1}: Has ShopQ labels - "${subject.substring(0, 40)}..."`);
       } else {
-        withoutMailQLabels++;
-        console.log(`   ❌ Email ${i + 1}: No MailQ labels - "${subject.substring(0, 40)}..."`);
+        withoutShopQLabels++;
+        console.log(`   ❌ Email ${i + 1}: No ShopQ labels - "${subject.substring(0, 40)}..."`);
       }
     }
 
     console.log('\n📊 Results:');
-    console.log(`   With MailQ labels: ${withMailQLabels}`);
-    console.log(`   Without MailQ labels: ${withoutMailQLabels}`);
+    console.log(`   With ShopQ labels: ${withShopQLabels}`);
+    console.log(`   Without ShopQ labels: ${withoutShopQLabels}`);
 
-    // If all emails have MailQ labels, that's okay
+    // If all emails have ShopQ labels, that's okay
     // If some don't, the search should find them
     console.log('✅ Label detection complete');
   });

@@ -4,7 +4,7 @@ Create unified golden dataset by combining synthetic and real emails.
 
 This merges:
 1. 240 synthetic emails (perfect balance, complete fields)
-2. 298 real emails (actual Gmail data with MailQ labels)
+2. 298 real emails (actual Gmail data with ShopQ labels)
 
 Total: 538 emails for Phase 0 golden dataset
 """

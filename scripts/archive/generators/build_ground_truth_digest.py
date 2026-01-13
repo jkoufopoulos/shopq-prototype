@@ -19,7 +19,7 @@ class EmailData:
     gds_type: str
     gds_importance: str
     has_temporal: bool
-    mailq_section: str
+    shopq_section: str
     ground_truth_section: str
     match: bool
 
@@ -977,12 +977,12 @@ def generate_digest_html(emails: list[EmailData]) -> str:
             for email_type, count in sorted(ee_by_type.items()):
                 label = "promos" if email_type == "promotion" else f"{email_type}s"
                 parts.append(
-                    f'<a href="https://mail.google.com/mail/u/0/#search/label%3AMailQ-{email_type.title()}+in%3Aanywhere+-in%3Atrash+-in%3Aspam">{count} {label}</a>'
+                    f'<a href="https://mail.google.com/mail/u/0/#search/label%3AShopQ-{email_type.title()}+in%3Aanywhere+-in%3Atrash+-in%3Aspam">{count} {label}</a>'
                 )
 
         if skip_count > 0:
             parts.append(
-                f'<a href="https://mail.google.com/mail/u/0/#search/label%3AMailQ-Skip+in%3Aanywhere+-in%3Atrash+-in%3Aspam">{skip_count} skipped</a>'
+                f'<a href="https://mail.google.com/mail/u/0/#search/label%3AShopQ-Skip+in%3Aanywhere+-in%3Atrash+-in%3Aspam">{skip_count} skipped</a>'
             )
 
         html += ", ".join(parts) + "."

@@ -19,7 +19,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from mailq.concepts.preferences import (
+from shopq.concepts.preferences import (
     MAX_PREFERENCES_PER_USER,
     UserPreferenceManager,
     get_explainer,
@@ -52,8 +52,8 @@ def manager(test_db, monkeypatch):
     def mock_connection():
         return test_db
 
-    monkeypatch.setattr("mailq.concepts.preferences.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.concepts.preferences.get_db_connection", mock_connection)
+    monkeypatch.setattr("shopq.concepts.preferences.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.concepts.preferences.get_db_connection", mock_connection)
 
     return UserPreferenceManager(user_id="alice")
 
@@ -331,8 +331,8 @@ def test_multi_user_isolation(test_db, monkeypatch):
     def mock_connection():
         return test_db
 
-    monkeypatch.setattr("mailq.concepts.preferences.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.concepts.preferences.get_db_connection", mock_connection)
+    monkeypatch.setattr("shopq.concepts.preferences.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.concepts.preferences.get_db_connection", mock_connection)
 
     # Create managers for two users
     alice = UserPreferenceManager(user_id="alice")
@@ -532,8 +532,8 @@ def test_invariant_precedence_chain(test_db, monkeypatch):
     def mock_connection():
         return test_db
 
-    monkeypatch.setattr("mailq.concepts.preferences.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.concepts.preferences.get_db_connection", mock_connection)
+    monkeypatch.setattr("shopq.concepts.preferences.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.concepts.preferences.get_db_connection", mock_connection)
 
     manager = UserPreferenceManager(user_id="alice")
 
@@ -570,8 +570,8 @@ def test_invariant_multi_tenancy_isolation(test_db, monkeypatch):
     def mock_connection():
         return test_db
 
-    monkeypatch.setattr("mailq.concepts.preferences.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.concepts.preferences.get_db_connection", mock_connection)
+    monkeypatch.setattr("shopq.concepts.preferences.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.concepts.preferences.get_db_connection", mock_connection)
 
     alice = UserPreferenceManager(user_id="alice")
     bob = UserPreferenceManager(user_id="bob")

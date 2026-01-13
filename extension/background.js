@@ -47,23 +47,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Load all dependencies using importScripts
-// Directory structure aligned with mailq/ backend for consistency
+// Directory structure aligned with shopq/ backend for consistency
 importScripts(
   'modules/shared/config.js',
-  // shared/ - Cross-cutting utilities (mailq/shared/)
+  // shared/ - Cross-cutting utilities (shopq/shared/)
   'modules/shared/signatures.js',  // Must load before utils.js (generateDedupeKey dependency)
   'modules/shared/utils.js',
-  // classification/ - Email classification pipeline (mailq/classification/)
+  // classification/ - Email classification pipeline (shopq/classification/)
   'modules/classification/detectors.js',
   'modules/classification/verifier.js',
-  // storage/ - Data persistence (mailq/storage/)
+  // storage/ - Data persistence (shopq/storage/)
   'modules/storage/budget.js',
   'modules/storage/cache.js',
   // shared/ - Config and notifications
   'modules/shared/config-sync.js',
-  // observability/ - Logging and telemetry (mailq/observability/)
+  // observability/ - Logging and telemetry (shopq/observability/)
   'modules/observability/telemetry.js',
-  // gmail/ - Gmail API integration (mailq/gmail/)
+  // gmail/ - Gmail API integration (shopq/gmail/)
   'modules/gmail/auth.js',
   // classification/ - Mapper and classifier
   'modules/classification/mapper.js',
@@ -79,7 +79,7 @@ importScripts(
   'modules/gmail/api.js',
   // shared/ - Chrome notifications
   'modules/shared/notifications.js',
-  // digest/ - Digest generation (mailq/digest/)
+  // digest/ - Digest generation (shopq/digest/)
   'modules/digest/summary-email.js',
   'modules/digest/context-digest.js',
   // automation/ - Extension-specific auto-organize
@@ -92,8 +92,8 @@ console.log('💡 Tip: Run showStats() in console to see cost breakdown');
 // Global mutex to prevent concurrent organize sessions
 let isOrganizing = false;
 
-const LAST_DIGEST_ATTEMPT_KEY = 'mailq_last_digest_attempt_at';
-const DIGEST_PENDING_FLAG_KEY = 'mailq_digest_pending';
+const LAST_DIGEST_ATTEMPT_KEY = 'shopq_last_digest_attempt_at';
+const DIGEST_PENDING_FLAG_KEY = 'shopq_digest_pending';
 const DIGEST_COOLDOWN_MINUTES = 1;
 const PASSIVE_DIGEST_ENABLED = CONFIG.ENABLE_PASSIVE_DIGEST_TRIGGERS !== false;
 
@@ -144,7 +144,7 @@ async function trackLabelCorrection(email, predictedLabels, currentLabels, resul
   // Send to backend for learning
   try {
     const token = await getAuthToken();
-    const response = await fetch(`${CONFIG.MAILQ_API_URL}/api/feedback`, {
+    const response = await fetch(`${CONFIG.SHOPQ_API_URL}/api/feedback`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === 'install') {
     try {
-      const response = await fetch(`${CONFIG.MAILQ_API_URL}/health`);
+      const response = await fetch(`${CONFIG.SHOPQ_API_URL}/health`);
       const health = await response.json();
       console.log('✅ Mailq API healthy:', health);
     } catch (error) {
@@ -281,7 +281,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // and will update badges automatically via InboxSDK
         if (result.success && result.processedCount > 0) {
           console.log('✅ Classification complete. Content script will update via storage listener.');
-          console.log('ℹ️  Digest available via MailQ button in Gmail header (no email sent)');
+          console.log('ℹ️  Digest available via ShopQ button in Gmail header (no email sent)');
         }
 
         sendResponse(result);
@@ -291,7 +291,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.notifications.create({
           type: 'basic',
           iconUrl: 'icons/icon48.png',
-          title: message.title || 'MailQ',
+          title: message.title || 'ShopQ',
           message: message.message,
           priority: 2
         });
@@ -313,7 +313,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Optionally send to backend API for tracking
         try {
           const token = await getAuthToken();
-          await fetch(`${CONFIG.MAILQ_API_URL}/api/telemetry/selector-health`, {
+          await fetch(`${CONFIG.SHOPQ_API_URL}/api/telemetry/selector-health`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -359,7 +359,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     // Set session start timestamp for digest generation
     await chrome.storage.local.set({
-      mailq_organize_session_start: new Date().toISOString()
+      shopq_organize_session_start: new Date().toISOString()
     });
 
     // Step 1: Get OAuth token
@@ -442,8 +442,8 @@ chrome.action.onClicked.addListener(async (tab) => {
     console.log('ℹ️  Emails remain in Inbox (no Gmail labels, no archive)');
 
     // Step 5: Digest email DISABLED - using sidebar drawer instead
-    // The digest is now available via the MailQ nav button in Gmail's header
-    console.log('ℹ️  Digest available via MailQ button in Gmail header');
+    // The digest is now available via the ShopQ nav button in Gmail's header
+    console.log('ℹ️  Digest available via ShopQ button in Gmail header');
 
     // Backend stats already logged per-request in classifier.js
     console.log('📊 Classification complete!');
@@ -478,7 +478,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 // ============================================================================
 
 /**
- * Cleanup function: Find emails with MailQ labels that are still in inbox
+ * Cleanup function: Find emails with ShopQ labels that are still in inbox
  * and re-archive them. This fixes cases where archiving failed silently.
  *
  * Usage in console: cleanupLabeledInbox()
@@ -491,23 +491,23 @@ async function cleanupLabeledInbox() {
     const token = await getAuthToken();
     console.log('✅ OAuth token obtained');
 
-    // Step 2: Search for emails that have MailQ labels AND are in inbox
+    // Step 2: Search for emails that have ShopQ labels AND are in inbox
     // This is the opposite of our normal search - we want labeled emails in inbox
     const mailqLabels = [
-      'MailQ/Receipts',
-      'MailQ/Shopping',
-      'MailQ/Messages',
-      'MailQ/Work',
-      'MailQ/Newsletters',
-      'MailQ/Notifications',
-      'MailQ/Events',
-      'MailQ/Finance',
-      'MailQ/Action-Required',
-      'MailQ/Promotions',
-      'MailQ/Personal'
+      'ShopQ/Receipts',
+      'ShopQ/Shopping',
+      'ShopQ/Messages',
+      'ShopQ/Work',
+      'ShopQ/Newsletters',
+      'ShopQ/Notifications',
+      'ShopQ/Events',
+      'ShopQ/Finance',
+      'ShopQ/Action-Required',
+      'ShopQ/Promotions',
+      'ShopQ/Personal'
     ];
 
-    // Build query: in:inbox AND (has any MailQ label)
+    // Build query: in:inbox AND (has any ShopQ label)
     const labelQuery = mailqLabels.map(l => `label:${l}`).join(' OR ');
     const query = `in:inbox (${labelQuery})`;
 
@@ -726,12 +726,12 @@ async function maybeSendDigest(trigger, tab) {
 
     if (!digestPending) {
       const storageKeys = await chrome.storage.local.get([
-        'mailq_last_auto_organize_at',
-        'mailq_last_digest_organize_at'
+        'shopq_last_auto_organize_at',
+        'shopq_last_digest_organize_at'
       ]);
       const timestamps = [
-        storageKeys.mailq_last_auto_organize_at,
-        storageKeys.mailq_last_digest_organize_at
+        storageKeys.shopq_last_auto_organize_at,
+        storageKeys.shopq_last_digest_organize_at
       ]
         .filter(Boolean)
         .map((iso) => {
@@ -753,7 +753,7 @@ async function maybeSendDigest(trigger, tab) {
               digestPending = true;
             }
             await chrome.storage.local.set({
-              mailq_last_digest_organize_at: new Date(now).toISOString()
+              shopq_last_digest_organize_at: new Date(now).toISOString()
             });
           } else {
             console.warn('⚠️ Organize pass before digest failed or returned no results:', organizeResult?.error);

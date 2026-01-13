@@ -61,7 +61,7 @@ test.describe('Digest Validation - Classified vs Visual Output', () => {
       const classifiedEmails = await page.evaluate(async () => {
         // Access the logger database
         const db = await new Promise((resolve, reject) => {
-          const request = indexedDB.open('MailQLogger', 1);
+          const request = indexedDB.open('ShopQLogger', 1);
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         });
@@ -485,12 +485,12 @@ This means:
 
 **Files to Check**:
 ${issue.debugSteps.map(step => {
-  if (step.includes('entity extraction')) return '- mailq/entity_extractor.py';
-  if (step.includes('timeline')) return '- mailq/timeline_synthesizer.py';
-  if (step.includes('noise')) return '- mailq/importance_classifier.py (categorize_routine)';
-  if (step.includes('timestamp')) return '- extension/modules/logger.js\n- mailq/api.py\n- mailq/entity_extractor.py';
-  if (step.includes('weather')) return '- mailq/weather_enrichment.py\n- mailq/narrative_generator.py';
-  if (step.includes('narrative')) return '- mailq/prompts/narrative_prompt_v2_grouped.txt';
+  if (step.includes('entity extraction')) return '- shopq/entity_extractor.py';
+  if (step.includes('timeline')) return '- shopq/timeline_synthesizer.py';
+  if (step.includes('noise')) return '- shopq/importance_classifier.py (categorize_routine)';
+  if (step.includes('timestamp')) return '- extension/modules/logger.js\n- shopq/api.py\n- shopq/entity_extractor.py';
+  if (step.includes('weather')) return '- shopq/weather_enrichment.py\n- shopq/narrative_generator.py';
+  if (step.includes('narrative')) return '- shopq/prompts/narrative_prompt_v2_grouped.txt';
   return '';
 }).filter(f => f).join('\n')}
 
@@ -526,11 +526,11 @@ jq . ${debugDir}/backend-tracking.json
 
 # 3. Make fix (example: timestamp issue)
 # Edit extension/modules/logger.js to add emailTimestamp
-# Edit mailq/api.py to extract emailTimestamp
+# Edit shopq/api.py to extract emailTimestamp
 
 # 4. Restart backend
 pkill -f uvicorn
-uvicorn mailq.api:app --reload --port 8000 &
+uvicorn shopq.api:app --reload --port 8000 &
 
 # 5. Re-test
 ./test-digest-quality.sh

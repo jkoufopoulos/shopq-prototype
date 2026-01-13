@@ -1,7 +1,7 @@
 # Phase 4: Deterministic Temporal Decay
 
 **Status**: ✅ Implemented & Tested (33/33 tests passing)
-**Module**: `mailq/temporal_decay.py`
+**Module**: `shopq/temporal_decay.py`
 **Tests**: `tests/test_temporal_decay.py`
 **Schema**: gds-1.0 (see `tests/golden_set/GDS_SCHEMA_v1.0.md`)
 
@@ -39,7 +39,7 @@ With temporal decay:
 └──────────────────────────────────────────────────────────────┘
                             ↓
 ┌──────────────────────────────────────────────────────────────┐
-│ Phase 4: Deterministic Temporal Decay (mailq/temporal_decay)│
+│ Phase 4: Deterministic Temporal Decay (shopq/temporal_decay)│
 │                                                              │
 │ Input:  stored_importance, temporal_start, temporal_end     │
 │ Rules:  4 deterministic time-based rules (no LLM)           │
@@ -108,7 +108,7 @@ Applied in priority order:
 
 ```python
 from datetime import datetime, timedelta, timezone
-from mailq.temporal_decay import resolve_temporal_importance
+from shopq.temporal_decay import resolve_temporal_importance
 
 # Current time
 now = datetime.now(timezone.utc)
@@ -130,7 +130,7 @@ print(result.was_modified)         # True (escalated from routine)
 ### Integration with Digest
 
 ```python
-from mailq.temporal_decay import (
+from shopq.temporal_decay import (
     resolve_temporal_importance,
     should_show_in_digest,
     get_digest_section
@@ -170,7 +170,7 @@ for email in classified_emails:
 For backward compatibility with existing code:
 
 ```python
-from mailq.temporal_decay import deterministic_temporal_updownrank
+from shopq.temporal_decay import deterministic_temporal_updownrank
 
 importance, reason = deterministic_temporal_updownrank(
     email_type="event",

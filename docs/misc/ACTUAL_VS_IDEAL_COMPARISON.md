@@ -68,7 +68,7 @@ Plus, there are 65 routine notifications.
 Everything else (70 emails):
   • 18 promotional ← "vote" and "Vanguard" should be here
   • 12 past events ← "Oct 31", "Drawing Hive", "adjourned" should be here
-  • 1 MailQ digest (filtered) ← Phase 1 filtered this ✅
+  • 1 ShopQ digest (filtered) ← Phase 1 filtered this ✅
   • 33 updates & notifications
 ```
 
@@ -207,7 +207,7 @@ Everything else (70 emails):
 
 **Root Cause**: ImportanceClassifier is not prioritizing correctly
 
-**Where**: `mailq/importance_classifier.py`
+**Where**: `shopq/importance_classifier.py`
 
 **Impact**: MASSIVE - 90% recall failure
 
@@ -224,7 +224,7 @@ Everything else (70 emails):
 
 **Root Cause**: Time-decay filter only catches 3 specific patterns
 
-**Where**: `mailq/filters/time_decay.py`
+**Where**: `shopq/filters/time_decay.py`
 
 **Impact**: MODERATE - 33% of featured items are noise
 
@@ -241,7 +241,7 @@ Everything else (70 emails):
 
 **Root Cause**: Importance classifier sees "last chance" and treats as time-sensitive
 
-**Where**: `mailq/importance_classifier.py` - time-sensitive patterns
+**Where**: `shopq/importance_classifier.py` - time-sensitive patterns
 
 **Impact**: HIGH - User sees noise instead of important info
 
@@ -259,8 +259,8 @@ Everything else (70 emails):
 3. Check why jobs/shipments not featured at all
 
 **Files to inspect**:
-- `mailq/importance_classifier.py`
-- `mailq/context_digest.py` (Stage 1: Classify importance)
+- `shopq/importance_classifier.py`
+- `shopq/context_digest.py` (Stage 1: Classify importance)
 
 **Expected fix**:
 - Add explicit patterns for bills: "bill", "statement", "balance"
@@ -279,7 +279,7 @@ Everything else (70 emails):
 
 1. **Expand calendar patterns**:
 ```python
-# mailq/filters/time_decay.py:70
+# shopq/filters/time_decay.py:70
 if any(kw in subject for kw in [
     'notification:',
     'updated invitation:',
@@ -333,7 +333,7 @@ Run diagnosis:
 ```bash
 # Check how emails are classified
 python3 -c "
-from mailq.importance_classifier import ImportanceClassifier
+from shopq.importance_classifier import ImportanceClassifier
 import csv
 
 classifier = ImportanceClassifier()

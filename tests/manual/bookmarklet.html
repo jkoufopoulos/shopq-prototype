@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailQ Test Bookmarklet</title>
+    <title>ShopQ Test Bookmarklet</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -55,12 +55,12 @@
     </style>
 </head>
 <body>
-    <h1>MailQ Label Verification Bookmarklet</h1>
+    <h1>ShopQ Label Verification Bookmarklet</h1>
 
     <div class="section">
         <h2>Quick Setup (Drag this to your bookmarks bar):</h2>
-        <a href="javascript:(function()%7B(async%20function()%7Bconsole.clear()%3Bconsole.log('%F0%9F%A7%AA%20MailQ%20Label%20Verification%20Test%5Cn'%2B'%3D'.repeat(50))%3Bconst%20rows%3Ddocument.querySelectorAll('tr%5Brole%3D%22row%22%5D')%7C%7Cdocument.querySelectorAll('.zA')%7C%7Cdocument.querySelectorAll('%5Bdata-thread-id%5D')%3Bif(rows.length%3D%3D%3D0)%7Bconsole.error('%E2%9D%8C%20No%20emails%20found%20(Issue%20%236%3A%20DOM%20selectors%20broken)')%3Breturn%7Dconsole.log(%60%F0%9F%93%A7%20Found%20%24%7Brows.length%7D%20emails%5Cn%60)%3Blet%20withLabels%3D0%3Blet%20withoutLabels%3D0%3BArray.from(rows).slice(0%2C20).forEach((row%2Ci)%3D%3E%7Bconst%20text%3Drow.textContent%3Bconst%20subject%3Dtext.split('%5Cn').find(l%3D%3El.trim().length%3E10)%7C%7C'Unknown'%3Bconst%20hasMailQ%3Dtext.includes('MailQ')%3Bif(hasMailQ)%7BwithLabels%2B%2B%3Bconsole.log(%60%E2%9C%85%20%5B%24%7Bi%2B1%7D%5D%20HAS%20MailQ%3A%20%24%7Bsubject.substring(0%2C50)%7D...%60)%7Delse%7BwithoutLabels%2B%2B%3Bconsole.log(%60%E2%9D%8C%20%5B%24%7Bi%2B1%7D%5D%20NO%20MailQ%3A%20%24%7Bsubject.substring(0%2C50)%7D...%60)%7D%7D)%3Bconsole.log('%5Cn'%2B'%3D'.repeat(50))%3Bconsole.log(%60%F0%9F%93%8A%20RESULTS%3A%60)%3Bconsole.log(%60%20%20%20With%20MailQ%20labels%3A%20%24%7BwithLabels%7D%60)%3Bconsole.log(%60%20%20%20Without%20MailQ%20labels%3A%20%24%7BwithoutLabels%7D%60)%3Bconsole.log(%60%20%20%20Labeling%20rate%3A%20%24%7B(withLabels%2F(withLabels%2BwithoutLabels)*100).toFixed(1)%7D%25%60)%3Bif(withoutLabels%3E0)%7Bconsole.log('%5Cn%E2%9A%A0%EF%B8%8F%20%20ISSUE%20%237%20DETECTED%3A')%3Bconsole.log(%60%20%20%20%24%7BwithoutLabels%7D%20emails%20have%20NO%20labels%60)%3Bconsole.log('%5Cn%F0%9F%93%8B%20Action%3A%20Check%20if%20console%20shows%20%22labeled%20successfully%22%20for%20these')%3Bconsole.log('%20%20%20If%20YES%20%E2%86%92%20Issue%20%237%20confirmed%20(logs%20lie)')%3Bconsole.log('%20%20%20If%20NO%20%E2%86%92%20Extension%20hasn%5C't%20processed%20these%20yet')%7Delse%7Bconsole.log('%5Cn%E2%9C%85%20All%20emails%20have%20MailQ%20labels!')%7D%7D)()%7D)()" class="bookmarklet">
-            🧪 Test MailQ Labels
+        <a href="javascript:(function()%7B(async%20function()%7Bconsole.clear()%3Bconsole.log('%F0%9F%A7%AA%20ShopQ%20Label%20Verification%20Test%5Cn'%2B'%3D'.repeat(50))%3Bconst%20rows%3Ddocument.querySelectorAll('tr%5Brole%3D%22row%22%5D')%7C%7Cdocument.querySelectorAll('.zA')%7C%7Cdocument.querySelectorAll('%5Bdata-thread-id%5D')%3Bif(rows.length%3D%3D%3D0)%7Bconsole.error('%E2%9D%8C%20No%20emails%20found%20(Issue%20%236%3A%20DOM%20selectors%20broken)')%3Breturn%7Dconsole.log(%60%F0%9F%93%A7%20Found%20%24%7Brows.length%7D%20emails%5Cn%60)%3Blet%20withLabels%3D0%3Blet%20withoutLabels%3D0%3BArray.from(rows).slice(0%2C20).forEach((row%2Ci)%3D%3E%7Bconst%20text%3Drow.textContent%3Bconst%20subject%3Dtext.split('%5Cn').find(l%3D%3El.trim().length%3E10)%7C%7C'Unknown'%3Bconst%20hasShopQ%3Dtext.includes('ShopQ')%3Bif(hasShopQ)%7BwithLabels%2B%2B%3Bconsole.log(%60%E2%9C%85%20%5B%24%7Bi%2B1%7D%5D%20HAS%20ShopQ%3A%20%24%7Bsubject.substring(0%2C50)%7D...%60)%7Delse%7BwithoutLabels%2B%2B%3Bconsole.log(%60%E2%9D%8C%20%5B%24%7Bi%2B1%7D%5D%20NO%20ShopQ%3A%20%24%7Bsubject.substring(0%2C50)%7D...%60)%7D%7D)%3Bconsole.log('%5Cn'%2B'%3D'.repeat(50))%3Bconsole.log(%60%F0%9F%93%8A%20RESULTS%3A%60)%3Bconsole.log(%60%20%20%20With%20ShopQ%20labels%3A%20%24%7BwithLabels%7D%60)%3Bconsole.log(%60%20%20%20Without%20ShopQ%20labels%3A%20%24%7BwithoutLabels%7D%60)%3Bconsole.log(%60%20%20%20Labeling%20rate%3A%20%24%7B(withLabels%2F(withLabels%2BwithoutLabels)*100).toFixed(1)%7D%25%60)%3Bif(withoutLabels%3E0)%7Bconsole.log('%5Cn%E2%9A%A0%EF%B8%8F%20%20ISSUE%20%237%20DETECTED%3A')%3Bconsole.log(%60%20%20%20%24%7BwithoutLabels%7D%20emails%20have%20NO%20labels%60)%3Bconsole.log('%5Cn%F0%9F%93%8B%20Action%3A%20Check%20if%20console%20shows%20%22labeled%20successfully%22%20for%20these')%3Bconsole.log('%20%20%20If%20YES%20%E2%86%92%20Issue%20%237%20confirmed%20(logs%20lie)')%3Bconsole.log('%20%20%20If%20NO%20%E2%86%92%20Extension%20hasn%5C't%20processed%20these%20yet')%7Delse%7Bconsole.log('%5Cn%E2%9C%85%20All%20emails%20have%20ShopQ%20labels!')%7D%7D)()%7D)()" class="bookmarklet">
+            🧪 Test ShopQ Labels
         </a>
         <p><strong>Drag the green button above to your bookmarks bar</strong></p>
     </div>
@@ -68,8 +68,8 @@
     <div class="section">
         <h2>How to Use:</h2>
         <ol>
-            <li>Drag the green "Test MailQ Labels" button to your bookmarks bar</li>
-            <li>Go to Gmail in Chrome (with MailQ extension loaded)</li>
+            <li>Drag the green "Test ShopQ Labels" button to your bookmarks bar</li>
+            <li>Go to Gmail in Chrome (with ShopQ extension loaded)</li>
             <li>Click the bookmark</li>
             <li>Open DevTools Console (F12) to see results</li>
         </ol>
@@ -80,7 +80,7 @@
         <p>If bookmarklet doesn't work, open Gmail, press F12, and paste this:</p>
         <pre><code id="manual-code">(async function() {
   console.clear();
-  console.log('🧪 MailQ Label Verification Test\n' + '='.repeat(50));
+  console.log('🧪 ShopQ Label Verification Test\n' + '='.repeat(50));
 
   const rows = document.querySelectorAll('tr[role="row"]') ||
                document.querySelectorAll('.zA') ||
@@ -99,21 +99,21 @@
   Array.from(rows).slice(0, 20).forEach((row, i) => {
     const text = row.textContent;
     const subject = text.split('\n').find(l => l.trim().length > 10) || 'Unknown';
-    const hasMailQ = text.includes('MailQ');
+    const hasShopQ = text.includes('ShopQ');
 
-    if (hasMailQ) {
+    if (hasShopQ) {
       withLabels++;
-      console.log(`✅ [${i+1}] HAS MailQ: ${subject.substring(0, 50)}...`);
+      console.log(`✅ [${i+1}] HAS ShopQ: ${subject.substring(0, 50)}...`);
     } else {
       withoutLabels++;
-      console.log(`❌ [${i+1}] NO MailQ: ${subject.substring(0, 50)}...`);
+      console.log(`❌ [${i+1}] NO ShopQ: ${subject.substring(0, 50)}...`);
     }
   });
 
   console.log('\n' + '='.repeat(50));
   console.log(`📊 RESULTS:`);
-  console.log(`   With MailQ labels: ${withLabels}`);
-  console.log(`   Without MailQ labels: ${withoutLabels}`);
+  console.log(`   With ShopQ labels: ${withLabels}`);
+  console.log(`   Without ShopQ labels: ${withoutLabels}`);
   console.log(`   Labeling rate: ${(withLabels/(withLabels+withoutLabels)*100).toFixed(1)}%`);
 
   if (withoutLabels > 0) {
@@ -123,7 +123,7 @@
     console.log('   If YES → Issue #7 confirmed (logs lie)');
     console.log('   If NO → Extension hasn\'t processed these yet');
   } else {
-    console.log('\n✅ All emails have MailQ labels!');
+    console.log('\n✅ All emails have ShopQ labels!');
   }
 })();</code></pre>
         <button onclick="copyCode()" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">
@@ -137,19 +137,19 @@
         <h3>✅ Good Result (Issue #7 Fixed):</h3>
         <div class="success">
             <pre>📊 RESULTS:
-   With MailQ labels: 20
-   Without MailQ labels: 0
+   With ShopQ labels: 20
+   Without ShopQ labels: 0
    Labeling rate: 100.0%
 
-✅ All emails have MailQ labels!</pre>
+✅ All emails have ShopQ labels!</pre>
             <p><strong>Meaning:</strong> Labels are actually being applied. Safe to deploy!</p>
         </div>
 
         <h3>❌ Bad Result (Issue #7 Confirmed):</h3>
         <div class="warning">
             <pre>📊 RESULTS:
-   With MailQ labels: 2
-   Without MailQ labels: 18
+   With ShopQ labels: 2
+   Without ShopQ labels: 18
    Labeling rate: 10.0%
 
 ⚠️  ISSUE #7 DETECTED:
@@ -162,7 +162,7 @@
         <h2>🔄 Best Practice: Before & After Test</h2>
         <ol>
             <li><strong>Before:</strong> Run test → Note how many unlabeled emails</li>
-            <li><strong>Action:</strong> Click MailQ button in Gmail</li>
+            <li><strong>Action:</strong> Click ShopQ button in Gmail</li>
             <li><strong>After:</strong> Run test again → Compare results</li>
             <li><strong>Verify:</strong> Did unlabeled count decrease? By how much?</li>
         </ol>
@@ -179,7 +179,7 @@
         <h2>🐛 Troubleshooting</h2>
         <ul>
             <li><strong>"No emails found":</strong> Issue #6 (DOM selectors broken). Gmail may have changed.</li>
-            <li><strong>"Labeling rate: 0%":</strong> Extension may not have run yet. Click MailQ button first.</li>
+            <li><strong>"Labeling rate: 0%":</strong> Extension may not have run yet. Click ShopQ button first.</li>
             <li><strong>Bookmarklet doesn't work:</strong> Use manual console method instead.</li>
         </ul>
     </div>

@@ -102,7 +102,7 @@ One-page summaries:
 api.py
   ↓ Called by: extension/modules/classifier.js
   ↓ Affects: All email classification
-  ↓ Tests: mailq/tests/test_api.py (15 tests)
+  ↓ Tests: shopq/tests/test_api.py (15 tests)
   ↓ Impact: HIGH - Core functionality
 ```
 
@@ -247,7 +247,7 @@ grep "api.py" analysis/IMPACT_MAP.md
 # 📍 api.py
 #   Called by: extension/modules/classifier.js (47 times/day)
 #   Affects: All email classification
-#   Tests: mailq/tests/test_api.py (15 tests)
+#   Tests: shopq/tests/test_api.py (15 tests)
 #   Impact: HIGH ⚠️
 ```
 

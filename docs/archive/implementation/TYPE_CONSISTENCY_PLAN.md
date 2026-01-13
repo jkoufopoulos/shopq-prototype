@@ -26,7 +26,7 @@ This plan adds **global deterministic type rules** to ensure consistent type ass
 ## Current State (Type Assignment Today)
 
 ```python
-# mailq/memory_classifier.py::classify()
+# shopq/memory_classifier.py::classify()
 
 # Step 1: Try rules first
 rule_result = self.rules.classify(...)  # User-specific rules DB
@@ -52,7 +52,7 @@ mapping = map_to_gmail_labels(semantic_result)
 ## Proposed Architecture (Type Mapper Integration)
 
 ```python
-# mailq/memory_classifier.py::classify() (ENHANCED)
+# shopq/memory_classifier.py::classify() (ENHANCED)
 
 # Step 0: Check global deterministic type rules (NEW)
 type_hint = type_mapper.get_deterministic_type({
@@ -185,7 +185,7 @@ notification:
 ### Implementation: type_mapper.py
 
 ```python
-# mailq/type_mapper.py (NEW)
+# shopq/type_mapper.py (NEW)
 
 from __future__ import annotations
 
@@ -194,7 +194,7 @@ from typing import Optional
 import yaml
 from pathlib import Path
 
-from mailq.logging import get_logger
+from shopq.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -381,9 +381,9 @@ def get_type_mapper() -> TypeMapper:
 ### 1. Memory Classifier (Main Orchestrator)
 
 ```python
-# mailq/memory_classifier.py (MODIFY)
+# shopq/memory_classifier.py (MODIFY)
 
-from mailq.type_mapper import get_type_mapper
+from shopq.type_mapper import get_type_mapper
 
 class MemoryClassifier:
     def __init__(self, category_manager=None):
@@ -449,7 +449,7 @@ class MemoryClassifier:
 ### 2. Vertex Gemini Classifier (LLM)
 
 ```python
-# mailq/vertex_gemini_classifier.py (MODIFY)
+# shopq/vertex_gemini_classifier.py (MODIFY)
 
 class VertexGeminiClassifier:
     def classify(
@@ -553,7 +553,7 @@ event:
 # tests/test_type_mapper_gds.py (NEW)
 
 import pytest
-from mailq.type_mapper import get_type_mapper
+from shopq.type_mapper import get_type_mapper
 
 def test_gds_event_consistency():
     """All 56 events in gds-1.0 must be typed as 'event'."""
@@ -692,7 +692,7 @@ def test_type_mapper_integration():
     assert result["decider"] in ["type_mapper", "type_corrector"]
 
     # Gmail labels should reflect event type
-    assert "MailQ-Events" in result["gmail_labels"]
+    assert "ShopQ-Events" in result["gmail_labels"]
 ```
 
 ---
@@ -704,7 +704,7 @@ def test_type_mapper_integration():
   - Event rules (calendar domains, subject patterns)
   - Receipt rules (Amazon, PayPal)
   - Basic notification rules
-- [ ] Implement `mailq/type_mapper.py` (TypeMapper class)
+- [ ] Implement `shopq/type_mapper.py` (TypeMapper class)
 - [ ] Unit tests for rule matching (domain wildcards, regex, phrases)
 
 ### Day 2: Integration
@@ -848,9 +848,9 @@ def test_type_mapper_integration():
 ---
 
 **Status**: ✅ **Ready for Implementation**
-**Next Action**: Create `config/type_mapper_rules.yaml` + implement `mailq/type_mapper.py`
+**Next Action**: Create `config/type_mapper_rules.yaml` + implement `shopq/type_mapper.py`
 
 ---
 
 *Generated: 2025-11-10*
-*MailQ Type Consistency Enhancement*
+*ShopQ Type Consistency Enhancement*

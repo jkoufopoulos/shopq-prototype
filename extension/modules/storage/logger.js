@@ -5,7 +5,7 @@
  * Each entry includes email metadata, classification results, and context.
  */
 
-const LOGGER_DB_NAME = 'MailQLogger';
+const LOGGER_DB_NAME = 'ShopQLogger';
 const LOGGER_STORE_NAME = 'classifications';
 const LOGGER_VERSION = 1;
 

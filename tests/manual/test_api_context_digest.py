@@ -264,7 +264,7 @@ def test_api_endpoint(url: str = "http://localhost:8000/api/context-digest"):
         print("\n❌ Connection Error")
         print("\n⚠️  API server is not running!")
         print("\nTo start the server:")
-        print("   uvicorn mailq.api:app --reload")
+        print("   uvicorn shopq.api:app --reload")
         print("\nThen run this script again.")
         return None
 

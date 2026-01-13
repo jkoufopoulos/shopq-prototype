@@ -44,7 +44,7 @@ git log --oneline -10
 
 ```bash
 # Option A: Rollback to previous revision
-gcloud run services update-traffic mailq-api \
+gcloud run services update-traffic shopq-api \
   --to-revisions=PREVIOUS_REVISION=100 \
   --region=us-central1
 
@@ -53,17 +53,17 @@ git checkout <last-good-commit>
 ./deploy.sh
 
 # Verify rollback
-gcloud run services describe mailq-api --region=us-central1 | grep "Revision:"
+gcloud run services describe shopq-api --region=us-central1 | grep "Revision:"
 ```
 
 ### Step 3: Verify Application Health
 
 ```bash
 # Check if API is responding
-curl https://mailq-api-<project-id>.run.app/health
+curl https://shopq-api-<project-id>.run.app/health
 
 # Check database health
-curl https://mailq-api-<project-id>.run.app/health/db
+curl https://shopq-api-<project-id>.run.app/health/db
 
 # Expected response:
 # {
@@ -82,7 +82,7 @@ curl https://mailq-api-<project-id>.run.app/health/db
 
 ```bash
 # Tail Cloud Run logs
-gcloud logging tail "resource.type=cloud_run_revision AND resource.labels.service_name=mailq-api" --format=json
+gcloud logging tail "resource.type=cloud_run_revision AND resource.labels.service_name=shopq-api" --format=json
 
 # Look for:
 # - "Database initialization complete" (should appear within 5s of startup)
@@ -96,13 +96,13 @@ gcloud logging tail "resource.type=cloud_run_revision AND resource.labels.servic
 
 ```bash
 # Stop the application first
-gcloud run services delete mailq-api --region=us-central1
+gcloud run services delete shopq-api --region=us-central1
 
 # Restore database from backup (if using Cloud SQL)
 gcloud sql backups restore <backup-id> --instance=<instance-name>
 
 # Or restore from local backup (if using SQLite)
-gsutil cp gs://mailq-backups/mailq-<timestamp>.db /app/mailq/data/mailq.db
+gsutil cp gs://mailq-backups/mailq-<timestamp>.db /app/shopq/data/shopq.db
 
 # Redeploy application
 ./deploy.sh
@@ -127,7 +127,7 @@ If schema changes were made (new tables/columns), you may need to:
 ```python
 # Connect to production database
 import sqlite3
-conn = sqlite3.connect("/app/mailq/data/mailq.db")
+conn = sqlite3.connect("/app/shopq/data/shopq.db")
 
 # Drop new tables (example - adjust as needed)
 conn.execute("DROP TABLE IF EXISTS new_table_name")
@@ -166,7 +166,7 @@ After rollback, verify:
 
 ### Scenario 1: Database Consolidation Rollback
 
-**What Changed**: Migrated from 10+ databases to single mailq.db
+**What Changed**: Migrated from 10+ databases to single shopq.db
 
 **Rollback Target**: Commit before feat/bridge-mode-ingestion merge
 
@@ -252,19 +252,19 @@ Before deploying database changes, verify:
 
 ```bash
 # In Cloud Run container
-ls -lh /app/mailq/data/mailq.db*
+ls -lh /app/shopq/data/shopq.db*
 
 # Expected:
-# mailq.db      - main database (< 50MB is normal)
-# mailq.db-wal  - write-ahead log (< 10MB is normal)
-# mailq.db-shm  - shared memory (< 1MB is normal)
+# shopq.db      - main database (< 50MB is normal)
+# shopq.db-wal  - write-ahead log (< 10MB is normal)
+# shopq.db-shm  - shared memory (< 1MB is normal)
 ```
 
 ### Force WAL Checkpoint
 
 ```bash
 # In Python shell (inside Cloud Run container)
-from mailq.config.database import checkpoint_wal
+from shopq.config.database import checkpoint_wal
 stats = checkpoint_wal()
 print(f"Freed {stats['bytes_freed'] / 1024 / 1024:.1f} MB")
 ```
@@ -273,10 +273,10 @@ print(f"Freed {stats['bytes_freed'] / 1024 / 1024:.1f} MB")
 
 ```bash
 # Via API
-curl https://mailq-api-<project-id>.run.app/health/db
+curl https://shopq-api-<project-id>.run.app/health/db
 
 # In Python shell
-from mailq.config.database import get_pool_stats
+from shopq.config.database import get_pool_stats
 print(get_pool_stats())
 ```
 

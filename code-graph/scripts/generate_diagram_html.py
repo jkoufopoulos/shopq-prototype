@@ -184,7 +184,7 @@ def generate_plain_description(from_actor: str, to_actor: str, arrow_desc: str, 
         elif "map" in desc_lower and "label" in desc_lower:
             return f"{from_display} converts the classification into Gmail label names."
         elif "click" in desc_lower:
-            return f"User clicks the MailQ icon to trigger email organization."
+            return f"User clicks the ShopQ icon to trigger email organization."
         elif "change label" in desc_lower or "correct" in desc_lower:
             return f"User manually changes a label, providing feedback to improve classification."
         elif "feedback" in desc_lower:
@@ -636,7 +636,7 @@ def generate_html_template(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} - MailQ</title>
+    <title>{title} - ShopQ</title>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({{
@@ -1078,7 +1078,7 @@ def generate_html_template(
     {context_drawer_html}
 
     <div class="footer">
-        <p>MailQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
+        <p>ShopQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
     </div>
 
     <script>
@@ -1220,7 +1220,7 @@ def generate_index_html(diagrams: list) -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailQ Code-Graph - Visual Documentation</title>
+    <title>ShopQ Code-Graph - Visual Documentation</title>
     <style>
         * {{
             margin: 0;
@@ -1549,7 +1549,7 @@ def generate_index_html(diagrams: list) -> str:
 <body>
     <div class="container">
         <div class="hero">
-            <h1>MailQ Code-Graph</h1>
+            <h1>ShopQ Code-Graph</h1>
             <p>Interactive Visual Documentation</p>
         </div>
 
@@ -1595,7 +1595,7 @@ def generate_and_save_all_diagrams() -> list[Path]:
     # Ensure output directory exists
     HTML_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Initialize MailQ context
+    # Initialize ShopQ context
 
     diagrams = [
         # Story Overview

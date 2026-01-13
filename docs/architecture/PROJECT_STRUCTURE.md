@@ -1,4 +1,4 @@
-# MailQ Project Structure
+# ShopQ Project Structure
 
 > Last updated: 2025-11-06
 
@@ -12,7 +12,7 @@ Clean, organized structure with all code, documentation, and scripts in logical 
 mailq-prototype/
 ├── 📄 Core Documentation
 │   ├── README.md                    # Project overview
-│   ├── MAILQ_REFERENCE.md                    # AI assistant guide (TL;DR architecture)
+│   ├── SHOPQ_REFERENCE.md                    # AI assistant guide (TL;DR architecture)
 │   ├── INDEX.md                     # Master navigation
 │   ├── QUICKSTART.md                # Setup & common tasks
 │   └── ROADMAP.md                   # Future plans
@@ -29,7 +29,7 @@ mailq-prototype/
 │   ├── cloud-scheduler.yaml         # GCP Cloud Scheduler config
 │   └── credentials.json             # Gmail API credentials
 │
-├── 🐍 mailq/                        # Python backend (FastAPI)
+├── 🐍 shopq/                        # Python backend (FastAPI)
 │   ├── api.py                       # Main FastAPI app
 │   ├── api_*.py                     # API route modules
 │   ├── *_classifier.py              # Classification logic
@@ -54,7 +54,7 @@ mailq-prototype/
 │   │   └── README.md               # Prompt management guide
 │   │
 │   ├── data/                        # SQLite databases
-│   │   ├── mailq.db                 # Main database
+│   │   ├── shopq.db                 # Main database
 │   │   └── backups/                 # Database backups
 │   │
 │   ├── logs/                        # Application logs
@@ -197,7 +197,7 @@ mailq-prototype/
 - Test results stored in `test-results/`
 
 ### `/data` - Data Storage
-- `mailq.db` - Main database (in `/mailq/data/`)
+- `shopq.db` - Main database (in `/shopq/data/`)
 - Test fixtures in `test-fixtures/`
 - CSV exports (git-ignored)
 
@@ -212,8 +212,8 @@ mailq-prototype/
 
 | File | Purpose |
 |------|---------|
-| `mailq/api.py` | Main FastAPI application entry point |
-| `mailq/prompts/classifier_prompt.txt` | LLM classification prompt (editable!) |
+| `shopq/api.py` | Main FastAPI application entry point |
+| `shopq/prompts/classifier_prompt.txt` | LLM classification prompt (editable!) |
 | `extension/background.js` | Chrome extension service worker |
 | `extension/modules/gmail.js` | Gmail API operations |
 | `scripts/mailq-debug` | Debugging CLI tool |
@@ -265,11 +265,11 @@ These exist locally but are git-ignored:
 ## Navigation
 
 - **Getting Started**: See `QUICKSTART.md`
-- **Architecture**: See `MAILQ_REFERENCE.md` (TL;DR) or `docs/DATABASE_ARCHITECTURE.md` (detailed)
+- **Architecture**: See `SHOPQ_REFERENCE.md` (TL;DR) or `docs/DATABASE_ARCHITECTURE.md` (detailed)
 - **Testing**: See `docs/E2E_TESTING_GUIDE.md` or `docs/TESTING_GUIDE.md`
 - **Feature Flags**: See `docs/FEATURE_GATES.md`
 - **All Documentation**: See `INDEX.md`
 
 ---
 
-For questions about structure or to suggest improvements, see `MAILQ_REFERENCE.md` for AI assistant guidance.
+For questions about structure or to suggest improvements, see `SHOPQ_REFERENCE.md` for AI assistant guidance.

@@ -1,27 +1,27 @@
-"""Migration: Add pending_rules table to existing mailq.db"""
+"""Migration: Add pending_rules table to existing shopq.db"""
 
 from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
 
-from mailq.observability.logging import get_logger
+from shopq.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 def migrate():
-    """Add pending_rules table to existing mailq.db"""
-    db_path = Path(__file__).parent.parent / "data" / "mailq.db"
+    """Add pending_rules table to existing shopq.db"""
+    db_path = Path(__file__).parent.parent / "data" / "shopq.db"
 
     logger.info("Looking for database at: %s", db_path)
 
     if not db_path.exists():
-        logger.error("mailq.db not found at expected location")
+        logger.error("shopq.db not found at expected location")
         logger.info("   Expected: %s", db_path)
         logger.info("   Creating new database...")
         # If no DB exists, just initialize it
-        from mailq.infrastructure.database import init_database
+        from shopq.infrastructure.database import init_database
 
         init_database()  # Uses centralized database configuration
         logger.info("New database created with pending_rules table")

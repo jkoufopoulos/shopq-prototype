@@ -63,7 +63,7 @@ VERIFIER_HIGH_CONFIDENCE = 0.94 # Verify up to 94% (nearly everything)
 2. Backend gate: 0.70 >= 0.70 → **PASS**
 3. Verifier check: 0.70 in range [0.50, 0.94] → **VERIFY**
 4. Verifier validates:
-   - ✅ Confirms → Apply `MailQ/Notifications`
+   - ✅ Confirms → Apply `ShopQ/Notifications`
    - ❌ Rejects → Mark Uncategorized → User organizes
 5. System learns from verifier decision
 
@@ -79,7 +79,7 @@ VERIFIER_HIGH_CONFIDENCE = 0.94 # Verify up to 94% (nearly everything)
 2. Backend gate: 0.80 >= 0.70 → **PASS**
 3. Verifier check: 0.80 in range [0.50, 0.94] → **VERIFY**
 4. Verifier validates:
-   - ✅ Confirms → Apply `MailQ/Receipts`, `MailQ/Shopping`
+   - ✅ Confirms → Apply `ShopQ/Receipts`, `ShopQ/Shopping`
    - ❌ Rejects → Mark Uncategorized → User organizes
 5. System learns from verifier decision
 
@@ -89,7 +89,7 @@ VERIFIER_HIGH_CONFIDENCE = 0.94 # Verify up to 94% (nearly everything)
 1. Detector classifies: `notification`, confidence: 0.96
 2. Backend gate: 0.96 >= 0.70 → **PASS**
 3. Verifier check: 0.96 > 0.94 → **SKIP VERIFIER**
-4. Apply `MailQ/Notifications`, `MailQ/Finance` immediately
+4. Apply `ShopQ/Notifications`, `ShopQ/Finance` immediately
 
 ## Expected Outcomes
 
@@ -241,7 +241,7 @@ This returns to 100% user manual organization (safe but high effort).
 
 ## Files Changed
 
-1. `mailq/config/confidence.py` - Lowered thresholds to 0.70, widened verifier range
+1. `shopq/config/confidence.py` - Lowered thresholds to 0.70, widened verifier range
 2. `domain/models.py` - Added dimension-specific confidence fields
 3. `domain/classify.py` - Populate confidence scores from rules
 4. `adapters/api_bridge.py` - Use dimension-specific confidence in API

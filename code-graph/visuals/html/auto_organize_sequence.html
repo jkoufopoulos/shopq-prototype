@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task-Flow: Auto-Organize - MailQ</title>
+    <title>Task-Flow: Auto-Organize - ShopQ</title>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({
@@ -490,15 +490,15 @@ sequenceDiagram
         Backend-->>Worker: Classification results
         Worker->>Gmail: Apply labels & archive
         Worker->>Store: Update cache + telemetry
-        Worker->>Store: Set mailq_digest_pending=true
+        Worker->>Store: Set shopq_digest_pending=true
         par Digest Trigger
             Worker->>Digest: generateAndSendSummaryEmail()
-            Digest->>Gmail: Send MailQ digest
+            Digest->>Gmail: Send ShopQ digest
         end
     else Inbox empty
         Worker->>Store: Clear digest pending flag
     end
-    Worker->>Store: Update mailq_last_auto_organize_at
+    Worker->>Store: Update shopq_last_auto_organize_at
                 </pre>
             </div>
         </div>
@@ -519,7 +519,7 @@ sequenceDiagram
                 <span class="step-number">1</span>
                 <div class="step-content">
                     <div class="step-title">Alarm Fires</div>
-                    <div class="step-description">Chrome MV3 alarm triggers based on configured interval (mailq_auto_organize_settings.intervalMinutes).</div>
+                    <div class="step-description">Chrome MV3 alarm triggers based on configured interval (shopq_auto_organize_settings.intervalMinutes).</div>
                 </div>
             </div>
             <div class="step-item" data-step="2" onclick="highlightStep(2)">
@@ -554,7 +554,7 @@ sequenceDiagram
                 <span class="step-number">6</span>
                 <div class="step-content">
                     <div class="step-title">Trigger Digest</div>
-                    <div class="step-description">Set mailq_digest_pending=true. When user opens Gmail, digest will be generated.</div>
+                    <div class="step-description">Set shopq_digest_pending=true. When user opens Gmail, digest will be generated.</div>
                 </div>
             </div>
             <div class="step-item" data-step="7" onclick="highlightStep(7)">
@@ -568,13 +568,13 @@ sequenceDiagram
                 <span class="step-number">8</span>
                 <div class="step-content">
                     <div class="step-title">Update Timestamp</div>
-                    <div class="step-description">Update mailq_last_auto_organize_at in Chrome storage. Clear digest pending flag.</div>
+                    <div class="step-description">Update shopq_last_auto_organize_at in Chrome storage. Clear digest pending flag.</div>
                 </div>
             </div>
     </div>
 
     <div class="footer">
-        <p>MailQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
+        <p>ShopQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
     </div>
 
     <script>
@@ -600,7 +600,7 @@ sequenceDiagram
 
 
         // Context Drawer Functionality
-        const executionSteps = [{"number": 1, "title": "Chrome \u2192 Background", "description": "Chrome \u2192 Background: Alarm fired (interval)."}, {"number": 2, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Record session start."}, {"number": 3, "title": "Background \u2192 Background", "description": "Background GetAutoOrganizeSettings()."}, {"number": 4, "title": "Background \u2192 Gmail", "description": "Background \u2192 Gmail: Fetch unlabeled threads."}, {"number": 5, "title": "Background \u2192 FastAPI", "description": "Background sends a batch request to FastAPI for processing."}, {"number": 6, "title": "FastAPI \u2192 FastAPI", "description": "FastAPI Parse \u2192 Classify \u2192 Map labels."}, {"number": 7, "title": "FastAPI \u2192 Background", "description": "FastAPI responds with classification results."}, {"number": 8, "title": "Background \u2192 Gmail", "description": "Background applies the classification labels and archives the emails."}, {"number": 9, "title": "Background \u2192 Chrome", "description": "Background updates the cache with results for 24-hour reuse."}, {"number": 10, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Set mailq_digest_pending=true."}, {"number": 11, "title": "Background \u2192 Summary", "description": "Background \u2192 Summary: GenerateAndSendSummaryEmail()."}, {"number": 12, "title": "Summary \u2192 Gmail", "description": "Summary \u2192 Gmail: Send MailQ digest."}, {"number": 13, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Clear digest pending flag."}, {"number": 14, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Update mailq_last_auto_organize_at."}];
+        const executionSteps = [{"number": 1, "title": "Chrome \u2192 Background", "description": "Chrome \u2192 Background: Alarm fired (interval)."}, {"number": 2, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Record session start."}, {"number": 3, "title": "Background \u2192 Background", "description": "Background GetAutoOrganizeSettings()."}, {"number": 4, "title": "Background \u2192 Gmail", "description": "Background \u2192 Gmail: Fetch unlabeled threads."}, {"number": 5, "title": "Background \u2192 FastAPI", "description": "Background sends a batch request to FastAPI for processing."}, {"number": 6, "title": "FastAPI \u2192 FastAPI", "description": "FastAPI Parse \u2192 Classify \u2192 Map labels."}, {"number": 7, "title": "FastAPI \u2192 Background", "description": "FastAPI responds with classification results."}, {"number": 8, "title": "Background \u2192 Gmail", "description": "Background applies the classification labels and archives the emails."}, {"number": 9, "title": "Background \u2192 Chrome", "description": "Background updates the cache with results for 24-hour reuse."}, {"number": 10, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Set shopq_digest_pending=true."}, {"number": 11, "title": "Background \u2192 Summary", "description": "Background \u2192 Summary: GenerateAndSendSummaryEmail()."}, {"number": 12, "title": "Summary \u2192 Gmail", "description": "Summary \u2192 Gmail: Send ShopQ digest."}, {"number": 13, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Clear digest pending flag."}, {"number": 14, "title": "Background \u2192 Chrome", "description": "Background \u2192 Chrome: Update shopq_last_auto_organize_at."}];
         let drawerOpen = false;
 
         function toggleDrawer() {

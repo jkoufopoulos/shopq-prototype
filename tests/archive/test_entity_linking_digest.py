@@ -10,12 +10,12 @@ Verifies that all entities in the digest have proper hyperlinks.
 import re
 from datetime import datetime
 
-from mailq.classification.models import (
+from shopq.classification.models import (
     DeadlineEntity,
     EventEntity,
     NotificationEntity,
 )
-from mailq.digest.card_renderer import CardRenderer
+from shopq.digest.card_renderer import CardRenderer
 
 
 class TestEntityLinkingInDigest:
@@ -31,7 +31,7 @@ class TestEntityLinkingInDigest:
             ("PayPal is refunding you $49.28", "PayPal"),
             ("Bank of America wants you to review trending scams", "Bank of America"),
             (
-                "Double-check if you authorized MailQ's access to your Google Account",
+                "Double-check if you authorized ShopQ's access to your Google Account",
                 "Google Account",
             ),
             ("Your AutoPay is set for tomorrow", "AutoPay"),
@@ -220,4 +220,4 @@ class TestEntityNameExtraction:
             assert extracted in message, "Extracted name should appear in message"
 
 
-# Run with: pytest mailq/tests/test_entity_linking_digest.py -v -s
+# Run with: pytest shopq/tests/test_entity_linking_digest.py -v -s

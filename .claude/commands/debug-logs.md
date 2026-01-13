@@ -10,7 +10,7 @@ Fetch the last 2 hours of Cloud Run logs from production, focusing on:
 5. Confidence scores and reasoning
 
 Use gcloud to fetch logs from:
-- Service: mailq-api (production environment)
+- Service: shopq-api (production environment)
 - Project: mailq-467118
 - Time range: last 2 hours
 - Focus on logs containing: [Importance], [Entity], [Weather], [Classification], [Verifier], ERROR, WARNING

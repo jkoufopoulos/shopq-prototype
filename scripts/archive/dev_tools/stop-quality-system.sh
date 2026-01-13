@@ -1,10 +1,10 @@
 #!/bin/bash
-# Stop MailQ Quality Monitor
+# Stop ShopQ Quality Monitor
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MONITOR_PID_FILE="$SCRIPT_DIR/quality-monitor/.monitor.pid"
 
-echo "🛑 Stopping MailQ Quality Monitor"
+echo "🛑 Stopping ShopQ Quality Monitor"
 echo "=================================="
 echo ""
 

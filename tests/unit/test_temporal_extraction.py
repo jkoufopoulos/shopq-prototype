@@ -7,7 +7,7 @@ entity patterns, and temporal decay rules.
 
 from datetime import UTC, datetime
 
-from mailq.digest.temporal import apply_temporal_decay, extract_temporal_context
+from shopq.digest.temporal import apply_temporal_decay, extract_temporal_context
 
 
 def test_extract_google_calendar_event():

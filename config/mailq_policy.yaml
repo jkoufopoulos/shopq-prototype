@@ -1,4 +1,4 @@
-# MailQ Runtime Policy Configuration
+# ShopQ Runtime Policy Configuration
 # Runtime knobs for classification, verification, and quality monitoring.
 # These values are referenced from code and documentation.
 # For behavioral constraints (coverage %, diff size, workflow), see /claude.md.

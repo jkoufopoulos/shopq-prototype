@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from mailq.classification.temporal import (
+from shopq.classification.temporal import (
     deterministic_temporal_updownrank,
     get_digest_section,
     resolve_temporal_importance,

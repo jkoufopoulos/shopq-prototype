@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from mailq.utils.versioning import (
+from shopq.utils.versioning import (
     MODEL_NAME,
     MODEL_VERSION,
     PROMPT_VERSION,
@@ -56,7 +56,7 @@ def test_format_version_string():
 
 def test_confidence_logger_includes_versions():
     """ConfidenceLogger.log_classification persists version metadata"""
-    from mailq.runtime.thresholds import ConfidenceLogger
+    from shopq.runtime.thresholds import ConfidenceLogger
 
     logger = ConfidenceLogger()
 
@@ -84,7 +84,7 @@ def test_confidence_logger_includes_versions():
     )
 
     # Verify versions were logged by querying recent logs
-    from mailq.infrastructure.database import get_db_connection
+    from shopq.infrastructure.database import get_db_connection
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -110,13 +110,13 @@ def test_confidence_logger_includes_versions():
 
 def test_classifier_output_includes_versions():
     """VertexGeminiClassifier.classify output includes version metadata"""
-    from mailq.classification.vertex_gemini_classifier import (
+    from shopq.classification.vertex_gemini_classifier import (
         MODEL_NAME as CLASSIFIER_MODEL_NAME,
     )
-    from mailq.classification.vertex_gemini_classifier import (
+    from shopq.classification.vertex_gemini_classifier import (
         MODEL_VERSION as CLASSIFIER_MODEL_VERSION,
     )
-    from mailq.classification.vertex_gemini_classifier import (
+    from shopq.classification.vertex_gemini_classifier import (
         PROMPT_VERSION as CLASSIFIER_PROMPT_VERSION,
     )
 
@@ -131,7 +131,7 @@ def test_classifier_output_includes_versions():
 
 def test_version_metadata_in_contract():
     """ClassificationContract requires version fields"""
-    from mailq.storage.classification import ClassificationContract
+    from shopq.storage.classification import ClassificationContract
 
     # Verify schema has version fields
     schema_fields = ClassificationContract.model_fields

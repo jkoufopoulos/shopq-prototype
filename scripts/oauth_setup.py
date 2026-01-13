@@ -9,16 +9,16 @@ Usage:
     python scripts/oauth_setup.py --revoke           # Revoke credentials
 
 Requirements:
-    - MAILQ_ENCRYPTION_KEY environment variable must be set
+    - SHOPQ_ENCRYPTION_KEY environment variable must be set
     - credentials/credentials.json with OAuth client secrets must exist
-    - Database must be initialized (mailq/data/mailq.db)
+    - Database must be initialized (shopq/data/shopq.db)
 
 Example:
     # Generate encryption key first
     python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
     # Set encryption key
-    export MAILQ_ENCRYPTION_KEY="your-key-here"
+    export SHOPQ_ENCRYPTION_KEY="your-key-here"
 
     # Run setup
     python scripts/oauth_setup.py
@@ -34,15 +34,15 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from mailq.gmail.oauth import GmailOAuthService
-from mailq.infrastructure.database import init_database
-from mailq.storage.user_credentials_repository import UserCredentialsRepository
+from shopq.gmail.oauth import GmailOAuthService
+from shopq.infrastructure.database import init_database
+from shopq.storage.user_credentials_repository import UserCredentialsRepository
 
 
 def print_banner():
     """Print welcome banner"""
     print("=" * 60)
-    print("          MailQ - Gmail OAuth Setup")
+    print("          ShopQ - Gmail OAuth Setup")
     print("=" * 60)
     print()
 
@@ -57,20 +57,20 @@ def check_prerequisites() -> tuple[bool, list[str]]:
     errors = []
 
     # Check encryption key
-    if not os.getenv("MAILQ_ENCRYPTION_KEY"):
+    if not os.getenv("SHOPQ_ENCRYPTION_KEY"):
         errors.append(
-            "❌ MAILQ_ENCRYPTION_KEY environment variable not set.\n"
+            "❌ SHOPQ_ENCRYPTION_KEY environment variable not set.\n"
             "   Generate one with:\n"
             '   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )
 
     # Check database
-    from mailq.infrastructure.database import DB_PATH
+    from shopq.infrastructure.database import DB_PATH
 
     if not DB_PATH.exists():
         errors.append(
             f"❌ Database not found at {DB_PATH}\n"
-            "   Run: python -c 'from mailq.infrastructure.database import init_database; init_database()'"
+            "   Run: python -c 'from shopq.infrastructure.database import init_database; init_database()'"
         )
 
     # Check client secrets
@@ -270,7 +270,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Setup Gmail OAuth credentials for MailQ",
+        description="Setup Gmail OAuth credentials for ShopQ",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

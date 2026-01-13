@@ -157,12 +157,12 @@ def add_side_effects_doc(filepath: Path, dry_run: bool = True) -> tuple[int, lis
 
 def main():
     """Find and document pure functions."""
-    mailq_dir = Path("mailq")
+    shopq_dir = Path("mailq")
 
     total_pure = 0
     all_updates = {}
 
-    for py_file in mailq_dir.rglob("*.py"):
+    for py_file in shopq_dir.rglob("*.py"):
         if py_file.name == "__init__.py":
             continue
 

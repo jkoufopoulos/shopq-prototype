@@ -1,6 +1,6 @@
 # Interactive HTML Diagram Viewer
 
-Beautiful, interactive HTML versions of MailQ's architecture diagrams.
+Beautiful, interactive HTML versions of ShopQ's architecture diagrams.
 
 ## Features
 

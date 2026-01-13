@@ -2,7 +2,7 @@
 """
 Pull emails from Gmail API to supplement golden dataset.
 
-Fetches emails with MailQ labels, deduplicates against existing dataset,
+Fetches emails with ShopQ labels, deduplicates against existing dataset,
 and extracts fields needed for Phase 0 validation.
 """
 
@@ -92,17 +92,17 @@ def get_gmail_service():
 
 
 def map_labels_to_importance(labels: list) -> str:
-    """Map Gmail labels to MailQ importance."""
+    """Map Gmail labels to ShopQ importance."""
     label_lower = [label.lower() for label in labels]
 
-    # Check for MailQ labels
-    if any("mailq/critical" in label for label in label_lower) or any(
-        "mailq/today" in label for label in label_lower
+    # Check for ShopQ labels
+    if any("shopq/critical" in label for label in label_lower) or any(
+        "shopq/today" in label for label in label_lower
     ):
         return "critical"
-    if any("mailq/coming up" in label for label in label_lower):
+    if any("shopq/coming up" in label for label in label_lower):
         return "time_sensitive"
-    if any("mailq/worth knowing" in label for label in label_lower):
+    if any("shopq/worth knowing" in label for label in label_lower):
         return "routine"
 
     return None
@@ -122,15 +122,15 @@ def get_existing_message_ids(dataset_path: Path) -> set[str]:
 
 
 def fetch_gmail_emails(service, max_emails: int, exclude_ids: set[str]):
-    """Fetch emails from Gmail with MailQ labels."""
+    """Fetch emails from Gmail with ShopQ labels."""
     emails = []
 
-    # Query for emails with MailQ labels
+    # Query for emails with ShopQ labels
     queries = [
-        "label:MailQ/Critical",
-        "label:MailQ/Today",
-        'label:"MailQ/Coming Up"',
-        'label:"MailQ/Worth Knowing"',
+        "label:ShopQ/Critical",
+        "label:ShopQ/Today",
+        'label:"ShopQ/Coming Up"',
+        'label:"ShopQ/Worth Knowing"',
     ]
 
     seen_ids = set()

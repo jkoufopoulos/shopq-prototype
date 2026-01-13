@@ -10,8 +10,8 @@ Tests validation logic for:
 import pytest
 from pydantic import ValidationError
 
-from mailq.api.app import SummaryRequest, VerifyRequest
-from mailq.api.routes.feedback import FeedbackInput
+from shopq.api.app import SummaryRequest, VerifyRequest
+from shopq.api.routes.feedback import FeedbackInput
 
 
 class TestVerifyRequestValidation:

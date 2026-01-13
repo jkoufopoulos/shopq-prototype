@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MailQ Codebase Summary</title>
+<title>ShopQ Codebase Summary</title>
 <style>
 body {
   font-family: sans-serif;
@@ -39,11 +39,11 @@ h3 {
 
 <h2>1. WHAT THIS SYSTEM DOES</h2>
 
-<p>MailQ is an email classification system.  It automatically sorts emails into categories (like "Finance" or "Social") and can apply Gmail labels accordingly. It also learns from user feedback to improve its accuracy.</p>
+<p>ShopQ is an email classification system.  It automatically sorts emails into categories (like "Finance" or "Social") and can apply Gmail labels accordingly. It also learns from user feedback to improve its accuracy.</p>
 
 <h2>2. HOW IT WORKS</h2>
 
-<p>MailQ uses a multi-layered approach to classify emails:</p>
+<p>ShopQ uses a multi-layered approach to classify emails:</p>
 
 <ul>
     <li><b>Email Source:</b> The system gets emails from Gmail using the Gmail API. This is handled by Javascript code in the Chrome Extension.</li>
@@ -59,27 +59,27 @@ h3 {
 
 <ul class="file-list">
     <li>
-        <span class="file-name">mailq/api.py</span>
+        <span class="file-name">shopq/api.py</span>
         <span class="file-description"> - The main FastAPI server. Handles API requests from the extension and orchestrates classification.</span>
         <span class="file-description"> - Matters because it's the entry point for email classification requests and where you'll configure the API.</span>
     </li>
     <li>
-        <span class="file-name">mailq/memory_classifier.py</span>
+        <span class="file-name">shopq/memory_classifier.py</span>
         <span class="file-description"> - Combines the rules engine and the AI model for classification.</span>
         <span class="file-description"> - Matters because it decides which classification method to use and manages the overall classification process.</span>
     </li>
     <li>
-        <span class="file-name">mailq/rules_engine.py</span>
+        <span class="file-name">shopq/rules_engine.py</span>
         <span class="file-description"> - Implements the rules-based classification system.</span>
         <span class="file-description"> - Matters because it provides a fast and accurate way to classify emails based on known patterns.</span>
     </li>
     <li>
-        <span class="file-name">mailq/vertex_gemini_classifier.py</span>
+        <span class="file-name">shopq/vertex_gemini_classifier.py</span>
         <span class="file-description"> - Implements the AI-powered classification using Google's Gemini model.</span>
         <span class="file-description"> - Matters because it provides a more sophisticated way to classify emails when the rules engine can't.</span>
     </li>
     <li>
-        <span class="file-name">mailq/feedback_manager.py</span>
+        <span class="file-name">shopq/feedback_manager.py</span>
         <span class="file-description"> - Manages user feedback and learns from it to improve classification accuracy.</span>
         <span class="file-description"> - Matters because it allows the system to adapt to user preferences and improve over time.</span>
     </li>
@@ -101,19 +101,19 @@ h3 {
 <ul>
     <li>
         <b>Adding a new email type:</b>
-        Modify `mailq/config/__init__.py` to define the new email type in the classification schema. Update `mailq/vertex_gemini_classifier.py` and potentially `mailq/rules_engine.py` to handle the new type during classification.
+        Modify `shopq/config/__init__.py` to define the new email type in the classification schema. Update `shopq/vertex_gemini_classifier.py` and potentially `shopq/rules_engine.py` to handle the new type during classification.
     </li>
     <li>
         <b>Changing the AI model:</b>
-        Modify `mailq/vertex_gemini_classifier.py` to use a different Gemini model or API endpoint. You might also need to adjust the prompt or parsing logic.
+        Modify `shopq/vertex_gemini_classifier.py` to use a different Gemini model or API endpoint. You might also need to adjust the prompt or parsing logic.
     </li>
     <li>
         <b>Modifying label formats:</b>
-        Modify `mailq/mapper.py` to change how classifications are mapped to Gmail labels.
+        Modify `shopq/mapper.py` to change how classifications are mapped to Gmail labels.
     </li>
     <li>
         <b>Adding new classification domains:</b>
-        Modify the database schema in `mailq/feedback_manager.py` and `mailq/rules_engine.py` to accommodate the new domains.  Update the UI to collect feedback for these new domains. Also, modify `mailq/vertex_gemini_classifier.py` and potentially `mailq/rules_engine.py` to handle classifications in these domains. Modify `mailq/api.py` and `mailq/api_organize.py` if needed.
+        Modify the database schema in `shopq/feedback_manager.py` and `shopq/rules_engine.py` to accommodate the new domains.  Update the UI to collect feedback for these new domains. Also, modify `shopq/vertex_gemini_classifier.py` and potentially `shopq/rules_engine.py` to handle classifications in these domains. Modify `shopq/api.py` and `shopq/api_organize.py` if needed.
     </li>
 </ul>
 </div>

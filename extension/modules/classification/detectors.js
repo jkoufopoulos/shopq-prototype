@@ -13,7 +13,7 @@
 
 /**
  * Compute client_label from type and importance.
- * Must match backend logic in mailq/storage/classification.py compute_client_label()
+ * Must match backend logic in shopq/storage/classification.py compute_client_label()
  *
  * Mapping Rules (in priority order):
  * 1. type=receipt → "receipts"

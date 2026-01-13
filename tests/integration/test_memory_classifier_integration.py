@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from mailq.classification.memory_classifier import MemoryClassifier
+from shopq.classification.memory_classifier import MemoryClassifier
 
 
 class TestMemoryClassifierTypeMapperIntegration:
@@ -35,7 +35,7 @@ class TestMemoryClassifierTypeMapperIntegration:
         assert result["decider"] == "type_mapper"
 
         # New 4-label system: events → everything-else (unless critical importance)
-        assert "MailQ-Everything-Else" in result["gmail_labels"]
+        assert "ShopQ-Everything-Else" in result["gmail_labels"]
 
         # Reason should mention type mapper
         assert "type_mapper" in result["reason"]
@@ -59,7 +59,7 @@ class TestMemoryClassifierTypeMapperIntegration:
         assert result["type"] == "event"
         assert result["decider"] == "type_mapper"
         # New 4-label system: events → everything-else
-        assert "MailQ-Everything-Else" in result["gmail_labels"]
+        assert "ShopQ-Everything-Else" in result["gmail_labels"]
 
     def test_google_meet_link_triggers_type_mapper(self):
         """

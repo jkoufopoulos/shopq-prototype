@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "MailQ",
+  "name": "ShopQ",
   "version": "1.0.15",
   "description": "AI-powered email organization for Gmail",
 
@@ -20,7 +20,7 @@
     "https://www.googleapis.com/gmail/*",
     "https://www.googleapis.com/oauth2/*",
     "https://people.googleapis.com/*",
-    "https://mailq-api-488078904670.us-central1.run.app/*",
+    "https://shopq-api-488078904670.us-central1.run.app/*",
     "https://ipapi.co/*",
     "https://*.inboxsdk.com/*"
   ],
@@ -39,7 +39,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "MailQ",
+    "default_title": "ShopQ",
     "default_popup": "popup.html"
   },
 

@@ -34,10 +34,10 @@ open code-graph/visuals/html/index.html
 ## What Gets Updated
 
 When you run `quick_regen.sh`:
-1. Scans `mailq/*.py` and `extension/*.js` files
+1. Scans `shopq/*.py` and `extension/*.js` files
 2. Regenerates 4 Mermaid diagrams
 3. Creates interactive HTML versions
-4. **NEW**: Injects MailQ-specific context from `MAILQ_REFERENCE.md` into each diagram
+4. **NEW**: Injects ShopQ-specific context from `SHOPQ_REFERENCE.md` into each diagram
 
 ## Features
 
@@ -52,7 +52,7 @@ Each interactive HTML diagram now includes a **context-aware info panel** with:
 
 **How to use:**
 - Click the **"📚 Context"** button on any diagram page
-- Info panel slides in from the right with relevant MailQ details
+- Info panel slides in from the right with relevant ShopQ details
 - Press **ESC** or click **✕** to close
 - Context automatically updates when you regenerate diagrams
 
@@ -60,7 +60,7 @@ Each interactive HTML diagram now includes a **context-aware info panel** with:
 
 Diagrams auto-regenerate on git commit via `.git/hooks/post-commit`
 
-All context is pulled dynamically from `MAILQ_REFERENCE.md`, so your diagrams always reflect the latest system information.
+All context is pulled dynamically from `SHOPQ_REFERENCE.md`, so your diagrams always reflect the latest system information.
 
 ## Archive
 

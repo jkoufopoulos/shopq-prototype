@@ -496,7 +496,7 @@ async function classifyEmails(emails) {
           relationship_conf: 0,
           decider: 'fallback',
           reason: 'Phase 1 mapping error - no classification found',
-          labels: ['MailQ/Everything-Else']
+          labels: ['ShopQ/Everything-Else']
         };
       }
 
@@ -606,7 +606,7 @@ function deduplicateBySender(emails) {
  * Call the classification API
  */
 async function callClassifierAPI(emails) {
-  const url = `${CONFIG.MAILQ_API_URL}${CONFIG.ENDPOINTS.CLASSIFY}`;
+  const url = `${CONFIG.SHOPQ_API_URL}${CONFIG.ENDPOINTS.CLASSIFY}`;
 
   console.log('🌐 classifier.request', {
     url: redactForLog(url),

@@ -1,4 +1,4 @@
-# MailQ - AI-Powered Gmail Assistant
+# ShopQ - AI-Powered Gmail Assistant
 
 **Privacy-first email classification and digest generation for Gmail**
 
@@ -8,9 +8,9 @@
 
 ---
 
-## What is MailQ?
+## What is ShopQ?
 
-MailQ is an AI-powered Gmail assistant that automatically organizes your inbox and generates glanceable daily email digests. It uses a hybrid classification system combining deterministic rules with Gemini LLM fallback to achieve high precision while keeping costs low.
+ShopQ is an AI-powered Gmail assistant that automatically organizes your inbox and generates glanceable daily email digests. It uses a hybrid classification system combining deterministic rules with Gemini LLM fallback to achieve high precision while keeping costs low.
 
 **Key Features:**
 - 🎯 **Smart Classification** - Rules engine + Gemini LLM with two-pass verification
@@ -44,7 +44,7 @@ cp .env.example .env
 nano .env  # Add your GOOGLE_API_KEY
 
 # Run backend
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # Load Chrome extension
 # 1. Open chrome://extensions/
@@ -57,7 +57,7 @@ uvicorn mailq.api:app --reload
 ### For AI Assistants (Claude, Cursor, etc.)
 
 Start with these files for full context:
-1. **[MAILQ_REFERENCE.md](MAILQ_REFERENCE.md)** - Complete system reference and architecture
+1. **[SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md)** - Complete system reference and architecture
 2. **[claude.md](claude.md)** - Development guardrails and workflows
 3. **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed technical design
 
@@ -68,7 +68,7 @@ Start with these files for full context:
 ### Essential Reading
 - **[INDEX.md](INDEX.md)** - 📚 Complete documentation map
 - **[QUICKSTART.md](QUICKSTART.md)** - 🚀 Setup, running, and common tasks
-- **[MAILQ_REFERENCE.md](MAILQ_REFERENCE.md)** - 📖 AI assistant guide and project overview
+- **[SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md)** - 📖 AI assistant guide and project overview
 - **[ROADMAP.md](ROADMAP.md)** - 🗺️ Feature roadmap and development status
 
 ### Technical Documentation
@@ -80,7 +80,7 @@ Start with these files for full context:
 ### Development
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development conventions and changelog
 - **[claude.md](claude.md)** - AI pair-programming guardrails
-- **[config/mailq_policy.yaml](config/mailq_policy.yaml)** - Runtime configuration
+- **[config/shopq_policy.yaml](config/shopq_policy.yaml)** - Runtime configuration
 
 ### Visual Documentation
 - **[code-graph/](code-graph/)** - Auto-generated system diagrams
@@ -92,7 +92,7 @@ Start with these files for full context:
 
 ```
 mailq-prototype/
-├── mailq/                    # Backend (Python/FastAPI)
+├── shopq/                    # Backend (Python/FastAPI)
 │   ├── api.py                # Main API entry point
 │   ├── digest/               # Digest generation pipeline
 │   ├── bridge/               # Classification bridge components
@@ -140,7 +140,7 @@ Emails → Stage 1: Importance Classification (CRITICAL/TIME_SENSITIVE/ROUTINE/N
 
 ### Database Policy
 
-MailQ uses **ONE central SQLite database**: `mailq/data/mailq.db`
+ShopQ uses **ONE central SQLite database**: `shopq/data/shopq.db`
 
 - All tables use `user_id` for multi-tenancy
 - Connection pooling for performance
@@ -169,7 +169,7 @@ ANTHROPIC_API_KEY=sk-ant-...          # For automated quality analysis
 GITHUB_TOKEN=ghp_...                  # For creating quality issues
 ```
 
-See [MAILQ_REFERENCE.md](MAILQ_REFERENCE.md) for complete configuration reference.
+See [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md) for complete configuration reference.
 
 ---
 
@@ -271,4 +271,4 @@ Proprietary - All rights reserved
 
 **For complete documentation, start with [INDEX.md](INDEX.md) or [QUICKSTART.md](QUICKSTART.md)**
 
-**For AI assistants, read [MAILQ_REFERENCE.md](MAILQ_REFERENCE.md) first**
+**For AI assistants, read [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md) first**

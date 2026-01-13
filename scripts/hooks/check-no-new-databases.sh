@@ -14,8 +14,8 @@ fi
 
 # Whitelist: Allowed database files (central database + test database)
 ALLOWED_DBS=(
-    "mailq/data/mailq.db"
-    "mailq/data/mailq_test.db"
+    "shopq/data/shopq.db"
+    "shopq/data/shopq_test.db"
 )
 
 # Check if any staged .db file is NOT in whitelist
@@ -41,15 +41,15 @@ if [ $VIOLATION -eq 1 ]; then
     echo "DATABASE POLICY VIOLATION"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "MailQ uses ONE SQLite database: mailq/data/mailq.db"
+    echo "ShopQ uses ONE SQLite database: shopq/data/shopq.db"
     echo ""
     echo "Creating new .db files is FORBIDDEN without architectural review."
     echo "See CLAUDE.md section 8 (Database Policy) for details."
     echo ""
     echo "What to do instead:"
-    echo "  1. Add your tables to mailq/data/mailq.db"
-    echo "  2. Use mailq/config/database.py::get_db_connection()"
-    echo "  3. Update mailq/config/database.py::init_database() with your schema"
+    echo "  1. Add your tables to shopq/data/shopq.db"
+    echo "  2. Use shopq/config/database.py::get_db_connection()"
+    echo "  3. Update shopq/config/database.py::init_database() with your schema"
     echo ""
     echo "If you believe this is a legitimate new database:"
     echo "  1. Document the architectural justification"

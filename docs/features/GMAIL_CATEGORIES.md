@@ -21,18 +21,18 @@ Updated query in `extension/modules/gmail.js`:
 
 **Before:**
 ```
-in:inbox -label:MailQ/*
+in:inbox -label:ShopQ/*
 ```
 
 **After:**
 ```
-(in:inbox OR category:updates OR category:promotions OR category:social OR category:forums) -in:trash -in:spam -label:MailQ/*
+(in:inbox OR category:updates OR category:promotions OR category:social OR category:forums) -in:trash -in:spam -label:ShopQ/*
 ```
 
 This ensures we capture:
 1. Primary inbox emails (have `INBOX` label)
 2. Category tab emails (have `CATEGORY_*` labels)
-3. Exclude trash, spam, and already-labeled MailQ emails
+3. Exclude trash, spam, and already-labeled ShopQ emails
 
 ## Gmail Category Documentation
 - Primary: Has `INBOX` label, no category label
@@ -42,4 +42,4 @@ This ensures we capture:
 - Forums: Has `CATEGORY_FORUMS`, no `INBOX` label
 
 ## Impact
-Without this fix, MailQ would only organize emails in the Primary tab, missing potentially 50%+ of inbox emails that are in category tabs.
+Without this fix, ShopQ would only organize emails in the Primary tab, missing potentially 50%+ of inbox emails that are in category tabs.

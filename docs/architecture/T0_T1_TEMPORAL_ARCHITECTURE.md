@@ -2,13 +2,13 @@
 
 **Status:** ACTIVE in production (as of Nov 2025)
 **Last Updated:** Nov 30, 2025
-**Owner:** MailQ Core Team
+**Owner:** ShopQ Core Team
 
 > **Canonical Reference**: See [T0_T1_IMPORTANCE_CLASSIFICATION.md](../features/T0_T1_IMPORTANCE_CLASSIFICATION.md) for the definitive T0/T1 terminology and rules.
 
 ## Overview
 
-MailQ uses a **two-stage temporal classification system** to separate **intrinsic email properties** (T0) from **time-based relevance** (T1).
+ShopQ uses a **two-stage temporal classification system** to separate **intrinsic email properties** (T0) from **time-based relevance** (T1).
 
 ## Terminology Clarification
 
@@ -99,7 +99,7 @@ T0 (Importance)             T1 (Digest Section)
 
 ### 1. T0 = Intrinsic Importance (What It IS)
 
-**File:** `mailq/classification/memory_classifier.py`
+**File:** `shopq/classification/memory_classifier.py`
 **Output:** `importance` field in classification result
 
 **Values:**
@@ -126,7 +126,7 @@ T0 (Importance)             T1 (Digest Section)
 
 ### 2. T1 = Time-Based Digest Sections (Where to Show It)
 
-**File:** `mailq/digest/temporal.py`
+**File:** `shopq/digest/temporal.py`
 **Function:** `apply_temporal_decay(t0_importance, temporal_ctx, now)`
 
 **Input:** T0 importance (`critical`, `time_sensitive`, `routine`)
@@ -174,7 +174,7 @@ if t0_importance == "routine":
 
 ### Pipeline Stages
 
-**Located:** `mailq/digest/digest_stages_v2.py`
+**Located:** `shopq/digest/digest_stages_v2.py`
 
 ```python
 pipeline = DigestPipeline([
@@ -353,13 +353,13 @@ def test_distant_event_section():
 
 ## References
 
-- **Pipeline Implementation:** `mailq/digest/digest_stages.py` lines 180-290
-- **T0 Implementation:** `mailq/digest/section_assignment_t0.py`
-- **T1 Implementation:** `mailq/digest/temporal.py` lines 402-586
+- **Pipeline Implementation:** `shopq/digest/digest_stages.py` lines 180-290
+- **T0 Implementation:** `shopq/digest/section_assignment_t0.py`
+- **T1 Implementation:** `shopq/digest/temporal.py` lines 402-586
 - **Ground Truth Annotations:** `tests/golden_set/` (T0 labels)
 - **Evaluation Scripts:** `scripts/evaluate_t0_accuracy.py`, `scripts/evaluate_t1_timing.py`
 
 ## Questions?
 
-Contact: MailQ Core Team
+Contact: ShopQ Core Team
 Last reviewed: Nov 25, 2025

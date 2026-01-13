@@ -1,4 +1,4 @@
-# MailQ Database Architecture
+# ShopQ Database Architecture
 
 **Status**: Database Consolidation Complete ✅
 **Last Updated**: 2025-11-12
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-MailQ uses a **single SQLite database** architecture to ensure data consistency, enable cross-domain queries, and prevent database proliferation. All features MUST add tables to the central `mailq/data/mailq.db` database.
+ShopQ uses a **single SQLite database** architecture to ensure data consistency, enable cross-domain queries, and prevent database proliferation. All features MUST add tables to the central `shopq/data/shopq.db` database.
 
 **Policy**: Creating new `.db` files is **FORBIDDEN** without explicit architectural review.
 
@@ -18,10 +18,10 @@ MailQ uses a **single SQLite database** architecture to ensure data consistency,
 
 ### Single Database Rule
 
-**MailQ uses ONE SQLite database: `mailq/data/mailq.db`**
+**ShopQ uses ONE SQLite database: `shopq/data/shopq.db`**
 
 - All new tables MUST be added to this database
-- Scripts MUST connect to central database via `mailq/config/database.py`
+- Scripts MUST connect to central database via `shopq/config/database.py`
 - Creating new `.db` files is FORBIDDEN without architectural review
 - Pre-commit hook enforces this policy (blocks commits with new .db files)
 
@@ -48,7 +48,7 @@ MailQ uses a **single SQLite database** architecture to ensure data consistency,
 ### Central Database (Consolidation Complete ✅)
 
 ```
-mailq/data/mailq.db
+shopq/data/shopq.db
 ├─ Classification
 │  ├─ rules - User classification rules
 │  ├─ pending_rules - Candidate rules from learning
@@ -84,10 +84,10 @@ Quality monitoring keeps its own database to avoid coupling monitoring tools to 
 
 ### How to Connect to Database
 
-All code MUST use the singleton pattern from `mailq/config/database.py`:
+All code MUST use the singleton pattern from `shopq/config/database.py`:
 
 ```python
-from mailq.config.database import get_db_connection, db_transaction
+from shopq.config.database import get_db_connection, db_transaction
 
 # ✅ CORRECT: Read query
 with get_db_connection() as conn:
@@ -145,7 +145,7 @@ CREATE INDEX idx_rules_user_pattern ON rules(user_id, pattern_type, pattern);
 
 When you need to add a table:
 
-1. **Update `mailq/config/database.py::init_database()`**:
+1. **Update `shopq/config/database.py::init_database()`**:
    ```python
    conn.executescript("""
        CREATE TABLE IF NOT EXISTS your_new_table (
@@ -170,7 +170,7 @@ When you need to add a table:
 
 3. **Create migration script** (if production DB exists):
    ```python
-   # mailq/scripts/migrations/YYYYMMDD_add_your_table.py
+   # shopq/scripts/migrations/YYYYMMDD_add_your_table.py
    def migrate():
        with db_transaction() as conn:
            conn.execute("ALTER TABLE ... ADD COLUMN ...")
@@ -187,7 +187,7 @@ When you need to add a table:
 **Goals**: Establish governance and prevent future proliferation
 
 **Completed**:
-- ✅ Database singleton pattern enforced in `mailq/config/database.py`
+- ✅ Database singleton pattern enforced in `shopq/config/database.py`
 - ✅ Policy added to `CLAUDE.md` section 8
 - ✅ Pre-commit hook created: `scripts/hooks/check-no-new-databases.sh`
 - ✅ Hook integrated into `.pre-commit-config.yaml`
@@ -214,8 +214,8 @@ When you need to add a table:
    - Digest code updated to use central connection pool
 
 3. ✅ **Updated all code** to use singleton pattern:
-   - `mailq/email_tracker.py` → uses `get_db_connection()`
-   - `mailq/confidence_logger.py` → uses `get_db_connection()`
+   - `shopq/email_tracker.py` → uses `get_db_connection()`
+   - `shopq/confidence_logger.py` → uses `get_db_connection()`
    - All new code must use `get_db_connection()` (enforced by policy)
 
 4. ✅ **Added automatic initialization**:
@@ -244,7 +244,7 @@ When you need to add a table:
 2. **Create composite indexes**: `(user_id, key_column)`
 3. **Implement tenancy guards**:
    ```python
-   from mailq.tenancy import enforce_tenancy
+   from shopq.tenancy import enforce_tenancy
 
    @enforce_tenancy
    def get_user_rules(user_id: str):
@@ -277,8 +277,8 @@ When you need to add a table:
 **Location**: `scripts/hooks/check-no-new-databases.sh`
 
 **Whitelist**:
-- `mailq/data/mailq.db` (central database)
-- `mailq/data/mailq_test.db` (test database)
+- `shopq/data/shopq.db` (central database)
+- `shopq/data/shopq_test.db` (test database)
 
 **Behavior**: Rejects commits with new `.db` files:
 
@@ -289,23 +289,23 @@ When you need to add a table:
 DATABASE POLICY VIOLATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-MailQ uses ONE SQLite database: mailq/data/mailq.db
+ShopQ uses ONE SQLite database: shopq/data/shopq.db
 
 Creating new .db files is FORBIDDEN without architectural review.
 
 What to do instead:
-  1. Add your tables to mailq/data/mailq.db
-  2. Use mailq/config/database.py::get_db_connection()
-  3. Update mailq/config/database.py::init_database() with your schema
+  1. Add your tables to shopq/data/shopq.db
+  2. Use shopq/config/database.py::get_db_connection()
+  3. Update shopq/config/database.py::init_database() with your schema
 ```
 
 ### CLAUDE.md Policy (Section 8)
 
 ```markdown
-* **Database Policy:** MailQ uses ONE SQLite database: `mailq/data/mailq.db`
-  * All new tables MUST be added to this database via `mailq/config/database.py`
+* **Database Policy:** ShopQ uses ONE SQLite database: `shopq/data/shopq.db`
+  * All new tables MUST be added to this database via `shopq/config/database.py`
   * Creating new `.db` files is **FORBIDDEN** without explicit architectural review
-  * All code MUST use `get_db_connection()` from `mailq/config/database.py`
+  * All code MUST use `get_db_connection()` from `shopq/config/database.py`
   * Scripts MUST connect to central database, not create their own
   * Pre-commit hook will reject commits with new `.db` files
 ```
@@ -317,16 +317,16 @@ What to do instead:
 ### Allowed ✅
 
 ```
-mailq/data/
-├─ mailq.db          ✅ Central database (THE database)
-└─ mailq_test.db     ✅ Test database (isolated from production)
+shopq/data/
+├─ shopq.db          ✅ Central database (THE database)
+└─ shopq_test.db     ✅ Test database (isolated from production)
 ```
 
 ### Forbidden ❌
 
 ```
 ❌ scripts/*/some_feature.db        # Scripts creating own DBs
-❌ mailq/some_module/feature.db     # Modules creating own DBs
+❌ shopq/some_module/feature.db     # Modules creating own DBs
 ❌ data/some_feature_tracking.db    # Feature-specific DBs
 ❌ *.db (anywhere else)             # Any other location
 ```
@@ -379,13 +379,13 @@ mailq/data/
 ### "Database not found" error
 
 ```python
-FileNotFoundError: Database not found: mailq/data/mailq.db
-Run: python mailq/scripts/consolidate_databases.py
+FileNotFoundError: Database not found: shopq/data/shopq.db
+Run: python shopq/scripts/consolidate_databases.py
 ```
 
 **Solution**:
 ```bash
-python -c "from mailq.config.database import init_database; init_database()"
+python -c "from shopq.config.database import init_database; init_database()"
 ```
 
 ### "Database locked" error
@@ -407,7 +407,7 @@ ValueError: Database missing tables: {'your_table'}
 
 **Solution**:
 ```bash
-python -c "from mailq.config.database import init_database; init_database()"
+python -c "from shopq.config.database import init_database; init_database()"
 ```
 
 ---
@@ -417,8 +417,8 @@ python -c "from mailq.config.database import init_database; init_database()"
 - **Root Cause Analysis**: Architecture-advisor report (2025-11-10)
 - **CLAUDE.md Section 8**: Database Policy governance
 - **Pre-commit Hook**: `scripts/hooks/check-no-new-databases.sh`
-- **Connection Pool**: `mailq/config/database.py`
-- **Migration Script**: `mailq/scripts/consolidate_databases.py` (Phase 2)
+- **Connection Pool**: `shopq/config/database.py`
+- **Migration Script**: `shopq/scripts/consolidate_databases.py` (Phase 2)
 
 ---
 

@@ -180,7 +180,7 @@ async function getClientContextEnv() {
  */
 async function generateContextDigestHTML(currentData) {
   try {
-    const apiUrl = CONFIG.MAILQ_API_URL;
+    const apiUrl = CONFIG.SHOPQ_API_URL;
 
     console.log(`🌟 [CONTEXT-DIGEST] Calling ${apiUrl}/api/context-digest`);
     console.log(`🌟 [CONTEXT-DIGEST] Sending ${currentData.length} emails`);
@@ -237,7 +237,7 @@ async function generateContextDigestHTML(currentData) {
  */
 async function displayTrackingReport(sessionId) {
   try {
-    const apiUrl = CONFIG.MAILQ_API_URL;
+    const apiUrl = CONFIG.SHOPQ_API_URL;
     const response = await fetch(`${apiUrl}/api/tracking/session/${sessionId}`);
 
     if (!response.ok) {

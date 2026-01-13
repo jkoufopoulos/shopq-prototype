@@ -73,16 +73,16 @@ sequenceDiagram
 
 | Component | File Path |
 |-----------|-----------|
-| API Route | `mailq/api/routes/digest.py` |
-| Context Builder | `mailq/digest/context_digest.py` |
-| Entity Extractor | `mailq/digest/entity_extractor.py` |
-| Importance Mapper | `mailq/classification/importance_mapping/mapper.py` |
-| Temporal Decay | `mailq/classification/temporal.py` |
-| Section Assignment | `mailq/digest/section_assignment.py` |
-| Narrative Builder | `mailq/digest/narrative.py` |
-| Hybrid Renderer | `mailq/digest/hybrid_digest_renderer.py` |
-| Narrative Verifier | `mailq/digest/narrative_verifier.py` |
-| Template | `mailq/digest/templates/digest_v2.html.j2` |
+| API Route | `shopq/api/routes/digest.py` |
+| Context Builder | `shopq/digest/context_digest.py` |
+| Entity Extractor | `shopq/digest/entity_extractor.py` |
+| Importance Mapper | `shopq/classification/importance_mapping/mapper.py` |
+| Temporal Decay | `shopq/classification/temporal.py` |
+| Section Assignment | `shopq/digest/section_assignment.py` |
+| Narrative Builder | `shopq/digest/narrative.py` |
+| Hybrid Renderer | `shopq/digest/hybrid_digest_renderer.py` |
+| Narrative Verifier | `shopq/digest/narrative_verifier.py` |
+| Template | `shopq/digest/templates/digest_v2.html.j2` |
 
 ## Metrics
 

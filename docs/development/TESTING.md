@@ -1,12 +1,12 @@
-# MailQ Testing Guide
+# ShopQ Testing Guide
 
-Complete guide to testing MailQ classification, digest generation, and Gmail integration.
+Complete guide to testing ShopQ classification, digest generation, and Gmail integration.
 
 ## Quick Start
 
 ```bash
 # 1. Ensure backend is running
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -102,7 +102,7 @@ npm run test:labeling
 **What failure looks like:**
 ```
 ✗ should actually apply labels to Gmail emails
-  Error: Extension logged success but no MailQ labels found in Gmail!
+  Error: Extension logged success but no ShopQ labels found in Gmail!
 ```
 
 #### 3. Gmail Search Test
@@ -167,7 +167,7 @@ Visual test runner with time-travel debugging.
 
 **Prerequisites:**
 1. Close Chrome: `pkill -x "Google Chrome"`
-2. Start backend: `uvicorn mailq.api:app --reload --port 8000`
+2. Start backend: `uvicorn shopq.api:app --reload --port 8000`
 3. Chrome profile at: `~/Library/Application Support/Google/Chrome`
 
 **Change Chrome profile:**
@@ -243,7 +243,7 @@ Comprehensive visual verification of digest generation:
 **Reports:**
 1. `report.json` - Structured test results with all assertions
 2. `summary.md` - Human-readable pass/fail summary
-3. `ANALYSIS_FOR_MAILQ_REFERENCE.md` - Claude-specific root cause analysis
+3. `ANALYSIS_FOR_SHOPQ_REFERENCE.md` - Claude-specific root cause analysis
 
 ### Expectations Checked
 
@@ -291,7 +291,7 @@ featured + orphaned + noise = total_threads
 test-results/
 ├── claude-iterations/
 │   ├── iter-1/
-│   │   ├── ANALYSIS_FOR_MAILQ_REFERENCE.md    ← Claude reads this
+│   │   ├── ANALYSIS_FOR_SHOPQ_REFERENCE.md    ← Claude reads this
 │   │   ├── 01-gmail-loaded.png
 │   │   ├── 02-digest-opened.png
 │   │   ├── digest-content.txt
@@ -333,7 +333,7 @@ Iteration 4:
 
 After automated tests pass, manually verify:
 
-- [ ] Click MailQ button/auto-organize triggers
+- [ ] Click ShopQ button/auto-organize triggers
 - [ ] Labels appear in Gmail UI (not just logs)
 - [ ] Emails are archived from inbox
 - [ ] Multiple emails processed correctly (not just 1)
@@ -358,16 +358,16 @@ cd /Users/justinkoufopoulos/Projects/mailq-prototype
 
 1. Open Gmail in a new tab
 2. Ensure inbox has unlabeled emails
-3. Click MailQ extension icon
+3. Click ShopQ extension icon
 4. Verify emails are organized successfully
 5. Check console for any errors
 
 #### Step 3: Test Label Reuse
 
-1. Note which labels were created (e.g., MailQ-Finance)
+1. Note which labels were created (e.g., ShopQ-Finance)
 2. Delete emails from organized folders
-3. Move them back to inbox, remove all MailQ-* labels
-4. Click MailQ extension icon again
+3. Move them back to inbox, remove all ShopQ-* labels
+4. Click ShopQ extension icon again
 5. Verify it reuses existing labels without 409 errors
 
 #### Step 4: Monitor Console Output
@@ -409,7 +409,7 @@ cd /Users/justinkoufopoulos/Projects/mailq-prototype
 
 **Symptom:**
 ```
-Extension logged success but no MailQ labels found in Gmail!
+Extension logged success but no ShopQ labels found in Gmail!
 Expected: true
 Received: false
 ```
@@ -435,7 +435,7 @@ Gmail search returns 0 results but 10 emails are visible in inbox.
 
 **What's wrong:**
 - Emails visible in inbox UI
-- But search `in:inbox -label:MailQ/*` finds nothing
+- But search `in:inbox -label:ShopQ/*` finds nothing
 - Likely: emails in category tabs (Promotions, Social) don't have INBOX label
 
 **Fix:**
@@ -522,7 +522,7 @@ jobs:
       - name: Start backend
         run: |
           pip install -r requirements.txt
-          uvicorn mailq.api:app &
+          uvicorn shopq.api:app &
           sleep 5
 
       - name: Run E2E tests
@@ -591,7 +591,7 @@ sleep 2
 
 **Fix:**
 ```bash
-uvicorn mailq.api:app --reload --port 8000
+uvicorn shopq.api:app --reload --port 8000
 ```
 
 ### "No unlabeled emails found"
@@ -599,7 +599,7 @@ uvicorn mailq.api:app --reload --port 8000
 **Cause:** All emails already labeled
 
 **Fix:**
-- Remove MailQ labels from some emails manually
+- Remove ShopQ labels from some emails manually
 - Or send yourself new test emails
 
 ### Screenshots Missing
@@ -617,7 +617,7 @@ fs.mkdirSync(debugDir, { recursive: true });
 
 **Fix:**
 ```bash
-uvicorn mailq.api:app --reload --port 8000
+uvicorn shopq.api:app --reload --port 8000
 ```
 
 ---

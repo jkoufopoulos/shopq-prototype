@@ -12,7 +12,7 @@ Tests:
 import os
 from unittest import mock
 
-from mailq.runtime.flags import FeatureFlags, get_feature_flags, is_enabled
+from shopq.runtime.flags import FeatureFlags, get_feature_flags, is_enabled
 
 
 class TestFeatureFlagsBasic:
@@ -166,7 +166,7 @@ class TestSingletonBehavior:
     def test_get_feature_flags_returns_singleton(self):
         """Test that get_feature_flags returns same instance"""
         # Clear singleton for test
-        import mailq.runtime.flags as flags_module
+        import shopq.runtime.flags as flags_module
 
         flags_module._feature_flags = None
 
@@ -179,7 +179,7 @@ class TestSingletonBehavior:
         """Test that is_enabled() convenience function works"""
         with mock.patch.dict(os.environ, {"FORCE_DIGEST_V2": "true"}):
             # Clear singleton for test
-            import mailq.runtime.flags as flags_module
+            import shopq.runtime.flags as flags_module
 
             flags_module._feature_flags = None
 

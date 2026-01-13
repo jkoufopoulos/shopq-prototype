@@ -1,6 +1,6 @@
 # Agent B: Phase 3 - Principles Compliance & Code Quality
 
-**Role**: You are Agent B working in parallel with Agent A on the MailQ codebase.
+**Role**: You are Agent B working in parallel with Agent A on the ShopQ codebase.
 
 **Context**: Agent A has completed the digest pipeline refactor (Phase 1-2). Now we're in Phase 3, focused on:
 - Agent A: Dataset 2 validation and old code removal
@@ -10,7 +10,7 @@
 
 ---
 
-## 🎯 Your Mission: Get MailQ to 46/50 Principles Score
+## 🎯 Your Mission: Get ShopQ to 46/50 Principles Score
 
 **Current Score**: 33/50 (66%) - Grade C+
 **Target Score**: 46/50 (92%) - Grade A
@@ -55,9 +55,9 @@ These are from your original AGENT_B_PROMPT.md - finish them first:
 
 #### ✅ Task 1: Type Hints (Priority 1)
 **Files to complete**:
-- [ ] `mailq/observability.py` - Full type hints
-- [ ] `mailq/email_tracker.py` - Full type hints
-- [ ] `mailq/filters.py` - Type hints only (no refactoring)
+- [ ] `shopq/observability.py` - Full type hints
+- [ ] `shopq/email_tracker.py` - Full type hints
+- [ ] `shopq/filters.py` - Type hints only (no refactoring)
 - [ ] `adapters/storage/checkpoint.py` - Full type hints
 - [ ] `infra/telemetry.py` - Full type hints
 
@@ -72,9 +72,9 @@ def function_name(
 
 #### ✅ Task 2: Document Side Effects (Priority 1)
 **Files to complete**:
-- [ ] `mailq/observability.py` - Add "Side Effects:" to docstrings
-- [ ] `mailq/email_tracker.py` - Add "Side Effects:" to docstrings
-- [ ] `mailq/storage.py` - Add "Side Effects:" to docstrings
+- [ ] `shopq/observability.py` - Add "Side Effects:" to docstrings
+- [ ] `shopq/email_tracker.py` - Add "Side Effects:" to docstrings
+- [ ] `shopq/storage.py` - Add "Side Effects:" to docstrings
 - [ ] `adapters/storage/checkpoint.py` - Add "Side Effects:" to docstrings
 
 **Pattern**:
@@ -98,9 +98,9 @@ def record_classification(email_id: str, classification: str) -> None:
 ```
 
 #### ✅ Task 3: Input Validation (Priority 2)
-- [ ] `mailq/api.py` - Add Pydantic validation to request models
-- [ ] `mailq/api_feedback.py` - Add validation to feedback endpoints
-- [ ] `mailq/api_debug.py` - Add validation to debug endpoints
+- [ ] `shopq/api.py` - Add Pydantic validation to request models
+- [ ] `shopq/api_feedback.py` - Add validation to feedback endpoints
+- [ ] `shopq/api_debug.py` - Add validation to debug endpoints
 
 ---
 
@@ -199,9 +199,9 @@ mypy concepts/temporal_extraction.py --strict
 mypy concepts/section_assignment.py --strict
 
 # Check your assigned files
-mypy mailq/observability.py --strict
-mypy mailq/email_tracker.py --strict
-mypy mailq/filters.py --strict
+mypy shopq/observability.py --strict
+mypy shopq/email_tracker.py --strict
+mypy shopq/filters.py --strict
 mypy adapters/storage/checkpoint.py --strict
 mypy infra/telemetry.py --strict
 ```
@@ -337,11 +337,11 @@ git pull origin main
 git checkout -b feat/agent-b-phase3-typing
 
 # Check current mypy status
-mypy mailq/observability.py --strict
+mypy shopq/observability.py --strict
 mypy concepts/digest_pipeline.py --strict
 
 # Start with smallest file
-code mailq/observability.py
+code shopq/observability.py
 ```
 
 **Day 2 - Type hints**:
@@ -470,7 +470,7 @@ def write_to_database(
 4. **COMMIT frequently** - Small commits are easier to review
 5. **FOCUS on principles** - Your goal is P2 and P3 compliance
 
-**Your success = MailQ gets to 46/50 principles score**
+**Your success = ShopQ gets to 46/50 principles score**
 
 Good luck! 🚀
 

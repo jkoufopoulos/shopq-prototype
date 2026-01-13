@@ -25,7 +25,7 @@ All fixes have been tested and verified working.
 
 **Solution**: Added `threading.Lock()` for all rate limiter operations
 
-**Code Changes** (`mailq/structured_logging.py`):
+**Code Changes** (`shopq/structured_logging.py`):
 ```python
 # In __init__:
 self._rate_limiter_lock = threading.Lock()
@@ -48,7 +48,7 @@ with self._rate_limiter_lock:
 
 **Solution**: Periodic cleanup every 5 minutes, removes entries older than 1 hour
 
-**Code Changes** (`mailq/structured_logging.py`):
+**Code Changes** (`shopq/structured_logging.py`):
 ```python
 # In __init__:
 self._last_cleanup = datetime.now(timezone.utc)
@@ -73,7 +73,7 @@ if (now - self._last_cleanup).total_seconds() > 300:  # 5 minutes
 
 **Solution**: HMAC-SHA256 with per-instance salt (cryptographic hash)
 
-**Code Changes** (`mailq/structured_logging.py`):
+**Code Changes** (`shopq/structured_logging.py`):
 ```python
 # In __init__:
 self._salt = secrets.token_bytes(32)  # 256-bit random salt
@@ -96,7 +96,7 @@ def hash_email_id(self, email_id: str) -> str:
 
 **Solution**: SafeJSONEncoder with fallback handling
 
-**Code Changes** (`mailq/structured_logging.py`):
+**Code Changes** (`shopq/structured_logging.py`):
 ```python
 class SafeJSONEncoder(json.JSONEncoder):
     """JSON encoder that handles common non-serializable types."""
@@ -129,7 +129,7 @@ except Exception as e:
 
 **Solution**: Pre-compile regex patterns as module-level constants
 
-**Code Changes** (`mailq/structured_logging.py`):
+**Code Changes** (`shopq/structured_logging.py`):
 ```python
 # At module level (before EventType class):
 _EMAIL_PATTERN = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
@@ -152,10 +152,10 @@ truncated = _PHONE_PATTERN.sub('[PHONE]', truncated)
 
 **Code Changes** (all modified files):
 
-#### `mailq/vertex_gemini_classifier.py`:
+#### `shopq/vertex_gemini_classifier.py`:
 ```python
 try:
-    from mailq.structured_logging import EventType, get_logger as get_structured_logger
+    from shopq.structured_logging import EventType, get_logger as get_structured_logger
     s_logger = get_structured_logger()
 except Exception as e:
     class NoOpLogger:
@@ -166,10 +166,10 @@ except Exception as e:
     logger.warning(f"Structured logging disabled due to import error: {e}")
 ```
 
-#### `mailq/bridge/mapper.py`:
+#### `shopq/bridge/mapper.py`:
 ```python
 try:
-    from mailq.structured_logging import EventType, get_logger as get_structured_logger
+    from shopq.structured_logging import EventType, get_logger as get_structured_logger
     s_logger = get_structured_logger()
 except Exception as e:
     class NoOpLogger:
@@ -179,10 +179,10 @@ except Exception as e:
     s_logger = NoOpLogger()
 ```
 
-#### `mailq/temporal_enrichment.py`:
+#### `shopq/temporal_enrichment.py`:
 ```python
 try:
-    from mailq.structured_logging import EventType, get_logger as get_structured_logger
+    from shopq.structured_logging import EventType, get_logger as get_structured_logger
     s_logger = get_structured_logger()
 except Exception as e:
     class NoOpLogger:
@@ -191,10 +191,10 @@ except Exception as e:
     s_logger = NoOpLogger()
 ```
 
-#### `mailq/entity_extractor.py`:
+#### `shopq/entity_extractor.py`:
 ```python
 try:
-    from mailq.structured_logging import EventType, get_logger as get_structured_logger
+    from shopq.structured_logging import EventType, get_logger as get_structured_logger
     s_logger = get_structured_logger()
 except Exception as e:
     class NoOpLogger:
@@ -211,7 +211,7 @@ except Exception as e:
 ### Smoke Tests (All Passed ✅)
 
 ```bash
-$ python3 -c "from mailq.structured_logging import StructuredLogger, EventType, SafeJSONEncoder..."
+$ python3 -c "from shopq.structured_logging import StructuredLogger, EventType, SafeJSONEncoder..."
 
 ✅ Test 1: Initialization successful
 ✅ Test 2: HMAC hashing works (hash=1a3737d0302c9cbd)
@@ -224,7 +224,7 @@ $ python3 -c "from mailq.structured_logging import StructuredLogger, EventType, 
 ### Import Fallback Tests (All Passed ✅)
 
 ```bash
-$ python3 -c "from mailq.vertex_gemini_classifier import s_logger..."
+$ python3 -c "from shopq.vertex_gemini_classifier import s_logger..."
 
 Testing vertex_gemini_classifier.py...
   s_logger type: StructuredLogger
@@ -250,7 +250,7 @@ Testing entity_extractor.py...
 ## Files Modified
 
 ### Core Module
-1. **`mailq/structured_logging.py`** (413 lines)
+1. **`shopq/structured_logging.py`** (413 lines)
    - Added thread safety with `threading.Lock()`
    - Added periodic cleanup for rate limiter
    - Changed `hash_email_id()` from static to instance method with HMAC
@@ -259,10 +259,10 @@ Testing entity_extractor.py...
    - Added error handling to `log_event()`
 
 ### Integration Points (Import Fallbacks)
-2. **`mailq/vertex_gemini_classifier.py`** (lines 23-37)
-3. **`mailq/bridge/mapper.py`** (lines 11-23)
-4. **`mailq/temporal_enrichment.py`** (lines 40-51)
-5. **`mailq/entity_extractor.py`** (lines 38-48)
+2. **`shopq/vertex_gemini_classifier.py`** (lines 23-37)
+3. **`shopq/bridge/mapper.py`** (lines 11-23)
+4. **`shopq/temporal_enrichment.py`** (lines 40-51)
+5. **`shopq/entity_extractor.py`** (lines 38-48)
 
 ---
 
@@ -338,5 +338,5 @@ Testing entity_extractor.py...
 
 - [STRUCTURED_LOGGING_COMPLETE.md](./STRUCTURED_LOGGING_COMPLETE.md) - Original implementation
 - [STRUCTURED_LOGGING_RETROFIT_GUIDE.md](./STRUCTURED_LOGGING_RETROFIT_GUIDE.md) - Integration guide
-- `mailq/structured_logging.py` - Core module source code
+- `shopq/structured_logging.py` - Core module source code
 - `extension/modules/structured-logger.js` - JavaScript mirror for extension

@@ -1,6 +1,6 @@
 # Onboarding Trust Copy
 
-**How MailQ handles your email**
+**How ShopQ handles your email**
 
 - Starts **read-only**. You can try the digest without letting us modify anything.
 - We store **message metadata only** (IDs, sender, timestamps, extracted entities) — not your email contents.

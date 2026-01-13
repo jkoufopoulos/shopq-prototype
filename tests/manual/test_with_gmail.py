@@ -19,9 +19,9 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from mailq.classification.memory_classifier import MemoryClassifier
-from mailq.digest.category_manager import CategoryManager
-from mailq.digest.context_digest import ContextDigest
+from shopq.classification.memory_classifier import MemoryClassifier
+from shopq.digest.category_manager import CategoryManager
+from shopq.digest.context_digest import ContextDigest
 
 # Gmail API scopes
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -125,7 +125,7 @@ def fetch_recent_emails(service, max_results: int = 20):
 
 
 def classify_emails(emails):
-    """Classify emails using MailQ classifier"""
+    """Classify emails using ShopQ classifier"""
     print(f"\n🏷️  Classifying {len(emails)} emails...")
 
     classifier = MemoryClassifier(CategoryManager())

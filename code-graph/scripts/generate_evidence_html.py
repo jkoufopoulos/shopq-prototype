@@ -235,7 +235,7 @@ def fetch_component_details_from_git_and_disk(component: str) -> ComponentDetail
     if component.endswith('.js'):
         file_paths = list(PROJECT_ROOT.glob(f"extension/**/{component}"))
     elif component.endswith('.py'):
-        file_paths = list(PROJECT_ROOT.glob(f"mailq/**/{component}"))
+        file_paths = list(PROJECT_ROOT.glob(f"shopq/**/{component}"))
     else:
         return {"error": "Unknown file type"}
 
@@ -328,7 +328,7 @@ def fetch_component_details_from_git_and_disk(component: str) -> ComponentDetail
                 import_pattern = r'^(?:from|import)\s+([a-zA-Z0-9_.]+)'
                 for match in re.finditer(import_pattern, content, re.MULTILINE):
                     module = match.group(1)
-                    if not module.startswith('mailq.'):
+                    if not module.startswith('shopq.'):
                         # SECURITY: Escape module names (unlikely to contain HTML, but defense in depth)
                         details["imports"].append(html.escape(module))
             elif component.endswith('.js'):
@@ -441,11 +441,11 @@ def get_quality_metrics() -> QualityMetrics:
 
     # Check for critical TODOs/FIXMEs in hot components
     try:
-        mailq_path = PROJECT_ROOT / "mailq"
+        shopq_path = PROJECT_ROOT / "mailq"
         extension_path = PROJECT_ROOT / "extension"
 
         # Validate paths exist
-        if not mailq_path.is_dir() or not extension_path.is_dir():
+        if not shopq_path.is_dir() or not extension_path.is_dir():
             metrics["recent_errors"].append({
                 "message": "Required directories not found for TODO scan",
                 "count": 1
@@ -455,7 +455,7 @@ def get_quality_metrics() -> QualityMetrics:
             result = subprocess.run(
                 ["grep", "-r", "-n", "-E", "--include=*.py", "--include=*.js",
                  "(CRITICAL|FIXME|XXX)",
-                 str(mailq_path), str(extension_path)],
+                 str(shopq_path), str(extension_path)],
                 capture_output=True,
                 text=True,
                 cwd=PROJECT_ROOT,

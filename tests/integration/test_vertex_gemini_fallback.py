@@ -8,10 +8,10 @@ passes schema validation.
 import pytest
 
 try:
-    from mailq.classification.vertex_gemini_classifier import VertexGeminiClassifier
-    from mailq.storage.classification import ClassificationContract, get_valid_email_types
+    from shopq.classification.vertex_gemini_classifier import VertexGeminiClassifier
+    from shopq.storage.classification import ClassificationContract, get_valid_email_types
 except ImportError:
-    pytest.skip("MailQ modules not available", allow_module_level=True)
+    pytest.skip("ShopQ modules not available", allow_module_level=True)
 
 
 def test_fallback_result_matches_schema():

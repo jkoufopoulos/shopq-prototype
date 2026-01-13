@@ -1,6 +1,6 @@
 # Golden Dataset Testing Guide
 
-**Purpose**: Test MailQ against 500 labeled emails to catch regressions and drift
+**Purpose**: Test ShopQ against 500 labeled emails to catch regressions and drift
 
 **Last Updated**: 2025-11-10
 
@@ -183,7 +183,7 @@ AssertionError: Found 2 OTP emails in CRITICAL (must be 0)
 
 **What to do**:
 1. Check `config/guardrails.yaml` - is `never_surface` configured correctly?
-2. Check `mailq/bridge/guardrails.py` - are rules being applied?
+2. Check `shopq/bridge/guardrails.py` - are rules being applied?
 3. Debug the specific emails that failed
 4. Fix the issue
 5. Re-run tests
@@ -381,7 +381,7 @@ scripts/
 ```python
 # tests/test_guardrails_gds.py
 try:
-    from mailq.bridge.guardrails import GuardrailMatcher
+    from shopq.bridge.guardrails import GuardrailMatcher
 except ImportError:
     pytest.skip("Guardrails not implemented yet")
 ```
@@ -420,7 +420,7 @@ def test_my_new_quality_gate(predictions):
 
 ```bash
 # Check imports
-python -c "from mailq.memory_classifier import MemoryClassifier"
+python -c "from shopq.memory_classifier import MemoryClassifier"
 
 # If fails, check PYTHONPATH
 export PYTHONPATH=/path/to/mailq-prototype:$PYTHONPATH

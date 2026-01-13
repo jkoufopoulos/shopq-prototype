@@ -20,7 +20,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).parent.parent
 GOLDEN_SET_DIR = REPO_ROOT / "tests" / "golden_set"
 OUTPUT_DIR = REPO_ROOT / "gsd_exports"
-DB_PATH = REPO_ROOT / "mailq" / "data" / "mailq.db"
+DB_PATH = REPO_ROOT / "mailq" / "data" / "shopq.db"
 
 # Main GSD file
 GDS_FILE = GOLDEN_SET_DIR / "gds-1.0.csv"

@@ -23,7 +23,7 @@ def skip_if_db_unavailable():
     This allows GDS tests to run even when DB is being migrated
     """
     try:
-        from mailq.infrastructure.database import get_db_connection
+        from shopq.infrastructure.database import get_db_connection
 
         # Try to connect
         conn = get_db_connection()
@@ -45,7 +45,7 @@ def classifier_without_rules():
     This allows testing type mapper + LLM even when rules DB is unavailable
     """
     try:
-        from mailq.classification.memory_classifier import MemoryClassifier
+        from shopq.classification.memory_classifier import MemoryClassifier
 
         # Try to initialize normally first
         try:
@@ -57,8 +57,8 @@ def classifier_without_rules():
             print("   Running tests with type mapper + LLM only")
 
             # Create a mock classifier that skips rules
-            from mailq.classification.type_mapper import get_type_mapper
-            from mailq.classification.vertex_gemini_classifier import VertexGeminiClassifier
+            from shopq.classification.type_mapper import get_type_mapper
+            from shopq.classification.vertex_gemini_classifier import VertexGeminiClassifier
 
             class MinimalClassifier:
                 """Classifier without rules engine (for testing during migration)"""

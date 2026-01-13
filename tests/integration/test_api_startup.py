@@ -14,7 +14,7 @@ def start_api():
     """Start the API in a subprocess"""
     import uvicorn
 
-    from mailq.api import app
+    from shopq.api import app
 
     uvicorn.run(app, host="127.0.0.1", port=8888, log_level="info")
 

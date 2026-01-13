@@ -9,7 +9,7 @@ import sqlite3
 
 import pytest
 
-from mailq.storage.tenancy import TenancyViolationError, enforce_tenancy, require_user_scope
+from shopq.storage.tenancy import TenancyViolationError, enforce_tenancy, require_user_scope
 
 # Test Decorator Validation
 

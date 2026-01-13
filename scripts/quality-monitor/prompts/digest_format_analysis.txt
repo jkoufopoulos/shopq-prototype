@@ -1,4 +1,4 @@
-You are analyzing a MailQ email digest to identify format and categorization issues.
+You are analyzing a ShopQ email digest to identify format and categorization issues.
 
 Compare the ACTUAL digest output against the IDEAL format structure.
 

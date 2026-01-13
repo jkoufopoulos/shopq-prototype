@@ -20,9 +20,9 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.api.routes.verify import verify_classification
-from mailq.classification.memory_classifier import MemoryClassifier
-from mailq.observability.confidence import VERIFIER_HIGH_CONFIDENCE, VERIFIER_LOW_CONFIDENCE
+from shopq.api.routes.verify import verify_classification
+from shopq.classification.memory_classifier import MemoryClassifier
+from shopq.observability.confidence import VERIFIER_HIGH_CONFIDENCE, VERIFIER_LOW_CONFIDENCE
 
 
 def load_gds(csv_path: str) -> list[dict]:

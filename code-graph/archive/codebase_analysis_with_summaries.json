@@ -4,9 +4,9 @@
     "root_dir": "/Users/justinkoufopoulos/Projects/mailq-prototype"
   },
   "files": {
-    "mailq/mapper.py": {
+    "shopq/mapper.py": {
       "type": "python",
-      "path": "mailq/mapper.py",
+      "path": "shopq/mapper.py",
       "lines": 120,
       "docstring": "Gmail label mapper - converts semantic classification to Gmail label strings\nMulti-dimensional: each dimension gets its own label",
       "imports": [
@@ -33,11 +33,11 @@
       ],
       "complexity": 2,
       "content_hash": "bded52690d62adc8d55d60a923e876ffcebd6fef5ffeb5a114d488c3993a65f1",
-      "ai_summary": "SUMMARY: This file is a utility that converts semantic email classification results, encompassing dimensions like type, domain, and attention, into a structured list of Gmail label strings based on defined confidence thresholds.\n\nRELATIONSHIPS: This file acts as a core mapping utility, primarily imported and used by `mailq/memory_classifier.py`. It takes the raw classification output from `memory_classifier.py` and transforms it into an actionable format suitable for applying Gmail labels. Its role is to bridge the internal semantic classification logic with the external mechanism of organizing emails through labels."
+      "ai_summary": "SUMMARY: This file is a utility that converts semantic email classification results, encompassing dimensions like type, domain, and attention, into a structured list of Gmail label strings based on defined confidence thresholds.\n\nRELATIONSHIPS: This file acts as a core mapping utility, primarily imported and used by `shopq/memory_classifier.py`. It takes the raw classification output from `memory_classifier.py` and transforms it into an actionable format suitable for applying Gmail labels. Its role is to bridge the internal semantic classification logic with the external mechanism of organizing emails through labels."
     },
-    "mailq/feedback_manager.py": {
+    "shopq/feedback_manager.py": {
       "type": "python",
-      "path": "mailq/feedback_manager.py",
+      "path": "shopq/feedback_manager.py",
       "lines": 365,
       "docstring": "Feedback management for user corrections.\nStores corrections and learns patterns for improved classification.",
       "imports": [
@@ -82,42 +82,42 @@
       "functions": [],
       "complexity": 11,
       "content_hash": "d53fbeed0c1a9c823a05f98aad46b0e6248a44b85f9e12135ef456ad12902254",
-      "ai_summary": "SUMMARY: The `FeedbackManager` class stores user corrections, learns classification patterns, and manages few-shot examples in a SQLite database to continuously improve the `mailq` system's email classification accuracy.\n\nRELATIONSHIPS: This file acts as a core data persistence layer, managing a SQLite database for feedback and learning. It depends on standard Python libraries like `sqlite3` for database interaction. Other components, specifically `mailq/api.py` and `mailq/api_feedback.py`, utilize this manager to store user corrections and retrieve learned patterns, while `mailq/vertex_gemini_classifier.py` likely fetches patterns and few-shot examples to enhance its AI-driven classification process."
+      "ai_summary": "SUMMARY: The `FeedbackManager` class stores user corrections, learns classification patterns, and manages few-shot examples in a SQLite database to continuously improve the `mailq` system's email classification accuracy.\n\nRELATIONSHIPS: This file acts as a core data persistence layer, managing a SQLite database for feedback and learning. It depends on standard Python libraries like `sqlite3` for database interaction. Other components, specifically `shopq/api.py` and `shopq/api_feedback.py`, utilize this manager to store user corrections and retrieve learned patterns, while `shopq/vertex_gemini_classifier.py` likely fetches patterns and few-shot examples to enhance its AI-driven classification process."
     },
-    "mailq/__init__.py": {
+    "shopq/__init__.py": {
       "type": "python",
-      "path": "mailq/__init__.py",
+      "path": "shopq/__init__.py",
       "lines": 8,
-      "docstring": "MailQ Production System",
+      "docstring": "ShopQ Production System",
       "imports": [
-        "mailq.rules_engine.RulesEngine",
-        "mailq.memory_classifier.MemoryClassifier"
+        "shopq.rules_engine.RulesEngine",
+        "shopq.memory_classifier.MemoryClassifier"
       ],
       "internal_imports": [
-        "mailq/rules_engine.py",
-        "mailq/memory_classifier.py"
+        "shopq/rules_engine.py",
+        "shopq/memory_classifier.py"
       ],
       "external_imports": [],
       "classes": [],
       "functions": [],
       "complexity": 0,
       "content_hash": "3261301d8a91da7ecfc79aabbc45b59d664a95b61eed56f6f5c1d294cd50420d",
-      "ai_summary": "SUMMARY: This file initializes the MailQ package, exposing its core `RulesEngine` and `MemoryClassifier` components as part of its public API, and declares the package version.\n\nRELATIONSHIPS: This file acts as the primary public interface and package initializer for the `mailq` system. It directly depends on `mailq/rules_engine.py` and `mailq/memory_classifier.py`, importing their classes to make them accessible directly from the `mailq` package namespace. Other parts of the codebase that utilize MailQ's core logic will typically import these components via `from mailq import RulesEngine`, establishing this `__init__.py` as a central access point to the system's core functionalities."
+      "ai_summary": "SUMMARY: This file initializes the ShopQ package, exposing its core `RulesEngine` and `MemoryClassifier` components as part of its public API, and declares the package version.\n\nRELATIONSHIPS: This file acts as the primary public interface and package initializer for the `mailq` system. It directly depends on `shopq/rules_engine.py` and `shopq/memory_classifier.py`, importing their classes to make them accessible directly from the `mailq` package namespace. Other parts of the codebase that utilize ShopQ's core logic will typically import these components via `from shopq import RulesEngine`, establishing this `__init__.py` as a central access point to the system's core functionalities."
     },
-    "mailq/rules_manager.py": {
+    "shopq/rules_manager.py": {
       "type": "python",
-      "path": "mailq/rules_manager.py",
+      "path": "shopq/rules_manager.py",
       "lines": 157,
       "docstring": "Rules Management Module\n\nHandles CRUD operations for classification rules:\n- Fetching rules from database\n- Adding new rules\n- Updating existing rules\n- Deleting rules",
       "imports": [
-        "mailq.config.database.get_db_connection",
-        "mailq.config.database.db_transaction",
+        "shopq.config.database.get_db_connection",
+        "shopq.config.database.db_transaction",
         "typing.List",
         "typing.Dict",
         "typing.Optional"
       ],
       "internal_imports": [
-        "mailq/config/database.py"
+        "shopq/config/database.py"
       ],
       "external_imports": [
         "typing.List",
@@ -149,11 +149,11 @@
       ],
       "complexity": 5,
       "content_hash": "a103e72b54fea321d8229147a9d6eac01f722e03fd862c0a3d483fc1feacfe30",
-      "ai_summary": "SUMMARY: This module manages email classification rules by providing functions for CRUD operations like fetching, adding, updating, and deleting rules stored in the database.\n\nRELATIONSHIPS: This file heavily depends on `mailq/config/database.py` to handle all its database connections and transactions for persistent storage of classification rules. It is imported and utilized by `mailq/api.py`, suggesting that the API layer exposes these rule management functionalities, making this file a core backend logic component for the system's rule-based email classification."
+      "ai_summary": "SUMMARY: This module manages email classification rules by providing functions for CRUD operations like fetching, adding, updating, and deleting rules stored in the database.\n\nRELATIONSHIPS: This file heavily depends on `shopq/config/database.py` to handle all its database connections and transactions for persistent storage of classification rules. It is imported and utilized by `shopq/api.py`, suggesting that the API layer exposes these rule management functionalities, making this file a core backend logic component for the system's rule-based email classification."
     },
-    "mailq/logger.py": {
+    "shopq/logger.py": {
       "type": "python",
-      "path": "mailq/logger.py",
+      "path": "shopq/logger.py",
       "lines": 21,
       "docstring": "Centralized logging - CREATE THIS FILE",
       "imports": [
@@ -174,25 +174,25 @@
       ],
       "complexity": 1,
       "content_hash": "8fb4c2e416892f947ed15deb971c8089ca4640fbd71ae0b5858a089df9821c63",
-      "ai_summary": "SUMMARY: This file provides a utility function to centrally configure and return a standardized Python logger that outputs formatted messages to standard output, preventing duplicate handlers.\n\nRELATIONSHIPS: This file serves as a utility for centralized, consistent logging within the `mailq` application. It depends on Python's built-in `logging` and `sys` modules to configure loggers that output formatted messages to `sys.stdout`. Other components, such as `mailq/rules_engine.py`, import and use its `setup_logger` function to acquire these pre-configured loggers, ensuring uniform log output across the system."
+      "ai_summary": "SUMMARY: This file provides a utility function to centrally configure and return a standardized Python logger that outputs formatted messages to standard output, preventing duplicate handlers.\n\nRELATIONSHIPS: This file serves as a utility for centralized, consistent logging within the `mailq` application. It depends on Python's built-in `logging` and `sys` modules to configure loggers that output formatted messages to `sys.stdout`. Other components, such as `shopq/rules_engine.py`, import and use its `setup_logger` function to acquire these pre-configured loggers, ensuring uniform log output across the system."
     },
-    "mailq/memory_classifier.py": {
+    "shopq/memory_classifier.py": {
       "type": "python",
-      "path": "mailq/memory_classifier.py",
+      "path": "shopq/memory_classifier.py",
       "lines": 190,
       "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
       "imports": [
         "os",
         "typing.Dict",
-        "mailq.rules_engine.RulesEngine",
-        "mailq.vertex_gemini_classifier.VertexGeminiClassifier",
-        "mailq.mapper.map_to_gmail_labels",
-        "mailq.mapper.validate_classification_result"
+        "shopq.rules_engine.RulesEngine",
+        "shopq.vertex_gemini_classifier.VertexGeminiClassifier",
+        "shopq.mapper.map_to_gmail_labels",
+        "shopq.mapper.validate_classification_result"
       ],
       "internal_imports": [
-        "mailq/rules_engine.py",
-        "mailq/vertex_gemini_classifier.py",
-        "mailq/mapper.py"
+        "shopq/rules_engine.py",
+        "shopq/vertex_gemini_classifier.py",
+        "shopq/mapper.py"
       ],
       "external_imports": [
         "os",
@@ -215,13 +215,13 @@
       "functions": [],
       "complexity": 5,
       "content_hash": "3d5aec1c89a1bf9d18b6540a5aa6e6d37e4a1a18baf258b4fdaed69654e5369a",
-      "ai_summary": "SUMMARY: This file provides a memory-enhanced email classifier that prioritizes rule-based classification, falling back to a Vertex AI Gemini LLM, and mapping results to Gmail labels.\n\nRELATIONSHIPS: This file acts as the core classification logic, orchestrating rule-based matching using `mailq.rules_engine` and leveraging `mailq.vertex_gemini_classifier` for LLM inference when rules don't match. It further depends on `mailq.mapper` for result transformation and validation, and is a foundational component directly consumed by `mailq/api.py` to expose the primary email classification functionality."
+      "ai_summary": "SUMMARY: This file provides a memory-enhanced email classifier that prioritizes rule-based classification, falling back to a Vertex AI Gemini LLM, and mapping results to Gmail labels.\n\nRELATIONSHIPS: This file acts as the core classification logic, orchestrating rule-based matching using `shopq.rules_engine` and leveraging `shopq.vertex_gemini_classifier` for LLM inference when rules don't match. It further depends on `shopq.mapper` for result transformation and validation, and is a foundational component directly consumed by `shopq/api.py` to expose the primary email classification functionality."
     },
-    "mailq/api.py": {
+    "shopq/api.py": {
       "type": "python",
-      "path": "mailq/api.py",
+      "path": "shopq/api.py",
       "lines": 300,
-      "docstring": "FastAPI server for MailQ email classification",
+      "docstring": "FastAPI server for ShopQ email classification",
       "imports": [
         "fastapi.FastAPI",
         "fastapi.HTTPException",
@@ -233,29 +233,29 @@
         "typing.Optional",
         "time",
         "datetime.datetime",
-        "mailq.memory_classifier.MemoryClassifier",
-        "mailq.category_manager.CategoryManager",
-        "mailq.feedback_manager.FeedbackManager",
-        "mailq.rules_manager.get_rules",
-        "mailq.rules_manager.add_rule",
-        "mailq.rules_manager.update_rule",
-        "mailq.rules_manager.delete_rule",
-        "mailq.rules_manager.get_rule_stats",
-        "mailq.api_debug.router",
-        "mailq.api_debug.set_last_batch",
-        "mailq.api_feedback.router",
-        "mailq.api_feedback.set_feedback_manager",
-        "mailq.api_organize.classify_batch",
+        "shopq.memory_classifier.MemoryClassifier",
+        "shopq.category_manager.CategoryManager",
+        "shopq.feedback_manager.FeedbackManager",
+        "shopq.rules_manager.get_rules",
+        "shopq.rules_manager.add_rule",
+        "shopq.rules_manager.update_rule",
+        "shopq.rules_manager.delete_rule",
+        "shopq.rules_manager.get_rule_stats",
+        "shopq.api_debug.router",
+        "shopq.api_debug.set_last_batch",
+        "shopq.api_feedback.router",
+        "shopq.api_feedback.set_feedback_manager",
+        "shopq.api_organize.classify_batch",
         "uvicorn"
       ],
       "internal_imports": [
-        "mailq/api_organize.py",
-        "mailq/api_feedback.py",
-        "mailq/memory_classifier.py",
-        "mailq/api_debug.py",
-        "mailq/rules_manager.py",
-        "mailq/category_manager.py",
-        "mailq/feedback_manager.py"
+        "shopq/api_organize.py",
+        "shopq/api_feedback.py",
+        "shopq/memory_classifier.py",
+        "shopq/api_debug.py",
+        "shopq/rules_manager.py",
+        "shopq/category_manager.py",
+        "shopq/feedback_manager.py"
       ],
       "external_imports": [
         "fastapi.FastAPI",
@@ -338,11 +338,11 @@
       ],
       "complexity": 2,
       "content_hash": "3149d306e634926d8d76d670bf6e78c28bf12b02222f85b32c3033a80f4a5804",
-      "ai_summary": "SUMMARY: This file initializes the MailQ FastAPI server, orchestrating core services like email classification and feedback management, defining API models, and integrating specialized endpoint routers.\n\nRELATIONSHIPS: This file serves as the primary entry point and API layer for the MailQ application, setting up the FastAPI server and configuring global middleware. It instantiates and depends on `MemoryClassifier`, `CategoryManager`, and `FeedbackManager` for core email processing, passing these services as dependencies to integrated API routers from `mailq.api_debug` and `mailq.api_feedback`. This centralizes the instantiation and connection of various internal components to expose a comprehensive set of endpoints."
+      "ai_summary": "SUMMARY: This file initializes the ShopQ FastAPI server, orchestrating core services like email classification and feedback management, defining API models, and integrating specialized endpoint routers.\n\nRELATIONSHIPS: This file serves as the primary entry point and API layer for the ShopQ application, setting up the FastAPI server and configuring global middleware. It instantiates and depends on `MemoryClassifier`, `CategoryManager`, and `FeedbackManager` for core email processing, passing these services as dependencies to integrated API routers from `shopq.api_debug` and `shopq.api_feedback`. This centralizes the instantiation and connection of various internal components to expose a comprehensive set of endpoints."
     },
-    "mailq/api_feedback.py": {
+    "shopq/api_feedback.py": {
       "type": "python",
-      "path": "mailq/api_feedback.py",
+      "path": "shopq/api_feedback.py",
       "lines": 97,
       "docstring": "Feedback API endpoints for user corrections",
       "imports": [
@@ -353,13 +353,13 @@
         "typing.List",
         "typing.Dict",
         "typing.Optional",
-        "mailq.feedback_manager.FeedbackManager",
-        "mailq.api_dashboard.render_dashboard",
+        "shopq.feedback_manager.FeedbackManager",
+        "shopq.api_dashboard.render_dashboard",
         "fastapi.responses.HTMLResponse"
       ],
       "internal_imports": [
-        "mailq/api_dashboard.py",
-        "mailq/feedback_manager.py"
+        "shopq/api_dashboard.py",
+        "shopq/feedback_manager.py"
       ],
       "external_imports": [
         "fastapi.APIRouter",
@@ -393,11 +393,11 @@
       ],
       "complexity": 1,
       "content_hash": "aed731c70464df112b5d55f124b609f0d9b25cc1f179bbe2e17e031ac09a61d8",
-      "ai_summary": "SUMMARY: This file defines FastAPI endpoints for submitting user corrections on email classifications, retrieving learning statistics, and serving a feedback dashboard.\n\nRELATIONSHIPS: This file acts as an API layer, providing external access to the feedback system. It critically depends on `mailq.feedback_manager` for handling the core business logic of recording and querying feedback, and utilizes `mailq.api_dashboard` to render its HTML dashboard. The `mailq/api.py` module imports this file's `APIRouter` to integrate these endpoints into the main application, making it the primary interface for user interaction with the feedback mechanism."
+      "ai_summary": "SUMMARY: This file defines FastAPI endpoints for submitting user corrections on email classifications, retrieving learning statistics, and serving a feedback dashboard.\n\nRELATIONSHIPS: This file acts as an API layer, providing external access to the feedback system. It critically depends on `shopq.feedback_manager` for handling the core business logic of recording and querying feedback, and utilizes `shopq.api_dashboard` to render its HTML dashboard. The `shopq/api.py` module imports this file's `APIRouter` to integrate these endpoints into the main application, making it the primary interface for user interaction with the feedback mechanism."
     },
-    "mailq/api_dashboard.py": {
+    "shopq/api_dashboard.py": {
       "type": "python",
-      "path": "mailq/api_dashboard.py",
+      "path": "shopq/api_dashboard.py",
       "lines": 255,
       "docstring": "Dashboard HTML rendering for feedback visualization",
       "imports": [
@@ -438,11 +438,11 @@
       ],
       "complexity": 5,
       "content_hash": "2a815f0c8c5b7f5ba59ef93fc02ad95835dfc1a4a6ebfb8174f0b16f8e61bace",
-      "ai_summary": "SUMMARY: This file provides utility functions to dynamically render a comprehensive HTML dashboard for visualizing MailQ's feedback, including statistics, correction patterns, and recent activities, based on provided data.\n\nRELATIONSHIPS: This file acts as an HTML templating utility or presentation layer within the MailQ system. It is imported and utilized by `mailq/api_feedback.py`, which is likely an API endpoint responsible for gathering the necessary data and then calling `render_dashboard` to generate the HTML response for a web request. While it depends on standard Python libraries like `datetime` for formatting, it primarily relies on receiving structured data from other MailQ components (via `api_feedback.py`) to construct the visual dashboard."
+      "ai_summary": "SUMMARY: This file provides utility functions to dynamically render a comprehensive HTML dashboard for visualizing ShopQ's feedback, including statistics, correction patterns, and recent activities, based on provided data.\n\nRELATIONSHIPS: This file acts as an HTML templating utility or presentation layer within the ShopQ system. It is imported and utilized by `shopq/api_feedback.py`, which is likely an API endpoint responsible for gathering the necessary data and then calling `render_dashboard` to generate the HTML response for a web request. While it depends on standard Python libraries like `datetime` for formatting, it primarily relies on receiving structured data from other ShopQ components (via `api_feedback.py`) to construct the visual dashboard."
     },
-    "mailq/rules_engine.py": {
+    "shopq/rules_engine.py": {
       "type": "python",
-      "path": "mailq/rules_engine.py",
+      "path": "shopq/rules_engine.py",
       "lines": 282,
       "docstring": "Rules-based email classification with learning",
       "imports": [
@@ -452,10 +452,10 @@
         "typing.List",
         "collections.Counter",
         "re",
-        "mailq.logger.setup_logger"
+        "shopq.logger.setup_logger"
       ],
       "internal_imports": [
-        "mailq/logger.py"
+        "shopq/logger.py"
       ],
       "external_imports": [
         "sqlite3",
@@ -490,11 +490,11 @@
       "functions": [],
       "complexity": 13,
       "content_hash": "41a4a1f5edc65ec455e2fe23bedcfcd8a3cf5f16919f0df3ae6a56f306bf33f9",
-      "ai_summary": "SUMMARY: This file implements a rules engine for email classification, storing user-defined and learned patterns in an SQLite database to categorize incoming messages based on various criteria.\n\nRELATIONSHIPS: This file relies on `mailq/logger.py` for standardized logging across the application. As a core logic component, it is imported by `mailq/__init__.py`, making its `RulesEngine` class a publicly accessible part of the `mailq` package. Additionally, `mailq/memory_classifier.py` imports this file, likely integrating its persistent, database-backed email classification rules into a broader classification strategy."
+      "ai_summary": "SUMMARY: This file implements a rules engine for email classification, storing user-defined and learned patterns in an SQLite database to categorize incoming messages based on various criteria.\n\nRELATIONSHIPS: This file relies on `shopq/logger.py` for standardized logging across the application. As a core logic component, it is imported by `shopq/__init__.py`, making its `RulesEngine` class a publicly accessible part of the `mailq` package. Additionally, `shopq/memory_classifier.py` imports this file, likely integrating its persistent, database-backed email classification rules into a broader classification strategy."
     },
-    "mailq/api_organize.py": {
+    "shopq/api_organize.py": {
       "type": "python",
-      "path": "mailq/api_organize.py",
+      "path": "shopq/api_organize.py",
       "lines": 175,
       "docstring": "Email classification logic for /api/organize endpoint",
       "imports": [
@@ -545,11 +545,11 @@
       ],
       "complexity": 7,
       "content_hash": "6a2ca90068c3f094b76aac16931647380e2636309a80b6b2ae75d2011ebceaba",
-      "ai_summary": "SUMMARY: This file provides core logic for classifying a batch of emails, applying confidence thresholds, filtering labels, and collecting statistics, primarily for the `/api/organize` API endpoint.\n\nRELATIONSHIPS: This file acts as a core logic component, specifically handling email classification for the `/api/organize` endpoint. It critically depends on an external `classifier` object (likely an AI model or rule engine) passed during runtime to perform the actual classification. The `mailq/api.py` module imports and utilizes the `classify_batch` function from this file, making it an essential backend processing layer for the Mailq API."
+      "ai_summary": "SUMMARY: This file provides core logic for classifying a batch of emails, applying confidence thresholds, filtering labels, and collecting statistics, primarily for the `/api/organize` API endpoint.\n\nRELATIONSHIPS: This file acts as a core logic component, specifically handling email classification for the `/api/organize` endpoint. It critically depends on an external `classifier` object (likely an AI model or rule engine) passed during runtime to perform the actual classification. The `shopq/api.py` module imports and utilizes the `classify_batch` function from this file, making it an essential backend processing layer for the Mailq API."
     },
-    "mailq/api_debug.py": {
+    "shopq/api_debug.py": {
       "type": "python",
-      "path": "mailq/api_debug.py",
+      "path": "shopq/api_debug.py",
       "lines": 93,
       "docstring": "Debug endpoints for monitoring classification batches",
       "imports": [
@@ -574,11 +574,11 @@
       ],
       "complexity": 1,
       "content_hash": "c0217d0eaff6dd1c9f9a9b4148a9e79e20b83a9f2478cbbf3542b49e4c8a2eb9",
-      "ai_summary": "SUMMARY: This file defines FastAPI debug endpoints to expose and summarize the results and statistics of the most recent email classification batch, aiding in runtime monitoring.\n\nRELATIONSHIPS: This file serves as an API layer for debugging, imported and mounted by `mailq/api.py` into the main FastAPI application. It depends on the core classification processing logic (likely orchestrated by `api.py`) to actively update its global `last_batch_store` via the `set_last_batch` function. This enables developers to remotely monitor the outcome and performance of classification batches, providing immediate insights into system operations."
+      "ai_summary": "SUMMARY: This file defines FastAPI debug endpoints to expose and summarize the results and statistics of the most recent email classification batch, aiding in runtime monitoring.\n\nRELATIONSHIPS: This file serves as an API layer for debugging, imported and mounted by `shopq/api.py` into the main FastAPI application. It depends on the core classification processing logic (likely orchestrated by `api.py`) to actively update its global `last_batch_store` via the `set_last_batch` function. This enables developers to remotely monitor the outcome and performance of classification batches, providing immediate insights into system operations."
     },
-    "mailq/category_manager.py": {
+    "shopq/category_manager.py": {
       "type": "python",
-      "path": "mailq/category_manager.py",
+      "path": "shopq/category_manager.py",
       "lines": 118,
       "docstring": "Manage user-specific email categories",
       "imports": [
@@ -619,11 +619,11 @@
       "functions": [],
       "complexity": 7,
       "content_hash": "c7388070ff6f1b042a1f204820c120cc8e75bde485c3c5a2ba250df412d550dc",
-      "ai_summary": "SUMMARY: This file manages user-specific email categories, storing them in an SQLite database and providing methods to retrieve, initialize with defaults, and add custom categories.\n\nRELATIONSHIPS: This file acts as a core data access and business logic component for email category management, used by `mailq/api.py` to expose category-related functionalities. It depends on `config/default_categories.py` to retrieve predefined category lists for initial user setup or when a user has no custom categories."
+      "ai_summary": "SUMMARY: This file manages user-specific email categories, storing them in an SQLite database and providing methods to retrieve, initialize with defaults, and add custom categories.\n\nRELATIONSHIPS: This file acts as a core data access and business logic component for email category management, used by `shopq/api.py` to expose category-related functionalities. It depends on `config/default_categories.py` to retrieve predefined category lists for initial user setup or when a user has no custom categories."
     },
-    "mailq/vertex_gemini_classifier.py": {
+    "shopq/vertex_gemini_classifier.py": {
       "type": "python",
-      "path": "mailq/vertex_gemini_classifier.py",
+      "path": "shopq/vertex_gemini_classifier.py",
       "lines": 521,
       "docstring": "Vertex AI Gemini - Multi-dimensional email classifier",
       "imports": [
@@ -633,10 +633,10 @@
         "dotenv.load_dotenv",
         "json",
         "re",
-        "mailq.feedback_manager.FeedbackManager"
+        "shopq.feedback_manager.FeedbackManager"
       ],
       "internal_imports": [
-        "mailq/feedback_manager.py"
+        "shopq/feedback_manager.py"
       ],
       "external_imports": [
         "vertexai",
@@ -666,11 +666,11 @@
       "functions": [],
       "complexity": 8,
       "content_hash": "afe9dbe5e2a64a6a57c7f8d15bc84c35f98919ab3a7cf316a6888abc3c6e5083",
-      "ai_summary": "SUMMARY: This file initializes a Vertex AI Gemini 2.0 Flash model to classify emails multi-dimensionally (type, domain, attention) using both static and dynamically learned few-shot examples from user feedback.\n\nRELATIONSHIPS: This file depends on `mailq.feedback_manager.py` to retrieve learned classification patterns, dynamically enhancing its few-shot examples based on user corrections. Conversely, `mailq.memory_classifier.py` imports and likely utilizes this `VertexGeminiClassifier` as a core component for performing intelligent, multi-dimensional email classification within the broader MailQ system, acting as its AI-powered classification engine."
+      "ai_summary": "SUMMARY: This file initializes a Vertex AI Gemini 2.0 Flash model to classify emails multi-dimensionally (type, domain, attention) using both static and dynamically learned few-shot examples from user feedback.\n\nRELATIONSHIPS: This file depends on `shopq.feedback_manager.py` to retrieve learned classification patterns, dynamically enhancing its few-shot examples based on user corrections. Conversely, `shopq.memory_classifier.py` imports and likely utilizes this `VertexGeminiClassifier` as a core component for performing intelligent, multi-dimensional email classification within the broader ShopQ system, acting as its AI-powered classification engine."
     },
-    "mailq/config/default_categories.py": {
+    "shopq/config/default_categories.py": {
       "type": "python",
-      "path": "mailq/config/default_categories.py",
+      "path": "shopq/config/default_categories.py",
       "lines": 49,
       "docstring": "Default email categories for new users",
       "imports": [],
@@ -680,11 +680,11 @@
       "functions": [],
       "complexity": 0,
       "content_hash": "e1d24eca56151b27c2b07f887e6763e52cf43a279ad7796eb9f74a0e25fdf7be",
-      "ai_summary": "SUMMARY: This file defines a constant list of default email categories, each with a name, description, and color, intended for new user accounts within the MailQ system.\n\nRELATIONSHIPS: This file acts as a self-contained configuration data source, defining a `DEFAULT_CATEGORIES` list without any external dependencies. Other `mailq` system components, such as user creation or email processing modules, would import and utilize this list to initialize default email categories for new users. Its role is to provide a standardized, pre-defined set of initial categorization options for the application."
+      "ai_summary": "SUMMARY: This file defines a constant list of default email categories, each with a name, description, and color, intended for new user accounts within the ShopQ system.\n\nRELATIONSHIPS: This file acts as a self-contained configuration data source, defining a `DEFAULT_CATEGORIES` list without any external dependencies. Other `mailq` system components, such as user creation or email processing modules, would import and utilize this list to initialize default email categories for new users. Its role is to provide a standardized, pre-defined set of initial categorization options for the application."
     },
-    "mailq/config/database.py": {
+    "shopq/config/database.py": {
       "type": "python",
-      "path": "mailq/config/database.py",
+      "path": "shopq/config/database.py",
       "lines": 234,
       "docstring": "Centralized database configuration\n\nProvides:\n- Single source of truth for database path\n- Connection management with proper settings\n- Schema validation\n- Test database support",
       "imports": [
@@ -704,7 +704,7 @@
       "functions": [
         {
           "name": "get_db_path",
-          "docstring": "Get database path (environment-aware)\n\nChecks MAILQ_DB_PATH environment variable first,\nfalls back to default location."
+          "docstring": "Get database path (environment-aware)\n\nChecks SHOPQ_DB_PATH environment variable first,\nfalls back to default location."
         },
         {
           "name": "get_db_connection",
@@ -733,13 +733,13 @@
       ],
       "complexity": 7,
       "content_hash": "963424bd592225b3a02715bcb65a74c07f4f85714a0e4514ae5d029114eb316f",
-      "ai_summary": "SUMMARY: This file provides a centralized SQLite database configuration, managing connections, transactions, and schema validation to serve as the core data access layer for the 'mailq' application.\n\nRELATIONSHIPS: This file serves as the foundational data access layer for the `mailq` application, providing the necessary utilities to connect to, manage, and interact with the SQLite database. Components such as `mailq/rules_manager.py` explicitly depend on it to perform all database operations, ensuring consistent connection settings, transaction handling, and schema integrity without needing to directly interact with the `sqlite3` module. It itself relies only on Python's standard library for its functionality."
+      "ai_summary": "SUMMARY: This file provides a centralized SQLite database configuration, managing connections, transactions, and schema validation to serve as the core data access layer for the 'mailq' application.\n\nRELATIONSHIPS: This file serves as the foundational data access layer for the `mailq` application, providing the necessary utilities to connect to, manage, and interact with the SQLite database. Components such as `shopq/rules_manager.py` explicitly depend on it to perform all database operations, ensuring consistent connection settings, transaction handling, and schema integrity without needing to directly interact with the `sqlite3` module. It itself relies only on Python's standard library for its functionality."
     },
-    "mailq/config/__init__.py": {
+    "shopq/config/__init__.py": {
       "type": "python",
-      "path": "mailq/config/__init__.py",
+      "path": "shopq/config/__init__.py",
       "lines": 112,
-      "docstring": "Configuration module for MailQ.\nUses the MVP v1 classification schema from Schema.json.",
+      "docstring": "Configuration module for ShopQ.\nUses the MVP v1 classification schema from Schema.json.",
       "imports": [
         "pathlib.Path"
       ],
@@ -751,11 +751,11 @@
       "functions": [],
       "complexity": 0,
       "content_hash": "d8f2c305f3626da4abd0c22b0c94a9cb40944ef354474119f2208a4064c3025e",
-      "ai_summary": "SUMMARY: This file centralizes MailQ's core configuration, defining project paths, database location, enumerated email classification attributes (types, domains), and a comprehensive list of valid Gmail labels.\n\nRELATIONSHIPS: This configuration file serves as a central source of truth for MailQ's system-wide constants, making it a foundational dependency for numerous other components. Modules like database connectors, data classification logic, or any part interacting with Gmail labels will import these definitions, ensuring consistent paths, data categories, and valid label structures across the codebase. While it indirectly references `Schema.json` and `mapping.py` for its definitions, this file itself is a core utility that *provides* these structured constants to the rest of the MailQ system."
+      "ai_summary": "SUMMARY: This file centralizes ShopQ's core configuration, defining project paths, database location, enumerated email classification attributes (types, domains), and a comprehensive list of valid Gmail labels.\n\nRELATIONSHIPS: This configuration file serves as a central source of truth for ShopQ's system-wide constants, making it a foundational dependency for numerous other components. Modules like database connectors, data classification logic, or any part interacting with Gmail labels will import these definitions, ensuring consistent paths, data categories, and valid label structures across the codebase. While it indirectly references `Schema.json` and `mapping.py` for its definitions, this file itself is a core utility that *provides* these structured constants to the rest of the ShopQ system."
     },
-    "mailq/config/settings.py": {
+    "shopq/config/settings.py": {
       "type": "python",
-      "path": "mailq/config/settings.py",
+      "path": "shopq/config/settings.py",
       "lines": 77,
       "docstring": "Application-wide settings and environment configuration",
       "imports": [
@@ -784,13 +784,13 @@
       ],
       "complexity": 3,
       "content_hash": "ddb9ef867300f08a128dd888b98cd3bd86dc41e0798be1fa2a67ea7e9b50014b",
-      "ai_summary": "SUMMARY: This file centralizes application-wide settings, environment variables, API configurations, and feature flags by reading values from environment variables or providing sensible defaults for the MailQ application.\n\nRELATIONSHIPS: This file primarily depends on the `os` module to read environment variables and `pathlib.Path` for defining project directory structures. Virtually every other component within the `mailq` application, including API endpoints, AI classification logic, feature flag checks, and logging setup, imports and utilizes these settings to configure their behavior and integrate with external services like Google Cloud or OpenAI. It acts as the core configuration provider, centralizing all configurable parameters to ensure consistent application-wide behavior across different environments."
+      "ai_summary": "SUMMARY: This file centralizes application-wide settings, environment variables, API configurations, and feature flags by reading values from environment variables or providing sensible defaults for the ShopQ application.\n\nRELATIONSHIPS: This file primarily depends on the `os` module to read environment variables and `pathlib.Path` for defining project directory structures. Virtually every other component within the `mailq` application, including API endpoints, AI classification logic, feature flag checks, and logging setup, imports and utilizes these settings to configure their behavior and integrate with external services like Google Cloud or OpenAI. It acts as the core configuration provider, centralizing all configurable parameters to ensure consistent application-wide behavior across different environments."
     },
-    "mailq/scripts/consolidate_databases.py": {
+    "shopq/scripts/consolidate_databases.py": {
       "type": "python",
-      "path": "mailq/scripts/consolidate_databases.py",
+      "path": "shopq/scripts/consolidate_databases.py",
       "lines": 204,
-      "docstring": "Consolidate all databases into mailq/data/mailq.db",
+      "docstring": "Consolidate all databases into shopq/data/shopq.db",
       "imports": [
         "sqlite3",
         "shutil",
@@ -808,16 +808,16 @@
       "functions": [
         {
           "name": "consolidate",
-          "docstring": "Merge all databases into mailq/data/mailq.db"
+          "docstring": "Merge all databases into shopq/data/shopq.db"
         }
       ],
       "complexity": 1,
       "content_hash": "f658a32653893be4a48d6bca119cbc78a902e9099b58dead6ac123c1b209482f",
-      "ai_summary": "SUMMARY: This script consolidates various Mailq system databases, including rules and learned patterns, into a single `mailq.db` file, creating a unified and initialized data store.\n\nRELATIONSHIPS: This utility script is crucial for initializing and consolidating the Mailq application's central data store, `mailq.db`, defining its foundational schema for rules, categories, feedback, and learned patterns. It depends on an existing `rules.sqlite` file for initial data population and `sqlite3` for database operations. Crucially, all other Mailq components that manage or utilize email classification, rules, categories, or feedback will depend on the `mailq.db` created and maintained by this script as their primary data source."
+      "ai_summary": "SUMMARY: This script consolidates various Mailq system databases, including rules and learned patterns, into a single `shopq.db` file, creating a unified and initialized data store.\n\nRELATIONSHIPS: This utility script is crucial for initializing and consolidating the Mailq application's central data store, `shopq.db`, defining its foundational schema for rules, categories, feedback, and learned patterns. It depends on an existing `rules.sqlite` file for initial data population and `sqlite3` for database operations. Crucially, all other Mailq components that manage or utilize email classification, rules, categories, or feedback will depend on the `shopq.db` created and maintained by this script as their primary data source."
     },
-    "mailq/scripts/inspect_databases.py": {
+    "shopq/scripts/inspect_databases.py": {
       "type": "python",
-      "path": "mailq/scripts/inspect_databases.py",
+      "path": "shopq/scripts/inspect_databases.py",
       "lines": 114,
       "docstring": "Inspect all databases and show their contents",
       "imports": [
@@ -842,7 +842,7 @@
       ],
       "complexity": 2,
       "content_hash": "281b7c8c1a165355f789d89ac7eb0d2e797f3e5428ef61bc9a5077ff97263d30",
-      "ai_summary": "SUMMARY: This Python script connects to project SQLite databases, extracts table schema, row counts, and sample data, then prints a comprehensive diagnostic report to the console.\n\nRELATIONSHIPS: This utility script critically depends on the Python `sqlite3` module for database interaction and implicitly relies on the existence and structure of SQLite database files (e.g., `mailq.db`, `rules.db`) that are created and managed by other parts of the `mailq` application. It functions as a standalone developer tool, designed for direct command-line execution to debug or monitor the application's data stores, rather than being integrated into the core `mailq` runtime logic or being depended upon by other internal components."
+      "ai_summary": "SUMMARY: This Python script connects to project SQLite databases, extracts table schema, row counts, and sample data, then prints a comprehensive diagnostic report to the console.\n\nRELATIONSHIPS: This utility script critically depends on the Python `sqlite3` module for database interaction and implicitly relies on the existence and structure of SQLite database files (e.g., `shopq.db`, `rules.db`) that are created and managed by other parts of the `mailq` application. It functions as a standalone developer tool, designed for direct command-line execution to debug or monitor the application's data stores, rather than being integrated into the core `mailq` runtime logic or being depended upon by other internal components."
     },
     "scripts/fetch_emails_bulk.py": {
       "type": "python",
@@ -910,7 +910,7 @@
       ],
       "complexity": 1,
       "content_hash": "90f6ebc70aa823ea3ede4b9df02cd453734a13c74ba819b4a0f1d2de476e6899",
-      "ai_summary": "SUMMARY: This script populates the `rules.db` database by reading manually labeled email classifications from a CSV file and adding them as rules via the `RulesEngine` component.\n\nRELATIONSHIPS: This utility script heavily depends on the `RulesEngine` class (imported from `mailq/rules_engine.py`) to store and manage the learned rules within `data/rules.db`. It consumes a \"gold standard\" CSV dataset (`data/100_emails/email_eval_dataset.csv`), effectively bootstrapping the foundational rule set that other core components, such as an API, will then utilize for live email classification."
+      "ai_summary": "SUMMARY: This script populates the `rules.db` database by reading manually labeled email classifications from a CSV file and adding them as rules via the `RulesEngine` component.\n\nRELATIONSHIPS: This utility script heavily depends on the `RulesEngine` class (imported from `shopq/rules_engine.py`) to store and manage the learned rules within `data/rules.db`. It consumes a \"gold standard\" CSV dataset (`data/100_emails/email_eval_dataset.csv`), effectively bootstrapping the foundational rule set that other core components, such as an API, will then utilize for live email classification."
     },
     "scripts/fetch_emails.py": {
       "type": "python",
@@ -1076,12 +1076,12 @@
         },
         {
           "name": "classify_email",
-          "docstring": "Classify email using LLM.\n\nDEPRECATED: This is a legacy wrapper. New code should use:\n    from mailq.llm_classifier import LLMClassifier\n    classifier = LLMClassifier()\n    result = classifier.classify(subject, snippet, from_field)\n\nArgs:\n    subject: Email subject line\n    snippet: Email preview text\n    from_field: Sender email address\n\nReturns:\n    dict: {'category': str, 'confidence': int}"
+          "docstring": "Classify email using LLM.\n\nDEPRECATED: This is a legacy wrapper. New code should use:\n    from shopq.llm_classifier import LLMClassifier\n    classifier = LLMClassifier()\n    result = classifier.classify(subject, snippet, from_field)\n\nArgs:\n    subject: Email subject line\n    snippet: Email preview text\n    from_field: Sender email address\n\nReturns:\n    dict: {'category': str, 'confidence': int}"
         }
       ],
       "complexity": 3,
       "content_hash": "961fa64fbda1519b5c5cbd17ceda0ce3964f16a19442cf6f2c674cdc21ad04f5",
-      "ai_summary": "SUMMARY: This legacy `ai_utils.py` file serves as a backward-compatible wrapper for email classification, delegating calls to the newer `mailq.LLMClassifier`, and includes a text cleaning utility, with a clear intention for deprecation.\n\nRELATIONSHIPS: This file is a deprecated compatibility layer within the `experiments` module. It dynamically adds `mailq` to the Python path to import and utilize the `LLMClassifier` and `CategoryManager` from the `mailq` package, acting as a wrapper for email classification and providing a text cleaning utility. Older components within the codebase currently depend on its `classify_email` function, but are explicitly encouraged to migrate directly to `mailq.LLMClassifier` as this file is slated for removal."
+      "ai_summary": "SUMMARY: This legacy `ai_utils.py` file serves as a backward-compatible wrapper for email classification, delegating calls to the newer `shopq.LLMClassifier`, and includes a text cleaning utility, with a clear intention for deprecation.\n\nRELATIONSHIPS: This file is a deprecated compatibility layer within the `experiments` module. It dynamically adds `mailq` to the Python path to import and utilize the `LLMClassifier` and `CategoryManager` from the `mailq` package, acting as a wrapper for email classification and providing a text cleaning utility. Older components within the codebase currently depend on its `classify_email` function, but are explicitly encouraged to migrate directly to `shopq.LLMClassifier` as this file is slated for removal."
     },
     "experiments/src/compare_gemini_gpt.py": {
       "type": "python",
@@ -1381,36 +1381,36 @@
     }
   },
   "dependencies": {
-    "mailq/__init__.py": [
-      "mailq/rules_engine.py",
-      "mailq/memory_classifier.py"
+    "shopq/__init__.py": [
+      "shopq/rules_engine.py",
+      "shopq/memory_classifier.py"
     ],
-    "mailq/rules_manager.py": [
-      "mailq/config/database.py"
+    "shopq/rules_manager.py": [
+      "shopq/config/database.py"
     ],
-    "mailq/memory_classifier.py": [
-      "mailq/rules_engine.py",
-      "mailq/vertex_gemini_classifier.py",
-      "mailq/mapper.py"
+    "shopq/memory_classifier.py": [
+      "shopq/rules_engine.py",
+      "shopq/vertex_gemini_classifier.py",
+      "shopq/mapper.py"
     ],
-    "mailq/api.py": [
-      "mailq/api_organize.py",
-      "mailq/api_feedback.py",
-      "mailq/memory_classifier.py",
-      "mailq/api_debug.py",
-      "mailq/rules_manager.py",
-      "mailq/category_manager.py",
-      "mailq/feedback_manager.py"
+    "shopq/api.py": [
+      "shopq/api_organize.py",
+      "shopq/api_feedback.py",
+      "shopq/memory_classifier.py",
+      "shopq/api_debug.py",
+      "shopq/rules_manager.py",
+      "shopq/category_manager.py",
+      "shopq/feedback_manager.py"
     ],
-    "mailq/api_feedback.py": [
-      "mailq/api_dashboard.py",
-      "mailq/feedback_manager.py"
+    "shopq/api_feedback.py": [
+      "shopq/api_dashboard.py",
+      "shopq/feedback_manager.py"
     ],
-    "mailq/rules_engine.py": [
-      "mailq/logger.py"
+    "shopq/rules_engine.py": [
+      "shopq/logger.py"
     ],
-    "mailq/vertex_gemini_classifier.py": [
-      "mailq/feedback_manager.py"
+    "shopq/vertex_gemini_classifier.py": [
+      "shopq/feedback_manager.py"
     ]
   },
   "js_dependencies": {
@@ -1450,9 +1450,9 @@
     "total_functions": 57,
     "orchestrators": [
       {
-        "path": "mailq/api.py",
+        "path": "shopq/api.py",
         "import_count": 7,
-        "docstring": "FastAPI server for MailQ email classification",
+        "docstring": "FastAPI server for ShopQ email classification",
         "type": "python"
       },
       {
@@ -1462,7 +1462,7 @@
         "type": "javascript"
       },
       {
-        "path": "mailq/memory_classifier.py",
+        "path": "shopq/memory_classifier.py",
         "import_count": 3,
         "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
         "type": "python"
@@ -1476,31 +1476,31 @@
     ],
     "core_classes": [
       {
-        "path": "mailq/rules_engine.py",
+        "path": "shopq/rules_engine.py",
         "class_name": "RulesEngine",
         "method_count": 13,
         "docstring": ""
       },
       {
-        "path": "mailq/feedback_manager.py",
+        "path": "shopq/feedback_manager.py",
         "class_name": "FeedbackManager",
         "method_count": 11,
         "docstring": ""
       },
       {
-        "path": "mailq/vertex_gemini_classifier.py",
+        "path": "shopq/vertex_gemini_classifier.py",
         "class_name": "VertexGeminiClassifier",
         "method_count": 8,
         "docstring": ""
       },
       {
-        "path": "mailq/category_manager.py",
+        "path": "shopq/category_manager.py",
         "class_name": "CategoryManager",
         "method_count": 7,
         "docstring": "Manages email categories for each user"
       },
       {
-        "path": "mailq/memory_classifier.py",
+        "path": "shopq/memory_classifier.py",
         "class_name": "MemoryClassifier",
         "method_count": 5,
         "docstring": ""

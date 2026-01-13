@@ -11,9 +11,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mailq.classification.classifier import EmailClassifier, get_classifier
-from mailq.observability.confidence import LEARNING_MIN_CONFIDENCE, USER_CORRECTION_CONFIDENCE
-from mailq.storage.models import ClassifiedEmail, ParsedEmail, RawEmail
+from shopq.classification.classifier import EmailClassifier, get_classifier
+from shopq.observability.confidence import LEARNING_MIN_CONFIDENCE, USER_CORRECTION_CONFIDENCE
+from shopq.storage.models import ClassifiedEmail, ParsedEmail, RawEmail
 
 
 @pytest.fixture
@@ -124,8 +124,8 @@ class TestEmailClassifier:
 
         # Should have at least one label
         assert len(result.gmail_labels) >= 1
-        # All labels should start with MailQ-
-        assert all(label.startswith("MailQ-") for label in result.gmail_labels)
+        # All labels should start with ShopQ-
+        assert all(label.startswith("ShopQ-") for label in result.gmail_labels)
 
 
 class TestClassifyAndLearn:
@@ -157,7 +157,7 @@ class TestClassifyAndLearn:
             assert mock_rules.learn_from_classification.called
             call_args = mock_rules.learn_from_classification.call_args
             assert call_args.kwargs["confidence"] == 0.95
-            assert "MailQ-" in call_args.kwargs["category"]
+            assert "ShopQ-" in call_args.kwargs["category"]
 
     def test_does_not_learn_from_low_confidence(self, sample_email: ParsedEmail):
         """Test that low-confidence classifications don't trigger learning."""
@@ -206,14 +206,14 @@ class TestLearnFromCorrection:
         mock_rules = MagicMock()
         classifier.rules = mock_rules
 
-        corrected_labels = ["MailQ-Receipts", "MailQ-Shopping"]
+        corrected_labels = ["ShopQ-Receipts", "ShopQ-Shopping"]
         classifier.learn_from_correction(sample_email, corrected_labels)
 
         # Should have called learn_from_classification with user correction confidence
         assert mock_rules.learn_from_classification.called
         call_args = mock_rules.learn_from_classification.call_args
         assert call_args.kwargs["confidence"] == USER_CORRECTION_CONFIDENCE
-        assert call_args.kwargs["category"] == "MailQ-Receipts"  # First label
+        assert call_args.kwargs["category"] == "ShopQ-Receipts"  # First label
 
     def test_skips_empty_corrections(self, sample_email: ParsedEmail):
         """Test that empty corrections are skipped."""
@@ -233,7 +233,7 @@ class TestGetClassifier:
     def test_returns_same_instance(self):
         """Test that get_classifier returns the same instance."""
         # Reset singleton for test
-        import mailq.classification.classifier as module
+        import shopq.classification.classifier as module
 
         module._classifier_instance = None
 

@@ -1,4 +1,4 @@
-# MailQ Architecture Evaluation Report
+# ShopQ Architecture Evaluation Report
 
 **Date:** November 2025
 **Scope:** Full codebase review against documented architecture and Core Principles
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The MailQ codebase demonstrates **solid architectural discipline** with excellent infrastructure (database, configuration, error handling) and good separation of concerns. The 4-tier classification system is properly implemented, and the single-database policy is exemplary. Main weaknesses are in **orchestrator complexity** (large files) and **features spread across too many files**.
+The ShopQ codebase demonstrates **solid architectural discipline** with excellent infrastructure (database, configuration, error handling) and good separation of concerns. The 4-tier classification system is properly implemented, and the single-database policy is exemplary. Main weaknesses are in **orchestrator complexity** (large files) and **features spread across too many files**.
 
 ### Quick Assessment
 
@@ -32,7 +32,7 @@ The MailQ codebase demonstrates **solid architectural discipline** with excellen
 **Actual:** 14 modules (deliberate expansion)
 
 ```
-mailq/
+shopq/
 ├── api/               FastAPI endpoints
 ├── classification/    Email categorization (21 files, ~5,900 LOC)
 ├── concepts/          Feedback, preferences, A/B testing
@@ -86,7 +86,7 @@ T0 (Free)     → Rules Engine (rules_engine.py, ~393 LOC)
                 User-learned patterns from SQLite
                    ↓
 T3 (~$0.0001) → Gemini Classifier (vertex_gemini_classifier.py)
-                Prompts from mailq/llm/prompts/
+                Prompts from shopq/llm/prompts/
                    ↓
 T3 (~$0.0001) → Verifier (selective 2nd pass)
 ```
@@ -160,7 +160,7 @@ Present:
 
 #### Issue #1: Hardcoded Vertex AI Configuration ✅ FIXED
 
-**Location:** `mailq/classification/vertex_gemini_classifier.py:114-115`
+**Location:** `shopq/classification/vertex_gemini_classifier.py:114-115`
 
 ```python
 # Now uses environment variables with defaults
@@ -173,15 +173,15 @@ location = os.getenv("VERTEX_AI_LOCATION", "us-central1")
 #### Issue #2: Threshold Value Conflict ✅ FIXED
 
 **Resolution:**
-- `config/mailq_policy.yaml` is now single source of truth
-- `mailq/observability/confidence.py` loads values from YAML
+- `config/shopq_policy.yaml` is now single source of truth
+- `shopq/observability/confidence.py` loads values from YAML
 - All thresholds unified at 0.70 (verify-first strategy)
 
 **Status:** Fixed in Phase 0.5. YAML is canonical.
 
 #### Issue #3: God Object - context_digest.py (1,523 LOC)
 
-**Location:** `mailq/digest/context_digest.py`
+**Location:** `shopq/digest/context_digest.py`
 
 Orchestrates: extraction, classification, enrichment, synthesis, verification, rendering
 
@@ -192,7 +192,7 @@ Orchestrates: extraction, classification, enrichment, synthesis, verification, r
 
 #### Issue #4: Incomplete LLM Output Validation ✅ FIXED
 
-**Location:** `mailq/classification/memory_classifier.py`
+**Location:** `shopq/classification/memory_classifier.py`
 
 Validation now called on all paths:
 - Line 76: Type mapper path
@@ -205,7 +205,7 @@ Validation now called on all paths:
 
 #### Issue #5: Stale Prompt File Versions ✅ FIXED
 
-**Location:** `mailq/llm/prompts/`
+**Location:** `shopq/llm/prompts/`
 
 **Resolution:** Archived 10 unused prompt files to `prompts/archive/`:
 - `narrative_prompt_v1_original.txt` → archive
@@ -217,11 +217,11 @@ Validation now called on all paths:
 
 #### Issue #6: Hardcoded Confidence in patterns.py ✅ FIXED
 
-**Location:** `mailq/classification/patterns.py`
+**Location:** `shopq/classification/patterns.py`
 
 ```python
 # Now references centralized config
-from mailq.observability.confidence import DETECTOR_CONFIDENCE
+from shopq.observability.confidence import DETECTOR_CONFIDENCE
 PATTERN_CONFIDENCE = {
     "otp": DETECTOR_CONFIDENCE["otp"]["type_conf"],
     "receipt": DETECTOR_CONFIDENCE["receipt"]["type_conf"],
@@ -240,7 +240,7 @@ Some failures log as `info()`, others as `warning()`. No consistent severity pat
 #### Issue #8: Stale Comments
 
 References to deprecated databases in comments:
-- `tracking.py`: "Old database (data/mailq_tracking.db) is deprecated"
+- `tracking.py`: "Old database (data/shopq_tracking.db) is deprecated"
 - `formatting.py`: mentions "digest_rules.db"
 
 ---
@@ -249,7 +249,7 @@ References to deprecated databases in comments:
 
 ### Database Policy (Exemplary)
 
-- Single database: `mailq/data/mailq.db`
+- Single database: `shopq/data/shopq.db`
 - Connection pooling with `DatabaseConnectionPool`
 - Pre-commit hooks block new `.db` files
 - All code uses `get_db_connection()` from centralized location
@@ -284,7 +284,7 @@ Key areas covered: rules engine, mapper, deduplication, digest pipeline, retenti
 
 ### Prompt Externalization (Correct)
 
-- 3 active prompt files in `mailq/llm/prompts/` (10 archived in Phase 0.5)
+- 3 active prompt files in `shopq/llm/prompts/` (10 archived in Phase 0.5)
 - PromptLoader pattern with caching
 - Not hardcoded in Python
 
@@ -314,7 +314,7 @@ Key areas covered: rules engine, mapper, deduplication, digest pipeline, retenti
 
 ## 7. Conclusion
 
-MailQ's architecture is **production-ready** with strong fundamentals:
+ShopQ's architecture is **production-ready** with strong fundamentals:
 
 - **What works:** Database discipline, 4-tier classification, error handling, test coverage
 - **What needs work:** Large orchestrator files (`context_digest.py`), scattered features

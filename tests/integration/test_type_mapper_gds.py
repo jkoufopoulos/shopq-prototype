@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from mailq.classification.type_mapper import TypeMapper
-from mailq.utils.email import extract_email_address
+from shopq.classification.type_mapper import TypeMapper
+from shopq.utils.email import extract_email_address
 
 # Path to golden dataset
 GDS_PATH = Path(__file__).parent / "golden_set" / "gds-1.0.csv"

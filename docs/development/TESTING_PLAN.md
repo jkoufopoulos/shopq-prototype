@@ -235,7 +235,7 @@ PYTHONPATH=. pytest tests/test_type_mapper_gds.py -v
 PYTHONPATH=. pytest tests/test_temporal_decay.py -v
 ```
 **Expected**: Should pass (temporal logic is deterministic)
-**If failures**: Check config/mailq_policy.yaml temporal_decay settings
+**If failures**: Check config/shopq_policy.yaml temporal_decay settings
 
 ### Phase 3: Run Integration Tests (10 min)
 ```bash
@@ -300,7 +300,7 @@ PYTHONPATH=. pytest tests/test_importance_baseline.py -v -s
 **Check**:
 - Is `temporal_enrichment.py` being called?
 - Are temporal fields (`temporal_start`, `temporal_end`) populated?
-- Check `config/mailq_policy.yaml` for correct settings
+- Check `config/shopq_policy.yaml` for correct settings
 
 ### Issue: Tests failing with "module not found"
 **Solution**: Always use `PYTHONPATH=. pytest` or `PYTHONPATH=/full/path`
@@ -316,7 +316,7 @@ PYTHONPATH=. pytest tests/test_importance_baseline.py -v -s
 - Review error patterns in test output
 - Check prompt templates in LLM classifier
 - Verify temporal decay rules are correct
-- May need to tune thresholds in `config/mailq_policy.yaml`
+- May need to tune thresholds in `config/shopq_policy.yaml`
 
 ---
 

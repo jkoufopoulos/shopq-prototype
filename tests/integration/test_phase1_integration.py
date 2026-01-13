@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from mailq.digest.context_digest import ContextDigest
+from shopq.digest.context_digest import ContextDigest
 
 
 class TestPhase1Integration:
@@ -66,11 +66,11 @@ class TestPhase1Integration:
         assert result is not None
 
     def test_self_emails_filtered_from_digest(self):
-        """MailQ's own digest should be filtered"""
+        """ShopQ's own digest should be filtered"""
         digest = ContextDigest(verbose=True)
 
         emails = [
-            # MailQ digest (should be filtered)
+            # ShopQ digest (should be filtered)
             {
                 "id": "1",
                 "thread_id": "1",

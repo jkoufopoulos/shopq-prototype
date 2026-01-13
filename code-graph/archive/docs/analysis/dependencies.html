@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dependency Graphs - MailQ</title>
+    <title>Dependency Graphs - ShopQ</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -131,27 +131,27 @@
 
         <section>
             <h2>🐍 Python Dependencies</h2>
-            <p class="meta">Shows how Python modules in mailq/, scripts/, experiments/ connect</p>
+            <p class="meta">Shows how Python modules in shopq/, scripts/, experiments/ connect</p>
             <div class="graph-container">
                 <div class="mermaid">
 graph LR
-    mailq___init___py["__init__.py"] --> mailq_rules_engine_py["rules_engine.py"]
-    mailq___init___py["__init__.py"] --> mailq_memory_classifier_py["memory_classifier.py"]
-    mailq_rules_manager_py["rules_manager.py"] --> mailq_config_database_py["config/database.py"]
-    mailq_memory_classifier_py["memory_classifier.py"] --> mailq_rules_engine_py["rules_engine.py"]
-    mailq_memory_classifier_py["memory_classifier.py"] --> mailq_vertex_gemini_classifier_py["vertex_gemini_classifier.py"]
-    mailq_memory_classifier_py["memory_classifier.py"] --> mailq_mapper_py["mapper.py"]
-    mailq_api_py["api.py"] --> mailq_api_organize_py["api_organize.py"]
-    mailq_api_py["api.py"] --> mailq_api_feedback_py["api_feedback.py"]
-    mailq_api_py["api.py"] --> mailq_memory_classifier_py["memory_classifier.py"]
-    mailq_api_py["api.py"] --> mailq_api_debug_py["api_debug.py"]
-    mailq_api_py["api.py"] --> mailq_rules_manager_py["rules_manager.py"]
-    mailq_api_py["api.py"] --> mailq_category_manager_py["category_manager.py"]
-    mailq_api_py["api.py"] --> mailq_feedback_manager_py["feedback_manager.py"]
-    mailq_api_feedback_py["api_feedback.py"] --> mailq_api_dashboard_py["api_dashboard.py"]
-    mailq_api_feedback_py["api_feedback.py"] --> mailq_feedback_manager_py["feedback_manager.py"]
-    mailq_rules_engine_py["rules_engine.py"] --> mailq_logger_py["logger.py"]
-    mailq_vertex_gemini_classifier_py["vertex_gemini_classifier.py"] --> mailq_feedback_manager_py["feedback_manager.py"]
+    shopq___init___py["__init__.py"] --> shopq_rules_engine_py["rules_engine.py"]
+    shopq___init___py["__init__.py"] --> shopq_memory_classifier_py["memory_classifier.py"]
+    shopq_rules_manager_py["rules_manager.py"] --> shopq_config_database_py["config/database.py"]
+    shopq_memory_classifier_py["memory_classifier.py"] --> shopq_rules_engine_py["rules_engine.py"]
+    shopq_memory_classifier_py["memory_classifier.py"] --> shopq_vertex_gemini_classifier_py["vertex_gemini_classifier.py"]
+    shopq_memory_classifier_py["memory_classifier.py"] --> shopq_mapper_py["mapper.py"]
+    shopq_api_py["api.py"] --> shopq_api_organize_py["api_organize.py"]
+    shopq_api_py["api.py"] --> shopq_api_feedback_py["api_feedback.py"]
+    shopq_api_py["api.py"] --> shopq_memory_classifier_py["memory_classifier.py"]
+    shopq_api_py["api.py"] --> shopq_api_debug_py["api_debug.py"]
+    shopq_api_py["api.py"] --> shopq_rules_manager_py["rules_manager.py"]
+    shopq_api_py["api.py"] --> shopq_category_manager_py["category_manager.py"]
+    shopq_api_py["api.py"] --> shopq_feedback_manager_py["feedback_manager.py"]
+    shopq_api_feedback_py["api_feedback.py"] --> shopq_api_dashboard_py["api_dashboard.py"]
+    shopq_api_feedback_py["api_feedback.py"] --> shopq_feedback_manager_py["feedback_manager.py"]
+    shopq_rules_engine_py["rules_engine.py"] --> shopq_logger_py["logger.py"]
+    shopq_vertex_gemini_classifier_py["vertex_gemini_classifier.py"] --> shopq_feedback_manager_py["feedback_manager.py"]
 </div>
             </div>
         </section>

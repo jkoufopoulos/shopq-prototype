@@ -7,7 +7,7 @@
  */
 
 const AUTO_ORGANIZE_ALARM = 'mailq-auto-organize';
-const AUTO_ORGANIZE_SETTINGS_KEY = 'mailq_auto_organize_settings';
+const AUTO_ORGANIZE_SETTINGS_KEY = 'shopq_auto_organize_settings';
 
 // Default settings
 const DEFAULT_SETTINGS = {
@@ -93,7 +93,7 @@ async function setupAutoOrganize(enabled, intervalMinutes = 15, options = {}) {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon128.png',
-        title: 'MailQ Auto-Organize Enabled',
+        title: 'ShopQ Auto-Organize Enabled',
         message: `Your inbox will be organized automatically every ${intervalMinutes} minutes.`,
         priority: 1
       });
@@ -156,14 +156,14 @@ async function handleAutoOrganizeAlarm(alarm) {
 
     // Mark session start time for digest generation
     await chrome.storage.local.set({
-      mailq_organize_session_start: nowIso
+      shopq_organize_session_start: nowIso
     });
     console.log('📍 Organize session start time recorded');
 
     const result = await organizeInboxSilently();
 
     await chrome.storage.local.set({
-      mailq_last_auto_organize_at: nowIso
+      shopq_last_auto_organize_at: nowIso
     });
 
     // Show notification if inbox reached zero and user wants notifications
@@ -181,13 +181,13 @@ async function handleAutoOrganizeAlarm(alarm) {
 
     if (result.processedCount > 0) {
       await chrome.storage.local.set({
-        mailq_digest_pending: true,
-        mailq_last_digest_candidate_at: nowIso,
-        mailq_digest_needs_refresh: Date.now()  // Signal content script to refresh digest
+        shopq_digest_pending: true,
+        shopq_last_digest_candidate_at: nowIso,
+        shopq_digest_needs_refresh: Date.now()  // Signal content script to refresh digest
       });
       console.log('📬 Digest marked pending, signaled content script to refresh');
     } else {
-      await chrome.storage.local.set({ mailq_digest_pending: false });
+      await chrome.storage.local.set({ shopq_digest_pending: false });
     }
 
   } catch (error) {

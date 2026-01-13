@@ -11,7 +11,7 @@
 
 ## Core Concept
 
-MailQ uses a **two-stage importance classification** system to separate intrinsic email properties from time-dependent context:
+ShopQ uses a **two-stage importance classification** system to separate intrinsic email properties from time-dependent context:
 
 - **T0 (Intrinsic Importance)**: What the email IS, independent of when it's observed
 - **T1 (Time-Adjusted Importance)**: What the email MEANS right now, considering current time
@@ -53,11 +53,11 @@ T0 importance is **observer-independent** — the same regardless of when you ev
 
 ### Implementation
 
-**Module**: `mailq/classification/memory_classifier.py`
+**Module**: `shopq/classification/memory_classifier.py`
 **Output**: `importance` field in classification result
 
 ```python
-from mailq.classification.memory_classifier import MemoryClassifier
+from shopq.classification.memory_classifier import MemoryClassifier
 
 classifier = MemoryClassifier()
 result = classifier.classify(
@@ -131,11 +131,11 @@ if T0 == "critical" and type != "otp":
 
 ### Implementation
 
-**Module**: `mailq/digest/temporal_decay.py`
+**Module**: `shopq/digest/temporal_decay.py`
 **Output**: T1 section for digest
 
 ```python
-from mailq.digest.temporal_decay import apply_temporal_decay
+from shopq.digest.temporal_decay import apply_temporal_decay
 
 # T0 classification
 t0_section = "today"  # Event is time_sensitive (T0)
@@ -249,7 +249,7 @@ def test_t1_accuracy():
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ STAGE 1: Classification (T0)                                    │
-│ Module: mailq/classification/memory_classifier.py               │
+│ Module: shopq/classification/memory_classifier.py               │
 │                                                                  │
 │ Input:  Email (subject, snippet, from)                          │
 │ Output: importance="time_sensitive" (T0)                        │
@@ -259,7 +259,7 @@ def test_t1_accuracy():
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ STAGE 2: Temporal Context Extraction                            │
-│ Module: mailq/digest/temporal_extraction.py                     │
+│ Module: shopq/digest/temporal_extraction.py                     │
 │                                                                  │
 │ Input:  Email (subject, snippet)                                │
 │ Output: temporal_ctx = {                                         │
@@ -270,7 +270,7 @@ def test_t1_accuracy():
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ STAGE 3: Temporal Decay (T0 → T1)                              │
-│ Module: mailq/digest/temporal_decay.py                          │
+│ Module: shopq/digest/temporal_decay.py                          │
 │                                                                  │
 │ Input:  T0 importance="time_sensitive"                          │
 │         temporal_ctx (event_time)                                │
@@ -284,7 +284,7 @@ def test_t1_accuracy():
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ STAGE 4: Digest Rendering                                       │
-│ Module: mailq/digest/digest_pipeline.py                         │
+│ Module: shopq/digest/digest_pipeline.py                         │
 │                                                                  │
 │ Sections:                                                        │
 │   - TODAY / URGENT (T1=critical)                                │
@@ -480,4 +480,4 @@ TemporalDecayStage:
 
 ---
 
-**Status**: ✅ Active - This is the current architecture for importance classification in MailQ.
+**Status**: ✅ Active - This is the current architecture for importance classification in ShopQ.

@@ -8,7 +8,7 @@ Replaces all sqlite3.connect(self.db_path) with get_db_connection() context mana
 import re
 
 # Read the file
-with open("mailq/email_tracker.py") as f:
+with open("shopq/email_tracker.py") as f:
     content = f.read()
 
 # Step 1: Replace imports
@@ -35,7 +35,7 @@ content = re.sub(r"\n\s+conn\.close\(\)", "", content)
 # The _init_db uses db_transaction() which auto-commits
 
 # Write the fixed file
-with open("mailq/email_tracker.py", "w") as f:
+with open("shopq/email_tracker.py", "w") as f:
     f.write(content)
 
 print("✅ Fixed email_tracker.py to use central database")

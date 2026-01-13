@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🔍 MailQ Codebase Analysis Pipeline"
+echo "🔍 ShopQ Codebase Analysis Pipeline"
 echo "===================================="
 echo ""
 

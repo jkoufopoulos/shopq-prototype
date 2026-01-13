@@ -18,7 +18,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
  */
 async function fetchConfidenceThresholds() {
   try {
-    const url = `${CONFIG.MAILQ_API_URL}/api/config/confidence`;
+    const url = `${CONFIG.SHOPQ_API_URL}/api/config/confidence`;
     console.log('🔄 Fetching confidence thresholds from backend:', url);
 
     const response = await fetch(url);
@@ -229,7 +229,7 @@ async function validateClassificationBatch(classifications) {
  */
 async function fetchTestMode() {
   try {
-    const url = `${CONFIG.MAILQ_API_URL}/api/test/mode`;
+    const url = `${CONFIG.SHOPQ_API_URL}/api/test/mode`;
     const response = await fetch(url);
 
     if (!response.ok) {

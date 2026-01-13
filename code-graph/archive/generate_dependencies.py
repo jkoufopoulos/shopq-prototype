@@ -40,7 +40,7 @@ def generate_dependencies_html(analysis_path: Path, output_path: Path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dependency Graphs - MailQ</title>
+    <title>Dependency Graphs - ShopQ</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -168,7 +168,7 @@ def generate_dependencies_html(analysis_path: Path, output_path: Path):
 
         <section>
             <h2>🐍 Python Dependencies</h2>
-            <p class="meta">Shows how Python modules in mailq/, scripts/, experiments/ connect</p>
+            <p class="meta">Shows how Python modules in shopq/, scripts/, experiments/ connect</p>
             <div class="graph-container">
                 {_render_python_graph(python_deps)}
             </div>
@@ -263,7 +263,7 @@ def _to_node_id(path):
 
 def _shorten_path(path):
     """Shorten path for readability"""
-    path = path.replace("mailq/", "")
+    path = path.replace("shopq/", "")
     path = path.replace("extension/", "")
     path = path.replace("code-graph/scripts/", "scripts/")
 

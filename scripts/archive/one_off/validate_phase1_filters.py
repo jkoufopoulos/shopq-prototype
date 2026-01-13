@@ -16,8 +16,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.self_emails import is_self_email
-from mailq.classification.time_decay import is_expired_event
+from shopq.classification.self_emails import is_self_email
+from shopq.classification.time_decay import is_expired_event
 
 
 def load_ground_truth():
@@ -145,17 +145,17 @@ def validate_self_email_filter():
     User marked "Your Inbox --Saturday, November 01..." as NO
     with note "Mailq email"
 
-    Expected: 1 MailQ digest email should be filtered
+    Expected: 1 ShopQ digest email should be filtered
     """
     print("=" * 70)
-    print("PHASE 1 VALIDATION: Self-Email Filter (MailQ Digest)")
+    print("PHASE 1 VALIDATION: Self-Email Filter (ShopQ Digest)")
     print("=" * 70)
     print()
 
     emails, featured, not_featured = load_ground_truth()
 
-    # Find MailQ digest emails
-    mailq_emails = [
+    # Find ShopQ digest emails
+    shopq_emails = [
         e
         for e in emails
         if "mailq" in (e.get("notes", "") + e.get("reasoning", "")).lower()
@@ -176,19 +176,19 @@ def validate_self_email_filter():
             is_noise = email["should_feature"].strip().lower() in ["no", "n"]
 
             # Check if notes mention "mailq"
-            is_mailq_note = "mailq" in (email.get("notes", "") + email.get("reasoning", "")).lower()
+            is_shopq_note = "mailq" in (email.get("notes", "") + email.get("reasoning", "")).lower()
 
-            if is_noise and (is_mailq_note or "your inbox --" in email.get("subject", "").lower()):
+            if is_noise and (is_shopq_note or "your inbox --" in email.get("subject", "").lower()):
                 filtered_correctly.append(email)
 
     print("📊 Results:")
     print(f"  Total emails: {len(emails)}")
-    print(f"  User marked {len(mailq_emails)} with 'mailq' notes")
+    print(f"  User marked {len(shopq_emails)} with 'mailq' notes")
     print(f"  Filter would remove: {filtered_count} emails")
     print()
 
     if filtered_correctly:
-        print("✅ Correctly filtered MailQ digest emails:")
+        print("✅ Correctly filtered ShopQ digest emails:")
         for email in filtered_correctly:
             subject = email.get("subject", "")[:60]
             notes = email.get("notes", "") or email.get("reasoning", "")
@@ -196,7 +196,7 @@ def validate_self_email_filter():
             print(f"    → {notes}")
         print()
     else:
-        print("⚠️  No MailQ emails found (might not be in this batch)")
+        print("⚠️  No ShopQ emails found (might not be in this batch)")
         print()
 
     return {"total_filtered": filtered_count, "correctly_filtered": len(filtered_correctly)}

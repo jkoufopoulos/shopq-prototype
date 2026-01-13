@@ -231,7 +231,7 @@ function shouldVerify(email, classification) {
  */
 async function callVerifier(email, classification, verifyContext) {
   try {
-    const url = `${CONFIG.MAILQ_API_URL}/api/verify`;
+    const url = `${CONFIG.SHOPQ_API_URL}/api/verify`;
 
     const redactedFrom = redactForLog(email.from);
 

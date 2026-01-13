@@ -43,15 +43,15 @@ class DatabaseMigration:
 
     # Old database files to deprecate
     OLD_DATABASES = [
-        "data/mailq_tracking.db",
-        "mailq/digest_rules.db",
+        "data/shopq_tracking.db",
+        "shopq/digest_rules.db",
         "data/digest_feedback.db",
-        "mailq/data/digest_feedback.db",
+        "shopq/data/digest_feedback.db",
     ]
 
     # Required tables in central database
     REQUIRED_TABLES = [
-        "email_threads",  # From mailq_tracking.db
+        "email_threads",  # From shopq_tracking.db
         "digest_rules",  # From digest_rules.db
         "digest_feedback",  # From digest_feedback.db
         "digest_patterns",  # From digest_feedback.db
@@ -61,11 +61,11 @@ class DatabaseMigration:
         self.dry_run = dry_run
         self.project_root = Path(__file__).parent.parent
         # Get central database path (check environment variable, fallback to default)
-        db_path_env = os.getenv("MAILQ_DB_PATH")
+        db_path_env = os.getenv("SHOPQ_DB_PATH")
         if db_path_env:
             self.central_db_path = Path(db_path_env)
         else:
-            self.central_db_path = self.project_root / "mailq" / "data" / "mailq.db"
+            self.central_db_path = self.project_root / "mailq" / "data" / "shopq.db"
         self.archive_dir = self.project_root / "data" / "archived_dbs"
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -84,7 +84,7 @@ class DatabaseMigration:
 
         if not self.central_db_path.exists():
             logger.error(f"❌ Central database not found: {self.central_db_path}")
-            logger.error("   Run: python -m mailq.config.database init_database()")
+            logger.error("   Run: python -m shopq.config.database init_database()")
             return False
 
         # Check for required tables
@@ -96,7 +96,7 @@ class DatabaseMigration:
         missing_tables = set(self.REQUIRED_TABLES) - existing_tables
         if missing_tables:
             logger.error(f"❌ Central database missing tables: {missing_tables}")
-            logger.error("   Run: python -m mailq.config.database init_database()")
+            logger.error("   Run: python -m shopq.config.database init_database()")
             return False
 
         logger.info(f"✅ Central database valid ({len(existing_tables)} tables)")
@@ -168,7 +168,7 @@ Deprecated on: {datetime.now().isoformat()}
 Archived to: data/archived_dbs/{original_path.name}
 Central database: {self.central_db_path.relative_to(self.project_root)}
 
-DO NOT create new database files. Use get_db_connection() from mailq.shared.database.
+DO NOT create new database files. Use get_db_connection() from shopq.shared.database.
 
 Migration commit: See git log for database consolidation commits
 """

@@ -72,8 +72,8 @@
           const label = await labelResponse.json();
           labelNames.push(label.name);
 
-          if (label.name.startsWith('MailQ')) {
-            console.log(`   ✅ ${labelId} → "${label.name}" (MailQ label)`);
+          if (label.name.startsWith('ShopQ')) {
+            console.log(`   ✅ ${labelId} → "${label.name}" (ShopQ label)`);
           } else {
             console.log(`   ➖ ${labelId} → "${label.name}"`);
           }
@@ -83,17 +83,17 @@
       }
     }
 
-    const hasMailQInAPI = labelNames.some(name => name.startsWith('MailQ'));
-    console.log(`   API says has MailQ: ${hasMailQInAPI ? 'YES' : 'NO'}`);
-    console.log(`   (Check Gmail UI: does this email show MailQ labels?)`);
+    const hasShopQInAPI = labelNames.some(name => name.startsWith('ShopQ'));
+    console.log(`   API says has ShopQ: ${hasShopQInAPI ? 'YES' : 'NO'}`);
+    console.log(`   (Check Gmail UI: does this email show ShopQ labels?)`);
   }
 
   console.log('\n' + '='.repeat(60));
   console.log('💡 DIAGNOSIS:');
-  console.log('   If API says "has MailQ: YES" but UI shows NO labels');
+  console.log('   If API says "has ShopQ: YES" but UI shows NO labels');
   console.log('   → Gmail API data is stale or out of sync');
   console.log('   → Extension is using API data (thinks labeled)');
   console.log('   → But emails are actually unlabeled');
   console.log('\n   SOLUTION: Extension should not trust labelIds from API');
-  console.log('   → Use search query "-label:MailQ/*" instead');
+  console.log('   → Use search query "-label:ShopQ/*" instead');
 })();

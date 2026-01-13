@@ -40,7 +40,7 @@ def clear_screen():
     print("\033[2J\033[H", end="")
 
 
-# Taxonomy rules for email type (from mailq/storage/classification.py)
+# Taxonomy rules for email type (from shopq/storage/classification.py)
 TYPE_TAXONOMY = {
     "otp": {
         "description": "One-time passcodes, verification codes, 2FA codes",

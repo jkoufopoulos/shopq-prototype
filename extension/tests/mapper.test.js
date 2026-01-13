@@ -6,7 +6,7 @@
  *
  * The mapper now uses client_label from API as the primary label source.
  * See: docs/TAXONOMY.md for client_label definitions
- * See: mailq/storage/classification.py compute_client_label() for mapping logic
+ * See: shopq/storage/classification.py compute_client_label() for mapping logic
  */
 
 const fs = require('fs');
@@ -91,16 +91,16 @@ console.log('='.repeat(60));
 console.log('\n📋 client_label to Gmail label mapping (PRIMARY):');
 
 const receiptsLabel = mapToLabels({ client_label: 'receipts', domains: [] });
-test.assertIncludes(receiptsLabel, 'MailQ-Receipts', 'client_label=receipts maps to MailQ-Receipts');
+test.assertIncludes(receiptsLabel, 'ShopQ-Receipts', 'client_label=receipts maps to ShopQ-Receipts');
 
 const actionRequired = mapToLabels({ client_label: 'action-required', domains: [] });
-test.assertIncludes(actionRequired, 'MailQ-Action-Required', 'client_label=action-required maps to MailQ-Action-Required');
+test.assertIncludes(actionRequired, 'ShopQ-Action-Required', 'client_label=action-required maps to ShopQ-Action-Required');
 
 const messagesLabel = mapToLabels({ client_label: 'messages', domains: [] });
-test.assertIncludes(messagesLabel, 'MailQ-Messages', 'client_label=messages maps to MailQ-Messages');
+test.assertIncludes(messagesLabel, 'ShopQ-Messages', 'client_label=messages maps to ShopQ-Messages');
 
 const everythingElse = mapToLabels({ client_label: 'everything-else', domains: [] });
-test.assertIncludes(everythingElse, 'MailQ-Everything-Else', 'client_label=everything-else maps to MailQ-Everything-Else');
+test.assertIncludes(everythingElse, 'ShopQ-Everything-Else', 'client_label=everything-else maps to ShopQ-Everything-Else');
 
 // =============================================================================
 // FALLBACK: Legacy type-based mapping (for backwards compatibility)
@@ -108,30 +108,30 @@ test.assertIncludes(everythingElse, 'MailQ-Everything-Else', 'client_label=every
 console.log('\n🔄 Legacy type-based fallback (when client_label missing):');
 
 const legacyReceipt = mapToLabels({ type: 'receipt', domains: [], attention: 'none' });
-test.assertIncludes(legacyReceipt, 'MailQ-Receipts', 'Legacy: type=receipt maps to MailQ-Receipts');
+test.assertIncludes(legacyReceipt, 'ShopQ-Receipts', 'Legacy: type=receipt maps to ShopQ-Receipts');
 
 const legacyMessage = mapToLabels({ type: 'message', domains: [], attention: 'none' });
-test.assertIncludes(legacyMessage, 'MailQ-Messages', 'Legacy: type=message maps to MailQ-Messages');
+test.assertIncludes(legacyMessage, 'ShopQ-Messages', 'Legacy: type=message maps to ShopQ-Messages');
 
 const legacyNewsletter = mapToLabels({ type: 'newsletter', domains: [], attention: 'none' });
-test.assertIncludes(legacyNewsletter, 'MailQ-Everything-Else', 'Legacy: type=newsletter maps to MailQ-Everything-Else');
+test.assertIncludes(legacyNewsletter, 'ShopQ-Everything-Else', 'Legacy: type=newsletter maps to ShopQ-Everything-Else');
 
 const legacyNotification = mapToLabels({ type: 'notification', domains: [], attention: 'none' });
-test.assertIncludes(legacyNotification, 'MailQ-Everything-Else', 'Legacy: type=notification maps to MailQ-Everything-Else');
+test.assertIncludes(legacyNotification, 'ShopQ-Everything-Else', 'Legacy: type=notification maps to ShopQ-Everything-Else');
 
 const legacyOtp = mapToLabels({ type: 'otp', domains: [], importance: 'critical' });
-test.assertIncludes(legacyOtp, 'MailQ-Everything-Else', 'Legacy: type=otp maps to MailQ-Everything-Else (NOT action-required)');
+test.assertIncludes(legacyOtp, 'ShopQ-Everything-Else', 'Legacy: type=otp maps to ShopQ-Everything-Else (NOT action-required)');
 
 const legacyUncategorized = mapToLabels({ type: 'uncategorized', domains: [], attention: 'none' });
-test.assertIncludes(legacyUncategorized, 'MailQ-Everything-Else', 'Legacy: type=uncategorized maps to MailQ-Everything-Else');
+test.assertIncludes(legacyUncategorized, 'ShopQ-Everything-Else', 'Legacy: type=uncategorized maps to ShopQ-Everything-Else');
 
 // Legacy: action_required → action-required (except OTPs)
 const legacyActionRequired = mapToLabels({ type: 'notification', attention: 'action_required', domains: [] });
-test.assertIncludes(legacyActionRequired, 'MailQ-Action-Required', 'Legacy: notification with action_required maps to MailQ-Action-Required');
+test.assertIncludes(legacyActionRequired, 'ShopQ-Action-Required', 'Legacy: notification with action_required maps to ShopQ-Action-Required');
 
 // Informational notification (no action required) → everything-else
 const legacyInformational = mapToLabels({ type: 'notification', attention: 'none', domains: [] });
-test.assertIncludes(legacyInformational, 'MailQ-Everything-Else', 'Legacy: notification with no action → MailQ-Everything-Else');
+test.assertIncludes(legacyInformational, 'ShopQ-Everything-Else', 'Legacy: notification with no action → ShopQ-Everything-Else');
 
 // =============================================================================
 // OTP special handling
@@ -140,13 +140,13 @@ console.log('\n🔐 OTP special handling:');
 
 // OTPs should NEVER get action-required, even with action_required attention
 const otpWithClientLabel = mapToLabels({ client_label: 'everything-else', type: 'otp', attention: 'action_required', domains: [] });
-test.assertIncludes(otpWithClientLabel, 'MailQ-Everything-Else', 'OTP with client_label maps to Everything-Else');
-test.assertNotIncludes(otpWithClientLabel, 'MailQ-Action-Required', 'OTP does NOT get Action-Required (ephemeral)');
+test.assertIncludes(otpWithClientLabel, 'ShopQ-Everything-Else', 'OTP with client_label maps to Everything-Else');
+test.assertNotIncludes(otpWithClientLabel, 'ShopQ-Action-Required', 'OTP does NOT get Action-Required (ephemeral)');
 
 // Legacy fallback for OTPs
 const otpLegacy = mapToLabels({ type: 'otp', attention: 'action_required', domains: [] });
-test.assertIncludes(otpLegacy, 'MailQ-Everything-Else', 'Legacy OTP maps to Everything-Else');
-test.assertNotIncludes(otpLegacy, 'MailQ-Action-Required', 'Legacy OTP does NOT get Action-Required');
+test.assertIncludes(otpLegacy, 'ShopQ-Everything-Else', 'Legacy OTP maps to Everything-Else');
+test.assertNotIncludes(otpLegacy, 'ShopQ-Action-Required', 'Legacy OTP does NOT get Action-Required');
 
 // =============================================================================
 // client_label only (gmail_labels ignored for clean UI)
@@ -156,15 +156,15 @@ console.log('\n🏷️  client_label only (gmail_labels ignored):');
 // Extension uses client_label ONLY - ignores backend's gmail_labels for cleaner Gmail UI
 const withBackendLabels = mapToLabels({
   client_label: 'receipts',
-  gmail_labels: ['MailQ-Receipts', 'MailQ-Everything-Else']  // These are ignored - client_label is source of truth
+  gmail_labels: ['ShopQ-Receipts', 'ShopQ-Everything-Else']  // These are ignored - client_label is source of truth
 });
-test.assertEqual(withBackendLabels, ['MailQ-Receipts'], 'Only client_label used, gmail_labels ignored');
+test.assertEqual(withBackendLabels, ['ShopQ-Receipts'], 'Only client_label used, gmail_labels ignored');
 
 // Without gmail_labels, client_label is still used
 const noBackendLabels = mapToLabels({
   client_label: 'receipts'
 });
-test.assertEqual(noBackendLabels, ['MailQ-Receipts'], 'client_label maps correctly');
+test.assertEqual(noBackendLabels, ['ShopQ-Receipts'], 'client_label maps correctly');
 
 // =============================================================================
 // Edge cases
@@ -172,15 +172,15 @@ test.assertEqual(noBackendLabels, ['MailQ-Receipts'], 'client_label maps correct
 console.log('\n🚫 Edge cases:');
 
 const nullClassification = mapToLabels(null);
-test.assertEqual(nullClassification, ['MailQ-Everything-Else'], 'Null classification returns Everything-Else');
+test.assertEqual(nullClassification, ['ShopQ-Everything-Else'], 'Null classification returns Everything-Else');
 
 const emptyClassification = mapToLabels({});
-test.assertEqual(emptyClassification, ['MailQ-Everything-Else'], 'Empty classification returns Everything-Else fallback');
+test.assertEqual(emptyClassification, ['ShopQ-Everything-Else'], 'Empty classification returns Everything-Else fallback');
 
 const missingDomains = mapToLabels({
   client_label: 'receipts'
 });
-test.assertIncludes(missingDomains, 'MailQ-Receipts', 'Missing domains field handled gracefully');
+test.assertIncludes(missingDomains, 'ShopQ-Receipts', 'Missing domains field handled gracefully');
 
 // =============================================================================
 // TAXONOMY.md alignment tests
@@ -189,19 +189,19 @@ console.log('\n📖 TAXONOMY.md alignment:');
 
 // Order confirmation (type=receipt) → receipts
 const orderConfirmation = mapToLabels({ client_label: 'receipts', type: 'receipt', importance: 'routine', domains: ['shopping'] });
-test.assertIncludes(orderConfirmation, 'MailQ-Receipts', 'Order confirmation → receipts');
+test.assertIncludes(orderConfirmation, 'ShopQ-Receipts', 'Order confirmation → receipts');
 
 // Fraud alert (type=notification, importance=critical) → action-required
 const fraudAlert = mapToLabels({ client_label: 'action-required', type: 'notification', importance: 'critical', domains: ['finance'] });
-test.assertIncludes(fraudAlert, 'MailQ-Action-Required', 'Fraud alert → action-required');
+test.assertIncludes(fraudAlert, 'ShopQ-Action-Required', 'Fraud alert → action-required');
 
 // Listserv event (type=event) → everything-else
 const listservEvent = mapToLabels({ client_label: 'everything-else', type: 'event', importance: 'time_sensitive', domains: [] });
-test.assertIncludes(listservEvent, 'MailQ-Everything-Else', 'Listserv event → everything-else');
+test.assertIncludes(listservEvent, 'ShopQ-Everything-Else', 'Listserv event → everything-else');
 
 // Listserv discussion (type=message) → messages
 const listservDiscussion = mapToLabels({ client_label: 'messages', type: 'message', importance: 'routine', domains: [] });
-test.assertIncludes(listservDiscussion, 'MailQ-Messages', 'Listserv discussion → messages');
+test.assertIncludes(listservDiscussion, 'ShopQ-Messages', 'Listserv discussion → messages');
 
 // Exit with code
 const success = test.summary();

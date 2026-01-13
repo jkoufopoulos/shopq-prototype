@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 
-from mailq.storage.classification import ClassificationContract
+from shopq.storage.classification import ClassificationContract
 
 BASE = {
     "message_id": "msg-1",

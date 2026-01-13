@@ -57,8 +57,8 @@
 - Common in real data (many calendar systems omit end time)
 
 **Fix Applied**:
-1. `mailq/temporal_decay.py`: Use `temporal_start` as fallback for expiration check
-2. `mailq/temporal_enrichment.py`: Pass `temporal_start` to visibility check
+1. `shopq/temporal_decay.py`: Use `temporal_start` as fallback for expiration check
+2. `shopq/temporal_enrichment.py`: Pass `temporal_start` to visibility check
 3. Fixed incorrect test expectation in `test_expired_deadline_downgraded`
 
 **Test Coverage**: 13 tests validate this fix (integration + unit + e2e)
@@ -148,7 +148,7 @@
 # Option 3: Generate full digest and inspect HTML
 
 # Monitor logs for type mapper matches
-tail -f /path/to/mailq.log | grep "Type mapper match"
+tail -f /path/to/shopq.log | grep "Type mapper match"
 ```
 
 ### Step 2: Full Digest Test (15-30 min)
@@ -267,7 +267,7 @@ PYTHONPATH=. pytest tests/test_temporal*.py -v
 PYTHONPATH=. pytest tests/test_type_mapper_gds.py tests/test_importance_baseline.py -v
 
 # Monitor type mapper in logs
-tail -f /path/to/mailq.log | grep -E "Type mapper match|temporal_resolve"
+tail -f /path/to/shopq.log | grep -E "Type mapper match|temporal_resolve"
 ```
 
 ---

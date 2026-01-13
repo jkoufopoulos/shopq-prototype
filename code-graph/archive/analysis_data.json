@@ -4,9 +4,9 @@
     "root_dir": "/Users/justinkoufopoulos/Projects/mailq-prototype"
   },
   "files": {
-    "mailq/mapper.py": {
+    "shopq/mapper.py": {
       "type": "python",
-      "path": "mailq/mapper.py",
+      "path": "shopq/mapper.py",
       "lines": 120,
       "docstring": "Gmail label mapper - converts semantic classification to Gmail label strings\nMulti-dimensional: each dimension gets its own label",
       "imports": [
@@ -33,9 +33,9 @@
       ],
       "complexity": 2
     },
-    "mailq/feedback_manager.py": {
+    "shopq/feedback_manager.py": {
       "type": "python",
-      "path": "mailq/feedback_manager.py",
+      "path": "shopq/feedback_manager.py",
       "lines": 365,
       "docstring": "Feedback management for user corrections.\nStores corrections and learns patterns for improved classification.",
       "imports": [
@@ -80,27 +80,27 @@
       "functions": [],
       "complexity": 11
     },
-    "mailq/__init__.py": {
+    "shopq/__init__.py": {
       "type": "python",
-      "path": "mailq/__init__.py",
+      "path": "shopq/__init__.py",
       "lines": 8,
-      "docstring": "MailQ Production System",
+      "docstring": "ShopQ Production System",
       "imports": [
-        "mailq.rules_engine.RulesEngine",
-        "mailq.memory_classifier.MemoryClassifier"
+        "shopq.rules_engine.RulesEngine",
+        "shopq.memory_classifier.MemoryClassifier"
       ],
       "internal_imports": [
-        "mailq/rules_engine.py",
-        "mailq/memory_classifier.py"
+        "shopq/rules_engine.py",
+        "shopq/memory_classifier.py"
       ],
       "external_imports": [],
       "classes": [],
       "functions": [],
       "complexity": 0
     },
-    "mailq/logger.py": {
+    "shopq/logger.py": {
       "type": "python",
-      "path": "mailq/logger.py",
+      "path": "shopq/logger.py",
       "lines": 21,
       "docstring": "Centralized logging - CREATE THIS FILE",
       "imports": [
@@ -121,23 +121,23 @@
       ],
       "complexity": 1
     },
-    "mailq/memory_classifier.py": {
+    "shopq/memory_classifier.py": {
       "type": "python",
-      "path": "mailq/memory_classifier.py",
+      "path": "shopq/memory_classifier.py",
       "lines": 190,
       "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
       "imports": [
         "os",
         "typing.Dict",
-        "mailq.rules_engine.RulesEngine",
-        "mailq.vertex_gemini_classifier.VertexGeminiClassifier",
-        "mailq.mapper.map_to_gmail_labels",
-        "mailq.mapper.validate_classification_result"
+        "shopq.rules_engine.RulesEngine",
+        "shopq.vertex_gemini_classifier.VertexGeminiClassifier",
+        "shopq.mapper.map_to_gmail_labels",
+        "shopq.mapper.validate_classification_result"
       ],
       "internal_imports": [
-        "mailq/rules_engine.py",
-        "mailq/mapper.py",
-        "mailq/vertex_gemini_classifier.py"
+        "shopq/rules_engine.py",
+        "shopq/mapper.py",
+        "shopq/vertex_gemini_classifier.py"
       ],
       "external_imports": [
         "os",
@@ -160,11 +160,11 @@
       "functions": [],
       "complexity": 5
     },
-    "mailq/api.py": {
+    "shopq/api.py": {
       "type": "python",
-      "path": "mailq/api.py",
+      "path": "shopq/api.py",
       "lines": 185,
-      "docstring": "FastAPI server for MailQ email classification",
+      "docstring": "FastAPI server for ShopQ email classification",
       "imports": [
         "fastapi.FastAPI",
         "fastapi.HTTPException",
@@ -176,23 +176,23 @@
         "typing.Optional",
         "time",
         "datetime.datetime",
-        "mailq.memory_classifier.MemoryClassifier",
-        "mailq.category_manager.CategoryManager",
-        "mailq.feedback_manager.FeedbackManager",
-        "mailq.api_debug.router",
-        "mailq.api_debug.set_last_batch",
-        "mailq.api_feedback.router",
-        "mailq.api_feedback.set_feedback_manager",
-        "mailq.api_organize.classify_batch",
+        "shopq.memory_classifier.MemoryClassifier",
+        "shopq.category_manager.CategoryManager",
+        "shopq.feedback_manager.FeedbackManager",
+        "shopq.api_debug.router",
+        "shopq.api_debug.set_last_batch",
+        "shopq.api_feedback.router",
+        "shopq.api_feedback.set_feedback_manager",
+        "shopq.api_organize.classify_batch",
         "uvicorn"
       ],
       "internal_imports": [
-        "mailq/memory_classifier.py",
-        "mailq/feedback_manager.py",
-        "mailq/api_feedback.py",
-        "mailq/api_organize.py",
-        "mailq/category_manager.py",
-        "mailq/api_debug.py"
+        "shopq/memory_classifier.py",
+        "shopq/feedback_manager.py",
+        "shopq/api_feedback.py",
+        "shopq/api_organize.py",
+        "shopq/category_manager.py",
+        "shopq/api_debug.py"
       ],
       "external_imports": [
         "fastapi.FastAPI",
@@ -263,9 +263,9 @@
       ],
       "complexity": 2
     },
-    "mailq/api_feedback.py": {
+    "shopq/api_feedback.py": {
       "type": "python",
-      "path": "mailq/api_feedback.py",
+      "path": "shopq/api_feedback.py",
       "lines": 97,
       "docstring": "Feedback API endpoints for user corrections",
       "imports": [
@@ -276,13 +276,13 @@
         "typing.List",
         "typing.Dict",
         "typing.Optional",
-        "mailq.feedback_manager.FeedbackManager",
-        "mailq.api_dashboard.render_dashboard",
+        "shopq.feedback_manager.FeedbackManager",
+        "shopq.api_dashboard.render_dashboard",
         "fastapi.responses.HTMLResponse"
       ],
       "internal_imports": [
-        "mailq/api_dashboard.py",
-        "mailq/feedback_manager.py"
+        "shopq/api_dashboard.py",
+        "shopq/feedback_manager.py"
       ],
       "external_imports": [
         "fastapi.APIRouter",
@@ -316,9 +316,9 @@
       ],
       "complexity": 1
     },
-    "mailq/api_dashboard.py": {
+    "shopq/api_dashboard.py": {
       "type": "python",
-      "path": "mailq/api_dashboard.py",
+      "path": "shopq/api_dashboard.py",
       "lines": 255,
       "docstring": "Dashboard HTML rendering for feedback visualization",
       "imports": [
@@ -359,9 +359,9 @@
       ],
       "complexity": 5
     },
-    "mailq/rules_engine.py": {
+    "shopq/rules_engine.py": {
       "type": "python",
-      "path": "mailq/rules_engine.py",
+      "path": "shopq/rules_engine.py",
       "lines": 282,
       "docstring": "Rules-based email classification with learning",
       "imports": [
@@ -371,10 +371,10 @@
         "typing.List",
         "collections.Counter",
         "re",
-        "mailq.logger.setup_logger"
+        "shopq.logger.setup_logger"
       ],
       "internal_imports": [
-        "mailq/logger.py"
+        "shopq/logger.py"
       ],
       "external_imports": [
         "sqlite3",
@@ -409,9 +409,9 @@
       "functions": [],
       "complexity": 13
     },
-    "mailq/api_organize.py": {
+    "shopq/api_organize.py": {
       "type": "python",
-      "path": "mailq/api_organize.py",
+      "path": "shopq/api_organize.py",
       "lines": 175,
       "docstring": "Email classification logic for /api/organize endpoint",
       "imports": [
@@ -462,9 +462,9 @@
       ],
       "complexity": 7
     },
-    "mailq/api_debug.py": {
+    "shopq/api_debug.py": {
       "type": "python",
-      "path": "mailq/api_debug.py",
+      "path": "shopq/api_debug.py",
       "lines": 93,
       "docstring": "Debug endpoints for monitoring classification batches",
       "imports": [
@@ -489,9 +489,9 @@
       ],
       "complexity": 1
     },
-    "mailq/category_manager.py": {
+    "shopq/category_manager.py": {
       "type": "python",
-      "path": "mailq/category_manager.py",
+      "path": "shopq/category_manager.py",
       "lines": 118,
       "docstring": "Manage user-specific email categories",
       "imports": [
@@ -532,9 +532,9 @@
       "functions": [],
       "complexity": 7
     },
-    "mailq/vertex_gemini_classifier.py": {
+    "shopq/vertex_gemini_classifier.py": {
       "type": "python",
-      "path": "mailq/vertex_gemini_classifier.py",
+      "path": "shopq/vertex_gemini_classifier.py",
       "lines": 521,
       "docstring": "Vertex AI Gemini - Multi-dimensional email classifier",
       "imports": [
@@ -544,10 +544,10 @@
         "dotenv.load_dotenv",
         "json",
         "re",
-        "mailq.feedback_manager.FeedbackManager"
+        "shopq.feedback_manager.FeedbackManager"
       ],
       "internal_imports": [
-        "mailq/feedback_manager.py"
+        "shopq/feedback_manager.py"
       ],
       "external_imports": [
         "vertexai",
@@ -577,9 +577,9 @@
       "functions": [],
       "complexity": 8
     },
-    "mailq/config/default_categories.py": {
+    "shopq/config/default_categories.py": {
       "type": "python",
-      "path": "mailq/config/default_categories.py",
+      "path": "shopq/config/default_categories.py",
       "lines": 49,
       "docstring": "Default email categories for new users",
       "imports": [],
@@ -589,11 +589,11 @@
       "functions": [],
       "complexity": 0
     },
-    "mailq/config/__init__.py": {
+    "shopq/config/__init__.py": {
       "type": "python",
-      "path": "mailq/config/__init__.py",
+      "path": "shopq/config/__init__.py",
       "lines": 112,
-      "docstring": "Configuration module for MailQ.\nUses the MVP v1 classification schema from Schema.json.",
+      "docstring": "Configuration module for ShopQ.\nUses the MVP v1 classification schema from Schema.json.",
       "imports": [
         "pathlib.Path"
       ],
@@ -825,7 +825,7 @@
         },
         {
           "name": "classify_email",
-          "docstring": "Classify email using LLM.\n\nDEPRECATED: This is a legacy wrapper. New code should use:\n    from mailq.llm_classifier import LLMClassifier\n    classifier = LLMClassifier()\n    result = classifier.classify(subject, snippet, from_field)\n\nArgs:\n    subject: Email subject line\n    snippet: Email preview text\n    from_field: Sender email address\n\nReturns:\n    dict: {'category': str, 'confidence': int}"
+          "docstring": "Classify email using LLM.\n\nDEPRECATED: This is a legacy wrapper. New code should use:\n    from shopq.llm_classifier import LLMClassifier\n    classifier = LLMClassifier()\n    result = classifier.classify(subject, snippet, from_field)\n\nArgs:\n    subject: Email subject line\n    snippet: Email preview text\n    from_field: Sender email address\n\nReturns:\n    dict: {'category': str, 'confidence': int}"
         }
       ],
       "complexity": 3
@@ -1114,32 +1114,32 @@
     }
   },
   "dependencies": {
-    "mailq/__init__.py": [
-      "mailq/rules_engine.py",
-      "mailq/memory_classifier.py"
+    "shopq/__init__.py": [
+      "shopq/rules_engine.py",
+      "shopq/memory_classifier.py"
     ],
-    "mailq/memory_classifier.py": [
-      "mailq/rules_engine.py",
-      "mailq/mapper.py",
-      "mailq/vertex_gemini_classifier.py"
+    "shopq/memory_classifier.py": [
+      "shopq/rules_engine.py",
+      "shopq/mapper.py",
+      "shopq/vertex_gemini_classifier.py"
     ],
-    "mailq/api.py": [
-      "mailq/memory_classifier.py",
-      "mailq/feedback_manager.py",
-      "mailq/api_feedback.py",
-      "mailq/api_organize.py",
-      "mailq/category_manager.py",
-      "mailq/api_debug.py"
+    "shopq/api.py": [
+      "shopq/memory_classifier.py",
+      "shopq/feedback_manager.py",
+      "shopq/api_feedback.py",
+      "shopq/api_organize.py",
+      "shopq/category_manager.py",
+      "shopq/api_debug.py"
     ],
-    "mailq/api_feedback.py": [
-      "mailq/api_dashboard.py",
-      "mailq/feedback_manager.py"
+    "shopq/api_feedback.py": [
+      "shopq/api_dashboard.py",
+      "shopq/feedback_manager.py"
     ],
-    "mailq/rules_engine.py": [
-      "mailq/logger.py"
+    "shopq/rules_engine.py": [
+      "shopq/logger.py"
     ],
-    "mailq/vertex_gemini_classifier.py": [
-      "mailq/feedback_manager.py"
+    "shopq/vertex_gemini_classifier.py": [
+      "shopq/feedback_manager.py"
     ]
   },
   "js_dependencies": {
@@ -1180,9 +1180,9 @@
     "total_functions": 39,
     "orchestrators": [
       {
-        "path": "mailq/api.py",
+        "path": "shopq/api.py",
         "import_count": 6,
-        "docstring": "FastAPI server for MailQ email classification",
+        "docstring": "FastAPI server for ShopQ email classification",
         "type": "python"
       },
       {
@@ -1192,7 +1192,7 @@
         "type": "javascript"
       },
       {
-        "path": "mailq/memory_classifier.py",
+        "path": "shopq/memory_classifier.py",
         "import_count": 3,
         "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
         "type": "python"
@@ -1206,31 +1206,31 @@
     ],
     "core_classes": [
       {
-        "path": "mailq/rules_engine.py",
+        "path": "shopq/rules_engine.py",
         "class_name": "RulesEngine",
         "method_count": 13,
         "docstring": ""
       },
       {
-        "path": "mailq/feedback_manager.py",
+        "path": "shopq/feedback_manager.py",
         "class_name": "FeedbackManager",
         "method_count": 11,
         "docstring": ""
       },
       {
-        "path": "mailq/vertex_gemini_classifier.py",
+        "path": "shopq/vertex_gemini_classifier.py",
         "class_name": "VertexGeminiClassifier",
         "method_count": 8,
         "docstring": ""
       },
       {
-        "path": "mailq/category_manager.py",
+        "path": "shopq/category_manager.py",
         "class_name": "CategoryManager",
         "method_count": 7,
         "docstring": "Manages email categories for each user"
       },
       {
-        "path": "mailq/memory_classifier.py",
+        "path": "shopq/memory_classifier.py",
         "class_name": "MemoryClassifier",
         "method_count": 5,
         "docstring": ""

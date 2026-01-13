@@ -69,7 +69,7 @@ The stats aggregation now correctly reads importance and verifier counts from th
 # Close Issue #2: Financial statements
 close_issue_by_title \
   "Financial statement notifications misclassified as critical" \
-  "✅ **FIXED** in \`mailq/importance_classifier.py\`
+  "✅ **FIXED** in \`shopq/importance_classifier.py\`
 
 Changes:
 - Moved patterns from \`CRITICAL_PATTERNS\` → \`ROUTINE_PATTERNS['financial_notifications']\`
@@ -81,7 +81,7 @@ Financial statement availability notifications are now correctly classified as R
 # Close Issue #13: Shipment notifications
 close_issue_by_title \
   "Shipment notifications over-classified as time-sensitive" \
-  "✅ **FIXED** in \`mailq/importance_classifier.py\`
+  "✅ **FIXED** in \`shopq/importance_classifier.py\`
 
 Changes:
 - Split shipment patterns into 3 tiers:
@@ -94,7 +94,7 @@ Test suite confirms all 10 test cases pass. Standard shipment notifications are 
 # Close Issue #14: Policy updates
 close_issue_by_title \
   "Policy update misclassified using medical_claims pattern" \
-  "✅ **FIXED** in \`mailq/importance_classifier.py\`
+  "✅ **FIXED** in \`shopq/importance_classifier.py\`
 
 Changes:
 - Refined \`medical_claims\` pattern to require specific context
@@ -108,7 +108,7 @@ Test suite confirms all 9 test cases pass. Generic policy updates are now correc
 # Close Issue #15: Promotional action_required
 close_issue_by_title \
   "Promotional emails with action_required flag elevated to time-sensitive" \
-  "✅ **FIXED** in \`mailq/importance_classifier.py\`
+  "✅ **FIXED** in \`shopq/importance_classifier.py\`
 
 Changes:
 - Marketing emails with vague urgency ('urgent', 'time sensitive') → ROUTINE

@@ -10,9 +10,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 
 # Load GDS
 gds_path = Path(__file__).parent.parent / "tests" / "golden_set" / "gds-1.0.csv"

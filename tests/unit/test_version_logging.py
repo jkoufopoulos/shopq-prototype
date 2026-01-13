@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from mailq.utils.versioning import MODEL_NAME, MODEL_VERSION, PROMPT_VERSION, get_version_metadata
+from shopq.utils.versioning import MODEL_NAME, MODEL_VERSION, PROMPT_VERSION, get_version_metadata
 
 
 def test_versioning_constants_exist():
@@ -38,7 +38,7 @@ def test_get_version_metadata_structure():
 @pytest.mark.skipif(True, reason="Requires GOOGLE_API_KEY - integration test, not unit test")
 def test_llm_classifier_includes_version_fields():
     """Verify VertexGeminiClassifier.classify() includes version fields."""
-    from mailq.classification.vertex_gemini_classifier import VertexGeminiClassifier
+    from shopq.classification.vertex_gemini_classifier import VertexGeminiClassifier
 
     classifier = VertexGeminiClassifier()
 
@@ -62,7 +62,7 @@ def test_llm_classifier_includes_version_fields():
 
 def test_fallback_result_includes_version_fields():
     """Verify fallback results include version fields."""
-    from mailq.classification.vertex_gemini_classifier import (
+    from shopq.classification.vertex_gemini_classifier import (
         MODEL_NAME,
         MODEL_VERSION,
         PROMPT_VERSION,
@@ -87,7 +87,7 @@ def test_fallback_result_includes_version_fields():
 
 def test_version_fields_in_classification_contract():
     """Verify ClassificationContract schema includes version fields."""
-    from mailq.storage.classification import ClassificationContract
+    from shopq.storage.classification import ClassificationContract
 
     # Check if version fields are in the model
     schema = ClassificationContract.model_json_schema()
@@ -102,16 +102,16 @@ def test_vertex_classifier_uses_central_versioning():
     """Verify VertexGeminiClassifier imports from central versioning module."""
     # Check that constants are imported from versioning module
     # (not defined locally in vertex_gemini_classifier.py)
-    import mailq.classification.vertex_gemini_classifier as classifier_module
-    import mailq.utils.versioning as versioning_module
+    import shopq.classification.vertex_gemini_classifier as classifier_module
+    import shopq.utils.versioning as versioning_module
 
     # If imported correctly, they should be the same object
     assert classifier_module.MODEL_NAME is versioning_module.MODEL_NAME, (
-        "VertexGeminiClassifier should import MODEL_NAME from mailq.utils.versioning"
+        "VertexGeminiClassifier should import MODEL_NAME from shopq.utils.versioning"
     )
     assert classifier_module.MODEL_VERSION is versioning_module.MODEL_VERSION, (
-        "VertexGeminiClassifier should import MODEL_VERSION from mailq.utils.versioning"
+        "VertexGeminiClassifier should import MODEL_VERSION from shopq.utils.versioning"
     )
     assert classifier_module.PROMPT_VERSION is versioning_module.PROMPT_VERSION, (
-        "VertexGeminiClassifier should import PROMPT_VERSION from mailq.utils.versioning"
+        "VertexGeminiClassifier should import PROMPT_VERSION from shopq.utils.versioning"
     )

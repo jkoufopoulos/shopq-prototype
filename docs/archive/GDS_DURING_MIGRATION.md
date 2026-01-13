@@ -9,10 +9,10 @@
 Your MemoryClassifier uses the database:
 
 ```python
-# mailq/memory_classifier.py
+# shopq/memory_classifier.py
 class MemoryClassifier:
     def __init__(self):
-        self.rules = RulesEngine()  # ← Uses mailq.db
+        self.rules = RulesEngine()  # ← Uses shopq.db
         self.type_mapper = get_type_mapper()  # ← Uses config (YAML)
         self.llm_classifier = VertexGeminiClassifier()  # ← Uses Gemini API
 ```
@@ -122,7 +122,7 @@ Run tests that don't depend on database:
 
 # Output:
 # ╔════════════════════════════════════════════════════════╗
-# ║  MailQ GDS Tests (DB Migration Safe Mode)             ║
+# ║  ShopQ GDS Tests (DB Migration Safe Mode)             ║
 # ║  Running tests that don't depend on database          ║
 # ╚════════════════════════════════════════════════════════╝
 #
@@ -149,14 +149,14 @@ Create a test database that won't change:
 
 ```bash
 # Before migration: Copy current DB
-cp mailq/data/mailq.db mailq/data/mailq_test.db
+cp shopq/data/shopq.db shopq/data/shopq_test.db
 
 # During migration: Use test DB for GDS tests
-export MAILQ_TEST_DB=mailq/data/mailq_test.db
+export SHOPQ_TEST_DB=shopq/data/shopq_test.db
 pytest tests/test_*_gds.py -v
 
 # After migration: Delete test DB
-rm mailq/data/mailq_test.db
+rm shopq/data/shopq_test.db
 ```
 
 ---

@@ -48,7 +48,7 @@ def load_emails_from_csv():
 
 def test_filters_only(emails):
     """Test Phase 1 filters in isolation"""
-    from mailq.filters import filter_expired_events, filter_self_emails
+    from shopq.filters import filter_expired_events, filter_self_emails
 
     print("=" * 80)
     print("TESTING PHASE 1 FILTERS IN ISOLATION")
@@ -83,7 +83,7 @@ def test_filters_only(emails):
     emails_final = filter_self_emails(emails_after_time, "jkoufopoulos@gmail.com")
     self_count = before - len(emails_final)
 
-    print(f"  Filtered: {self_count} MailQ digest emails")
+    print(f"  Filtered: {self_count} ShopQ digest emails")
     print(f"  Remaining: {len(emails_final)} emails")
 
     if self_count > 0:
@@ -104,7 +104,7 @@ def test_filters_only(emails):
 
 def test_full_digest(emails):
     """Test full digest generation with filters"""
-    from mailq.digest.context_digest import ContextDigest
+    from shopq.digest.context_digest import ContextDigest
 
     print("=" * 80)
     print("TESTING FULL DIGEST GENERATION")

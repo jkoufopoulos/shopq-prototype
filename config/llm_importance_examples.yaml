@@ -261,7 +261,7 @@ examples:
 
   - id: false_escalation_oauth_confirmation
     subject: "Security alert"
-    snippet: "You allowed MailQ access to some of your Google Account data jkoufopoulos@gmail.com"
+    snippet: "You allowed ShopQ access to some of your Google Account data jkoufopoulos@gmail.com"
     from: "Google <no-reply@accounts.google.com>"
     classification:
       type: notification

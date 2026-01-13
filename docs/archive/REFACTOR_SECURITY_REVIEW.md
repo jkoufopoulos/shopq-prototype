@@ -9,10 +9,10 @@
 ## Executive Summary
 
 Reviewed 4 recently refactored files for security vulnerabilities:
-- `mailq/api/routes/debug_ab_testing.py` - A/B testing debug endpoints
-- `mailq/infrastructure/database_schema.py` - Database schema initialization
-- `mailq/classification/extractor_patterns.py` - Pattern matching helpers
-- `mailq/observability/tracking_reports.py` - Reporting and GCS sync
+- `shopq/api/routes/debug_ab_testing.py` - A/B testing debug endpoints
+- `shopq/infrastructure/database_schema.py` - Database schema initialization
+- `shopq/classification/extractor_patterns.py` - Pattern matching helpers
+- `shopq/observability/tracking_reports.py` - Reporting and GCS sync
 
 **Findings:**
 - ✅ **SQL Injection:** All queries use parameterized queries correctly
@@ -32,11 +32,11 @@ Reviewed 4 recently refactored files for security vulnerabilities:
 
 #### [M1] Debug Endpoints Lack Authentication
 **Severity:** Medium
-**Location:** `mailq/api/routes/debug_ab_testing.py` (all endpoints)
+**Location:** `shopq/api/routes/debug_ab_testing.py` (all endpoints)
 **Files Affected:**
-- `mailq/api/routes/debug_ab_testing.py:17-42` (get_ab_testing_summary)
-- `mailq/api/routes/debug_ab_testing.py:45-102` (get_recent_ab_tests)
-- `mailq/api/routes/debug_ab_testing.py:105-193` (get_ab_test_details)
+- `shopq/api/routes/debug_ab_testing.py:17-42` (get_ab_testing_summary)
+- `shopq/api/routes/debug_ab_testing.py:45-102` (get_recent_ab_tests)
+- `shopq/api/routes/debug_ab_testing.py:105-193` (get_ab_test_details)
 
 **Evidence:**
 ```python
@@ -65,9 +65,9 @@ In production, unauthorized access could enable competitive intelligence gatheri
 Add authentication to debug endpoints using existing `require_admin_auth` dependency:
 
 ```diff
-# mailq/api/routes/debug_ab_testing.py
+# shopq/api/routes/debug_ab_testing.py
 from fastapi import APIRouter, Query, Depends
-+from mailq.api.middleware.auth import require_admin_auth
++from shopq.api.middleware.auth import require_admin_auth
 
  @router.get("/ab-testing/summary")
  async def get_ab_testing_summary(
@@ -99,10 +99,10 @@ Apply authentication to all `/api/debug/*` endpoints. Consider creating a shared
 #### [M2] PII Exposure in Log Messages
 **Severity:** Medium
 **Locations:**
-- `mailq/observability/tracking_reports.py:92-96` (Entity extraction failures)
-- `mailq/observability/tracking_reports.py:103-104` (Unlinked summaries)
-- `mailq/classification/extractor_patterns.py:280,302,312,317` (Metadata recovery)
-- `mailq/observability/validation.py:112,146-149` (Importance/entity logging)
+- `shopq/observability/tracking_reports.py:92-96` (Entity extraction failures)
+- `shopq/observability/tracking_reports.py:103-104` (Unlinked summaries)
+- `shopq/classification/extractor_patterns.py:280,302,312,317` (Metadata recovery)
+- `shopq/observability/validation.py:112,146-149` (Importance/entity logging)
 
 **Evidence:**
 ```python
@@ -344,7 +344,7 @@ except Exception as e:
 
 **Current State:**
 - Admin endpoints use `require_admin_auth` dependency (rules.py:56,100,137)
-- API key from `MAILQ_ADMIN_API_KEY` environment variable
+- API key from `SHOPQ_ADMIN_API_KEY` environment variable
 - Timing-safe comparison with `secrets.compare_digest()` (auth.py:60)
 - Optional in development (auth.py:34-35)
 
@@ -352,11 +352,11 @@ except Exception as e:
 Debug endpoints (`/api/debug/ab-testing/*`) don't use authentication, allowing unauthenticated access to internal metrics.
 
 **Production Configuration:**
-Cloud Run startup (app.py:181-186) warns if `MAILQ_ADMIN_API_KEY` not set:
+Cloud Run startup (app.py:181-186) warns if `SHOPQ_ADMIN_API_KEY` not set:
 ```python
-if not os.getenv("MAILQ_ADMIN_API_KEY"):
+if not os.getenv("SHOPQ_ADMIN_API_KEY"):
     logger.warning(
-        "Security misconfiguration: MAILQ_ADMIN_API_KEY not set in "
+        "Security misconfiguration: SHOPQ_ADMIN_API_KEY not set in "
         "production environment. Admin endpoints are unprotected."
     )
 ```
@@ -375,7 +375,7 @@ This warning-only approach means production could deploy without authentication 
 
 2. **Reduce PII in Logs**
    - Replace subject logging with thread_id (fix from [M2])
-   - Run: `grep -r 'logger.*subject' mailq/` to find remaining instances
+   - Run: `grep -r 'logger.*subject' shopq/` to find remaining instances
    - Update 10 most egregious log statements first
 
 3. **Enforce Admin API Key in Production**
@@ -389,7 +389,7 @@ This warning-only approach means production could deploy without authentication 
      +         detail="Server misconfiguration: authentication not configured",
      +     )
      ```
-   - Deploy validation ensures `MAILQ_ADMIN_API_KEY` set before Cloud Run starts
+   - Deploy validation ensures `SHOPQ_ADMIN_API_KEY` set before Cloud Run starts
 
 ### Short-Term (Within 1 Month)
 
@@ -398,7 +398,7 @@ This warning-only approach means production could deploy without authentication 
      ```yaml
      - id: no-pii-logging
        name: Block PII in logs
-       entry: bash -c 'grep -r "logger.*subject\|logger.*from_field\|logger.*email" --include="*.py" mailq/ && exit 1 || exit 0'
+       entry: bash -c 'grep -r "logger.*subject\|logger.*from_field\|logger.*email" --include="*.py" shopq/ && exit 1 || exit 0'
        language: system
      ```
 
@@ -423,8 +423,8 @@ This warning-only approach means production could deploy without authentication 
    - Enables per-user audit logs and granular permissions
 
 9. **Secrets Management Audit**
-   - Verify no secrets in `mailq/data/mailq.db` (user_credentials table uses encrypted_token_json)
-   - Rotate `MAILQ_ADMIN_API_KEY` quarterly
+   - Verify no secrets in `shopq/data/shopq.db` (user_credentials table uses encrypted_token_json)
+   - Rotate `SHOPQ_ADMIN_API_KEY` quarterly
    - Consider Google Secret Manager for centralized secrets
 
 ---
@@ -483,17 +483,17 @@ This warning-only approach means production could deploy without authentication 
 ## Appendix: Files Reviewed
 
 ### Refactored Files (Primary Review Scope)
-1. `mailq/api/routes/debug_ab_testing.py` (194 lines)
-2. `mailq/infrastructure/database_schema.py` (200 lines)
-3. `mailq/classification/extractor_patterns.py` (320 lines)
-4. `mailq/observability/tracking_reports.py` (221 lines)
+1. `shopq/api/routes/debug_ab_testing.py` (194 lines)
+2. `shopq/infrastructure/database_schema.py` (200 lines)
+3. `shopq/classification/extractor_patterns.py` (320 lines)
+4. `shopq/observability/tracking_reports.py` (221 lines)
 
 ### Supporting Files (Context Review)
-5. `mailq/infrastructure/database.py` (585 lines)
-6. `mailq/api/middleware/auth.py` (83 lines)
-7. `mailq/api/routes/debug.py` (100 lines, partial)
-8. `mailq/observability/validation.py` (150 lines, partial)
-9. `mailq/storage/cloud.py` (100 lines, partial)
+5. `shopq/infrastructure/database.py` (585 lines)
+6. `shopq/api/middleware/auth.py` (83 lines)
+7. `shopq/api/routes/debug.py` (100 lines, partial)
+8. `shopq/observability/validation.py` (150 lines, partial)
+9. `shopq/storage/cloud.py` (100 lines, partial)
 
 ---
 

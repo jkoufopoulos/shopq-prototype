@@ -42,7 +42,7 @@ class DynamicDiagramGenerator:
 
     def _scan_backend(self) -> list[Path]:
         """Scan Python backend files (core architecture only)"""
-        mailq_dir = PROJECT_ROOT / "mailq"
+        shopq_dir = PROJECT_ROOT / "mailq"
 
         # Directories to exclude (utility, config, data)
         exclude_dirs = {"scripts", "config", "prompts", "data", "logs", "tests", "__pycache__"}
@@ -57,7 +57,7 @@ class DynamicDiagramGenerator:
         }
 
         backend_files = []
-        for f in mailq_dir.rglob("*.py"):
+        for f in shopq_dir.rglob("*.py"):
             # Skip test files and __init__.py
             if f.name.startswith("test_") or f.name == "__init__.py":
                 continue
@@ -67,7 +67,7 @@ class DynamicDiagramGenerator:
                 continue
 
             # Skip if file is in excluded directory
-            relative_parts = f.relative_to(mailq_dir).parts
+            relative_parts = f.relative_to(shopq_dir).parts
             if any(part in exclude_dirs for part in relative_parts):
                 continue
 
@@ -103,7 +103,7 @@ class DynamicDiagramGenerator:
     def _analyze_file_imports(self, filepath: Path) -> dict[str, list[str]]:
         """Parse a file to extract import relationships"""
         imports = {
-            "internal": [],  # from mailq.X import Y
+            "internal": [],  # from shopq.X import Y
             "external": [],  # vertexai, gmail API, etc.
             "stdlib": [],  # datetime, json, etc.
         }
@@ -116,9 +116,9 @@ class DynamicDiagramGenerator:
                 for line in content.split("\n"):
                     line = line.strip()
 
-                    # from mailq.digest_X import Y
-                    if (match := re.match(r"from mailq\.(\w+)", line)) or (
-                        match := re.match(r"import mailq\.(\w+)", line)
+                    # from shopq.digest_X import Y
+                    if (match := re.match(r"from shopq\.(\w+)", line)) or (
+                        match := re.match(r"import shopq\.(\w+)", line)
                     ):
                         module_name = match.group(1)
                         imports["internal"].append(module_name)
@@ -157,9 +157,9 @@ class DynamicDiagramGenerator:
         return all_imports
 
     def _detect_database_config(self) -> dict:
-        """Detect database configuration from mailq/config/database.py"""
+        """Detect database configuration from shopq/config/database.py"""
         config = {
-            "path": "mailq.db",  # default
+            "path": "shopq.db",  # default
             "tables": [],
             "pool_size": 5,
         }
@@ -1163,7 +1163,7 @@ sequenceDiagram
     participant Mapper as 🏷️ Label Mapper<br/>mapper.py
     participant Gmail as 📧 Gmail API
 
-    User->>Ext: Click MailQ icon / Auto-organize
+    User->>Ext: Click ShopQ icon / Auto-organize
     Ext->>Ext: Fetch unlabeled emails
     Ext->>Cache: Check sender cache (24hr TTL)
 
@@ -1208,12 +1208,12 @@ sequenceDiagram
 
 ## Execution Flow
 
-1. **Trigger**: User clicks MailQ icon or auto-organize alarm fires
+1. **Trigger**: User clicks ShopQ icon or auto-organize alarm fires
 2. **Cache check**: Extension checks 24-hour cache for sender classifications
 3. **Deduplication**: 100 emails reduced to ~30 unique senders for API call
 4. **Rules engine**: Checks learned rules first (50-70% match rate, $0 cost)
 5. **LLM fallback**: If no rule matches, use {model} classifier (~$0.0010/email)
-6. **Label mapping**: Mapper converts classification → Gmail labels (e.g., "MailQ-Urgent")
+6. **Label mapping**: Mapper converts classification → Gmail labels (e.g., "ShopQ-Urgent")
 7. **Apply & cache**: Labels applied, results cached for 24hr, expanded to same-sender emails
 8. **Learning loop**: User label corrections create new rules via /api/feedback
 
@@ -1242,7 +1242,7 @@ sequenceDiagram
         return diagram
 
     def generate_system_storyboard(self) -> str:
-        """Generate a curated high-level storyboard of the MailQ flow - DYNAMICALLY UPDATED"""
+        """Generate a curated high-level storyboard of the ShopQ flow - DYNAMICALLY UPDATED"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         # DYNAMIC DETECTION: Pull from actual codebase
@@ -1268,17 +1268,17 @@ sequenceDiagram
         has_entity_extractor = any("entity" in k and "extract" in k for k in backend_files_map.keys())
         has_feedback_mgr = "feedback_manager" in backend_files_map
 
-        diagram = f"""# MailQ System Storyboard
+        diagram = f"""# ShopQ System Storyboard
 
 > **Dynamically generated** from actual codebase structure. Last updated: {timestamp}
 >
 > **Stats**: {len(self.backend_files)} backend files • {len(self.extension_files)} extension files • {len(self.api_endpoints)} API endpoints • {table_count} DB tables
 
-> **Curated overview** of how MailQ captures, classifies, learns, and narrates. Last updated: {timestamp}
+> **Curated overview** of how ShopQ captures, classifies, learns, and narrates. Last updated: {timestamp}
 
 ## Overview
 
-This storyboard highlights the five essential beats every MailQ run hits: **capture → classify → learn → narrate → delight**.
+This storyboard highlights the five essential beats every ShopQ run hits: **capture → classify → learn → narrate → delight**.
 
 ```mermaid
 flowchart LR
@@ -1399,7 +1399,7 @@ flowchart LR
 - **LLM Classifier:** Vertex AI `{model}` with structured prompts (slowest, handles edge cases)
 - **Verifier:** `NarrativeVerifier` checks for hallucinations (numbers, dates, names must exist in source)
 
-**Files:** `mailq/api_organize.py`, `mailq/pipeline_wrapper.py`, `mailq/rules_manager.py`, `mailq/memory_classifier.py`, `mailq/vertex_gemini_classifier.py`, `mailq/narrative_verifier.py`
+**Files:** `shopq/api_organize.py`, `shopq/pipeline_wrapper.py`, `shopq/rules_manager.py`, `shopq/memory_classifier.py`, `shopq/vertex_gemini_classifier.py`, `shopq/narrative_verifier.py`
 
 ### 3. Learn (Temporal Intelligence + Persistence)
 **What happens:** Enrich classifications with time-based signals and store decisions.
@@ -1408,7 +1408,7 @@ flowchart LR
 - **Database write:** Store classification decision with metadata (decider, confidence, model version)
 - **Feedback loop:** User corrections written to `feedback` table, trigger rule learning
 
-**Files:** `mailq/temporal_enrichment.py`, `mailq/temporal_decay.py`, `mailq/config/database.py`, `mailq/feedback_manager.py`
+**Files:** `shopq/temporal_enrichment.py`, `shopq/temporal_decay.py`, `shopq/config/database.py`, `shopq/feedback_manager.py`
 
 ### 4. Narrate (Digest Generation)
 **What happens:** Build daily context-aware digest email.
@@ -1417,7 +1417,7 @@ flowchart LR
 - **Narrative building:** Generate natural language story (~90 words) using context from entities
 - **HTML rendering:** Render digest cards using Jinja2 template (`digest_v2.html.j2`)
 
-**Files:** `mailq/context_digest.py`, `mailq/entity_extractor.py`, `mailq/digest/ranker.py`, `mailq/digest/narrative.py`, `mailq/hybrid_digest_renderer.py`, `mailq/templates/digest_v2.html.j2`
+**Files:** `shopq/context_digest.py`, `shopq/entity_extractor.py`, `shopq/digest/ranker.py`, `shopq/digest/narrative.py`, `shopq/hybrid_digest_renderer.py`, `shopq/templates/digest_v2.html.j2`
 
 ### 5. Delight (Delivery + Feedback)
 **What happens:** Send digest, capture user feedback, improve system.
@@ -1427,7 +1427,7 @@ flowchart LR
 - **Rule learning:** `FeedbackManager` generates new rules or adjusts confidence thresholds
 - **Quality monitoring:** Automated analysis flags hallucinations, inconsistencies, low-confidence decisions
 
-**Files:** `mailq/api.py` (context-digest endpoint), `mailq/api_feedback.py`, `mailq/feedback_manager.py`, `scripts/quality-monitor/quality_monitor.py`
+**Files:** `shopq/api.py` (context-digest endpoint), `shopq/api_feedback.py`, `shopq/feedback_manager.py`, `scripts/quality-monitor/quality_monitor.py`
 
 ## Touchpoints
 
@@ -1457,17 +1457,17 @@ Single SQLite database with these key tables:
 
 ### Observability & Quality Control
 - **Telemetry:** `infra/telemetry.py` logs events (API calls, classifications, errors)
-- **Confidence Logger:** `mailq/confidence_logger.py` tracks decision confidence over time
+- **Confidence Logger:** `shopq/confidence_logger.py` tracks decision confidence over time
 - **Quality Monitor:** `scripts/quality-monitor/` automated digest analysis
   - Runs LLM-based checks for hallucinations, inconsistencies, tone issues
   - Creates GitHub issues for quality problems
   - Stores results in `quality_logs/`
 - **Bridge Mode Logs:** `logs/bridge_mode/*.jsonl` captures shadow deployment comparisons
-- **Structured Logging:** `mailq/structured_logging.py` provides searchable event logs
+- **Structured Logging:** `shopq/structured_logging.py` provides searchable event logs
 
 ### Feature Flags
 - `USE_REFACTORED_PIPELINE` – Enable refactored classification pipeline (default: true)
-- `MAILQ_USE_LLM` – Enable LLM fallback in classification (default: false, rules-only mode)
+- `SHOPQ_USE_LLM` – Enable LLM fallback in classification (default: false, rules-only mode)
 - Dynamic feature gates via `/api/feature-gates` (database-backed toggles)
 
 ## Regenerate
@@ -1502,7 +1502,7 @@ Run `./code-graph/scripts/quick_regen.sh` after architecture changes to refresh 
 
 ## Overview
 
-This dashboard shows estimated costs and performance metrics for MailQ's classification pipeline.
+This dashboard shows estimated costs and performance metrics for ShopQ's classification pipeline.
 
 ⚠️ **IMPORTANT**: Performance metrics (%, latency) are **projections**, not measured values. Cost values and config are **detected from code**.
 
@@ -1592,7 +1592,7 @@ sequenceDiagram
     participant Mem as Memory Classifier<br/>memory_classifier.py
     participant Rules as Rules Engine<br/>rules_engine.py
     participant LLM as {model}<br/>Vertex AI
-    participant DB as mailq.db
+    participant DB as shopq.db
 
     Ext->>API: POST {{threads: [...], user: "..."}}
     API->>Mem: classify_batch(threads)
@@ -1606,7 +1606,7 @@ sequenceDiagram
         Mem->>DB: Store classification
         Mem-->>API: LLM result (T3)
     end
-    API-->>Ext: {{results: [{{id, type, label, mailq_labels}}]}}
+    API-->>Ext: {{results: [{{id, type, label, shopq_labels}}]}}
 ```
 
 ## Key Contracts
@@ -1718,7 +1718,7 @@ sequenceDiagram
     participant API as /api/feedback
     participant FeedMgr as Feedback Manager<br/>feedback_manager.py
     participant RulesMgr as Rules Manager<br/>rules_manager.py
-    participant DB as mailq.db
+    participant DB as shopq.db
 
     User->>User: Changes label (Critical → Routine)
     Content->>Content: Detect label change (MutationObserver)
@@ -1794,35 +1794,35 @@ sequenceDiagram
         Backend-->>Worker: Classification results
         Worker->>Gmail: Apply labels & archive
         Worker->>Store: Update cache + telemetry
-        Worker->>Store: Set mailq_digest_pending=true
+        Worker->>Store: Set shopq_digest_pending=true
         par Digest Trigger
             Worker->>Digest: generateAndSendSummaryEmail()
-            Digest->>Gmail: Send MailQ digest
+            Digest->>Gmail: Send ShopQ digest
         end
     else Inbox empty
         Worker->>Store: Clear digest pending flag
     end
-    Worker->>Store: Update mailq_last_auto_organize_at
+    Worker->>Store: Update shopq_last_auto_organize_at
 ```
 
 ## Execution Flow
 
-1. **Alarm fires** based on the configured interval (`mailq_auto_organize_settings.intervalMinutes`).
+1. **Alarm fires** based on the configured interval (`shopq_auto_organize_settings.intervalMinutes`).
 2. **Service worker** validates settings, records session start, and queries Gmail for unlabeled threads.
 3. **When threads exist**:
    - Calls the backend `/api/organize` endpoint with deduplicated threads.
    - Applies Gmail labels/archives via `gmail.js`.
-   - Marks `mailq_digest_pending` so the next foreground Gmail tab triggers a digest.
+   - Marks `shopq_digest_pending` so the next foreground Gmail tab triggers a digest.
 4. **When inbox is empty**, the digest pending flag is cleared.
 5. **Digest pipeline** runs when Gmail becomes active, using `generateAndSendSummaryEmail` to send the context digest.
 
 ## Key Metrics
 
-- Alarm interval & settings in `mailq_auto_organize_settings`
+- Alarm interval & settings in `shopq_auto_organize_settings`
 - Cache hit/miss (`extension/modules/telemetry.js`)
 - Pipeline timing (`infra/telemetry.py`:
   `pipeline.total_ms`, `gmail.fetch.latency_ms`, etc.)
-- Digest timestamps (`mailq_last_digest_sent_at` sync storage)
+- Digest timestamps (`shopq_last_digest_sent_at` sync storage)
 
 ---
 

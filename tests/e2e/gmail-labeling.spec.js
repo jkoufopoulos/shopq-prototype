@@ -60,16 +60,16 @@ test.describe('Gmail Label Application', () => {
       }
     });
 
-    // Step 6: Trigger MailQ auto-organize
-    console.log('🚀 Step 2: Triggering MailQ auto-organize...');
+    // Step 6: Trigger ShopQ auto-organize
+    console.log('🚀 Step 2: Triggering ShopQ auto-organize...');
 
-    // Find and click the MailQ button (or trigger via extension message)
+    // Find and click the ShopQ button (or trigger via extension message)
     try {
-      // Option 1: Try to click MailQ button in Gmail UI
-      const mailqButton = await page.$('button:has-text("MailQ")').catch(() => null);
+      // Option 1: Try to click ShopQ button in Gmail UI
+      const mailqButton = await page.$('button:has-text("ShopQ")').catch(() => null);
       if (mailqButton) {
         await mailqButton.click();
-        console.log('   ✅ Clicked MailQ button');
+        console.log('   ✅ Clicked ShopQ button');
       } else {
         // Option 2: Send message directly to extension
         console.log('   📨 Sending organize message to extension...');
@@ -130,12 +130,12 @@ test.describe('Gmail Label Application', () => {
     console.log(`🏷️  Final labels: ${finalLabels.length > 0 ? finalLabels.join(', ') : 'None'}`);
 
     // Step 12: Analyze results
-    const hasMailQLabel = finalLabels.some(label => label.includes('MailQ'));
+    const hasShopQLabel = finalLabels.some(label => label.includes('ShopQ'));
 
     console.log('\n📊 Test Results:');
     console.log(`   Initial labels: ${initialLabels.length}`);
     console.log(`   Final labels: ${finalLabels.length}`);
-    console.log(`   Has MailQ label: ${hasMailQLabel}`);
+    console.log(`   Has ShopQ label: ${hasShopQLabel}`);
     console.log(`   Still in inbox: ${emailStillInInbox !== null}`);
 
     // Check for success claims in logs
@@ -148,8 +148,8 @@ test.describe('Gmail Label Application', () => {
     // Step 13: Assertions
     if (successLogs.length > 0) {
       // Extension claimed success - verify labels actually exist
-      expect(hasMailQLabel,
-        'Extension logged success but no MailQ labels found in Gmail! This is Issue #7.'
+      expect(hasShopQLabel,
+        'Extension logged success but no ShopQ labels found in Gmail! This is Issue #7.'
       ).toBe(true);
 
       expect(finalLabels.length,
@@ -229,16 +229,16 @@ test.describe('Gmail Label Application', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Count emails with MailQ labels
+    // Count emails with ShopQ labels
     const emails = await gmailPage.getEmails();
     let labeledCount = 0;
     let unlabeledCount = 0;
 
     for (const email of emails) {
       const labels = await gmailPage.getEmailLabels(email);
-      const hasMailQLabel = labels.some(label => label.includes('MailQ'));
+      const hasShopQLabel = labels.some(label => label.includes('ShopQ'));
 
-      if (hasMailQLabel) {
+      if (hasShopQLabel) {
         labeledCount++;
         actualResults.push({ labeled: true, labels });
       } else {

@@ -8,9 +8,9 @@ from datetime import datetime
 
 import pytest
 
-from mailq.api.routes import debug as api_debug
-from mailq.api.routes.debug import _get_entity_title, set_last_digest
-from mailq.classification.models import FlightEntity
+from shopq.api.routes import debug as api_debug
+from shopq.api.routes.debug import _get_entity_title, set_last_digest
+from shopq.classification.models import FlightEntity
 
 
 class TestDebugEndpoints:
@@ -56,7 +56,7 @@ class TestDebugInlineHints:
         """Test that debug hints are not added when DEBUG_FEATURED is not set"""
         import os
 
-        from mailq.digest.card_renderer import CardRenderer
+        from shopq.digest.card_renderer import CardRenderer
 
         # Ensure DEBUG_FEATURED is not set
         os.environ.pop("DEBUG_FEATURED", None)
@@ -88,7 +88,7 @@ class TestDebugInlineHints:
         """Test that debug hints are added when DEBUG_FEATURED=true"""
         import os
 
-        from mailq.digest.card_renderer import CardRenderer
+        from shopq.digest.card_renderer import CardRenderer
 
         # Enable DEBUG_FEATURED
         os.environ["DEBUG_FEATURED"] = "true"
@@ -120,4 +120,4 @@ class TestDebugInlineHints:
         os.environ.pop("DEBUG_FEATURED")
 
 
-# Run with: pytest mailq/tests/test_debug_endpoints_simple.py -v
+# Run with: pytest shopq/tests/test_debug_endpoints_simple.py -v

@@ -16,7 +16,7 @@
 #   Run daily via Cloud Scheduler:
 #   gcloud scheduler jobs create http mailq-cleanup \
 #     --schedule="0 2 * * *" \
-#     --uri="https://mailq-api.run.app/admin/cleanup" \
+#     --uri="https://shopq-api.run.app/admin/cleanup" \
 #     --http-method=POST \
 #     --time-zone="America/New_York"
 
@@ -54,7 +54,7 @@ done
 
 # Banner
 echo "================================================="
-echo "MailQ Data Cleanup - $RETENTION_DAYS Day Retention"
+echo "ShopQ Data Cleanup - $RETENTION_DAYS Day Retention"
 if [[ "$DRY_RUN" == "true" ]]; then
   echo "MODE: DRY RUN (no data will be deleted)"
 else
@@ -68,7 +68,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
   PYTHONPATH=. python3 -c "
 import sys
 sys.path.insert(0, '.')
-from mailq.infrastructure.retention import cleanup_old_artifacts, get_retention_stats
+from shopq.infrastructure.retention import cleanup_old_artifacts, get_retention_stats
 import json
 
 print('📊 Current retention stats:')
@@ -88,7 +88,7 @@ else
   PYTHONPATH=. python3 -c "
 import sys
 sys.path.insert(0, '.')
-from mailq.infrastructure.retention import cleanup_old_artifacts, get_retention_stats
+from shopq.infrastructure.retention import cleanup_old_artifacts, get_retention_stats
 import json
 
 print('📊 Current retention stats BEFORE cleanup:')

@@ -16,8 +16,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.importance.heuristics import apply_importance_heuristics
-from mailq.classification.memory_classifier import MemoryClassifier
+from shopq.classification.importance.heuristics import apply_importance_heuristics
+from shopq.classification.memory_classifier import MemoryClassifier
 
 
 def load_gds(csv_path: str) -> list[dict]:

@@ -19,12 +19,12 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.enrichment import (
+from shopq.classification.enrichment import (
     enrich_entities_with_temporal_decay,
     get_temporal_stats,
     reset_temporal_stats,
 )
-from mailq.classification.models import Entity, EventEntity, NotificationEntity
+from shopq.classification.models import Entity, EventEntity, NotificationEntity
 
 
 def load_gds_emails(gds_path: Path) -> list[dict]:

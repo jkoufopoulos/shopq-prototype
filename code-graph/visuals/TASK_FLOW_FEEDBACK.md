@@ -16,7 +16,7 @@ sequenceDiagram
     participant API as /api/feedback
     participant FeedMgr as Feedback Learning<br/>feedback_learning.py
     participant RulesMgr as Rules Engine<br/>rules_engine.py
-    participant DB as mailq.db
+    participant DB as shopq.db
 
     User->>User: Changes label (Critical → Routine)
     Content->>Content: Detect label change (MutationObserver)
@@ -57,6 +57,6 @@ sequenceDiagram
 **See also**: [CLASSIFICATION_FLOW.md](CLASSIFICATION_FLOW.md) for full classification pipeline
 
 **Key files**:
-- `mailq/api/routes/feedback.py` - API endpoint
-- `mailq/classification/feedback_learning.py` - Feedback processing
-- `mailq/classification/rules_engine.py` - Rule management
+- `shopq/api/routes/feedback.py` - API endpoint
+- `shopq/classification/feedback_learning.py` - Feedback processing
+- `shopq/classification/rules_engine.py` - Rule management

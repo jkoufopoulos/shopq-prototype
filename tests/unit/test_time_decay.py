@@ -11,7 +11,7 @@ from datetime import datetime
 
 import pytest
 
-from mailq.classification.temporal import filter_expired_events, is_expired_event
+from shopq.classification.temporal import filter_expired_events, is_expired_event
 
 
 class TestExpiredEventDetection:

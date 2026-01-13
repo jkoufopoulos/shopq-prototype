@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-Tests for self-email filter (MailQ digest emails)
+Tests for self-email filter (ShopQ digest emails)
 """
 
 import pytest
 
-from mailq.classification.filters import filter_self_emails, is_self_email
+from shopq.classification.filters import filter_self_emails, is_self_email
 
 
 class TestSelfEmailDetection:
-    """Test detection of MailQ's own digest emails"""
+    """Test detection of ShopQ's own digest emails"""
 
-    def test_mailq_digest_subject(self):
-        """Detect MailQ digest by distinctive subject line"""
+    def test_shopq_digest_subject(self):
+        """Detect ShopQ digest by distinctive subject line"""
         email = {
             "subject": "Your Inbox --Saturday, November 01 at 01:03 AM",
             "from": "jkoufopoulos@gmail.com",
@@ -26,7 +26,7 @@ class TestSelfEmailDetection:
 
         assert is_self_email(email, "jkoufopoulos@gmail.com")
 
-    def test_mailq_digest_subject_without_user_email(self):
+    def test_shopq_digest_subject_without_user_email(self):
         """Digest email identifiable even without user_email parameter"""
         email = {
             "subject": "Your Inbox --Saturday, November 01 at 01:03 AM",
@@ -37,17 +37,17 @@ class TestSelfEmailDetection:
         # Should still detect by subject pattern alone
         assert is_self_email(email)
 
-    def test_mailq_digest_label(self):
-        """Detect by MailQ/Digest label"""
+    def test_shopq_digest_label(self):
+        """Detect by ShopQ/Digest label"""
         email = {
             "subject": "Some subject",
             "from": "jkoufopoulos@gmail.com",
-            "labelIds": ["INBOX", "MailQ/Digest"],
+            "labelIds": ["INBOX", "ShopQ/Digest"],
         }
 
         assert is_self_email(email)
 
-    def test_mailq_digest_label_case_insensitive(self):
+    def test_shopq_digest_label_case_insensitive(self):
         """Label detection should be case-insensitive"""
         email = {
             "subject": "Some subject",
@@ -96,7 +96,7 @@ class TestFilterSelfEmails:
     def test_filter_removes_digest_emails(self):
         """Filter should remove digest emails, keep regular emails"""
         emails = [
-            # MailQ digest (should be filtered)
+            # ShopQ digest (should be filtered)
             {
                 "subject": "Your Inbox --Saturday, November 01 at 01:03 AM",
                 "from": "jkoufopoulos@gmail.com",

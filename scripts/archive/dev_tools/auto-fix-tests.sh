@@ -5,14 +5,14 @@
 
 set -e
 
-echo "🤖 MailQ Auto-Fix Test Runner"
+echo "🤖 ShopQ Auto-Fix Test Runner"
 echo "=============================="
 echo ""
 
 # Ensure backend is running
 if ! lsof -Pi :8000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo "🚀 Starting backend..."
-    uvicorn mailq.api:app --reload --port 8000 > /tmp/mailq-backend.log 2>&1 &
+    uvicorn shopq.api:app --reload --port 8000 > /tmp/mailq-backend.log 2>&1 &
     sleep 3
 fi
 

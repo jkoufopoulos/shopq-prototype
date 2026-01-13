@@ -17,7 +17,7 @@ export default async function globalSetup() {
 
     if (!response || !response.ok) {
       console.warn('⚠️  Backend API not running on localhost:8000');
-      console.warn('   Please start it with: uvicorn mailq.api:app --reload');
+      console.warn('   Please start it with: uvicorn shopq.api:app --reload');
       console.warn('   Tests will proceed but may fail if backend is required');
     } else {
       console.log('✅ Backend API is running');

@@ -20,7 +20,7 @@ sequenceDiagram
     participant Mapper as 🏷️ Label Mapper<br/>classification/mapper.py
     participant Gmail as 📧 Gmail API
 
-    User->>Ext: Click MailQ icon / Auto-organize
+    User->>Ext: Click ShopQ icon / Auto-organize
     Ext->>Ext: Fetch unlabeled emails
     Ext->>Cache: Check sender cache (24hr TTL)
 
@@ -73,7 +73,7 @@ sequenceDiagram
 
 ## Execution Flow
 
-1. **Trigger**: User clicks MailQ icon or auto-organize alarm fires
+1. **Trigger**: User clicks ShopQ icon or auto-organize alarm fires
 2. **Cache check**: Extension checks 24-hour cache for sender classifications
 3. **Deduplication**: 100 emails reduced to ~30 unique senders for API call
 4. **Rules engine**: Checks learned rules first (50-70% match rate, $0 cost) from `rules` table
@@ -88,14 +88,14 @@ sequenceDiagram
 
 | Component | File Path |
 |-----------|-----------|
-| API Route | `mailq/api/routes/organize.py` |
-| Pipeline Wrapper | `mailq/classification/pipeline_wrapper.py` |
-| Rules Engine | `mailq/classification/rules_engine.py` |
-| LLM Classifier | `mailq/classification/vertex_gemini_classifier.py` |
-| Memory Classifier | `mailq/classification/memory_classifier.py` |
-| Importance Mapper | `mailq/classification/importance_mapping/mapper.py` |
-| Temporal Decay | `mailq/classification/temporal.py` |
-| Label Mapper | `mailq/classification/mapper.py` |
+| API Route | `shopq/api/routes/organize.py` |
+| Pipeline Wrapper | `shopq/classification/pipeline_wrapper.py` |
+| Rules Engine | `shopq/classification/rules_engine.py` |
+| LLM Classifier | `shopq/classification/vertex_gemini_classifier.py` |
+| Memory Classifier | `shopq/classification/memory_classifier.py` |
+| Importance Mapper | `shopq/classification/importance_mapping/mapper.py` |
+| Temporal Decay | `shopq/classification/temporal.py` |
+| Label Mapper | `shopq/classification/mapper.py` |
 
 ## Key Metrics
 

@@ -71,7 +71,7 @@ class TestAPIIntegration:
                 print(f"   Response: {response.text}")
 
         except requests.exceptions.ConnectionError:
-            print("❌ API server not running - start with: python mailq/api.py")
+            print("❌ API server not running - start with: python shopq/api.py")
         except Exception as e:
             print(f"❌ Unexpected error: {e}")
 

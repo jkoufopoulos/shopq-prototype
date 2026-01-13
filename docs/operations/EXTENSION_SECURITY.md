@@ -39,7 +39,7 @@ async function getAuthToken(options = {}) {
 | Token hardcoded in code | ✅ PASS | All tokens obtained via `chrome.identity` |
 | Token in URL params | ✅ PASS | Token sent in `Authorization: Bearer` header |
 | Token logging to console | ⚠️ REVIEW | Logs "token obtained" but not token value |
-| Insecure API calls (HTTP) | ✅ PASS | All API calls use HTTPS (CONFIG.MAILQ_API_URL) |
+| Insecure API calls (HTTP) | ✅ PASS | All API calls use HTTPS (CONFIG.SHOPQ_API_URL) |
 | CSRF protection | ✅ PASS | Token-based auth (no cookies) |
 | XSS vulnerabilities | ✅ PASS | Content Security Policy in manifest |
 
@@ -50,7 +50,7 @@ async function getAuthToken(options = {}) {
 ```javascript
 // extension/background.js
 const token = await getAuthToken();
-const response = await fetch(`${CONFIG.MAILQ_API_URL}/api/feedback`, {
+const response = await fetch(`${CONFIG.SHOPQ_API_URL}/api/feedback`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -152,7 +152,7 @@ async function logout() {
   "host_permissions": [
     "https://mail.google.com/*",                           // ✅ Gmail access
     "https://www.googleapis.com/*",                        // ✅ Gmail API
-    "https://mailq-api-488078904670.us-central1.run.app/*", // ✅ Backend API
+    "https://shopq-api-488078904670.us-central1.run.app/*", // ✅ Backend API
     "https://ipapi.co/*"                                   // ⚠️ REVIEW: Location service
   ]
 }
@@ -173,7 +173,7 @@ async function logout() {
 | Token expiration during batch ops | Low | ✅ PASS: Chrome auto-refreshes |
 | Man-in-the-middle (MITM) | Low | ✅ PASS: HTTPS only |
 | Phishing (malicious extension) | Medium | ✅ PASS: Published via Chrome Web Store |
-| Data exfiltration via API | Medium | ✅ PASS: Only sends to MAILQ_API_URL |
+| Data exfiltration via API | Medium | ✅ PASS: Only sends to SHOPQ_API_URL |
 
 ### Recommendations
 

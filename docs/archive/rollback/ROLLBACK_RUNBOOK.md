@@ -151,7 +151,7 @@ Before executing rollback:
 - [ ] **Confirm trigger condition** - Verify metrics/logs show rollback condition
 - [ ] **Check current version** - Note exact model/prompt versions in production
   ```bash
-  grep -r "MODEL_VERSION\|PROMPT_VERSION" mailq/versioning.py
+  grep -r "MODEL_VERSION\|PROMPT_VERSION" shopq/versioning.py
   ```
 - [ ] **Identify rollback target** - Determine which version to revert to (usually previous stable version)
 - [ ] **Notify team** - Alert on Slack/Discord that rollback is imminent
@@ -173,14 +173,14 @@ Before executing rollback:
 1. **Revert prompt file**:
    ```bash
    cd /Users/justinkoufopoulos/Projects/mailq-prototype
-   git log --oneline mailq/prompts/classifier_prompt.txt | head -10
+   git log --oneline shopq/prompts/classifier_prompt.txt | head -10
    # Find commit hash before problematic change
-   git checkout <previous-commit-hash> -- mailq/prompts/classifier_prompt.txt
+   git checkout <previous-commit-hash> -- shopq/prompts/classifier_prompt.txt
    ```
 
 2. **Update version constant**:
    ```bash
-   # Edit mailq/versioning.py
+   # Edit shopq/versioning.py
    # Change PROMPT_VERSION from "v2" back to "v1" (or appropriate version)
    ```
 
@@ -192,7 +192,7 @@ Before executing rollback:
 
 4. **Deploy** (if validation passes):
    ```bash
-   git add mailq/prompts/classifier_prompt.txt mailq/versioning.py
+   git add shopq/prompts/classifier_prompt.txt shopq/versioning.py
    git commit -m "rollback: Revert prompt to v1 due to [trigger reason]"
    ./deploy.sh
    ```
@@ -209,14 +209,14 @@ Before executing rollback:
 
 1. **Update model configuration**:
    ```bash
-   # Edit mailq/versioning.py
+   # Edit shopq/versioning.py
    MODEL_NAME = "gemini-1.5-flash"  # Revert from 2.0
    MODEL_VERSION = "1.5"
    ```
 
 2. **Update VertexGeminiClassifier** (if needed):
    ```python
-   # mailq/vertex_gemini_classifier.py
+   # shopq/vertex_gemini_classifier.py
    # Line ~39: Change model initialization
    self.model = GenerativeModel("gemini-1.5-flash")
    ```
@@ -229,7 +229,7 @@ Before executing rollback:
 
 4. **Deploy** (if validation passes):
    ```bash
-   git add mailq/versioning.py mailq/vertex_gemini_classifier.py
+   git add shopq/versioning.py shopq/vertex_gemini_classifier.py
    git commit -m "rollback: Revert to Gemini 1.5 Flash due to [trigger reason]"
    ./deploy.sh
    ```
@@ -295,7 +295,7 @@ After rollback, verify these metrics return to baseline:
 
 - [ ] **No errors** in classification pipeline
   ```bash
-  grep "ERROR" /tmp/mailq-api.log | tail -20
+  grep "ERROR" /tmp/shopq-api.log | tail -20
   ```
 
 ### Short-term (1-4 hours)
@@ -372,7 +372,7 @@ To prevent rollbacks, follow this workflow for ALL model/prompt changes:
 
 ### During Change
 
-4. **Update mailq/versioning.py** (single source of truth)
+4. **Update shopq/versioning.py** (single source of truth)
 5. **Run tests**:
    ```bash
    pytest tests/ -v
@@ -400,14 +400,14 @@ To prevent rollbacks, follow this workflow for ALL model/prompt changes:
 
 **On-Call Engineer**: [Slack @oncall]
 **Vertex AI Status**: https://status.cloud.google.com/
-**Deployment Logs**: `/tmp/mailq-api.log`
+**Deployment Logs**: `/tmp/shopq-api.log`
 **Metrics Dashboard**: [Link to monitoring]
 
 ---
 
 ## Related Documentation
 
-- `mailq/versioning.py` - Version constants (single source of truth)
+- `shopq/versioning.py` - Version constants (single source of truth)
 - `VERSIONS.md` - Version change history (to be created)
 - `docs/CLASSIFICATION_REFACTOR_PLAN.md` - Architecture reference
 - `scripts/test_against_gds.sh` - Golden dataset validation
@@ -415,5 +415,5 @@ To prevent rollbacks, follow this workflow for ALL model/prompt changes:
 ---
 
 **Version**: 1.0
-**Owner**: MailQ Team
+**Owner**: ShopQ Team
 **Last Reviewed**: 2025-11-11

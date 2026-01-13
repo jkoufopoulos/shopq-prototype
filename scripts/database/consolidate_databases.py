@@ -8,14 +8,14 @@ to avoid merge conflicts.
 
 This script:
 1. Backs up all existing databases
-2. Merges tables from scattered databases into mailq/data/mailq.db
+2. Merges tables from scattered databases into shopq/data/shopq.db
 3. Validates data integrity
 4. Deletes old database files (after confirmation)
 
 Usage:
-    python mailq/scripts/consolidate_databases.py --dry-run  # Preview changes
-    python mailq/scripts/consolidate_databases.py --execute  # Run migration
-    python mailq/scripts/consolidate_databases.py --rollback # Restore backups
+    python shopq/scripts/consolidate_databases.py --dry-run  # Preview changes
+    python shopq/scripts/consolidate_databases.py --execute  # Run migration
+    python shopq/scripts/consolidate_databases.py --rollback # Restore backups
 
 Status: SKELETON - To be implemented in Phase 2 (Week of 2025-11-18)
 """
@@ -31,7 +31,7 @@ from pathlib import Path
 
 # Database paths
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-CENTRAL_DB = PROJECT_ROOT / "mailq" / "data" / "mailq.db"
+CENTRAL_DB = PROJECT_ROOT / "mailq" / "data" / "shopq.db"
 BACKUP_DIR = (
     PROJECT_ROOT / "backups" / f"db_consolidation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 )
@@ -39,7 +39,7 @@ BACKUP_DIR = (
 # Databases to consolidate
 DATABASES_TO_MERGE = {
     "tracking": {
-        "path": PROJECT_ROOT / "data" / "mailq_tracking.db",
+        "path": PROJECT_ROOT / "data" / "shopq_tracking.db",
         "tables": ["email_threads", "digest_sessions"],
         "size_kb": 960,
     },
@@ -59,7 +59,7 @@ DATABASES_TO_MERGE = {
 DATABASES_TO_DELETE = [
     PROJECT_ROOT / "mailq" / "data" / "rules.db",
     PROJECT_ROOT / "mailq" / "data" / "tracking.db",
-    PROJECT_ROOT / "mailq" / "data" / "mailq_tracking.db",
+    PROJECT_ROOT / "mailq" / "data" / "shopq_tracking.db",
     PROJECT_ROOT / "scripts" / "quality-monitor" / "quality_state.db",
     PROJECT_ROOT / "scripts" / "quality-monitor" / "quality_issues.db",
     PROJECT_ROOT / "extension" / "quality_monitor.db",
@@ -73,7 +73,7 @@ def backup_databases():
 
     # Backup central database
     if CENTRAL_DB.exists():
-        shutil.copy2(CENTRAL_DB, BACKUP_DIR / "mailq.db.backup")
+        shutil.copy2(CENTRAL_DB, BACKUP_DIR / "shopq.db.backup")
         print(f"  ✅ Backed up {CENTRAL_DB}")
 
     # Backup databases to merge
@@ -228,7 +228,7 @@ def consolidate_databases():
     if not CENTRAL_DB.exists():
         print(f"❌ Central database not found: {CENTRAL_DB}")
         print(
-            "   Run: python -c 'from mailq.infrastructure.database import init_database; init_database()'"
+            "   Run: python -c 'from shopq.infrastructure.database import init_database; init_database()'"
         )
         return False
 
@@ -291,13 +291,13 @@ def delete_old_databases():
 def update_code_references():
     """Print instructions for updating code to use central database"""
     print("\n📝 Code updates required:\n")
-    print("1. mailq/email_tracker.py:")
-    print("   - Remove: conn = sqlite3.connect('data/mailq_tracking.db')")
-    print("   + Add: from mailq.infrastructure.database import get_db_connection")
+    print("1. shopq/email_tracker.py:")
+    print("   - Remove: conn = sqlite3.connect('data/shopq_tracking.db')")
+    print("   + Add: from shopq.infrastructure.database import get_db_connection")
     print("   + Use: with get_db_connection() as conn:")
     print()
-    print("2. mailq/digest_categorizer.py:")
-    print("   - Remove: conn = sqlite3.connect('mailq/digest_rules.db')")
+    print("2. shopq/digest_categorizer.py:")
+    print("   - Remove: conn = sqlite3.connect('shopq/digest_rules.db')")
     print("   + Use: with get_db_connection() as conn:")
     print()
     print("3. scripts/quality-monitor/quality_monitor.py:")
@@ -308,7 +308,7 @@ def update_code_references():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Consolidate MailQ databases into single central database"
+        description="Consolidate ShopQ databases into single central database"
     )
     parser.add_argument(
         "--dry-run",
@@ -329,7 +329,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 70)
-    print("MailQ Database Consolidation - Phase 2")
+    print("ShopQ Database Consolidation - Phase 2")
     print("=" * 70)
     print()
 
@@ -346,7 +346,7 @@ def main():
         print("3. ✅ Validate data integrity")
         print("4. ✅ Delete old databases")
         print("5. ✅ Update code references")
-        print("\nTo execute: python mailq/scripts/consolidate_databases.py --execute")
+        print("\nTo execute: python shopq/scripts/consolidate_databases.py --execute")
         update_code_references()
         return
 

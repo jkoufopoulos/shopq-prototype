@@ -15,7 +15,7 @@ import threading
 
 import pytest
 
-from mailq.infrastructure.database import (
+from shopq.infrastructure.database import (
     db_transaction,
     get_db_connection,
     get_pool,
@@ -164,7 +164,7 @@ def test_thread_safety():
 
 def test_base_repository():
     """Test BaseRepository class"""
-    from mailq.storage import BaseRepository
+    from shopq.storage import BaseRepository
 
     # Create test repository
     repo = BaseRepository("test_repo_table")

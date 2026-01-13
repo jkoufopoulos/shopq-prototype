@@ -1,5 +1,5 @@
 /**
- * Console Logger for MailQ Extension
+ * Console Logger for ShopQ Extension
  *
  * Simple, flow-focused logging for debugging.
  * One log per major event, with context that matters.
@@ -24,7 +24,7 @@ const log = {
     if (rawDigest) flags.push('raw_digest');
     if (testMode) flags.push('test_mode');
     const flagStr = flags.length ? ` (${flags.join(', ')})` : '';
-    console.log(`🚀 MailQ v${version}${flagStr}`);
+    console.log(`🚀 ShopQ v${version}${flagStr}`);
     if (cacheSize > 0) {
       console.log(`   └─ ${cacheSize} cached threads`);
     }
@@ -166,7 +166,7 @@ const log = {
    * Debug (only logs if DEBUG flag is set)
    */
   debug(message, data = null) {
-    if (typeof window !== 'undefined' && window.MAILQ_DEBUG) {
+    if (typeof window !== 'undefined' && window.SHOPQ_DEBUG) {
       if (data) {
         console.debug(`🔍 ${message}`, data);
       } else {

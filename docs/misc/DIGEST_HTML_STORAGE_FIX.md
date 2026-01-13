@@ -37,7 +37,7 @@ actual_digest_20251106_031420.html
 
 ## Fix Applied
 
-### File: `mailq/api.py`
+### File: `shopq/api.py`
 
 **Lines 404-408, 417** - Use `session_id` from digest result instead of generating new timestamp
 
@@ -67,10 +67,10 @@ emails_log_file = os.path.join(log_dir, f"input_emails_{session_id}.json")
 ### 1. Restart Backend
 ```bash
 # Kill existing uvicorn
-pkill -f "uvicorn mailq.api"
+pkill -f "uvicorn shopq.api"
 
 # Start fresh
-uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 ### 2. Generate New Digest
@@ -177,10 +177,10 @@ If this causes issues:
 cd /Users/justinkoufopoulos/Projects/mailq-prototype
 
 # Revert changes
-git checkout HEAD -- mailq/api.py
+git checkout HEAD -- shopq/api.py
 
 # Restart backend
-pkill -f "uvicorn mailq.api" && uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+pkill -f "uvicorn shopq.api" && uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 ---

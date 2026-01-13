@@ -15,11 +15,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
-from mailq.digest.context_digest import generate_context_digest
-from mailq.runtime.gates import feature_gates
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.digest.context_digest import generate_context_digest
+from shopq.runtime.gates import feature_gates
 
 
 def test_digest_generation_on_gds():

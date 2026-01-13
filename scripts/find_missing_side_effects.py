@@ -37,11 +37,11 @@ def check_file(filepath: Path) -> list[tuple[str, int, str]]:
 
 def main():
     """Find all functions missing Side Effects documentation."""
-    mailq_dir = Path("mailq")
+    shopq_dir = Path("mailq")
 
     all_missing = []
 
-    for py_file in mailq_dir.rglob("*.py"):
+    for py_file in shopq_dir.rglob("*.py"):
         # Skip __init__.py files - usually just imports
         if py_file.name == "__init__.py":
             continue

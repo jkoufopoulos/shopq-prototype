@@ -17,8 +17,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from mailq.classification.models import NotificationEntity
-from mailq.classification.temporal import resolve_otp_shipping_importance
+from shopq.classification.models import NotificationEntity
+from shopq.classification.temporal import resolve_otp_shipping_importance
 
 
 @pytest.fixture

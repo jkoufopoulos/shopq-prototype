@@ -6,7 +6,7 @@ Verify if labels are **actually** applied to Gmail (not just logged as successfu
 ## ⚡ Quick Test (2 minutes)
 
 ### Step 1: Open Gmail
-1. Open Gmail in Chrome with MailQ extension loaded
+1. Open Gmail in Chrome with ShopQ extension loaded
 2. Make sure you have some emails in your inbox (you mentioned 20+ unlabeled emails)
 
 ### Step 2: Open DevTools
@@ -19,10 +19,10 @@ Click the "Console" tab in DevTools
 ### Step 4: Copy & Paste This Script
 
 ```javascript
-// Quick MailQ Label Verification
+// Quick ShopQ Label Verification
 (async function() {
   console.clear();
-  console.log('🧪 MailQ Label Verification Test\n' + '='.repeat(50));
+  console.log('🧪 ShopQ Label Verification Test\n' + '='.repeat(50));
 
   // Find email rows
   const rows = document.querySelectorAll('tr[role="row"]') ||
@@ -42,21 +42,21 @@ Click the "Console" tab in DevTools
   Array.from(rows).slice(0, 20).forEach((row, i) => {
     const text = row.textContent;
     const subject = text.split('\n').find(l => l.trim().length > 10) || 'Unknown';
-    const hasMailQ = text.includes('MailQ');
+    const hasShopQ = text.includes('ShopQ');
 
-    if (hasMailQ) {
+    if (hasShopQ) {
       withLabels++;
-      console.log(`✅ [${i+1}] HAS MailQ: ${subject.substring(0, 50)}...`);
+      console.log(`✅ [${i+1}] HAS ShopQ: ${subject.substring(0, 50)}...`);
     } else {
       withoutLabels++;
-      console.log(`❌ [${i+1}] NO MailQ: ${subject.substring(0, 50)}...`);
+      console.log(`❌ [${i+1}] NO ShopQ: ${subject.substring(0, 50)}...`);
     }
   });
 
   console.log('\n' + '='.repeat(50));
   console.log(`📊 RESULTS:`);
-  console.log(`   With MailQ labels: ${withLabels}`);
-  console.log(`   Without MailQ labels: ${withoutLabels}`);
+  console.log(`   With ShopQ labels: ${withLabels}`);
+  console.log(`   Without ShopQ labels: ${withoutLabels}`);
   console.log(`   Labeling rate: ${(withLabels/(withLabels+withoutLabels)*100).toFixed(1)}%`);
 
   if (withoutLabels > 0) {
@@ -66,7 +66,7 @@ Click the "Console" tab in DevTools
     console.log('   If YES → Issue #7 confirmed (logs lie)');
     console.log('   If NO → Extension hasn\'t processed these yet');
   } else {
-    console.log('\n✅ All emails have MailQ labels!');
+    console.log('\n✅ All emails have ShopQ labels!');
   }
 })();
 ```
@@ -74,7 +74,7 @@ Click the "Console" tab in DevTools
 ### Step 5: Press Enter
 
 The script will run and show you:
-- How many emails have MailQ labels
+- How many emails have ShopQ labels
 - How many don't have labels
 - List of each email and its label status
 
@@ -84,8 +84,8 @@ The script will run and show you:
 
 ```
 📊 RESULTS:
-   With MailQ labels: 2
-   Without MailQ labels: 18
+   With ShopQ labels: 2
+   Without ShopQ labels: 18
    Labeling rate: 10.0%
 
 ⚠️  ISSUE #7 DETECTED:
@@ -108,11 +108,11 @@ The script will run and show you:
 
 ```
 📊 RESULTS:
-   With MailQ labels: 20
-   Without MailQ labels: 0
+   With ShopQ labels: 20
+   Without ShopQ labels: 0
    Labeling rate: 100.0%
 
-✅ All emails have MailQ labels!
+✅ All emails have ShopQ labels!
 ```
 
 **This means:** Labels are actually being applied. Issue #7 is fixed!
@@ -123,8 +123,8 @@ The script will run and show you:
 
 ```
 📊 RESULTS:
-   With MailQ labels: 0
-   Without MailQ labels: 20
+   With ShopQ labels: 0
+   Without ShopQ labels: 20
    Labeling rate: 0.0%
 ```
 
@@ -132,7 +132,7 @@ The script will run and show you:
 
 **This means:** Extension hasn't processed these emails yet.
 
-**Action:** Click MailQ button, wait, then re-run this script.
+**Action:** Click ShopQ button, wait, then re-run this script.
 
 ## 🧪 Full Test (5 minutes)
 
@@ -162,18 +162,18 @@ Full script provides:
 
 ### Best Practice:
 
-1. **Run test BEFORE clicking MailQ**
+1. **Run test BEFORE clicking ShopQ**
    ```
-   Without MailQ labels: 20
+   Without ShopQ labels: 20
    ```
 
-2. **Click MailQ button in Gmail**
+2. **Click ShopQ button in Gmail**
    - Watch console for "labeled successfully" messages
    - Count how many it claims to label
 
 3. **Run test AFTER extension finishes**
    ```
-   Without MailQ labels: 18
+   Without ShopQ labels: 18
    ```
 
 4. **Compare:**
@@ -210,7 +210,7 @@ After running the test, note:
 ```
 Test Date: [date/time]
 Total emails: [X]
-With MailQ labels: [Y]
+With ShopQ labels: [Y]
 Without labels: [Z]
 Extension claimed: [A] successful
 Actual success rate: [Y/A * 100]%

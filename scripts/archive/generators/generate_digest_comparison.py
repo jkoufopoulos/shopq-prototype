@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from mailq.classification.importance_classifier import ImportanceClassifier
+from shopq.classification.importance_classifier import ImportanceClassifier
 
 
 def find_latest_files():

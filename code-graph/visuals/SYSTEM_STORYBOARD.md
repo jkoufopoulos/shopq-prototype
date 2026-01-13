@@ -1,14 +1,14 @@
-# MailQ System Storyboard
+# ShopQ System Storyboard
 
 > **Manually maintained** - Last updated: 2025-12-04
 >
 > **Stats**: 98 backend files • 19 extension files • 4 API endpoints • 13 DB tables
 
-> **Curated overview** of how MailQ captures, classifies, learns, and narrates.
+> **Curated overview** of how ShopQ captures, classifies, learns, and narrates.
 
 ## Overview
 
-This storyboard highlights the five essential beats every MailQ run hits: **capture → classify → learn → narrate → delight**.
+This storyboard highlights the five essential beats every ShopQ run hits: **capture → classify → learn → narrate → delight**.
 
 ```mermaid
 flowchart LR
@@ -47,7 +47,7 @@ flowchart LR
 
     %% Database
     subgraph persist[" 5️⃣ PERSIST — Database "]
-        d1[("mailq.db")]
+        d1[("shopq.db")]
         d2["13 tables"]
         d1 -.-> d2
     end
@@ -129,7 +129,7 @@ flowchart LR
 - **LLM Classifier:** Vertex AI `gemini-2.0-flash` with structured prompts (slowest, handles edge cases)
 - **Verifier:** `NarrativeVerifier` checks for hallucinations (numbers, dates, names must exist in source)
 
-**Files:** `mailq/api/routes/organize.py`, `mailq/classification/pipeline_wrapper.py`, `mailq/classification/rules_engine.py`, `mailq/classification/memory_classifier.py`, `mailq/classification/vertex_gemini_classifier.py`, `mailq/digest/narrative_verifier.py`
+**Files:** `shopq/api/routes/organize.py`, `shopq/classification/pipeline_wrapper.py`, `shopq/classification/rules_engine.py`, `shopq/classification/memory_classifier.py`, `shopq/classification/vertex_gemini_classifier.py`, `shopq/digest/narrative_verifier.py`
 
 ### 3. Learn (Temporal Intelligence + Persistence)
 **What happens:** Enrich classifications with time-based signals and store decisions.
@@ -138,7 +138,7 @@ flowchart LR
 - **Database write:** Store classification decision with metadata (decider, confidence, model version)
 - **Feedback loop:** User corrections written to `feedback` table, trigger rule learning
 
-**Files:** `mailq/classification/temporal.py`, `mailq/infrastructure/database.py`, `mailq/classification/feedback_learning.py`
+**Files:** `shopq/classification/temporal.py`, `shopq/infrastructure/database.py`, `shopq/classification/feedback_learning.py`
 
 ### 4. Narrate (Digest Generation)
 **What happens:** Build daily context-aware digest email.
@@ -147,7 +147,7 @@ flowchart LR
 - **Narrative building:** Generate natural language story (~90 words) using context from entities
 - **HTML rendering:** Render digest cards using Jinja2 template (`digest_v2.html.j2`)
 
-**Files:** `mailq/digest/context_digest.py`, `mailq/digest/entity_extractor.py`, `mailq/digest/ranker.py`, `mailq/digest/narrative.py`, `mailq/digest/hybrid_digest_renderer.py`, `mailq/digest/templates/digest_v2.html.j2`
+**Files:** `shopq/digest/context_digest.py`, `shopq/digest/entity_extractor.py`, `shopq/digest/ranker.py`, `shopq/digest/narrative.py`, `shopq/digest/hybrid_digest_renderer.py`, `shopq/digest/templates/digest_v2.html.j2`
 
 ### 5. Delight (Delivery + Feedback)
 **What happens:** Send digest, capture user feedback, improve system.
@@ -157,11 +157,11 @@ flowchart LR
 - **Rule learning:** `FeedbackManager` generates new rules or adjusts confidence thresholds
 - **Quality monitoring:** Automated analysis flags hallucinations, inconsistencies, low-confidence decisions
 
-**Files:** `mailq/api/routes/digest.py`, `mailq/api/routes/feedback.py`, `mailq/classification/feedback_learning.py`, `mailq/observability/quality_monitor.py`
+**Files:** `shopq/api/routes/digest.py`, `shopq/api/routes/feedback.py`, `shopq/classification/feedback_learning.py`, `shopq/observability/quality_monitor.py`
 
 ## Touchpoints
 
-### Database Schema (`mailq.db`)
+### Database Schema (`shopq.db`)
 Single SQLite database with 13 tables:
 - `rules` – user rules + feedback-learned rules
 - `pending_rules` – rules awaiting approval before activation
@@ -192,17 +192,17 @@ Single SQLite database with 13 tables:
   - Output: Verification verdict (confirm/correct/flag)
 
 ### Observability & Quality Control
-- **Telemetry:** `mailq/observability/telemetry.py` logs events (API calls, classifications, errors)
-- **Confidence Logger:** `mailq/observability/confidence.py` tracks decision confidence over time
-- **Quality Monitor:** `mailq/observability/quality_monitor.py` automated digest analysis
+- **Telemetry:** `shopq/observability/telemetry.py` logs events (API calls, classifications, errors)
+- **Confidence Logger:** `shopq/observability/confidence.py` tracks decision confidence over time
+- **Quality Monitor:** `shopq/observability/quality_monitor.py` automated digest analysis
   - Runs LLM-based checks for hallucinations, inconsistencies, tone issues
   - Creates GitHub issues for quality problems
   - Stores results in `reports/quality/`
-- **Structured Logging:** `mailq/observability/structured_logging.py` provides searchable event logs
+- **Structured Logging:** `shopq/observability/structured_logging.py` provides searchable event logs
 
 ### Feature Flags
 - `USE_REFACTORED_PIPELINE` – Enable refactored classification pipeline (default: true)
-- `MAILQ_USE_LLM` – Enable LLM fallback in classification (default: false, rules-only mode)
+- `SHOPQ_USE_LLM` – Enable LLM fallback in classification (default: false, rules-only mode)
 - Dynamic feature gates via `/api/feature-gates` (database-backed toggles)
 
 ## Maintenance

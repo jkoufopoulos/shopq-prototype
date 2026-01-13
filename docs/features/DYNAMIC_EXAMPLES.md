@@ -8,7 +8,7 @@ The digest generator uses **zero hardcoded examples**. Instead, the LLM receives
 
 ### 1. Entity Extraction (Dynamic)
 ```python
-# mailq/entity_extractor.py
+# shopq/entity_extractor.py
 # Extracts REAL entities from emails:
 # - Flights with departure_time
 # - Events with event_time
@@ -18,7 +18,7 @@ The digest generator uses **zero hardcoded examples**. Instead, the LLM receives
 
 ### 2. Importance Classification (Dynamic)
 ```python
-# mailq/importance_classifier.py
+# shopq/importance_classifier.py
 # Classifies each entity:
 entity.importance = 'critical'      # Fraud alerts, bills due today
 entity.importance = 'time_sensitive' # Flights, appointments
@@ -27,7 +27,7 @@ entity.importance = 'routine'        # Newsletters, promos
 
 ### 3. Grouping (Dynamic)
 ```python
-# mailq/timeline_synthesizer.py - format_featured_for_llm()
+# shopq/timeline_synthesizer.py - format_featured_for_llm()
 # Groups by importance:
 
 Most urgent:
@@ -41,7 +41,7 @@ Also important:
 
 ### 4. LLM Generation (Uses Real Data)
 ```python
-# mailq/narrative_generator.py
+# shopq/narrative_generator.py
 # Sends to LLM:
 prompt = f"""
 {prompt_template}  # Structure guidance only
@@ -94,9 +94,9 @@ Have a great day!
 
 ## Where Examples Are NOT Used
 
-- ❌ `mailq/prompts/narrative_prompt.txt` - Structure guidance only, no hardcoded examples
-- ❌ `mailq/narrative_generator.py` - Passes real data, not examples
-- ❌ `mailq/timeline_synthesizer.py` - Formats real entities, not examples
+- ❌ `shopq/prompts/narrative_prompt.txt` - Structure guidance only, no hardcoded examples
+- ❌ `shopq/narrative_generator.py` - Passes real data, not examples
+- ❌ `shopq/timeline_synthesizer.py` - Formats real entities, not examples
 
 ## Where Real Data Flows
 

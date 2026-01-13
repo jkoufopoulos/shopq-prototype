@@ -40,7 +40,7 @@ def clear_screen():
     print("\033[2J\033[H", end="")
 
 
-# Taxonomy rules for importance (from mailq taxonomy)
+# Taxonomy rules for importance (from shopq taxonomy)
 IMPORTANCE_TAXONOMY = {
     "critical": {
         "description": "Requires immediate action, security implications, or significant financial impact",

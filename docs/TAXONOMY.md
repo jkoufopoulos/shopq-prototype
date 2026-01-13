@@ -1,9 +1,9 @@
-# MailQ Email Classification Taxonomy
+# ShopQ Email Classification Taxonomy
 
-This document defines the complete taxonomy for classifying emails in MailQ, including type, importance, client labels, and temporality rules.
+This document defines the complete taxonomy for classifying emails in ShopQ, including type, importance, client labels, and temporality rules.
 
 ```yaml
-mailq_taxonomy:
+shopq_taxonomy:
   type:
     event:
       definition: "Emails tied to attending something at a specific date/time."
@@ -251,7 +251,7 @@ mailq_taxonomy:
         - "Security: account may be compromised and needs password changes."
       notes:
         - "Flight/trip notifications default to action-required because users need to check-in or prepare."
-        - "Security access grants ('You allowed MailQ access') imply user should review for approval."
+        - "Security access grants ('You allowed ShopQ access') imply user should review for approval."
         - "Data breach notifications ('you were pwned') require password changes."
 
     receipts:

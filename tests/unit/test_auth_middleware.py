@@ -16,16 +16,16 @@ import os
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from mailq.api.middleware.auth import APIKeyAuth
+from shopq.api.middleware.auth import APIKeyAuth
 
 
 def create_test_app(api_key: str | None = None):
     """Create test FastAPI app with protected endpoint"""
     # Set environment before creating auth instance
     if api_key is not None:
-        os.environ["MAILQ_ADMIN_API_KEY"] = api_key
-    elif "MAILQ_ADMIN_API_KEY" in os.environ:
-        del os.environ["MAILQ_ADMIN_API_KEY"]
+        os.environ["SHOPQ_ADMIN_API_KEY"] = api_key
+    elif "SHOPQ_ADMIN_API_KEY" in os.environ:
+        del os.environ["SHOPQ_ADMIN_API_KEY"]
 
     # Create fresh auth instance that reads current environment
     auth_instance = APIKeyAuth()
@@ -91,7 +91,7 @@ def test_auth_accepts_correct_key():
 
 
 def test_auth_bypass_when_no_key_configured():
-    """Test that auth is bypassed when MAILQ_ADMIN_API_KEY is not set"""
+    """Test that auth is bypassed when SHOPQ_ADMIN_API_KEY is not set"""
     app = create_test_app(None)  # No API key
     client = TestClient(app)
 
@@ -120,7 +120,7 @@ def test_timing_attack_resistance():
     This test verifies that we're using timing-safe comparison.
     We can't directly test timing, but we can verify the function is imported.
     """
-    from mailq.api.middleware import auth
+    from shopq.api.middleware import auth
 
     # Verify secrets module is imported
     assert hasattr(auth, "secrets")

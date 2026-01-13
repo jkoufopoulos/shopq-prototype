@@ -10,8 +10,8 @@ and performs all operations without database errors.
 
 import pytest
 
-from mailq.classification.rules_engine import RulesEngine
-from mailq.infrastructure.database import get_db_connection, init_database
+from shopq.classification.rules_engine import RulesEngine
+from shopq.infrastructure.database import get_db_connection, init_database
 
 
 @pytest.fixture(scope="module", autouse=True)

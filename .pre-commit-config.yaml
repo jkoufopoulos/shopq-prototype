@@ -55,5 +55,5 @@ repos:
         entry: python scripts/check_file_size.py --max-lines 800
         language: python
         types: [python]
-        files: ^mailq/
+        files: ^shopq/
         stages: [pre-commit]

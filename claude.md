@@ -1,6 +1,6 @@
-# claude.md — MailQ development guardrails (Nov 2025)
+# claude.md — ShopQ development guardrails (Nov 2025)
 
-> Purpose: make Claude Code (Pro) a reliable pair‑programmer for MailQ by encoding rules, workflows, and safety rails it must follow. Keep this file at repo root. Claude must read this file before acting and re‑state the "North Star" at the top of each plan.
+> Purpose: make Claude Code (Pro) a reliable pair‑programmer for ShopQ by encoding rules, workflows, and safety rails it must follow. Keep this file at repo root. Claude must read this file before acting and re‑state the "North Star" at the top of each plan.
 
 ## 0) Reality check
 
@@ -9,7 +9,7 @@
 
 ## 1) North Star (repeat every plan)
 
-* **Goal:** shipping a stable, privacy‑respecting Gmail AI assistant (MailQ) with high precision classification and low incident risk.
+* **Goal:** shipping a stable, privacy‑respecting Gmail AI assistant (ShopQ) with high precision classification and low incident risk.
 * **Invariant Rules:**
 
   1. Propose a plan before editing. Wait for approval.
@@ -24,23 +24,23 @@
 * **Deployment flow:** Local development → Production (Cloud Run). No staging environment. Use feature flags for safe deployments.
 * **Critical directories (keep tidy):**
 
-  * `mailq/` (Python backend with subdirectories: api/, classification/, digest/, gmail/, infrastructure/, llm/, observability/, runtime/, shared/, storage/, utils/)
+  * `shopq/` (Python backend with subdirectories: api/, classification/, digest/, gmail/, infrastructure/, llm/, observability/, runtime/, shared/, storage/, utils/)
   * `extension/` (Chrome extension: background, content scripts, options, UI)
-  * `config/` (mailq_policy.yaml, mapper rules, confidence settings)
+  * `config/` (shopq_policy.yaml, mapper rules, confidence settings)
   * `scripts/` (ETL, evals, cleanup)
   * `tests/`
   * `docs/` (architecture, development guides, analysis)
-* **Critical artifacts:** `mailq/llm/prompts/`, `mailq/digest/templates/`, `mailq/data/mailq.db`, `config/mailq_policy.yaml`, `.env.example`.
-* **Runtime policy knobs:** See `config/mailq_policy.yaml` for classification thresholds, verifier triggers, and quality monitor settings.
+* **Critical artifacts:** `shopq/llm/prompts/`, `shopq/digest/templates/`, `shopq/data/shopq.db`, `config/shopq_policy.yaml`, `.env.example`.
+* **Runtime policy knobs:** See `config/shopq_policy.yaml` for classification thresholds, verifier triggers, and quality monitor settings.
 
-For architecture, file paths, environment variables, quality monitoring, and debugging, see [MAILQ_REFERENCE.md](MAILQ_REFERENCE.md).
+For architecture, file paths, environment variables, quality monitoring, and debugging, see [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md).
 
 ## 2a) Core Architectural Principles (ALWAYS APPLY)
 
 **Before writing ANY code, validate against these 5 principles** from [docs/CORE_PRINCIPLES.md](docs/CORE_PRINCIPLES.md):
 
 ### P1: Concepts Are Rooms, Not Hallways
-* Each feature lives in ONE conceptual home (e.g., `mailq/classification/feedback_learning.py`)
+* Each feature lives in ONE conceptual home (e.g., `shopq/classification/feedback_learning.py`)
 * Don't scatter related logic across 4+ files
 * **Check:** "Can I understand this feature by reading 1-2 files max?"
 
@@ -125,17 +125,17 @@ END PLAN
 * Add a **golden digest** snapshot test for HTML output.
 * Coverage target: **statements ≥ 80%** for touched modules.
 
-## 8) MailQ‑specific guardrails
+## 8) ShopQ‑specific guardrails
 
 * **Classification:** rules → LLM fallback; log `decider` (rule|gemini|detector), confidences, and reasons.
 * **Digest:** deterministic structure; tolerate missing fields; never leak PII.
 * **Gmail policy:** `gmail_labels` computed in mappers, not LLM outputs.
 * **Privacy:** no uploading user emails or secrets to third‑party APIs beyond configured LLM provider.
-* **Thresholds:** All runtime classification/verifier thresholds are in `config/mailq_policy.yaml`, not hard-coded.
-* **Database Policy:** MailQ uses ONE SQLite database: `mailq/data/mailq.db`
-  * All new tables MUST be added to this database via `mailq/infrastructure/database.py`
+* **Thresholds:** All runtime classification/verifier thresholds are in `config/shopq_policy.yaml`, not hard-coded.
+* **Database Policy:** ShopQ uses ONE SQLite database: `shopq/data/shopq.db`
+  * All new tables MUST be added to this database via `shopq/infrastructure/database.py`
   * Creating new `.db` files is **FORBIDDEN** without explicit architectural review
-  * All code MUST use `get_db_connection()` from `mailq/infrastructure/database.py`
+  * All code MUST use `get_db_connection()` from `shopq/infrastructure/database.py`
   * Scripts MUST connect to central database, not create their own
   * Pre-commit hook will reject commits with new `.db` files
 * **Evaluation Output Policy:** All eval script outputs go to `reports/experiments/`
@@ -158,7 +158,7 @@ END PLAN
   * All commands start as **DRY_RUN**; look for words like `rm -rf`, network calls, migrations; if found, require double‑confirmation (`CONFIRM DANGEROUS`).
 * **Context loss or short memory:**
 
-  * Re‑ingest `claude.md`, `MAILQ_REFERENCE.md`, and the touched files each session; summarize them in the plan.
+  * Re‑ingest `claude.md`, `SHOPQ_REFERENCE.md`, and the touched files each session; summarize them in the plan.
 * **Rate limits / weekly caps (⚠️ may apply):**
 
   * Batch diffs; prefer smaller, higher‑signal conversations; export long logs to `reports/`.

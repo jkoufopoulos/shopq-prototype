@@ -29,8 +29,8 @@
 - `config/type_mapper_rules.yaml` - Type classification rules (version 1.0)
 
 #### Implementation
-- `mailq/utils.py` - Email address extraction utility
-- `mailq/type_mapper.py` - TypeMapper class (singleton pattern)
+- `shopq/utils.py` - Email address extraction utility
+- `shopq/type_mapper.py` - TypeMapper class (singleton pattern)
 
 #### Tests
 - `tests/test_type_mapper.py` - Unit tests (40+ test cases)
@@ -44,7 +44,7 @@
 ### Modified Files (3 total)
 
 #### Integration
-- `mailq/memory_classifier.py` - Integrated type mapper into classification flow
+- `shopq/memory_classifier.py` - Integrated type mapper into classification flow
 
 #### Documentation
 - `docs/ARCHITECTURE.md` - Updated with type mapper flow (pending)
@@ -194,11 +194,11 @@ pytest tests/test_memory_classifier_integration.py -v
 pytest tests/ -v
 
 # Linting
-ruff check mailq/type_mapper.py mailq/utils.py mailq/memory_classifier.py
-mypy mailq/type_mapper.py mailq/utils.py
+ruff check shopq/type_mapper.py shopq/utils.py shopq/memory_classifier.py
+mypy shopq/type_mapper.py shopq/utils.py
 
 # Coverage
-pytest tests/test_type_mapper.py --cov=mailq.type_mapper --cov-report=term-missing
+pytest tests/test_type_mapper.py --cov=shopq.type_mapper --cov-report=term-missing
 ```
 
 ### Expected Test Results
@@ -253,7 +253,7 @@ pytest tests/test_memory_classifier_integration.py -v
 ### Phase 4: Commit & Deploy
 ```bash
 # Commit with atomic message
-git add config/ mailq/ tests/ docs/
+git add config/ shopq/ tests/ docs/
 git commit -m "feat: Add type mapper for calendar invite consistency
 
 ..."
@@ -338,13 +338,13 @@ git revert <commit-hash>
 git push
 
 # Option 2: Quick patch (comment out type mapper)
-# Edit mailq/memory_classifier.py:
+# Edit shopq/memory_classifier.py:
 # Comment out lines 60-83 (type mapper check)
 ```
 
 ---
 
-## Alignment with MailQ Philosophy
+## Alignment with ShopQ Philosophy
 
 ### ✅ Rules-First Architecture (`claude.md` line 89)
 - Type mapper is deterministic rules (not LLM)
@@ -401,4 +401,4 @@ git push
 ---
 
 *Generated: 2025-11-10*
-*MailQ Type Mapper MVP Implementation*
+*ShopQ Type Mapper MVP Implementation*

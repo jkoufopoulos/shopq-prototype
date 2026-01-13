@@ -2,7 +2,7 @@
 """
 Manual labeling interface for golden dataset emails.
 
-Labels match MailQ's actual importance_classifier.py patterns and Phase 4
+Labels match ShopQ's actual importance_classifier.py patterns and Phase 4
 deterministic up-rank rules from the classification refactor plan.
 
 Quick keys: c (critical), t (time_sensitive), r (routine), s (skip), q (quit)
@@ -16,10 +16,10 @@ from pathlib import Path
 
 def suggest_importance(subject: str, snippet: str) -> tuple:
     """
-    Suggest importance based on MailQ's actual classification patterns.
+    Suggest importance based on ShopQ's actual classification patterns.
     Returns (suggested_importance, reason)
 
-    Based on mailq/importance_classifier.py and Phase 4 deterministic up-ranks.
+    Based on shopq/importance_classifier.py and Phase 4 deterministic up-ranks.
     """
     combined = f"{subject} {snippet}".lower()
 
@@ -334,7 +334,7 @@ def get_label_input(can_undo=False):
 
 
 def show_guidelines():
-    """Show detailed labeling guidelines based on MailQ's actual system."""
+    """Show detailed labeling guidelines based on ShopQ's actual system."""
     print("\n" + "=" * 80)
     print("MAILQ IMPORTANCE LABELING GUIDELINES")
     print("Based on importance_classifier.py + Phase 4 deterministic up-ranks")
@@ -459,7 +459,7 @@ def main():
     # Filter to unlabeled emails
     # Need to label:
     # 1. Historical emails (placeholder labels from Gmail fetch)
-    # 2. Existing emails (old MailQ logic, need gds-1.0 alignment)
+    # 2. Existing emails (old ShopQ logic, need gds-1.0 alignment)
     # Already labeled:
     # 3. P0 critical cases (manual_p0_pattern labels are trusted)
     # 4. Manually labeled emails (decider='manual')
@@ -589,7 +589,7 @@ def main():
     # Final distribution
     final_dist = Counter(e["importance"] for e in emails)
     total_labeled = sum(
-        1 for e in emails if e.get("decider") in ["manual", "mailq_db", "manual_p0_pattern"]
+        1 for e in emails if e.get("decider") in ["manual", "shopq_db", "manual_p0_pattern"]
     )
 
     print("\n📊 Overall Dataset Status:")

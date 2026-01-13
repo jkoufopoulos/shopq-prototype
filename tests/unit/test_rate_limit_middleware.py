@@ -18,7 +18,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from mailq.api.middleware.rate_limit import RateLimitMiddleware
+from shopq.api.middleware.rate_limit import RateLimitMiddleware
 
 
 @pytest.fixture

@@ -11,10 +11,10 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from mailq.observability.logging import get_logger
+from shopq.observability.logging import get_logger
 
 # Database path
-DB_PATH = Path(__file__).parent.parent / "data" / "mailq.db"
+DB_PATH = Path(__file__).parent.parent / "data" / "shopq.db"
 BACKUP_DIR = Path(__file__).parent.parent / "data" / "backups"
 logger = get_logger(__name__)
 

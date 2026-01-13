@@ -61,25 +61,25 @@ def get_gmail_service():
 
 
 def fetch_inbox_emails(service, max_results=100):
-    """Fetch emails from inbox (excluding MailQ labeled emails)"""
+    """Fetch emails from inbox (excluding ShopQ labeled emails)"""
     print(f"📬 Fetching up to {max_results} emails from inbox...")
 
-    # Query: in inbox, not labeled by MailQ
-    mailq_labels = [
-        "MailQ/Receipts",
-        "MailQ/Shopping",
-        "MailQ/Messages",
-        "MailQ/Work",
-        "MailQ/Newsletters",
-        "MailQ/Notifications",
-        "MailQ/Events",
-        "MailQ/Finance",
-        "MailQ/Action-Required",
-        "MailQ/Digest",
-        "MailQ/Professional",
-        "MailQ/Personal",
+    # Query: in inbox, not labeled by ShopQ
+    shopq_labels = [
+        "ShopQ/Receipts",
+        "ShopQ/Shopping",
+        "ShopQ/Messages",
+        "ShopQ/Work",
+        "ShopQ/Newsletters",
+        "ShopQ/Notifications",
+        "ShopQ/Events",
+        "ShopQ/Finance",
+        "ShopQ/Action-Required",
+        "ShopQ/Digest",
+        "ShopQ/Professional",
+        "ShopQ/Personal",
     ]
-    exclude_labels = " ".join([f"-label:{label}" for label in mailq_labels])
+    exclude_labels = " ".join([f"-label:{label}" for label in shopq_labels])
     query = f"in:inbox {exclude_labels}"
 
     print(f"🔍 Query: {query}\n")

@@ -1,8 +1,8 @@
-# MailQ Deployment Playbook
+# ShopQ Deployment Playbook
 
 ## Overview
 
-This playbook provides step-by-step procedures for deploying the refactored MailQ backend to production. Follow these steps in order to ensure a safe, monitored rollout.
+This playbook provides step-by-step procedures for deploying the refactored ShopQ backend to production. Follow these steps in order to ensure a safe, monitored rollout.
 
 ## Pre-Deployment Checklist
 
@@ -28,7 +28,7 @@ export GOOGLE_API_KEY=AIzaSy...
 export GEMINI_MODEL=gemini-2.0-flash
 
 # LLM Safety (disabled by default for safety)
-export MAILQ_USE_LLM=false  # Set to "true" to enable after validation
+export SHOPQ_USE_LLM=false  # Set to "true" to enable after validation
 
 # API Port (optional)
 export API_PORT=8000
@@ -38,7 +38,7 @@ export API_PORT=8000
 
 | Flag | Default | Description | When to Enable |
 |------|---------|-------------|----------------|
-| `MAILQ_USE_LLM` | `false` | Enable LLM classification | After rules-only validation passes |
+| `SHOPQ_USE_LLM` | `false` | Enable LLM classification | After rules-only validation passes |
 | `USE_RULES_ENGINE` | `true` | Enable rules-based classification | Always enabled |
 | `USE_AI_CLASSIFIER` | `true` | Enable AI classifier (fallback to rules) | Always enabled |
 
@@ -49,16 +49,16 @@ export API_PORT=8000
 1. **Deploy to production with traffic splitting**
    ```bash
    # Deploy new version without traffic
-   gcloud run deploy mailq-api \
+   gcloud run deploy shopq-api \
      --source . \
      --platform managed \
      --region us-central1 \
      --no-traffic \
      --tag canary \
-     --set-env-vars MAILQ_USE_LLM=false
+     --set-env-vars SHOPQ_USE_LLM=false
 
    # Route 10% traffic to canary
-   gcloud run services update-traffic mailq-api \
+   gcloud run services update-traffic shopq-api \
      --to-revisions canary=10,LATEST=90
    ```
 
@@ -75,7 +75,7 @@ export API_PORT=8000
 3. **Validation queries**
    ```bash
    # Check Cloud Run logs
-   gcloud run services logs read mailq-api \
+   gcloud run services logs read shopq-api \
      --platform managed \
      --region us-central1 \
      --limit 1000 | grep ERROR
@@ -88,13 +88,13 @@ export API_PORT=8000
 1. **Increase traffic gradually**
    ```bash
    # 50% traffic
-   gcloud run services update-traffic mailq-api \
+   gcloud run services update-traffic shopq-api \
      --to-revisions canary=50,LATEST=50
 
    # Wait 1 hour, monitor metrics
 
    # 100% traffic
-   gcloud run services update-traffic mailq-api \
+   gcloud run services update-traffic shopq-api \
      --to-latest
    ```
 
@@ -112,8 +112,8 @@ export API_PORT=8000
 
 1. **Update environment variable**
    ```bash
-   gcloud run services update mailq-api \
-     --update-env-vars MAILQ_USE_LLM=true \
+   gcloud run services update shopq-api \
+     --update-env-vars SHOPQ_USE_LLM=true \
      --platform managed \
      --region us-central1
    ```
@@ -142,14 +142,14 @@ If critical issues detected (see ROLLBACK_CONDITIONS.md for full trigger list):
 
 ```bash
 # Rollback to previous revision
-gcloud run services update-traffic mailq-api \
+gcloud run services update-traffic shopq-api \
   --to-revisions LATEST=0,PREVIOUS=100 \
   --platform managed \
   --region us-central1
 
 # Or rollback via Console:
 # 1. Go to Cloud Run console
-# 2. Click on mailq-api service
+# 2. Click on shopq-api service
 # 3. Click "Revisions" tab
 # 4. Find previous stable revision
 # 5. Click "Manage Traffic"
@@ -161,8 +161,8 @@ gcloud run services update-traffic mailq-api \
 If LLM causing issues but pipeline works:
 
 ```bash
-gcloud run services update mailq-api \
-  --update-env-vars MAILQ_USE_LLM=false \
+gcloud run services update shopq-api \
+  --update-env-vars SHOPQ_USE_LLM=false \
   --platform managed \
   --region us-central1
 ```
@@ -178,7 +178,7 @@ git revert <commit-hash>
 git push origin main
 
 # Redeploy
-gcloud run deploy mailq-api --source .
+gcloud run deploy shopq-api --source .
 ```
 
 ## Post-Deployment Validation
@@ -187,10 +187,10 @@ gcloud run deploy mailq-api --source .
 
 ```bash
 # Run production health check
-curl https://mailq-api.run.app/health
+curl https://shopq-api.run.app/health
 
 # Run synthetic monitoring
-pytest tests/integration/test_e2e_pipeline.py --url=https://mailq-api.run.app
+pytest tests/integration/test_e2e_pipeline.py --url=https://shopq-api.run.app
 ```
 
 ### Manual Verification
@@ -203,7 +203,7 @@ pytest tests/integration/test_e2e_pipeline.py --url=https://mailq-api.run.app
 
 2. **Check Logs**
    ```bash
-   gcloud run services logs read mailq-api --limit=1000 | grep -E "(ERROR|WARN)"
+   gcloud run services logs read shopq-api --limit=1000 | grep -E "(ERROR|WARN)"
    ```
 
 3. **Verify Metrics**
@@ -236,15 +236,15 @@ See `docs/MONITORING_ALERTS.md` for detailed alert setup.
 **Diagnosis**:
 ```bash
 # Check error logs
-gcloud run services logs read mailq-api --limit=1000 | grep ERROR
+gcloud run services logs read shopq-api --limit=1000 | grep ERROR
 
 # Check which stage failing
-gcloud run services logs read mailq-api --limit=1000 | grep "stage_error"
+gcloud run services logs read shopq-api --limit=1000 | grep "stage_error"
 ```
 
 **Resolution**:
 1. Identify failing stage (fetch, parse, classify, assemble)
-2. If LLM-related: Disable LLM (`MAILQ_USE_LLM=false`)
+2. If LLM-related: Disable LLM (`SHOPQ_USE_LLM=false`)
 3. If persistent: Rollback to previous version
 4. Investigate offline, redeploy when fixed
 
@@ -255,13 +255,13 @@ gcloud run services logs read mailq-api --limit=1000 | grep "stage_error"
 **Diagnosis**:
 ```bash
 # Check latency breakdown
-gcloud run services logs read mailq-api --limit=1000 | grep "timing="
+gcloud run services logs read shopq-api --limit=1000 | grep "timing="
 ```
 
 **Resolution**:
 1. Scale up Cloud Run instances
    ```bash
-   gcloud run services update mailq-api --max-instances=10
+   gcloud run services update shopq-api --max-instances=10
    ```
 2. Enable parallel processing (if not already)
 3. Check for slow external calls (Gmail API, LLM)
@@ -274,11 +274,11 @@ gcloud run services logs read mailq-api --limit=1000 | grep "timing="
 **Diagnosis**:
 ```bash
 # Check validation errors
-gcloud run services logs read mailq-api --limit=1000 | grep "schema_validation_failed"
+gcloud run services logs read shopq-api --limit=1000 | grep "schema_validation_failed"
 ```
 
 **Resolution**:
-1. Disable LLM immediately (`MAILQ_USE_LLM=false`)
+1. Disable LLM immediately (`SHOPQ_USE_LLM=false`)
 2. Review LLM output format changes
 3. Update `domain/classify.py` LLMClassification schema if needed
 4. Test offline before re-enabling

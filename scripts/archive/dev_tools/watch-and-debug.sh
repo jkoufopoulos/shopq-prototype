@@ -22,7 +22,7 @@ ITERATION=1
 
 while true; do
   # Find latest session
-  LATEST_SESSION=$(ls -t exports/mailq_session_*.csv 2>/dev/null | head -1 || echo "")
+  LATEST_SESSION=$(ls -t exports/shopq_session_*.csv 2>/dev/null | head -1 || echo "")
 
   if [ -z "$LATEST_SESSION" ]; then
     echo "⏳ [$(date +%H:%M:%S)] No sessions found yet. Waiting for first digest..."
@@ -33,7 +33,7 @@ while true; do
   # Check if this is a new session
   if [ "$LATEST_SESSION" != "$LAST_SESSION" ]; then
     LAST_SESSION="$LATEST_SESSION"
-    SESSION_ID=$(basename "$LATEST_SESSION" .csv | sed 's/mailq_session_//')
+    SESSION_ID=$(basename "$LATEST_SESSION" .csv | sed 's/shopq_session_//')
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -167,9 +167,9 @@ while true; do
         echo "⚠️  Manual action required. Auto-debug made code changes."
         echo ""
         echo "Please:"
-        echo "  1. Reload extension: chrome://extensions → MailQ → 🔄"
+        echo "  1. Reload extension: chrome://extensions → ShopQ → 🔄"
         echo "  2. Clear data in Gmail console (F12):"
-        echo "     indexedDB.deleteDatabase('MailQLogger');"
+        echo "     indexedDB.deleteDatabase('ShopQLogger');"
         echo "     await chrome.storage.local.clear();"
         echo "     location.reload();"
         echo "  3. Wait for new digest (~10 seconds)"

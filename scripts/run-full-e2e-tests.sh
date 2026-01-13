@@ -1,5 +1,5 @@
 #!/bin/bash
-# Comprehensive E2E Test Runner for MailQ
+# Comprehensive E2E Test Runner for ShopQ
 # Runs against YOUR real Gmail with YOUR real emails
 #
 # This script will:
@@ -10,7 +10,7 @@
 
 set -e  # Exit on error
 
-echo "🧪 MailQ Comprehensive E2E Test Suite"
+echo "🧪 ShopQ Comprehensive E2E Test Suite"
 echo "======================================"
 echo ""
 
@@ -42,7 +42,7 @@ else
     echo "🚀 Starting backend API..."
 
     # Start backend in background
-    uvicorn mailq.api:app --reload --port $BACKEND_PORT > /tmp/mailq-backend.log 2>&1 &
+    uvicorn shopq.api:app --reload --port $BACKEND_PORT > /tmp/mailq-backend.log 2>&1 &
     BACKEND_PID=$!
 
     echo "   Backend PID: $BACKEND_PID"

@@ -1,4 +1,4 @@
-# MailQ Debugging Guide
+# ShopQ Debugging Guide
 
 Complete guide to debugging digest generation, classification, and visual output quality.
 
@@ -233,7 +233,7 @@ Cross-references 3 data sources:
 
 ```bash
 # 1. Clear old data first (in Gmail console F12)
-indexedDB.deleteDatabase('MailQLogger');
+indexedDB.deleteDatabase('ShopQLogger');
 await chrome.storage.local.clear();
 location.reload();
 
@@ -313,8 +313,8 @@ Sample output:
 
 **Files to Check**:
 - extension/modules/logger.js
-- mailq/api.py
-- mailq/entity_extractor.py
+- shopq/api.py
+- shopq/entity_extractor.py
 
 **Recommended Fix**:
 Add emailTimestamp field to logger
@@ -345,7 +345,7 @@ const entry = {
 **5. Re-test**
 ```bash
 # Clear old data (in Gmail console)
-indexedDB.deleteDatabase('MailQLogger');
+indexedDB.deleteDatabase('ShopQLogger');
 await chrome.storage.local.clear();
 location.reload();
 
@@ -378,7 +378,7 @@ Check that issue is resolved in new `CLAUDE_ANALYSIS.md`
       "from": "N/A",
       "attention_score": 1.0,
       "contextual_score": 0.95,
-      "labels": ["MailQ-Critical"],
+      "labels": ["ShopQ-Critical"],
       "reason": "critical importance, confidence=0.95"
     }
   ],
@@ -412,7 +412,7 @@ Check that issue is resolved in new `CLAUDE_ANALYSIS.md`
         "Bill due tomorrow"
       ],
       "sample_threadIds": ["msg_1", "msg_2"],
-      "gmail_search_query": "label:MailQ-Critical in:anywhere newer_than:1d"
+      "gmail_search_query": "label:ShopQ-Critical in:anywhere newer_than:1d"
     }
   ]
 }
@@ -437,8 +437,8 @@ Check that issue is resolved in new `CLAUDE_ANALYSIS.md`
   "computed_at": "2025-10-28T12:00:00",
   "gmail_counts": [
     {
-      "label": "MailQ-Uncategorized",
-      "query": "label:MailQ-Uncategorized in:anywhere newer_than:1d",
+      "label": "ShopQ-Uncategorized",
+      "query": "label:ShopQ-Uncategorized in:anywhere newer_than:1d",
       "count": 12
     }
   ],
@@ -539,9 +539,9 @@ Check that issue is resolved in new `CLAUDE_ANALYSIS.md`
 **Root Cause**: Entity linking broken or timeline selection wrong
 
 **Files to Check**:
-- `mailq/card_renderer.py` - Entity linking logic
-- `mailq/timeline_synthesizer.py` - Selection logic
-- `mailq/narrative_generator.py` - Prompt generation
+- `shopq/card_renderer.py` - Entity linking logic
+- `shopq/timeline_synthesizer.py` - Selection logic
+- `shopq/narrative_generator.py` - Prompt generation
 
 **Fix**:
 ```python
@@ -559,9 +559,9 @@ for i, entity in enumerate(featured, start=1):
 
 **Files to Check**:
 - `extension/modules/logger.js` - Must save `emailTimestamp`
-- `mailq/api.py` - Must extract `emailTimestamp`
-- `mailq/entity_extractor.py` - Must parse timestamp
-- `mailq/timeline_synthesizer.py` - Must add age markers
+- `shopq/api.py` - Must extract `emailTimestamp`
+- `shopq/entity_extractor.py` - Must parse timestamp
+- `shopq/timeline_synthesizer.py` - Must add age markers
 
 **Fix**:
 ```javascript
@@ -581,8 +581,8 @@ emailTimestamp: email.timestamp  // Add this field
 **Root Cause**: Noise summary generation wrong
 
 **Files to Check**:
-- `mailq/importance_classifier.py` (`categorize_routine()`)
-- `mailq/narrative_generator.py` - Noise section
+- `shopq/importance_classifier.py` (`categorize_routine()`)
+- `shopq/narrative_generator.py` - Noise section
 
 **Fix**:
 ```python
@@ -599,8 +599,8 @@ total = sum(noise_breakdown.values())
 **Root Cause**: Weather API failing or not enriched
 
 **Files to Check**:
-- `mailq/weather_enrichment.py` - API calls
-- `mailq/narrative_generator.py` - Weather prompt
+- `shopq/weather_enrichment.py` - API calls
+- `shopq/narrative_generator.py` - Weather prompt
 
 **Fix**:
 ```python
@@ -615,8 +615,8 @@ total = sum(noise_breakdown.values())
 **Root Cause**: Some emails not featured, orphaned, or noise
 
 **Files to Check**:
-- `mailq/entity_extractor.py` - Extraction failures
-- `mailq/timeline_synthesizer.py` - Selection logic
+- `shopq/entity_extractor.py` - Extraction failures
+- `shopq/timeline_synthesizer.py` - Selection logic
 
 **Fix**:
 ```python
@@ -633,7 +633,7 @@ total = sum(noise_breakdown.values())
 ```javascript
 // In Gmail console
 const db = await new Promise(r => {
-  const req = indexedDB.open('MailQLogger', 1);
+  const req = indexedDB.open('ShopQLogger', 1);
   req.onsuccess = () => r(req.result);
 });
 
@@ -666,7 +666,7 @@ curl -s http://localhost:8000/api/tracking/session/latest | \
 
 ```javascript
 // Clear everything in Gmail console
-indexedDB.deleteDatabase('MailQLogger');
+indexedDB.deleteDatabase('ShopQLogger');
 await chrome.storage.local.clear();
 location.reload();
 ```
@@ -686,11 +686,11 @@ location.reload();
 
 **Issue**: Gmail search doesn't find emails shown in digest footer counts.
 
-**Cause**: MailQ archives emails after organizing. Gmail search must include `in:anywhere`.
+**Cause**: ShopQ archives emails after organizing. Gmail search must include `in:anywhere`.
 
 **Solution**: All digest footer links now include `in:anywhere` in queries:
 ```
-label:MailQ-Notifications in:anywhere newer_than:1d
+label:ShopQ-Notifications in:anywhere newer_than:1d
 ```
 
 ### Featured Selection Seems Wrong
@@ -754,10 +754,10 @@ Check label counts and look for discrepancies.
 
 ```bash
 # Check specific labels
-./scripts/mailq-debug labels --labels MailQ-Uncategorized,MailQ-Notifications
+./scripts/mailq-debug labels --labels ShopQ-Uncategorized,ShopQ-Notifications
 
 # Check labels from last 3 days
-./scripts/mailq-debug labels --labels MailQ-Newsletters --days 3
+./scripts/mailq-debug labels --labels ShopQ-Newsletters --days 3
 ```
 
 #### `mailq-debug snapshot`
@@ -774,7 +774,7 @@ Get complete snapshot and save to file.
 
 **Output**:
 ```
-✓ Snapshot saved to /tmp/mailq_snapshot_latest.json
+✓ Snapshot saved to /tmp/shopq_snapshot_latest.json
 
 Header
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -810,7 +810,7 @@ Check for missed high-priority emails.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DEBUG_FEATURED` | `false` | Enable inline [score, reason] hints in digest |
-| `MAILQ_API_URL` | `http://localhost:8000` | API URL for CLI tool |
+| `SHOPQ_API_URL` | `http://localhost:8000` | API URL for CLI tool |
 
 **Enable debug hints:**
 ```bash
@@ -855,7 +855,7 @@ priority_score = importance_weight × confidence
 
 ### Debug Data Storage
 
-Debug data is stored in-memory in `mailq.api_debug.last_digest_store`:
+Debug data is stored in-memory in `shopq.api_debug.last_digest_store`:
 
 ```python
 {
@@ -883,7 +883,7 @@ Updated automatically when digest is generated via `context_digest._store_debug_
 Run the debug endpoint tests:
 
 ```bash
-pytest mailq/tests/test_debug_endpoints.py -v
+pytest shopq/tests/test_debug_endpoints.py -v
 ```
 
 **Tests include**:
@@ -899,7 +899,7 @@ pytest mailq/tests/test_debug_endpoints.py -v
 - [TESTING.md](TESTING.md) - Testing procedures
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design details
 - [QUICKSTART.md](../QUICKSTART.md) - Basic setup and usage
-- [MAILQ_REFERENCE.md](../MAILQ_REFERENCE.md) - AI assistant guide
+- [SHOPQ_REFERENCE.md](../SHOPQ_REFERENCE.md) - AI assistant guide
 
 ---
 

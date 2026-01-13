@@ -16,13 +16,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from mailq.classification.enrichment import (
+from shopq.classification.enrichment import (
     enforce_temporal_guardrails,
     enrich_entity_with_temporal_decay,
     get_temporal_stats,
     reset_temporal_stats,
 )
-from mailq.classification.models import DeadlineEntity, EventEntity, NotificationEntity
+from shopq.classification.models import DeadlineEntity, EventEntity, NotificationEntity
 
 
 @pytest.fixture(autouse=True)

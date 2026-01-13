@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from mailq.digest.digest_pipeline import (
+from shopq.digest.digest_pipeline import (
     DigestContext,
     DigestPipeline,
     PipelineValidationError,
@@ -327,7 +327,7 @@ def test_digest_result_to_dict():
         )
     ]
 
-    from mailq.digest.digest_pipeline import DigestResult
+    from shopq.digest.digest_pipeline import DigestResult
 
     result = DigestResult(
         context=context,

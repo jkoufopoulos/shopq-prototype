@@ -1,5 +1,5 @@
 /**
- * MailQ Content Script (ES Module Entry Point)
+ * ShopQ Content Script (ES Module Entry Point)
  *
  * This file is bundled by webpack with InboxSDK.
  * Implements the Visual Layer for Gmail:
@@ -16,10 +16,10 @@
 import * as InboxSDK from '@inboxsdk/core';
 import Kefir from 'kefir';
 
-console.log('MailQ: Content script loaded (bundled)');
+console.log('ShopQ: Content script loaded (bundled)');
 
 // =============================================================================
-// CLEANUP: Remove any stale MailQ elements/styles from previous loads
+// CLEANUP: Remove any stale ShopQ elements/styles from previous loads
 // =============================================================================
 
 (function cleanupStaleElements() {
@@ -31,10 +31,10 @@ console.log('MailQ: Content script loaded (bundled)');
   document.getElementById('mailq-layout-styles')?.remove();
   document.getElementById('mailq-sidebar-panel')?.remove();
 
-  // Remove any MailQ-specific classes only
+  // Remove any ShopQ-specific classes only
   document.documentElement.classList.remove('mailq-drawer-open');
 
-  console.log('MailQ: Cleaned up stale elements');
+  console.log('ShopQ: Cleaned up stale elements');
 })();
 
 // =============================================================================
@@ -71,15 +71,15 @@ function createLabelStream() {
 // API CONFIGURATION
 // =============================================================================
 
-const API_BASE_URL = 'https://mailq-api-488078904670.us-central1.run.app';
+const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
 
 // =============================================================================
 // CONFIGURATION
 // =============================================================================
 
 // Registered InboxSDK App ID
-const MAILQ_APP_ID = 'sdk_mailqapp_8eb273b616';
-const LABEL_CACHE_KEY = 'mailq_label_cache';
+const SHOPQ_APP_ID = 'sdk_mailqapp_8eb273b616';
+const LABEL_CACHE_KEY = 'shopq_label_cache';
 
 // Badge display names for types
 const TYPE_DISPLAY_NAMES = {
@@ -113,7 +113,7 @@ async function preloadCache() {
     const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
     return data[LABEL_CACHE_KEY] || {};
   } catch (error) {
-    console.error('MailQ: Failed to preload cache:', error);
+    console.error('ShopQ: Failed to preload cache:', error);
     return {};
   }
 }
@@ -169,7 +169,7 @@ function applyBadgesFromCache(threadId, labelData) {
   const displayType = labelData?.type || CLIENT_LABEL_TO_TYPE[labelData?.clientLabel];
   if (displayType) {
     const descriptor = buildTypeLabelDescriptor(displayType);
-    console.log(`MailQ: Updating type badge for ${threadId}:`, descriptor.title);
+    console.log(`ShopQ: Updating type badge for ${threadId}:`, descriptor.title);
     entry.typeStream.update(descriptor);
   } else {
     entry.typeStream.clear();
@@ -217,7 +217,7 @@ async function handleThreadRow(threadRowView) {
     // Log first few calls for debugging
     if (handlerCallCount <= 5) {
       const cacheKeys = Object.keys(localCache).slice(0, 3);
-      console.log(`MailQ: Handler #${handlerCallCount} - threadId: ${threadId}, cache sample: ${cacheKeys.join(', ')}`);
+      console.log(`ShopQ: Handler #${handlerCallCount} - threadId: ${threadId}, cache sample: ${cacheKeys.join(', ')}`);
     }
 
     if (!threadId) return;
@@ -262,7 +262,7 @@ async function handleThreadRow(threadRowView) {
     });
 
   } catch (error) {
-    console.debug('MailQ: Error handling thread row:', error);
+    console.debug('ShopQ: Error handling thread row:', error);
   }
 }
 
@@ -307,7 +307,7 @@ function showRefreshBanner() {
       align-items: center;
       gap: 12px;
     ">
-      <span>MailQ was updated. Please refresh this page to continue.</span>
+      <span>ShopQ was updated. Please refresh this page to continue.</span>
       <button onclick="location.reload()" style="
         background: white;
         color: #1a73e8;
@@ -336,14 +336,14 @@ function showRefreshBanner() {
 async function initializeVisualLayer() {
   // Check if extension context is still valid
   if (!isExtensionContextValid()) {
-    console.warn('MailQ: Extension context invalidated - showing refresh banner');
+    console.warn('ShopQ: Extension context invalidated - showing refresh banner');
     showRefreshBanner();
     return;
   }
 
   // Preload the cache
   localCache = await preloadCache();
-  console.log(`MailQ: Preloaded ${Object.keys(localCache).length} cached threads`);
+  console.log(`ShopQ: Preloaded ${Object.keys(localCache).length} cached threads`);
 
   // Signal that cache is ready
   cacheReadyResolve();
@@ -358,7 +358,7 @@ async function initializeVisualLayer() {
       const oldCache = localCache;
       localCache = newCache;
 
-      console.log(`MailQ: Cache updated, ${Object.keys(localCache).length} threads, ${threadRowRegistry.size} rows registered`);
+      console.log(`ShopQ: Cache updated, ${Object.keys(localCache).length} threads, ${threadRowRegistry.size} rows registered`);
 
       // Update badges for all registered thread rows
       for (const [threadId, entry] of threadRowRegistry) {
@@ -367,35 +367,35 @@ async function initializeVisualLayer() {
 
         // Only update if data changed
         if (JSON.stringify(oldData) !== JSON.stringify(newData)) {
-          console.log(`MailQ: Updating badges for thread ${threadId}`);
+          console.log(`ShopQ: Updating badges for thread ${threadId}`);
           applyBadgesFromCache(threadId, newData);
         }
       }
     }
 
     // Handle digest refresh signal (from auto-organize)
-    if (changes.mailq_digest_needs_refresh && triggerDigestRefresh) {
-      console.log('MailQ: Digest refresh signal received from auto-organize');
+    if (changes.shopq_digest_needs_refresh && triggerDigestRefresh) {
+      console.log('ShopQ: Digest refresh signal received from auto-organize');
       triggerDigestRefresh();
       // Clear the signal so it doesn't fire again
-      chrome.storage.local.remove('mailq_digest_needs_refresh');
+      chrome.storage.local.remove('shopq_digest_needs_refresh');
     }
   });
 
-  console.log('MailQ: Attempting InboxSDK.load with app ID:', MAILQ_APP_ID);
+  console.log('ShopQ: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
 
   try {
-    const sdk = await InboxSDK.load(2, MAILQ_APP_ID);
-    console.log('MailQ: InboxSDK loaded successfully');
+    const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
+    console.log('ShopQ: InboxSDK loaded successfully');
 
     // Register thread row handler for badges
     sdk.Lists.registerThreadRowViewHandler(handleThreadRow);
-    console.log('MailQ: Thread row handler registered');
+    console.log('ShopQ: Thread row handler registered');
 
     // Add digest sidebar panel via InboxSDK
     await initializeDigestSidebar(sdk);
   } catch (error) {
-    console.error('MailQ: Failed to load InboxSDK:', error.message);
+    console.error('ShopQ: Failed to load InboxSDK:', error.message);
     // Check if this is due to extension context being invalidated
     if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {
       showRefreshBanner();
@@ -411,65 +411,65 @@ async function initializeVisualLayer() {
 window.addEventListener('message', async (event) => {
   if (event.source !== window) return;
 
-  if (event.data?.type === 'MAILQ_TEST_ORGANIZE') {
-    console.log('MailQ: Test hook - triggering organize...');
+  if (event.data?.type === 'SHOPQ_TEST_ORGANIZE') {
+    console.log('ShopQ: Test hook - triggering organize...');
     try {
       const response = await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
-      window.postMessage({ type: 'MAILQ_TEST_ORGANIZE_RESPONSE', response }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE_RESPONSE', response }, '*');
     } catch (error) {
-      window.postMessage({ type: 'MAILQ_TEST_ORGANIZE_RESPONSE', error: error.message }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE_RESPONSE', error: error.message }, '*');
     }
   }
 
-  if (event.data?.type === 'MAILQ_TEST_CHECK_AUTH') {
-    console.log('MailQ: Test hook - checking auth...');
+  if (event.data?.type === 'SHOPQ_TEST_CHECK_AUTH') {
+    console.log('ShopQ: Test hook - checking auth...');
     try {
       const response = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
-      window.postMessage({ type: 'MAILQ_TEST_CHECK_AUTH_RESPONSE', response }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH_RESPONSE', response }, '*');
     } catch (error) {
-      window.postMessage({ type: 'MAILQ_TEST_CHECK_AUTH_RESPONSE', error: error.message }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH_RESPONSE', error: error.message }, '*');
     }
   }
 
-  if (event.data?.type === 'MAILQ_TEST_CLEAR_CACHE') {
-    console.log('MailQ: Test hook - clearing cache...');
+  if (event.data?.type === 'SHOPQ_TEST_CLEAR_CACHE') {
+    console.log('ShopQ: Test hook - clearing cache...');
     try {
-      await chrome.storage.local.remove('mailq_label_cache');
-      window.postMessage({ type: 'MAILQ_TEST_CLEAR_CACHE_RESPONSE', success: true }, '*');
+      await chrome.storage.local.remove('shopq_label_cache');
+      window.postMessage({ type: 'SHOPQ_TEST_CLEAR_CACHE_RESPONSE', success: true }, '*');
     } catch (error) {
-      window.postMessage({ type: 'MAILQ_TEST_CLEAR_CACHE_RESPONSE', error: error.message }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_CLEAR_CACHE_RESPONSE', error: error.message }, '*');
     }
   }
 
-  if (event.data?.type === 'MAILQ_TEST_SET_CACHE') {
-    console.log('MailQ: Test hook - setting cache with', Object.keys(event.data.cacheData || {}).length, 'entries...');
+  if (event.data?.type === 'SHOPQ_TEST_SET_CACHE') {
+    console.log('ShopQ: Test hook - setting cache with', Object.keys(event.data.cacheData || {}).length, 'entries...');
     try {
       await chrome.storage.local.set({ [LABEL_CACHE_KEY]: event.data.cacheData });
       localCache = event.data.cacheData;
-      window.postMessage({ type: 'MAILQ_TEST_SET_CACHE_RESPONSE', success: true }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_SET_CACHE_RESPONSE', success: true }, '*');
     } catch (error) {
-      window.postMessage({ type: 'MAILQ_TEST_SET_CACHE_RESPONSE', error: error.message }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_SET_CACHE_RESPONSE', error: error.message }, '*');
     }
   }
 
-  if (event.data?.type === 'MAILQ_TEST_GET_THREAD_IDS') {
-    console.log('MailQ: Test hook - returning', seenThreadIds.length, 'thread IDs');
-    window.postMessage({ type: 'MAILQ_TEST_GET_THREAD_IDS_RESPONSE', threadIds: [...seenThreadIds] }, '*');
+  if (event.data?.type === 'SHOPQ_TEST_GET_THREAD_IDS') {
+    console.log('ShopQ: Test hook - returning', seenThreadIds.length, 'thread IDs');
+    window.postMessage({ type: 'SHOPQ_TEST_GET_THREAD_IDS_RESPONSE', threadIds: [...seenThreadIds] }, '*');
   }
 
-  if (event.data?.type === 'MAILQ_TEST_GET_CACHE_STATUS') {
-    console.log('MailQ: Test hook - getting cache status...');
+  if (event.data?.type === 'SHOPQ_TEST_GET_CACHE_STATUS') {
+    console.log('ShopQ: Test hook - getting cache status...');
     try {
       const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
       const cache = data[LABEL_CACHE_KEY] || {};
       const entries = Object.entries(cache);
       window.postMessage({
-        type: 'MAILQ_TEST_GET_CACHE_STATUS_RESPONSE',
+        type: 'SHOPQ_TEST_GET_CACHE_STATUS_RESPONSE',
         count: entries.length,
         sample: entries.slice(0, 5).map(([id, v]) => ({ threadId: id.slice(0, 12), ...v }))
       }, '*');
     } catch (error) {
-      window.postMessage({ type: 'MAILQ_TEST_GET_CACHE_STATUS_RESPONSE', error: error.message }, '*');
+      window.postMessage({ type: 'SHOPQ_TEST_GET_CACHE_STATUS_RESPONSE', error: error.message }, '*');
     }
   }
 });
@@ -492,7 +492,7 @@ async function fetchDigest() {
     const entries = Object.entries(cache);
 
     if (entries.length === 0) {
-      return { empty: true, message: 'No classified emails yet. Click the MailQ icon to organize your inbox first.' };
+      return { empty: true, message: 'No classified emails yet. Click the ShopQ icon to organize your inbox first.' };
     }
 
     // Convert cache to digest format (current_data)
@@ -520,7 +520,7 @@ async function fetchDigest() {
       region: storageData.userRegion || undefined
     };
 
-    console.log('MailQ: Digest request payload:', {
+    console.log('ShopQ: Digest request payload:', {
       emailCount: currentData.length,
       sampleEmail: currentData[0],
       timezone: requestPayload.timezone,
@@ -545,15 +545,15 @@ async function fetchDigest() {
       } catch {
         errorDetail = await response.text();
       }
-      console.error('MailQ: Digest API error:', response.status, errorDetail);
+      console.error('ShopQ: Digest API error:', response.status, errorDetail);
       throw new Error(`API error ${response.status}: ${errorDetail}`);
     }
 
     const result = await response.json();
-    console.log('MailQ: Digest API response:', result);
+    console.log('ShopQ: Digest API response:', result);
     return { success: true, data: result };
   } catch (error) {
-    console.error('MailQ: Failed to fetch digest:', error);
+    console.error('ShopQ: Failed to fetch digest:', error);
 
     // Detect extension context invalidated (happens after extension reload)
     if (error.message?.includes('Extension context invalidated') ||
@@ -594,7 +594,7 @@ function renderDigestContent(panel, result) {
           </div>
         `;
       } catch (e) {
-        console.error('MailQ: Failed to trigger organize:', e);
+        console.error('ShopQ: Failed to trigger organize:', e);
       }
     });
     return;
@@ -758,7 +758,7 @@ function createDigestPanelContent() {
             </div>
           `;
         } catch (e) {
-          console.error('MailQ: Failed to trigger organize:', e);
+          console.error('ShopQ: Failed to trigger organize:', e);
         }
       });
     } else if (result.error) {
@@ -829,7 +829,7 @@ function createDigestPanelContent() {
  * trigger Gmail's layout recalculation.
  */
 async function initializeDigestSidebar(sdk) {
-  console.log('MailQ: Setting up global sidebar panel with IFRAME ISOLATION...');
+  console.log('ShopQ: Setting up global sidebar panel with IFRAME ISOLATION...');
 
   // ==========================================================================
   // PHASE 3: IFRAME ISOLATION
@@ -865,8 +865,8 @@ async function initializeDigestSidebar(sdk) {
 
   // Listen for messages from iframe
   window.addEventListener('message', (event) => {
-    if (event.data?.type === 'MAILQ_SIDEBAR_READY') {
-      console.log('MailQ: Sidebar iframe ready');
+    if (event.data?.type === 'SHOPQ_SIDEBAR_READY') {
+      console.log('ShopQ: Sidebar iframe ready');
       iframeReady = true;
       // Send any pending content
       if (pendingHtml !== null) {
@@ -876,16 +876,16 @@ async function initializeDigestSidebar(sdk) {
     }
 
     // Handle back button - navigate to inbox
-    if (event.data?.type === 'MAILQ_GO_TO_INBOX') {
-      console.log('MailQ: Navigating to inbox');
+    if (event.data?.type === 'SHOPQ_GO_TO_INBOX') {
+      console.log('ShopQ: Navigating to inbox');
       window.location.hash = '#inbox';
     }
 
     // Handle close button - close the sidebar panel
-    if (event.data?.type === 'MAILQ_CLOSE_SIDEBAR') {
-      console.log('MailQ: Closing sidebar');
-      // Click the MailQ icon in Gmail's sidebar to toggle it closed
-      const mailqIcon = document.querySelector('[data-tooltip="MailQ Digest"]');
+    if (event.data?.type === 'SHOPQ_CLOSE_SIDEBAR') {
+      console.log('ShopQ: Closing sidebar');
+      // Click the ShopQ icon in Gmail's sidebar to toggle it closed
+      const mailqIcon = document.querySelector('[data-tooltip="ShopQ Digest"]');
       if (mailqIcon) {
         mailqIcon.click();
       }
@@ -899,14 +899,14 @@ async function initializeDigestSidebar(sdk) {
       // the main window instead of the cross-origin iframe
       const fixedHtml = html.replace(/<a href="/g, '<a target="_top" href="');
       iframe.contentWindow.postMessage({
-        type: 'MAILQ_UPDATE_DIGEST',
+        type: 'SHOPQ_UPDATE_DIGEST',
         html: fixedHtml
       }, '*');
-      console.log('MailQ: Sent content to iframe via postMessage');
+      console.log('ShopQ: Sent content to iframe via postMessage');
     } else {
       // Queue for when iframe is ready
       pendingHtml = html;
-      console.log('MailQ: Queued content (iframe not ready yet)');
+      console.log('ShopQ: Queued content (iframe not ready yet)');
     }
   }
 
@@ -915,14 +915,14 @@ async function initializeDigestSidebar(sdk) {
 
   try {
     // Use InboxSDK's Global.addSidebarContentPanel API
-    console.log('MailQ: Calling sdk.Global.addSidebarContentPanel...');
+    console.log('ShopQ: Calling sdk.Global.addSidebarContentPanel...');
     const panelView = await sdk.Global.addSidebarContentPanel({
       el: panelEl,
-      title: 'MailQ Digest',
+      title: 'ShopQ Digest',
       iconUrl: chrome.runtime.getURL('icons/icon48.png'),
     });
 
-    console.log('MailQ: Global sidebar panel registered successfully:', panelView);
+    console.log('ShopQ: Global sidebar panel registered successfully:', panelView);
 
     // Track sidebar state for persistence across navigation
     // sidebarShouldBeOpen: user intent (true until they explicitly close it)
@@ -934,7 +934,7 @@ async function initializeDigestSidebar(sdk) {
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
-      console.log('MailQ: Sidebar panel activated');
+      console.log('ShopQ: Sidebar panel activated');
 
       // Only fetch new content on first activation
       // Subsequent activations (after navigation) reuse cached content
@@ -943,24 +943,24 @@ async function initializeDigestSidebar(sdk) {
         digestContentLoaded = true;
       } else if (cachedDigestHtml) {
         // Restore cached content without API call
-        console.log('MailQ: Restoring cached digest content');
+        console.log('ShopQ: Restoring cached digest content');
         sendContentToIframe(cachedDigestHtml);
       }
     });
 
     panelView.on('deactivate', () => {
-      console.log('MailQ: Sidebar panel deactivated, isNavigating:', isNavigating);
+      console.log('ShopQ: Sidebar panel deactivated, isNavigating:', isNavigating);
       // Only mark as "should be closed" if user explicitly closed it (not during navigation)
       if (!isNavigating) {
         sidebarShouldBeOpen = false;
-        console.log('MailQ: User closed sidebar');
+        console.log('ShopQ: User closed sidebar');
       }
     });
 
     // Keep sidebar open during navigation (like Gmail's native side panels)
     // Using Router.handleAllRoutes to detect when user navigates
     sdk.Router.handleAllRoutes((routeView) => {
-      console.log('MailQ: Route changed to:', routeView.getRouteID());
+      console.log('ShopQ: Route changed to:', routeView.getRouteID());
       isNavigating = true;
 
       // Re-open sidebar after navigation if it should be open
@@ -969,9 +969,9 @@ async function initializeDigestSidebar(sdk) {
         if (sidebarShouldBeOpen) {
           try {
             panelView.open();
-            console.log('MailQ: Re-opened sidebar after navigation');
+            console.log('ShopQ: Re-opened sidebar after navigation');
           } catch (e) {
-            console.log('MailQ: Could not re-open sidebar:', e.message);
+            console.log('ShopQ: Could not re-open sidebar:', e.message);
           }
         }
       }, 150);
@@ -984,12 +984,12 @@ async function initializeDigestSidebar(sdk) {
     triggerDigestRefresh = () => {
       const now = Date.now();
       if (now - lastDigestRefreshTime < DIGEST_REFRESH_DEBOUNCE_MS) {
-        console.log('MailQ: Digest refresh debounced (too soon)');
+        console.log('ShopQ: Digest refresh debounced (too soon)');
         return;
       }
       lastDigestRefreshTime = now;
 
-      console.log('MailQ: External digest refresh triggered');
+      console.log('ShopQ: External digest refresh triggered');
       digestContentLoaded = false;
       cachedDigestHtml = null;
       loadDigestIntoPanel(panelEl);
@@ -1002,17 +1002,17 @@ async function initializeDigestSidebar(sdk) {
 
     // Auto-open on first load to show the digest
     panelView.open();
-    console.log('MailQ: Sidebar opened on initial load');
+    console.log('ShopQ: Sidebar opened on initial load');
 
   } catch (error) {
-    console.error('MailQ: Failed to add global sidebar panel:', error);
-    console.log('MailQ: Falling back to manual button injection...');
+    console.error('ShopQ: Failed to add global sidebar panel:', error);
+    console.log('ShopQ: Falling back to manual button injection...');
     // Fallback to manual button if Global sidebar fails
-    injectMailQButton();
+    injectShopQButton();
 
     const observer = new MutationObserver(() => {
       if (!document.getElementById('mailq-nav-button')) {
-        injectMailQButton();
+        injectShopQButton();
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -1028,7 +1028,7 @@ async function loadDigestIntoPanel(panelEl) {
   const sendToIframe = panelEl._sendToIframe;
 
   if (!sendToIframe) {
-    console.error('MailQ: sendToIframe function not found on panelEl');
+    console.error('ShopQ: sendToIframe function not found on panelEl');
     return;
   }
 
@@ -1059,10 +1059,10 @@ async function loadDigestIntoPanel(panelEl) {
       </div>
     `;
   } else if (result.data?.html) {
-    console.log('MailQ: Digest HTML received, length:', result.data.html?.length);
+    console.log('ShopQ: Digest HTML received, length:', result.data.html?.length);
     contentHtml = `<div style="line-height: 1.6;">${result.data.html}</div>`;
   } else if (result.data?.narrative) {
-    console.log('MailQ: Digest narrative received, length:', result.data.narrative?.length);
+    console.log('ShopQ: Digest narrative received, length:', result.data.narrative?.length);
     contentHtml = `<div style="line-height: 1.6;">${result.data.narrative}</div>`;
   } else {
     contentHtml = `<p style="text-align: center; color: #5f6368;">No digest available.</p>`;
@@ -1071,18 +1071,18 @@ async function loadDigestIntoPanel(panelEl) {
   // Cache the content for navigation persistence
   if (panelEl._setCachedHtml) {
     panelEl._setCachedHtml(contentHtml);
-    console.log('MailQ: Digest content cached for navigation persistence');
+    console.log('ShopQ: Digest content cached for navigation persistence');
   }
 
   // Send content to iframe via postMessage (isolated from Gmail's DOM)
   sendToIframe(contentHtml);
-  console.log('MailQ: Digest content sent to iframe');
+  console.log('ShopQ: Digest content sent to iframe');
 }
 
 /**
- * Inject MailQ button into Gmail's top nav
+ * Inject ShopQ button into Gmail's top nav
  */
-function injectMailQButton() {
+function injectShopQButton() {
   // Skip if already exists
   if (document.getElementById('mailq-nav-button')) {
     return;
@@ -1094,12 +1094,12 @@ function injectMailQButton() {
                       document.querySelector('[aria-label="Support"]')?.closest('div')?.parentElement;
 
   if (!headerRight) {
-    console.log('MailQ: Header area not found, retrying...');
-    setTimeout(injectMailQButton, 1000);
+    console.log('ShopQ: Header area not found, retrying...');
+    setTimeout(injectShopQButton, 1000);
     return;
   }
 
-  // Create MailQ button matching Gmail's style
+  // Create ShopQ button matching Gmail's style
   const button = document.createElement('div');
   button.id = 'mailq-nav-button';
   button.innerHTML = `
@@ -1119,7 +1119,7 @@ function injectMailQButton() {
       #mailq-nav-button img { width: 24px; height: 24px; }
       #mailq-nav-button.active { background: rgba(138, 180, 248, 0.2); }
     </style>
-    <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="MailQ Digest" title="MailQ Digest">
+    <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="ShopQ Digest" title="ShopQ Digest">
   `;
 
   button.addEventListener('click', () => {
@@ -1131,10 +1131,10 @@ function injectMailQButton() {
   const profilePic = headerRight.querySelector('img[aria-label]')?.closest('a, div') || headerRight.lastElementChild;
   if (profilePic) {
     profilePic.parentElement.insertBefore(button, profilePic);
-    console.log('MailQ: Nav button injected successfully');
+    console.log('ShopQ: Nav button injected successfully');
   } else {
     headerRight.appendChild(button);
-    console.log('MailQ: Nav button appended to header');
+    console.log('ShopQ: Nav button appended to header');
   }
 }
 
@@ -1219,7 +1219,7 @@ function toggleDigestDrawer() {
     <body>
       <div class="drawer">
         <div class="header">
-          <h2>MailQ Digest</h2>
+          <h2>ShopQ Digest</h2>
           <button class="close-btn" id="close-btn">&times;</button>
         </div>
         <div class="content" id="content">

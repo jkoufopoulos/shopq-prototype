@@ -1,4 +1,4 @@
-# MailQ Test/Tuning Mode
+# ShopQ Test/Tuning Mode
 
 ## Quick Start
 
@@ -8,7 +8,7 @@ When actively tuning the classifier, enable test mode to ensure fresh classifica
 
 ### 1. Enable Test Mode (Single Source of Truth)
 
-In `mailq/feature_gates.py`, set:
+In `shopq/feature_gates.py`, set:
 
 ```python
 'test_mode': True,  # Change from False to True
@@ -24,7 +24,7 @@ Then reload the extension (chrome://extensions → reload) - it will fetch test 
 
 ### 2. What Test Mode Does
 
-**Backend (`mailq/feature_gates.py` → `test_mode: True`):**
+**Backend (`shopq/feature_gates.py` → `test_mode: True`):**
 - ✅ **Disables rules engine** - All emails go to LLM (no stale rules)
 - ✅ **Disables feedback learning** - No automatic rule creation
 - ✅ **Skips rule learning** - Prevents pattern memorization
@@ -36,7 +36,7 @@ Then reload the extension (chrome://extensions → reload) - it will fetch test 
 
 ### 3. Manual Cache Control (from DevTools Console)
 
-Open background page console (chrome://extensions → MailQ → "Inspect views: background page")
+Open background page console (chrome://extensions → ShopQ → "Inspect views: background page")
 
 ```javascript
 // Check cache stats
@@ -78,22 +78,22 @@ clearCache();
 
 ```bash
 # 1. Enable test mode in backend
-vim mailq/feature_gates.py  # Set 'test_mode': True
+vim shopq/feature_gates.py  # Set 'test_mode': True
 ./deploy.sh  # Deploy to Cloud Run
 
 # 2. Reload extension (fetches test mode from backend)
-# chrome://extensions → MailQ → Reload
+# chrome://extensions → ShopQ → Reload
 
 # 3. Make classifier changes
-vim mailq/classifier.py  # Edit classifier logic
+vim shopq/classifier.py  # Edit classifier logic
 ./deploy.sh  # Deploy updates
 
 # 4. Test with fresh classifications
-# Click MailQ icon → all emails freshly classified
+# Click ShopQ icon → all emails freshly classified
 # Console shows: "🧪 Test mode ENABLED - cache disabled, rules skipped"
 
 # 5. When stable, disable test mode
-vim mailq/feature_gates.py  # Set 'test_mode': False
+vim shopq/feature_gates.py  # Set 'test_mode': False
 ./deploy.sh  # Deploy
 # Reload extension → syncs to normal mode
 ```

@@ -14,7 +14,7 @@ def test_database_initialization():
     """Test database initialization logic"""
     print("Testing database initialization...")
 
-    from mailq.infrastructure.database import get_db_path, init_database, validate_schema
+    from shopq.infrastructure.database import get_db_path, init_database, validate_schema
 
     try:
         # Initialize database (idempotent)
@@ -49,8 +49,8 @@ def test_startup_error_handling():
 
     # Test 1: FileNotFoundError handling
     print("  Testing FileNotFoundError handling...")
-    with patch("mailq.infrastructure.database.get_db_path") as mock_path:
-        mock_path.return_value = Path("/nonexistent/path/mailq.db")
+    with patch("shopq.infrastructure.database.get_db_path") as mock_path:
+        mock_path.return_value = Path("/nonexistent/path/shopq.db")
         try:
             conn = sqlite3.connect(mock_path.return_value)
             # This should work even with nonexistent path (SQLite creates it)
@@ -79,7 +79,7 @@ def test_email_tracker_uses_transactions():
 
     import inspect
 
-    from mailq.observability.tracking import EmailThreadTracker
+    from shopq.observability.tracking import EmailThreadTracker
 
     tracker = EmailThreadTracker()
 

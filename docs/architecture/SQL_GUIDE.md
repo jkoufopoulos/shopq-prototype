@@ -1,16 +1,16 @@
-# MailQ Tracking Database - SQL Guide
+# ShopQ Tracking Database - SQL Guide
 
 ## Connection
 
 ```bash
 # Basic connection
-sqlite3 data/mailq_tracking.db
+sqlite3 data/shopq_tracking.db
 
 # With formatted output
-sqlite3 -column -header data/mailq_tracking.db
+sqlite3 -column -header data/shopq_tracking.db
 
 # One-line query
-sqlite3 data/mailq_tracking.db "SELECT COUNT(*) FROM email_threads"
+sqlite3 data/shopq_tracking.db "SELECT COUNT(*) FROM email_threads"
 ```
 
 ## Database Schema
@@ -344,7 +344,7 @@ ORDER BY session_id DESC;
 ## Example Session
 
 ```bash
-$ sqlite3 -column -header data/mailq_tracking.db
+$ sqlite3 -column -header data/shopq_tracking.db
 
 sqlite> .mode column
 sqlite> .headers on

@@ -11,16 +11,16 @@
  * - Witty Office quote easter egg
  */
 
-const SUMMARY_EMAIL_KEY = 'mailq_summary_email_sent';
-const LAST_SUMMARY_DATA_KEY = 'mailq_last_summary_data';
-const SESSION_START_KEY = 'mailq_session_start';
-const SUMMARY_METRICS_KEY = 'mailq_summary_metrics';
-const SUMMARY_ERRORS_KEY = 'mailq_summary_errors';
-const LAST_DIGEST_SENT_KEY = 'mailq_last_digest_sent_at';
-const DIGEST_PENDING_KEY = 'mailq_digest_pending';
-const LAST_DIGEST_HASH_KEY = 'mailq_last_digest_hash';
+const SUMMARY_EMAIL_KEY = 'shopq_summary_email_sent';
+const LAST_SUMMARY_DATA_KEY = 'shopq_last_summary_data';
+const SESSION_START_KEY = 'shopq_session_start';
+const SUMMARY_METRICS_KEY = 'shopq_summary_metrics';
+const SUMMARY_ERRORS_KEY = 'shopq_summary_errors';
+const LAST_DIGEST_SENT_KEY = 'shopq_last_digest_sent_at';
+const DIGEST_PENDING_KEY = 'shopq_digest_pending';
+const LAST_DIGEST_HASH_KEY = 'shopq_last_digest_hash';
 const DIGEST_DEDUP_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
-const DIGEST_GENERATION_LOCK_KEY = 'mailq_digest_generation_lock';
+const DIGEST_GENERATION_LOCK_KEY = 'shopq_digest_generation_lock';
 const DIGEST_LOCK_TIMEOUT_MS = 30 * 1000; // 30 seconds max lock time
 const DIGEST_COOLDOWN_MS = 10 * 1000; // 10 seconds cooldown between digests
 const MAX_EMAIL_AGE_DAYS = 30;
@@ -222,9 +222,9 @@ async function acquireDigestLock() {
     const lockId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Atomic compare-and-swap using storage
-    const result = await chrome.storage.local.get([DIGEST_GENERATION_LOCK_KEY, 'mailq_organize_session_start']);
+    const result = await chrome.storage.local.get([DIGEST_GENERATION_LOCK_KEY, 'shopq_organize_session_start']);
     const existingLock = result[DIGEST_GENERATION_LOCK_KEY];
-    const sessionStart = result.mailq_organize_session_start;
+    const sessionStart = result.shopq_organize_session_start;
 
     if (existingLock) {
       const lockAge = Date.now() - new Date(existingLock.timestamp).getTime();
@@ -351,9 +351,9 @@ async function getCurrentClassifications(options = {}) {
         startDate = lastDigestSentAt;
         console.log('📧 [SUMMARY] Using last digest timestamp as cutoff:', startDate);
       } else {
-        const sessionStart = await chrome.storage.local.get('mailq_organize_session_start');
-        if (sessionStart.mailq_organize_session_start) {
-          startDate = sessionStart.mailq_organize_session_start;
+        const sessionStart = await chrome.storage.local.get('shopq_organize_session_start');
+        if (sessionStart.shopq_organize_session_start) {
+          startDate = sessionStart.shopq_organize_session_start;
           console.log('📧 [SUMMARY] Using session start time:', startDate);
         } else {
           console.log('📧 [SUMMARY] No digest or session start timestamp found; using full history');
@@ -376,17 +376,17 @@ async function getCurrentClassifications(options = {}) {
       console.log('📧 [SUMMARY] First classification keys:', Object.keys(classifications[0]));
     }
 
-    // Filter out MailQ's own summary emails to prevent self-reference
+    // Filter out ShopQ's own summary emails to prevent self-reference
     const filtered = (classifications || []).filter(email => {
       // Skip if subject starts with "Your Inbox --" (our digest emails)
-      if (email.subject && (email.subject.startsWith('Your Inbox --') || email.subject.includes('MailQ Digest'))) {
-        console.log('📧 [SUMMARY] Filtering out MailQ Digest email:', email.subject);
+      if (email.subject && (email.subject.startsWith('Your Inbox --') || email.subject.includes('ShopQ Digest'))) {
+        console.log('📧 [SUMMARY] Filtering out ShopQ Digest email:', email.subject);
         return false;
       }
       return true;
     });
 
-    console.log('📧 [SUMMARY] After filtering MailQ emails:', filtered.length);
+    console.log('📧 [SUMMARY] After filtering ShopQ emails:', filtered.length);
 
     // Drop emails that are too old to matter to the current session.
     const cutoffMs = Date.now() - (MAX_EMAIL_AGE_DAYS * MS_IN_DAY);
@@ -462,7 +462,7 @@ async function getCurrentClassifications(options = {}) {
  */
 async function generateSummaryHTML(currentData, previousData, sessionStart) {
   try {
-    const apiUrl = CONFIG.MAILQ_API_URL;
+    const apiUrl = CONFIG.SHOPQ_API_URL;
 
     const response = await fetch(`${apiUrl}/api/summary`, {
       method: 'POST',
@@ -547,12 +547,12 @@ async function sendEmail(subject, htmlBody) {
     const userEmail = profile.emailAddress;
 
     // Build RFC 2822 compliant email with proper MIME headers
-    // Add custom header to identify MailQ digest emails
+    // Add custom header to identify ShopQ digest emails
     const email =
       `From: ${userEmail}\r\n` +
       `To: ${userEmail}\r\n` +
       `Subject: ${encodeSubject(subject)}\r\n` +
-      `X-MailQ-Digest: true\r\n` +
+      `X-ShopQ-Digest: true\r\n` +
       `MIME-Version: 1.0\r\n` +
       `Content-Type: text/html; charset=utf-8\r\n\r\n` +
       htmlBody;
@@ -637,7 +637,7 @@ async function generateAndSendSummaryEmail(options = {}) {
       metrics.step = 'no_data';
       await storeSummaryMetrics(metrics);
       if (!forceSend) {
-        await chrome.storage.local.remove('mailq_organize_session_start');
+        await chrome.storage.local.remove('shopq_organize_session_start');
         await clearDigestPending();
         return { success: false, error: 'No classifications to summarize' };
       }
@@ -678,7 +678,7 @@ async function generateAndSendSummaryEmail(options = {}) {
     let html, subject, result;
 
     if (useContextDigest) {
-      console.log(`📧 [SUMMARY] API URL: ${CONFIG.MAILQ_API_URL}/api/context-digest`);
+      console.log(`📧 [SUMMARY] API URL: ${CONFIG.SHOPQ_API_URL}/api/context-digest`);
       console.log(`📧 [SUMMARY] Request payload:`, {
         current_data_count: currentData.length
       });
@@ -686,7 +686,7 @@ async function generateAndSendSummaryEmail(options = {}) {
       html = result.html;
       subject = result.subject;
     } else {
-      console.log(`📧 [SUMMARY] API URL: ${CONFIG.MAILQ_API_URL}/api/summary`);
+      console.log(`📧 [SUMMARY] API URL: ${CONFIG.SHOPQ_API_URL}/api/summary`);
       console.log(`📧 [SUMMARY] Request payload:`, {
         current_data_count: currentData.length,
         previous_data_count: previousData ? previousData.length : 0,
@@ -724,10 +724,10 @@ async function generateAndSendSummaryEmail(options = {}) {
     try {
       const token = await getAuthToken();
       console.log('🔑 [SUMMARY] Got auth token');
-      const digestLabelId = await getOrCreateLabel(token, 'MailQ/Digest');
+      const digestLabelId = await getOrCreateLabel(token, 'ShopQ/Digest');
       console.log(`🏷️ [SUMMARY] Got label ID: ${digestLabelId}`);
 
-      // Apply MailQ/Digest label and archive (maintain inbox zero)
+      // Apply ShopQ/Digest label and archive (maintain inbox zero)
       // Keep UNREAD so user knows to read the digest
       const labelResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailResult.id}/modify`, {
         method: 'POST',
@@ -746,7 +746,7 @@ async function generateAndSendSummaryEmail(options = {}) {
         throw new Error(`Gmail API error ${labelResponse.status}: ${errorText}`);
       }
 
-      console.log('✅ [SUMMARY] Digest email labeled with MailQ/Digest and archived');
+      console.log('✅ [SUMMARY] Digest email labeled with ShopQ/Digest and archived');
     } catch (labelError) {
       console.error('❌ [SUMMARY] Failed to label digest email:', labelError);
       console.error('   Email ID:', emailResult.id);
@@ -777,7 +777,7 @@ async function generateAndSendSummaryEmail(options = {}) {
     console.log(`✅ [SUMMARY] Summary email sent successfully! Total time: ${metrics.totalDuration}ms`);
 
     // Clear session start time (ready for next organize session)
-    await chrome.storage.local.remove('mailq_organize_session_start');
+    await chrome.storage.local.remove('shopq_organize_session_start');
     console.log('🧹 Organize session timestamp cleared');
 
     // Store metrics
@@ -788,7 +788,7 @@ async function generateAndSendSummaryEmail(options = {}) {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-        title: 'MailQ Summary Sent',
+        title: 'ShopQ Summary Sent',
         message: 'Your inbox summary has been sent to your email!',
         priority: 1
       }, (notificationId) => {
@@ -813,7 +813,7 @@ async function generateAndSendSummaryEmail(options = {}) {
         try {
           // Fetch threads from tracking API
           console.log(`📊 [SUMMARY] Fetching threads from tracking API...`);
-          const trackingResponse = await fetch(`${CONFIG.MAILQ_API_URL}/api/tracking/session/${sessionId}`);
+          const trackingResponse = await fetch(`${CONFIG.SHOPQ_API_URL}/api/tracking/session/${sessionId}`);
 
           if (trackingResponse.ok) {
             const trackingData = await trackingResponse.json();

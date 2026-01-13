@@ -1,4 +1,4 @@
-from mailq.digest.support import normalize_email_payload, normalize_text
+from shopq.digest.support import normalize_email_payload, normalize_text
 
 
 def test_normalize_html_and_base64():

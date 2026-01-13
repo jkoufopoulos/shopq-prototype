@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  MailQ GDS Tests (DB Migration Safe Mode)                 ║${NC}"
+echo -e "${BLUE}║  ShopQ GDS Tests (DB Migration Safe Mode)                 ║${NC}"
 echo -e "${BLUE}║  Running tests that don't depend on database              ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""

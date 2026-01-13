@@ -12,7 +12,7 @@ import pytest
 
 def test_retry_decorator_success():
     """Test retry decorator with successful operation"""
-    from mailq.infrastructure.database import retry_on_db_lock
+    from shopq.infrastructure.database import retry_on_db_lock
 
     call_count = [0]
 
@@ -28,7 +28,7 @@ def test_retry_decorator_success():
 
 def test_retry_decorator_recovers_from_lock():
     """Test retry decorator recovers from database lock errors"""
-    from mailq.infrastructure.database import retry_on_db_lock
+    from shopq.infrastructure.database import retry_on_db_lock
 
     call_count = [0]
 
@@ -46,7 +46,7 @@ def test_retry_decorator_recovers_from_lock():
 
 def test_retry_decorator_fails_after_max_retries():
     """Test retry decorator gives up after max retries"""
-    from mailq.infrastructure.database import retry_on_db_lock
+    from shopq.infrastructure.database import retry_on_db_lock
 
     call_count = [0]
 
@@ -63,7 +63,7 @@ def test_retry_decorator_fails_after_max_retries():
 
 def test_retry_decorator_ignores_non_lock_errors():
     """Test retry decorator doesn't retry non-lock errors"""
-    from mailq.infrastructure.database import retry_on_db_lock
+    from shopq.infrastructure.database import retry_on_db_lock
 
     call_count = [0]
 
@@ -80,7 +80,7 @@ def test_retry_decorator_ignores_non_lock_errors():
 
 def test_pool_singleton():
     """Test that get_pool returns same instance"""
-    from mailq.infrastructure.database import get_pool
+    from shopq.infrastructure.database import get_pool
 
     pool1 = get_pool()
     pool2 = get_pool()
@@ -90,7 +90,7 @@ def test_pool_singleton():
 
 def test_pool_stats():
     """Test pool stats returns expected format"""
-    from mailq.infrastructure.database import get_pool_stats
+    from shopq.infrastructure.database import get_pool_stats
 
     stats = get_pool_stats()
 
@@ -112,7 +112,7 @@ def test_pool_stats():
 
 def test_checkpoint_wal_creates_stats():
     """Test WAL checkpoint returns proper stats structure"""
-    from mailq.infrastructure.database import checkpoint_wal
+    from shopq.infrastructure.database import checkpoint_wal
 
     try:
         stats = checkpoint_wal()
@@ -141,7 +141,7 @@ def test_checkpoint_wal_creates_stats():
 
 def test_db_transaction_commits():
     """Test db_transaction context manager commits on success"""
-    from mailq.infrastructure.database import db_transaction
+    from shopq.infrastructure.database import db_transaction
 
     try:
         # Create a test table and insert data
@@ -158,7 +158,7 @@ def test_db_transaction_commits():
             conn.execute("INSERT INTO _test_commits (id, value) VALUES (1, 'test')")
 
         # Verify data persisted
-        from mailq.infrastructure.database import get_db_connection
+        from shopq.infrastructure.database import get_db_connection
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -177,7 +177,7 @@ def test_db_transaction_commits():
 
 def test_db_transaction_rolls_back_on_error():
     """Test db_transaction rolls back on error"""
-    from mailq.infrastructure.database import db_transaction, get_db_connection
+    from shopq.infrastructure.database import db_transaction, get_db_connection
 
     try:
         # Create test table
@@ -221,15 +221,15 @@ def test_no_import_time_validation():
     import sys
 
     # Remove module if already imported
-    if "mailq.infrastructure.database" in sys.modules:
-        del sys.modules["mailq.infrastructure.database"]
+    if "shopq.infrastructure.database" in sys.modules:
+        del sys.modules["shopq.infrastructure.database"]
 
     # Mock validate_schema to detect if it's called during import
     validation_called = [False]
 
     original_validate = None
-    if "mailq.infrastructure.database" in sys.modules:
-        from mailq.config import database
+    if "shopq.infrastructure.database" in sys.modules:
+        from shopq.config import database
 
         original_validate = database.validate_schema
 
@@ -239,15 +239,15 @@ def test_no_import_time_validation():
             return original_validate()
 
     # Import with mocked validate_schema
-    with patch("mailq.infrastructure.database.validate_schema", side_effect=mock_validate):
-        importlib.import_module("mailq.infrastructure.database")
+    with patch("shopq.infrastructure.database.validate_schema", side_effect=mock_validate):
+        importlib.import_module("shopq.infrastructure.database")
 
     assert not validation_called[0], "validate_schema should not be called during import"
 
 
 def test_connection_pool_lifecycle():
     """Test connection pool get/return lifecycle"""
-    from mailq.infrastructure.database import get_db_connection, get_pool_stats
+    from shopq.infrastructure.database import get_db_connection, get_pool_stats
 
     try:
         # Get initial stats

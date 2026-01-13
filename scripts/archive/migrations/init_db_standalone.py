@@ -10,7 +10,7 @@ import sqlite3
 from pathlib import Path
 
 # Database path
-DB_PATH = Path("/app/mailq/data/mailq.db")
+DB_PATH = Path("/app/shopq/data/shopq.db")
 
 
 def init_database():

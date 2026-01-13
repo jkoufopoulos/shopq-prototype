@@ -1,5 +1,5 @@
 #!/bin/bash
-# MailQ Quality Control Pipeline
+# ShopQ Quality Control Pipeline
 # Analyzes digest quality, generates comparisons, and creates GitHub issues for prioritization
 
 set -e
@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo "🔍 MailQ Quality Control Pipeline"
+echo "🔍 ShopQ Quality Control Pipeline"
 echo "=================================="
 echo ""
 
@@ -49,9 +49,9 @@ if len(new_sessions) == 0:
     print("✅ No new sessions to analyze")
     print("")
     print("To generate a new digest session:")
-    print("  1. Open Chrome with the MailQ extension")
+    print("  1. Open Chrome with the ShopQ extension")
     print("  2. Navigate to Gmail")
-    print("  3. Let MailQ process some emails")
+    print("  3. Let ShopQ process some emails")
     sys.exit(0)
 
 print(f"Found {len(new_sessions)} new sessions:")

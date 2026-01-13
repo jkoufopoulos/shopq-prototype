@@ -1,5 +1,5 @@
 /**
- * Mailq Extension Configuration
+ * ShopQ Extension Configuration
  * Centralized constants and settings
  */
 
@@ -7,9 +7,10 @@ const VERSION = '1.0.13';
 
 const CONFIG = {
   // 🚀 PRODUCTION: Cloud Run backend
-  MAILQ_API_URL: 'https://mailq-api-488078904670.us-central1.run.app',
-  API_BASE_URL: 'https://mailq-api-488078904670.us-central1.run.app',
-  // DEVELOPMENT (commented out): 'http://localhost:8000'
+  // TODO: Update URL after deploying shopq-api to Cloud Run
+  SHOPQ_API_URL: 'http://localhost:8000',  // Local dev until shopq-api deployed
+  API_BASE_URL: 'http://localhost:8000',   // Local dev until shopq-api deployed
+  // PRODUCTION (after deployment): 'https://shopq-api-XXXXX.us-central1.run.app'
 
   VERSION: '1.0.13',
 
@@ -36,17 +37,17 @@ const CONFIG = {
 
   // Tuning mode - synced from backend feature_gates.py 'test_mode'
   // This is a fallback value - actual value fetched from /api/test/mode on startup
-  // To change: edit mailq/feature_gates.py and redeploy backend
+  // To change: edit shopq/feature_gates.py and redeploy backend
   TUNING_MODE: true,  // SYNCED FROM BACKEND - fallback only
 
   // Storage keys
   KEYS: {
-    SETTINGS: 'mailq_settings',
-    CLASSIFICATIONS: 'mailq_classifications',
-    CACHE: 'mailq_cache',
-    STATS: 'mailq_stats',
-    USER_PREFS: 'mailq_prefs',
-    SPEND_TRACKER: 'mailq_spend_tracker'
+    SETTINGS: 'shopq_settings',
+    CLASSIFICATIONS: 'shopq_classifications',
+    CACHE: 'shopq_cache',
+    STATS: 'shopq_stats',
+    USER_PREFS: 'shopq_prefs',
+    SPEND_TRACKER: 'shopq_spend_tracker'
   },
 
   // Logging controls

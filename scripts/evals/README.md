@@ -1,6 +1,6 @@
 # Evaluation Scripts
 
-Scripts for evaluating MailQ's classification accuracy and digest quality.
+Scripts for evaluating ShopQ's classification accuracy and digest quality.
 
 ## Quick Start
 

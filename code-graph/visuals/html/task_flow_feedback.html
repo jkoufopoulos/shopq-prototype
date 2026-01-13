@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task-Flow: Feedback Learning - MailQ</title>
+    <title>Task-Flow: Feedback Learning - ShopQ</title>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({
@@ -478,7 +478,7 @@ sequenceDiagram
     participant API as /api/feedback
     participant FeedMgr as Feedback Manager<br/>feedback_manager.py
     participant RulesMgr as Rules Manager<br/>rules_manager.py
-    participant DB as mailq.db
+    participant DB as shopq.db
 
     User->>User: Changes label (Critical → Routine)
     Content->>Content: Detect label change (MutationObserver)
@@ -567,7 +567,7 @@ sequenceDiagram
     </div>
 
     <div class="footer">
-        <p>MailQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
+        <p>ShopQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
     </div>
 
     <script>
@@ -593,7 +593,7 @@ sequenceDiagram
 
 
         // Context Drawer Functionality
-        const executionSteps = [{"number": 1, "title": "User \u2192 User", "description": "User Changes label (Critical \u2192 Routine)."}, {"number": 2, "title": "Content \u2192 Content", "description": "Content Detect label change (MutationObserver)."}, {"number": 3, "title": "Content \u2192 /api/feedback", "description": "Content \u2192 /api/feedback: POST {thread_id, old_label, new_label}."}, {"number": 4, "title": "/api/feedback \u2192 Feedback", "description": "/api/feedback sends the user's correction to update the rules engine."}, {"number": 5, "title": "Feedback \u2192 mailq.db", "description": "Feedback sends the user's correction to update the rules engine."}, {"number": 6, "title": "Feedback \u2192 Feedback", "description": "Feedback Check if pattern warrants rule."}, {"number": 7, "title": "Feedback \u2192 Rules", "description": "Feedback creates a new classification rule based on the user's correction."}, {"number": 8, "title": "Rules \u2192 mailq.db", "description": "Rules \u2192 mailq.db: INSERT INTO digest_rules."}, {"number": 9, "title": "Rules \u2192 Feedback", "description": "Rules responds with rule created (id)."}, {"number": 10, "title": "Feedback \u2192 /api/feedback", "description": "Feedback responds with {rule_created: true}."}, {"number": 11, "title": "Feedback \u2192 /api/feedback", "description": "Feedback responds with {logged: true, rule_created: false}."}, {"number": 12, "title": "/api/feedback \u2192 Content", "description": "/api/feedback responds with {success: true}."}, {"number": 13, "title": "Content \u2192 User", "description": "Content responds with silent (no ui change)."}];
+        const executionSteps = [{"number": 1, "title": "User \u2192 User", "description": "User Changes label (Critical \u2192 Routine)."}, {"number": 2, "title": "Content \u2192 Content", "description": "Content Detect label change (MutationObserver)."}, {"number": 3, "title": "Content \u2192 /api/feedback", "description": "Content \u2192 /api/feedback: POST {thread_id, old_label, new_label}."}, {"number": 4, "title": "/api/feedback \u2192 Feedback", "description": "/api/feedback sends the user's correction to update the rules engine."}, {"number": 5, "title": "Feedback \u2192 shopq.db", "description": "Feedback sends the user's correction to update the rules engine."}, {"number": 6, "title": "Feedback \u2192 Feedback", "description": "Feedback Check if pattern warrants rule."}, {"number": 7, "title": "Feedback \u2192 Rules", "description": "Feedback creates a new classification rule based on the user's correction."}, {"number": 8, "title": "Rules \u2192 shopq.db", "description": "Rules \u2192 shopq.db: INSERT INTO digest_rules."}, {"number": 9, "title": "Rules \u2192 Feedback", "description": "Rules responds with rule created (id)."}, {"number": 10, "title": "Feedback \u2192 /api/feedback", "description": "Feedback responds with {rule_created: true}."}, {"number": 11, "title": "Feedback \u2192 /api/feedback", "description": "Feedback responds with {logged: true, rule_created: false}."}, {"number": 12, "title": "/api/feedback \u2192 Content", "description": "/api/feedback responds with {success: true}."}, {"number": 13, "title": "Content \u2192 User", "description": "Content responds with silent (no ui change)."}];
         let drawerOpen = false;
 
         function toggleDrawer() {

@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from mailq.storage.retention import (
+from shopq.storage.retention import (
     anonymize_digest_session,
     anonymize_email_thread,
     cleanup_old_artifacts,
@@ -174,8 +174,8 @@ def test_cleanup_old_artifacts_dry_run(test_db, monkeypatch):
 
         return MockContext()
 
-    monkeypatch.setattr("mailq.storage.retention.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.storage.retention.get_db_connection", lambda: test_db)
+    monkeypatch.setattr("shopq.storage.retention.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.storage.retention.get_db_connection", lambda: test_db)
 
     # Run cleanup in dry run mode
     stats = cleanup_old_artifacts(days=14, dry_run=True)
@@ -219,8 +219,8 @@ def test_cleanup_old_artifacts_actual_deletion(test_db, monkeypatch):
 
         return MockContext()
 
-    monkeypatch.setattr("mailq.storage.retention.db_transaction", mock_transaction)
-    monkeypatch.setattr("mailq.storage.retention.get_db_connection", lambda: test_db)
+    monkeypatch.setattr("shopq.storage.retention.db_transaction", mock_transaction)
+    monkeypatch.setattr("shopq.storage.retention.get_db_connection", lambda: test_db)
 
     # Run cleanup
     stats = cleanup_old_artifacts(days=14, dry_run=False)
@@ -261,7 +261,7 @@ def test_get_retention_stats(test_db, monkeypatch):
     test_db.commit()
 
     # Mock connection
-    monkeypatch.setattr("mailq.storage.retention.get_db_connection", lambda: test_db)
+    monkeypatch.setattr("shopq.storage.retention.get_db_connection", lambda: test_db)
 
     stats = get_retention_stats()
 

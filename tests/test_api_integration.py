@@ -1,5 +1,5 @@
 """
-API Integration Tests for MailQ Backend
+API Integration Tests for ShopQ Backend
 
 Run with: uv run pytest tests/test_api_integration.py -v
 """
@@ -10,7 +10,7 @@ import pytest
 import requests
 
 # Use production URL by default, can override with env var
-API_BASE_URL = os.getenv("MAILQ_API_URL", "https://mailq-api-488078904670.us-central1.run.app")
+API_BASE_URL = os.getenv("SHOPQ_API_URL", "https://shopq-api-488078904670.us-central1.run.app")
 
 
 class TestHealthEndpoints:

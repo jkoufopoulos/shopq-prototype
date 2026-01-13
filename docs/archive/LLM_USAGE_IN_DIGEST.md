@@ -12,13 +12,13 @@
 ┌─────────────────────────────────────────────────────────────┐
 │ STAGE 1: Phase 1 Filters (Rule-based, NO LLM)             │
 │ - Time-decay filter (expired events)                       │
-│ - Self-email filter (MailQ digest recursion)              │
+│ - Self-email filter (ShopQ digest recursion)              │
 │ Result: 95 emails (3 filtered)                            │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ STAGE 2: Importance Classification (Rule-based, NO LLM)    │
-│ File: mailq/importance_classifier.py                       │
+│ File: shopq/importance_classifier.py                       │
 │ - Pattern matching on subject + snippet                    │
 │ - Categorizes: critical / time_sensitive / routine         │
 │ Result: 8 critical, 28 time_sensitive, 59 routine         │
@@ -26,7 +26,7 @@
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ STAGE 3: Entity Extraction (🤖 LLM #1 - Gemini 2.0)       │
-│ File: mailq/entity_extractor.py                            │
+│ File: shopq/entity_extractor.py                            │
 │ - Extracts structured data from critical + time_sensitive  │
 │ - Creates: NotificationEntity, EventEntity, etc.           │
 │ - LLM call for EACH email that needs extraction            │
@@ -41,7 +41,7 @@
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ STAGE 5: Timeline Building (Rule-based, NO LLM)           │
-│ File: mailq/timeline_synthesizer.py                        │
+│ File: shopq/timeline_synthesizer.py                        │
 │ - Sorts entities by priority score                         │
 │ - Groups: critical vs time_sensitive                       │
 │ - NOW: Shows ALL entities (no limits)                      │
@@ -59,7 +59,7 @@
 │                                                             │
 │ ┌─────────────────────────────────────────────────────┐   │
 │ │ NEW: Template-Based (digest_template_based = TRUE)  │   │
-│ │ File: mailq/digest_formatter.py                     │   │
+│ │ File: shopq/digest_formatter.py                     │   │
 │ │ - Programmatically categorize entities              │   │
 │ │ - Build HTML sections (🚨📦📅💼)                  │   │
 │ │ - NO LLM CALL                                       │   │
@@ -70,7 +70,7 @@
 │                                                             │
 │ ┌─────────────────────────────────────────────────────┐   │
 │ │ OLD: LLM-Based (🤖 LLM #2 - Gemini 2.0)            │   │
-│ │ File: mailq/narrative_generator.py                  │   │
+│ │ File: shopq/narrative_generator.py                  │   │
 │ │ - Sends entities + prompt to LLM                    │   │
 │ │ - LLM generates natural language digest             │   │
 │ │ - Problem: LLM ignores HTML formatting              │   │
@@ -87,7 +87,7 @@
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ STAGE 9: HTML Rendering (Rule-based, NO LLM)              │
-│ File: mailq/card_renderer.py                               │
+│ File: shopq/card_renderer.py                               │
 │ - Wraps digest in card template                            │
 │ - Adds deep links to Gmail                                 │
 │ - Adds noise summary footer                                │
@@ -102,7 +102,7 @@ Final Digest Email Sent
 ## Current LLM Usage Summary
 
 ### LLM Call #1: Entity Extraction (Required)
-**File**: `mailq/entity_extractor.py`
+**File**: `shopq/entity_extractor.py`
 **Model**: Gemini 2.0 Flash
 **Purpose**: Extract structured data from emails
 **Input**: Email subject + snippet
@@ -131,7 +131,7 @@ Output: NotificationEntity(
 ### LLM Call #2: Narrative Generation (NOW OPTIONAL)
 
 #### NEW: Template-Based (NO LLM) ✅ ACTIVE
-**File**: `mailq/digest_formatter.py`
+**File**: `shopq/digest_formatter.py`
 **Feature gate**: `digest_template_based = True`
 **Purpose**: Format entities into structured HTML digest
 **Method**: Programmatic categorization + templating
@@ -177,7 +177,7 @@ html = """
 ---
 
 #### OLD: LLM-Based (🤖 Gemini 2.0)
-**File**: `mailq/narrative_generator.py`
+**File**: `shopq/narrative_generator.py`
 **Feature gate**: `digest_template_based = False`
 **Model**: Gemini 2.0 Flash
 **Purpose**: Generate conversational digest from entities
@@ -219,7 +219,7 @@ New Email Arrives
     ↓ (if no rule match)
 ┌─────────────────────────────────────────────────────────────┐
 │ Gemini Classifier (T3 - 🤖 LLM #3)                        │
-│ File: mailq/vertex_gemini_classifier.py                    │
+│ File: shopq/vertex_gemini_classifier.py                    │
 │ - Classifies: type, domains, attention, relationship       │
 │ - Uses few-shot examples                                   │
 │ - Cost: ~$0.0001 per email                                │
@@ -227,7 +227,7 @@ New Email Arrives
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ Verifier (T3 - 🤖 LLM #4 - Selective)                     │
-│ File: mailq/api_verify.py                                  │
+│ File: shopq/api_verify.py                                  │
 │ - Only runs on ~10-20% of suspicious emails                │
 │ - Challenges first classification                          │
 │ - Can confirm or reject + provide correction               │

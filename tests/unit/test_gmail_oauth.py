@@ -19,8 +19,8 @@ from unittest.mock import Mock, patch
 import pytest
 from cryptography.fernet import Fernet
 
-from mailq.gmail.oauth import GMAIL_SCOPES, GmailOAuthService
-from mailq.storage.user_credentials_repository import (
+from shopq.gmail.oauth import GMAIL_SCOPES, GmailOAuthService
+from shopq.storage.user_credentials_repository import (
     CredentialEncryptionError,
     UserCredentialsRepository,
 )
@@ -30,10 +30,10 @@ from mailq.storage.user_credentials_repository import (
 def encryption_key():
     """Generate test encryption key"""
     key = Fernet.generate_key().decode()
-    os.environ["MAILQ_ENCRYPTION_KEY"] = key
+    os.environ["SHOPQ_ENCRYPTION_KEY"] = key
     yield key
-    if "MAILQ_ENCRYPTION_KEY" in os.environ:
-        del os.environ["MAILQ_ENCRYPTION_KEY"]
+    if "SHOPQ_ENCRYPTION_KEY" in os.environ:
+        del os.environ["SHOPQ_ENCRYPTION_KEY"]
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ def test_initiate_desktop_oauth_flow(oauth_service, mock_client_secrets):
     assert flow.redirect_uri is None or flow.redirect_uri.startswith("http://localhost")
 
 
-@patch("mailq.gmail.oauth.Flow")
+@patch("shopq.gmail.oauth.Flow")
 def test_exchange_code_for_tokens(mock_flow_class, oauth_service):
     """Test authorization code exchange for tokens"""
     # Mock flow and credentials
@@ -202,7 +202,7 @@ def test_get_authenticated_credentials_auto_refresh(oauth_service, mock_credenti
     mock_credentials_repo.is_token_expired.return_value = True
 
     # Mock the refresh
-    with patch("mailq.gmail.oauth.Request"):
+    with patch("shopq.gmail.oauth.Request"):
         with patch.object(oauth_service, "refresh_credentials") as mock_refresh:
             mock_refreshed_creds = Mock()
             mock_refresh.return_value = mock_refreshed_creds
@@ -214,7 +214,7 @@ def test_get_authenticated_credentials_auto_refresh(oauth_service, mock_credenti
             assert credentials == mock_refreshed_creds
 
 
-@patch("mailq.gmail.oauth.Request")
+@patch("shopq.gmail.oauth.Request")
 def test_refresh_credentials(mock_request, oauth_service, mock_credentials_repo):
     """Test token refresh"""
     # Mock existing credentials
@@ -257,7 +257,7 @@ def test_refresh_credentials_no_refresh_token(oauth_service, mock_credentials_re
     assert "No refresh token" in str(exc_info.value)
 
 
-@patch("mailq.gmail.oauth.build")
+@patch("shopq.gmail.oauth.build")
 def test_build_gmail_service(mock_build, oauth_service, mock_credentials_repo):
     """Test building Gmail API service"""
     # Mock credentials
@@ -297,7 +297,7 @@ def test_build_gmail_service_no_credentials(oauth_service, mock_credentials_repo
     assert "No credentials found" in str(exc_info.value)
 
 
-@patch("mailq.gmail.oauth.Request")
+@patch("shopq.gmail.oauth.Request")
 def test_revoke_credentials(mock_request, oauth_service, mock_credentials_repo):
     """Test credential revocation"""
     # Mock credentials
@@ -338,13 +338,13 @@ def test_revoke_credentials_no_credentials(oauth_service, mock_credentials_repo)
 def test_encryption_key_required():
     """Test that encryption key environment variable is required"""
     # Remove encryption key
-    if "MAILQ_ENCRYPTION_KEY" in os.environ:
-        del os.environ["MAILQ_ENCRYPTION_KEY"]
+    if "SHOPQ_ENCRYPTION_KEY" in os.environ:
+        del os.environ["SHOPQ_ENCRYPTION_KEY"]
 
     with pytest.raises(ValueError) as exc_info:
         UserCredentialsRepository()
 
-    assert "MAILQ_ENCRYPTION_KEY" in str(exc_info.value)
+    assert "SHOPQ_ENCRYPTION_KEY" in str(exc_info.value)
 
 
 def test_credential_encryption_decryption(encryption_key):

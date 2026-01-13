@@ -15,8 +15,8 @@ def test_complete_email_organization_flow():
 
     # 1. Test AI components work
     try:
-        from mailq.classification.memory_classifier import MemoryClassifier
-        from mailq.classification.rules_engine import RulesEngine
+        from shopq.classification.memory_classifier import MemoryClassifier
+        from shopq.classification.rules_engine import RulesEngine
 
         MemoryClassifier()
         RulesEngine()

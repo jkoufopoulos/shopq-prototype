@@ -1,6 +1,6 @@
 # Bridge Mapping Configuration (v2.0)
 # Unified configuration for importance mapping and guardrails
-# Replaces: config/mapper_rules.yaml + mailq/bridge/guardrails.py
+# Replaces: config/mapper_rules.yaml + shopq/bridge/guardrails.py
 
 version: 2.0
 
@@ -232,7 +232,7 @@ mapper_rules:
 #   - 3-tier model (critical, time_sensitive, routine) → 4-tier (urgent, critical, time_sensitive, routine)
 #   - Separate guardrails.py logic → Unified YAML config
 #
-# From mailq/bridge/guardrails.py:
+# From shopq/bridge/guardrails.py:
 #   - Hardcoded guardrail patterns → YAML patterns
 #   - Force-critical / force-routine logic → force_urgent / force_critical / force_time_sensitive / force_routine
 #

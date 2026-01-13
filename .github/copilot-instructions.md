@@ -1,8 +1,8 @@
-# MailQ Copilot Instructions
+# ShopQ Copilot Instructions
 
 ## Project Overview
 
-**MailQ** is a hybrid AI email classification system combining rule-based matching with Google Cloud Vertex AI (Gemini) to intelligently categorize Gmail emails. The system uses a **multi-dimensional classification schema** (type, domains, attention, relationship) and learns from user feedback to improve accuracy over time.
+**ShopQ** is a hybrid AI email classification system combining rule-based matching with Google Cloud Vertex AI (Gemini) to intelligently categorize Gmail emails. The system uses a **multi-dimensional classification schema** (type, domains, attention, relationship) and learns from user feedback to improve accuracy over time.
 
 **Architecture**: Python FastAPI backend + Chrome Manifest V3 extension
 **AI Model**: Google Cloud Vertex AI (Gemini 1.5 Flash)
@@ -18,7 +18,7 @@
 pip install -r requirements.txt
 
 # Run locally (auto-reload enabled)
-uvicorn mailq.api:app --host 0.0.0.0 --port 8000 --reload
+uvicorn shopq.api:app --host 0.0.0.0 --port 8000 --reload
 
 # Deploy to Cloud Run
 ./deploy.sh
@@ -32,13 +32,13 @@ pytest                        # All tests
 pytest -v                     # Verbose
 pytest -m unit                # Unit tests only
 pytest -m integration         # Integration tests only
-pytest mailq/tests/test_*.py  # Specific file
+pytest shopq/tests/test_*.py  # Specific file
 
 # Extension tests (vitest)
 npm test
 ```
 
-**Test Configuration**: Tests use `pytest.ini` for markers and paths. Backend tests live in `mailq/tests/`, extension tests in `extension/tests/`.
+**Test Configuration**: Tests use `pytest.ini` for markers and paths. Backend tests live in `shopq/tests/`, extension tests in `extension/tests/`.
 
 ### Loading the Extension
 
@@ -57,7 +57,7 @@ The system prioritizes **speed and cost efficiency** using a tiered approach:
 Email Input → Rules Engine (T0: free) → Vertex Gemini (T3: ~$0.0001) → Confidence Filter → Gmail Labels
 ```
 
-**Flow orchestrated by `mailq/memory_classifier.py`**:
+**Flow orchestrated by `shopq/memory_classifier.py`**:
 
 1. **Rules First** (`rules_engine.py`): Check SQLite for exact sender matches
    - Hit → Return cached result (T0 cost: free)
@@ -73,7 +73,7 @@ Email Input → Rules Engine (T0: free) → Vertex Gemini (T3: ~$0.0001) → Con
    - Low confidence → "Uncategorized" (never misclassify)
 
 4. **Label Mapping** (`mapper.py`): Semantic → Gmail labels
-   - Maps dimensions to `MailQ-*` prefixed labels
+   - Maps dimensions to `ShopQ-*` prefixed labels
 
 5. **Learning** (`rules_engine.py`): Build rule database
    - **Passive learning**: 2 consistent high-confidence classifications
@@ -142,10 +142,10 @@ See `extension/modules/utils.js` → `deduplicateEmails()`
 
 ### Gmail Label Convention
 
-All labels use `MailQ-*` prefix to prevent conflicts:
-- Type → `MailQ-Newsletters`, `MailQ-Notifications`, etc.
-- Domain → `MailQ-Finance`, `MailQ-Work`, etc.
-- Attention → `MailQ-Action-Required`
+All labels use `ShopQ-*` prefix to prevent conflicts:
+- Type → `ShopQ-Newsletters`, `ShopQ-Notifications`, etc.
+- Domain → `ShopQ-Finance`, `ShopQ-Work`, etc.
+- Attention → `ShopQ-Action-Required`
 
 ### Learning Velocity Control
 
@@ -153,7 +153,7 @@ Two learning paths with different promotion thresholds:
 
 **Passive (Gemini-based)**:
 - Requires 2 consistent classifications at high confidence
-- Creates "pending rules" in `mailq/data/mailq.db` (rules table)
+- Creates "pending rules" in `shopq/data/shopq.db` (rules table)
 - Promoted to confirmed rules on second match
 
 **Active (User corrections)**:
@@ -166,7 +166,7 @@ See `rules_engine.py` → `learn_from_classification()` and `feedback_manager.py
 
 ### Database Structure
 
-**Single central SQLite database**: `mailq/data/mailq.db`
+**Single central SQLite database**: `shopq/data/shopq.db`
 - Contains all tables: rules, feedback, classifications, digest data, quality monitoring, etc.
 - All tables have `user_id` column for multi-tenancy
 - Connection pooling enabled for performance
@@ -176,11 +176,11 @@ See `rules_engine.py` → `learn_from_classification()` and `feedback_manager.py
 
 ### Module Import Convention
 
-Backend uses **explicit mailq.* imports**:
+Backend uses **explicit shopq.* imports**:
 ```python
 # ✅ Correct
-from mailq.memory_classifier import MemoryClassifier
-from mailq.rules_engine import RulesEngine
+from shopq.memory_classifier import MemoryClassifier
+from shopq.rules_engine import RulesEngine
 
 # ❌ Avoid
 from memory_classifier import MemoryClassifier
@@ -205,10 +205,10 @@ System never crashes on classification failure:
 
 **Gmail API**:
 - OAuth scopes: `gmail.modify`, `gmail.labels`
-- Query pattern: `in:inbox -label:MailQ-*` (fetch unlabeled only)
+- Query pattern: `in:inbox -label:ShopQ-*` (fetch unlabeled only)
 
 **Cloud Run Deployment**:
-- URL: `https://mailq-api-488078904670.us-central1.run.app`
+- URL: `https://shopq-api-488078904670.us-central1.run.app`
 - Environment: Production only (no staging)
 - Container: Python 3.11 + FastAPI
 - Deploy script: `./deploy.sh` (handles IAM permissions, env vars)
@@ -235,8 +235,8 @@ USE_AI_CLASSIFIER=true           # Enable Gemini fallback
 ### Adding a New Email Type
 
 1. Update `extension/Schema.json` → Add to `type` enum
-2. Update `mailq/mapper.py` → Add to `type_label_map`
-3. Update `mailq/vertex_gemini_classifier.py` → Add few-shot examples
+2. Update `shopq/mapper.py` → Add to `type_label_map`
+3. Update `shopq/vertex_gemini_classifier.py` → Add few-shot examples
 
 ### Debugging Classification Issues
 
@@ -245,13 +245,13 @@ Use debug endpoints in `api_debug.py`:
 - `GET /api/debug/rules` - List all rules
 - `GET /api/debug/stats` - Classification statistics
 
-Or enable verbose logging: `pytest -v` or check `mailq/logs/`
+Or enable verbose logging: `pytest -v` or check `shopq/logs/`
 
 ### Changing Confidence Thresholds
 
 Edit constants in:
-- `mailq/api_organize.py` → `MIN_TYPE_CONF`, `MIN_LABEL_CONF`
-- `mailq/mapper.py` → `type_gate`, `domain_gate`, `attention_gate`
+- `shopq/api_organize.py` → `MIN_TYPE_CONF`, `MIN_LABEL_CONF`
+- `shopq/mapper.py` → `type_gate`, `domain_gate`, `attention_gate`
 
 ### Testing Schema Validation
 
@@ -264,13 +264,13 @@ assert validate_classification_result(result), "Schema mismatch"
 ## Key Files Reference
 
 **Backend Entry Points**:
-- `mailq/api.py` - FastAPI app initialization
-- `mailq/api_organize.py` - Classification endpoint logic
+- `shopq/api.py` - FastAPI app initialization
+- `shopq/api_organize.py` - Classification endpoint logic
 
 **Classification Core**:
-- `mailq/memory_classifier.py` - Main orchestrator
-- `mailq/rules_engine.py` - Rule database & learning
-- `mailq/vertex_gemini_classifier.py` - Vertex AI integration
+- `shopq/memory_classifier.py` - Main orchestrator
+- `shopq/rules_engine.py` - Rule database & learning
+- `shopq/vertex_gemini_classifier.py` - Vertex AI integration
 
 **Extension Core**:
 - `extension/background.js` - Service worker
@@ -295,4 +295,4 @@ Run focused tests during development: `pytest -m unit -v`
 
 ## Deprecated Scripts
 
-- `mailq/scripts/consolidate_databases.py` - One-time migration script, safe to delete
+- `shopq/scripts/consolidate_databases.py` - One-time migration script, safe to delete

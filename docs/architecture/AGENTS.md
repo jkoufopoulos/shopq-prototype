@@ -1,16 +1,16 @@
-# AGENTS.md — Codex configuration for MailQ (Nov 2025)
+# AGENTS.md — Codex configuration for ShopQ (Nov 2025)
 
 ## 0) Purpose
-Keep Codex aligned with the MailQ dev guardrails in `/claude.md`
-and technical references in `/MAILQ_REFERENCE.md`.
+Keep Codex aligned with the ShopQ dev guardrails in `/claude.md`
+and technical references in `/SHOPQ_REFERENCE.md`.
 
 ## 1) Initialization
 On startup or reload, Codex should:
 1. Read `/claude.md` (do not modify).
 2. Restate the **North Star** and confirm the plan → diff → approve → run loop.
 3. Reference:
-   - Architecture → `/MAILQ_REFERENCE.md`
-   - Runtime policy → `/config/mailq_policy.yaml`
+   - Architecture → `/SHOPQ_REFERENCE.md`
+   - Runtime policy → `/config/shopq_policy.yaml`
    - Workflow guide → `/DEVELOPER_GUIDE.md`
 4. Output a brief “session checklist” confirming compliance.
 

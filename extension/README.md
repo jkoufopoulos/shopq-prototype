@@ -1,10 +1,10 @@
-# MailQ Chrome Extension
+# ShopQ Chrome Extension
 
-The Chrome extension frontend for MailQ - an AI-powered Gmail assistant that automatically organizes your inbox using intelligent classification and provides daily digest emails.
+The Chrome extension frontend for ShopQ - an AI-powered Gmail assistant that automatically organizes your inbox using intelligent classification and provides daily digest emails.
 
 ## Overview
 
-The MailQ extension runs in Gmail and provides:
+The ShopQ extension runs in Gmail and provides:
 - **Auto-organization**: Automatically classifies and labels emails in real-time
 - **Manual organization**: On-demand organization via extension icon
 - **Bridge mode**: Transparent label mapping with shadow logging
@@ -50,37 +50,37 @@ The MailQ extension runs in Gmail and provides:
 
 ### Modules (modules/)
 
-Directory structure aligned with `mailq/` backend for consistency:
+Directory structure aligned with `shopq/` backend for consistency:
 
-#### modules/classification/ ← `mailq/classification/`
+#### modules/classification/ ← `shopq/classification/`
 - **classifier.js** - Backend classification client
 - **detectors.js** - Pattern detection (OTP, shipping, etc.)
 - **mapper.js** - Label mapping (internal → Gmail labels)
 - **verifier.js** - Classification verification and quality checks
 - **Schema.json** - Classification schema definitions
 
-#### modules/digest/ ← `mailq/digest/`
+#### modules/digest/ ← `shopq/digest/`
 - **summary-email.js** - Digest generation and delivery
 - **context-digest.js** - Context-aware digest logic
 
-#### modules/gmail/ ← `mailq/gmail/`
+#### modules/gmail/ ← `shopq/gmail/`
 - **api.js** - Gmail API client, label management, email fetching
 - **auth.js** - OAuth2 authentication flow
 - **selectors.js** - Gmail DOM selectors (version-resilient)
 
-#### modules/storage/ ← `mailq/storage/`
+#### modules/storage/ ← `shopq/storage/`
 - **cache.js** - Classification result caching
 - **budget.js** - API call budget tracking
 - **logger.js** - IndexedDB classification logging
 
-#### modules/shared/ ← `mailq/shared/`
+#### modules/shared/ ← `shopq/shared/`
 - **config.js** - Configuration constants (API URLs, timeouts)
 - **config-sync.js** - Configuration synchronization with backend
 - **utils.js** - Utility functions
 - **signatures.js** - Email signature detection
 - **notifications.js** - Chrome notifications
 
-#### modules/observability/ ← `mailq/observability/`
+#### modules/observability/ ← `shopq/observability/`
 - **telemetry.js** - Usage telemetry
 - **structured-logger.js** - Structured JSON event logging
 
@@ -124,7 +124,7 @@ Extension icons in multiple sizes:
    ```javascript
    const API_URL = "http://localhost:8000";  // Local development
    // or
-   const API_URL = "https://mailq-api-*.run.app";  // Production
+   const API_URL = "https://shopq-api-*.run.app";  // Production
    ```
 
 3. **Test in Gmail**:
@@ -302,10 +302,10 @@ await generateDailyDigest({
 const API_URL = "http://localhost:8000";
 
 // Staging
-const API_URL = "https://mailq-api-staging-*.run.app";
+const API_URL = "https://shopq-api-staging-*.run.app";
 
 // Production
-const API_URL = "https://mailq-api-488078904670.us-central1.run.app";
+const API_URL = "https://shopq-api-488078904670.us-central1.run.app";
 ```
 
 ### OAuth2 Scopes (manifest.json)
@@ -342,7 +342,7 @@ const RETRY_DELAY = [1000, 2000, 4000];
 ```bash
 # Terminal 1: Start backend
 cd /path/to/mailq-prototype
-uvicorn mailq.api:app --reload --port 8000
+uvicorn shopq.api:app --reload --port 8000
 
 # Terminal 2: Watch extension changes
 cd extension/
@@ -365,7 +365,7 @@ npm test -- --coverage     # With coverage
 
 **Background service worker**:
 ```
-chrome://extensions/ → MailQ → "Inspect views: service worker"
+chrome://extensions/ → ShopQ → "Inspect views: service worker"
 ```
 
 **Content script**:
@@ -458,7 +458,7 @@ export async function trackEvent(category, action, label, value) {
 ### Extension Not Working
 
 1. **Check service worker logs**:
-   - `chrome://extensions/` → MailQ → "Inspect views"
+   - `chrome://extensions/` → ShopQ → "Inspect views"
    - Look for error messages
 
 2. **Verify backend connection**:
@@ -530,7 +530,7 @@ Reduces backend load and improves responsiveness:
 
 ## Related Documentation
 
-- **Backend API**: `/mailq/README.md`
+- **Backend API**: `/shopq/README.md`
 - **Architecture**: `/docs/ARCHITECTURE.md`
 - **Testing**: `/docs/TESTING.md`
 - **Deployment**: `/docs/DEPLOYMENT_PLAYBOOK.md`

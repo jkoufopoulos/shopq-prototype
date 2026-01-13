@@ -18,7 +18,7 @@
                            │ Load emails
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              Your MailQ Classification Pipeline             │
+│              Your ShopQ Classification Pipeline             │
 │                                                             │
 │  ┌──────────┐   ┌────────────┐   ┌─────────┐   ┌────────┐ │
 │  │  Type    │→  │ Guardrails │→  │   LLM   │→  │  Post  │ │
@@ -67,7 +67,7 @@
 **Output**:
 ```
 ╔════════════════════════════════════════════════════════════╗
-║  MailQ Golden Dataset Test Suite                          ║
+║  ShopQ Golden Dataset Test Suite                          ║
 ║  Testing against gds-1.0.csv (500 emails)                 ║
 ╚════════════════════════════════════════════════════════════╝
 
@@ -218,7 +218,7 @@ Check all metrics against thresholds
 
 ```bash
 # Edit code
-vim mailq/bridge/guardrails.py
+vim shopq/bridge/guardrails.py
 
 # Test your feature
 pytest tests/test_guardrails_gds.py -v
@@ -247,7 +247,7 @@ pytest tests/test_importance_baseline_gds.py::test_critical_precision -v
 #   Precision: 87.3% < 95%
 
 # Fix the issue
-vim mailq/bridge/guardrails.py
+vim shopq/bridge/guardrails.py
 
 # Re-test
 ./scripts/test_against_gds.sh

@@ -36,7 +36,7 @@ class EmailLabel:
 
 def classify_email(from_addr: str, subject: str, snippet: str) -> EmailLabel:
     """
-    Classify email using deterministic rules (mimics MailQ Type Mapper logic).
+    Classify email using deterministic rules (mimics ShopQ Type Mapper logic).
 
     Precedence:
     1. Calendar events (Google Calendar)

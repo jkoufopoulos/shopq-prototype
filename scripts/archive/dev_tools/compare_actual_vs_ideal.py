@@ -174,12 +174,12 @@ def check_filter_failures(actual_content):
     """Check if filters failed to run"""
     failures = []
 
-    # Check 1: Self-email (MailQ digest appearing in itself)
+    # Check 1: Self-email (ShopQ digest appearing in itself)
     if "your inbox --" in actual_content.lower():
         failures.append(
             {
                 "filter": "Self-Email Filter",
-                "failure": "MailQ digest is featuring itself",
+                "failure": "ShopQ digest is featuring itself",
                 "evidence": '"Your Inbox --Saturday, November 01 at 01:03 AM"',
                 "expected": "Should be filtered by self_emails.py",
             }
@@ -313,9 +313,9 @@ def generate_report(false_positives, false_negatives, filter_failures):
     lines.append("")
 
     lines.append("3. FIX SELF-EMAIL FILTER")
-    lines.append("   Problem: MailQ digest appearing in itself")
+    lines.append("   Problem: ShopQ digest appearing in itself")
     lines.append("   Action: Verify 'Your Inbox --' pattern detection")
-    lines.append("   Test: Run filter on actual MailQ digest email")
+    lines.append("   Test: Run filter on actual ShopQ digest email")
     lines.append("")
 
     lines.append("4. FIX IMPORTANCE CLASSIFICATION")
@@ -336,16 +336,16 @@ def generate_report(false_positives, false_negatives, filter_failures):
     lines.append("=" * 80)
     lines.append("")
     lines.append("Step 1: Check if filters ran")
-    lines.append("  gcloud run services logs read mailq-api --limit 100 | grep 'Phase 1'")
+    lines.append("  gcloud run services logs read shopq-api --limit 100 | grep 'Phase 1'")
     lines.append("")
     lines.append("Step 2: Test filters on actual data")
     lines.append("  python3 scripts/validate_phase1_filters.py")
     lines.append("")
     lines.append("Step 3: Check digest generation")
-    lines.append('  python3 -c "from mailq.digest.context_digest import ContextDigest; ...')
+    lines.append('  python3 -c "from shopq.digest.context_digest import ContextDigest; ...')
     lines.append("")
     lines.append("Step 4: If filters aren't running, check integration")
-    lines.append("  - Verify lines 110-149 in mailq/context_digest.py")
+    lines.append("  - Verify lines 110-149 in shopq/context_digest.py")
     lines.append("  - Check if emails are being re-fetched after filtering")
     lines.append("  - Verify filter imports are correct")
     lines.append("")

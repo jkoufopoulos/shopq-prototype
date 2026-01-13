@@ -55,7 +55,7 @@ ValueError: invalid literal for int() with base 10: '30 # How often...'
 **Cause**: No new digest sessions have been created since last analysis.
 
 **Solution**:
-- Process emails with MailQ to create new sessions
+- Process emails with ShopQ to create new sessions
 - Or lower `MIN_SESSIONS_FOR_ANALYSIS` in `.env` for testing
 
 **Not an error** - system is working correctly, just waiting for new data.

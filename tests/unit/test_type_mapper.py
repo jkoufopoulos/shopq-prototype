@@ -11,7 +11,7 @@ Tests cover:
 
 from __future__ import annotations
 
-from mailq.classification.type_mapper import TypeMapper, get_type_mapper
+from shopq.classification.type_mapper import TypeMapper, get_type_mapper
 
 
 class TestTypeMapper:

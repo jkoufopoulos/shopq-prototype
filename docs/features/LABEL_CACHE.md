@@ -14,14 +14,14 @@ Added **in-memory label caching** to `extension/modules/gmail.js` to prevent:
 const labelCache = new Map(); // labelName -> labelId
 
 // Example:
-// "MailQ-Finance" -> "Label_1234567890"
-// "MailQ-Newsletters" -> "Label_9876543210"
+// "ShopQ-Finance" -> "Label_1234567890"
+// "ShopQ-Newsletters" -> "Label_9876543210"
 ```
 
 ### Cache Flow
 
 ```
-getOrCreateLabel("MailQ-Finance")
+getOrCreateLabel("ShopQ-Finance")
     ↓
 1. Check cache → HIT? → Return cached ID (instant)
     ↓ MISS
@@ -141,34 +141,34 @@ clearLabelCache();
 
 ### First Run (Cache Misses)
 ```
-🔍 Looking for label: MailQ-Finance
-✅ Found existing label: MailQ-Finance (Label_123456)
+🔍 Looking for label: ShopQ-Finance
+✅ Found existing label: ShopQ-Finance (Label_123456)
 
-🔍 Looking for label: MailQ-Newsletters
-✅ Found existing label: MailQ-Newsletters (Label_789012)
+🔍 Looking for label: ShopQ-Newsletters
+✅ Found existing label: ShopQ-Newsletters (Label_789012)
 
 📊 Results: 10/10 labeled successfully
-🏷️  Labels used: MailQ-Finance, MailQ-Newsletters, MailQ-Receipts
+🏷️  Labels used: ShopQ-Finance, ShopQ-Newsletters, ShopQ-Receipts
 💾 Label cache size: 5 labels cached
 ```
 
 ### Second Run (Cache Hits)
 ```
-💾 Label cache hit: MailQ-Finance (Label_123456)
-💾 Label cache hit: MailQ-Newsletters (Label_789012)
-💾 Label cache hit: MailQ-Receipts (Label_345678)
+💾 Label cache hit: ShopQ-Finance (Label_123456)
+💾 Label cache hit: ShopQ-Newsletters (Label_789012)
+💾 Label cache hit: ShopQ-Receipts (Label_345678)
 
 📊 Results: 10/10 labeled successfully
-🏷️  Labels used: MailQ-Finance, MailQ-Newsletters, MailQ-Receipts
+🏷️  Labels used: ShopQ-Finance, ShopQ-Newsletters, ShopQ-Receipts
 💾 Label cache size: 5 labels cached
 ```
 
 ### After 409 Recovery (Rare)
 ```
-🔍 Looking for label: MailQ-Finance
-➕ Creating label: MailQ-Finance
-⚠️ Label "MailQ-Finance" already exists (409), fetching existing label...
-✅ Found existing label after 409: MailQ-Finance (Label_123456)
+🔍 Looking for label: ShopQ-Finance
+➕ Creating label: ShopQ-Finance
+⚠️ Label "ShopQ-Finance" already exists (409), fetching existing label...
+✅ Found existing label after 409: ShopQ-Finance (Label_123456)
 💾 Label cache size: 1 labels cached
 ```
 
@@ -180,9 +180,9 @@ See `extension/TESTING.md` → Test Case 2: Label Caching & 409 Conflict Prevent
 ```bash
 # 1. Load extension in Chrome
 # 2. Open Gmail
-# 3. Click MailQ icon (first run)
+# 3. Click ShopQ icon (first run)
 # 4. Check console for "Looking for label" messages
-# 5. Click MailQ icon again (second run)
+# 5. Click ShopQ icon again (second run)
 # 6. Check console for "Label cache hit" messages
 ```
 

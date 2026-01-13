@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MailQ Summary</title>
+    <title>ShopQ Summary</title>
     <style>
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -95,7 +95,7 @@
 </head>
 <body>
     <header>
-        <h1>📝 MailQ Architecture Summary</h1>
+        <h1>📝 ShopQ Architecture Summary</h1>
         <nav>
             <a href="index.html">← Back to Dashboard</a>
         </nav>
@@ -105,7 +105,7 @@
         <section class="overview">
             <h2>What This System Does</h2>
             <p>
-                MailQ is an AI-powered email classification system that automatically
+                ShopQ is an AI-powered email classification system that automatically
                 organizes Gmail messages into categories. It combines rule-based logic
                 for common patterns with Gemini AI for complex emails.
             </p>
@@ -134,7 +134,7 @@
             <div class="file-list">
 
                 <div class="file-item">
-                    <h3>mailq/api.py</h3>
+                    <h3>shopq/api.py</h3>
                     <p>FastAPI server for classifying emails using AI and rule-based methods. It provides endpoints for email classification and category management.</p>
                     <p class="meta">7 dependencies</p>
                 </div>
@@ -146,7 +146,7 @@
                 </div>
 
                 <div class="file-item">
-                    <h3>mailq/memory_classifier.py</h3>
+                    <h3>shopq/memory_classifier.py</h3>
                     <p>This file implements an email classifier that combines rule-based logic and LLM classification for improved accuracy. It leverages a rules engine and Gemini AI to intelligently label emails.</p>
                     <p class="meta">3 dependencies</p>
                 </div>
@@ -163,16 +163,16 @@
         <section>
             <h2>Where to Make Common Changes</h2>
             <ul class="changes-list">
-                <li><strong>Add new email type:</strong> Edit <code>mailq/mapper.py</code> schema</li>
-                <li><strong>Change AI model:</strong> Update <code>mailq/vertex_gemini_classifier.py</code></li>
-                <li><strong>Modify label formats:</strong> Edit <code>mailq/mapper.py</code></li>
-                <li><strong>Add classification domains:</strong> Update <code>mailq/config/sender_allowlist.py</code></li>
+                <li><strong>Add new email type:</strong> Edit <code>shopq/mapper.py</code> schema</li>
+                <li><strong>Change AI model:</strong> Update <code>shopq/vertex_gemini_classifier.py</code></li>
+                <li><strong>Modify label formats:</strong> Edit <code>shopq/mapper.py</code></li>
+                <li><strong>Add classification domains:</strong> Update <code>shopq/config/sender_allowlist.py</code></li>
             </ul>
         </section>
     </main>
 
     <footer>
-        <p>MailQ Codebase Analyzer</p>
+        <p>ShopQ Codebase Analyzer</p>
     </footer>
 </body>
 </html>

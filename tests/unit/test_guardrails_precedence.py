@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
 
 FIXTURE_PATH = Path("tests/fixtures/guardrails_test.yaml")
 
@@ -8,8 +8,8 @@ FIXTURE_PATH = Path("tests/fixtures/guardrails_test.yaml")
 def test_never_surface_overrides_other_guardrails():
     matcher = GuardrailMatcher(FIXTURE_PATH)
     email = {
-        "subject": "MailQ Digest / read receipt",
-        "snippet": "Read receipt for MailQ Digest item.",
+        "subject": "ShopQ Digest / read receipt",
+        "snippet": "Read receipt for ShopQ Digest item.",
         "type": "notification",
         "attention": "none",
     }

@@ -1,4 +1,4 @@
-# MailQ Code-Graph
+# ShopQ Code-Graph
 
 **Visual documentation that stays in sync with your code.**
 
@@ -46,7 +46,7 @@ That's it! Everything auto-generates from your code in <1 second.
 
 ## 🛠️ How It Works
 
-1. **Scan codebase** - Analyzes `mailq/*.py` and `extension/*.js` files
+1. **Scan codebase** - Analyzes `shopq/*.py` and `extension/*.js` files
 2. **Detect signals** - Git churn (30d), TODOs, imports, external services
 3. **Generate markdown** - Creates Mermaid diagrams in `visuals/*.md`
 4. **Convert to HTML** - Interactive versions with zoom/export in `visuals/html/`

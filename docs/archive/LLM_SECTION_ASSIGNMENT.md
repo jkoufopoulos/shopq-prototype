@@ -39,7 +39,7 @@ Email → Fast Rules → [Match?] → T0 Section
 
 ### **Files Created**
 
-1. **`mailq/prompts/section_assignment_prompt.txt`**
+1. **`shopq/prompts/section_assignment_prompt.txt`**
    - LLM prompt for T0 section classification
    - Explains sections, patterns, and rules
    - Instructs LLM on content vs transactional distinction
@@ -57,11 +57,11 @@ Email → Fast Rules → [Match?] → T0 Section
 
 1. **`concepts/section_assignment_t0.py`**
    - Added LLM fallback at end of function
-   - Only triggers if `MAILQ_LLM_SECTION_FALLBACK=true`
+   - Only triggers if `SHOPQ_LLM_SECTION_FALLBACK=true`
    - Falls back to "noise" if LLM fails
 
 2. **`.env.example`**
-   - Added `MAILQ_LLM_SECTION_FALLBACK` flag
+   - Added `SHOPQ_LLM_SECTION_FALLBACK` flag
    - Documented feature and cost implications
 
 ---
@@ -132,17 +132,17 @@ if "newsletter" in subject and llm_section == "worth_knowing":
 
 Add to `.env`:
 ```bash
-MAILQ_LLM_SECTION_FALLBACK=true
+SHOPQ_LLM_SECTION_FALLBACK=true
 ```
 
 ### **Run Evaluation**
 
 ```bash
 # Test with LLM enabled
-MAILQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
+SHOPQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
 
 # Compare with rules-only baseline
-MAILQ_LLM_SECTION_FALLBACK=false python scripts/test_llm_section_assignment.py
+SHOPQ_LLM_SECTION_FALLBACK=false python scripts/test_llm_section_assignment.py
 ```
 
 ### **Expected Results**
@@ -282,7 +282,7 @@ Query logs to find patterns:
 
 1. **Test on Dataset 2**
    ```bash
-   MAILQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
+   SHOPQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
    ```
 
 2. **Measure Accuracy**
@@ -291,10 +291,10 @@ Query logs to find patterns:
 
 3. **Refine Prompt** (if needed)
    - Based on misclassifications
-   - Edit `mailq/prompts/section_assignment_prompt.txt`
+   - Edit `shopq/prompts/section_assignment_prompt.txt`
 
 4. **Enable for Dogfooding**
-   - Set `MAILQ_LLM_SECTION_FALLBACK=true` in production `.env`
+   - Set `SHOPQ_LLM_SECTION_FALLBACK=true` in production `.env`
    - Monitor cost, accuracy, latency
 
 5. **Plan Gradual Rollout**
@@ -315,11 +315,11 @@ A: Validation layer catches critical mistakes (e.g., verification codes not mark
 
 ### **Q: Can I edit the prompt without code changes?**
 
-A: Yes! Edit `mailq/prompts/section_assignment_prompt.txt` and restart the server.
+A: Yes! Edit `shopq/prompts/section_assignment_prompt.txt` and restart the server.
 
 ### **Q: How do I disable LLM fallback?**
 
-A: Set `MAILQ_LLM_SECTION_FALLBACK=false` in `.env` (default is already false).
+A: Set `SHOPQ_LLM_SECTION_FALLBACK=false` in `.env` (default is already false).
 
 ### **Q: What's the performance impact?**
 

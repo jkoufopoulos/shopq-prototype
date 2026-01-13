@@ -2,7 +2,7 @@
 """
 Evaluate Classification Accuracy Against GDS Ground Truth
 
-Runs the MailQ classifier on all 500 GDS emails and compares
+Runs the ShopQ classifier on all 500 GDS emails and compares
 predictions to human-annotated ground truth.
 
 Usage:
@@ -29,12 +29,12 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.memory_classifier import MemoryClassifier
-from mailq.api.routes.verify import verify_classification as run_verifier
+from shopq.classification.memory_classifier import MemoryClassifier
+from shopq.api.routes.verify import verify_classification as run_verifier
 
 # Import EmailClassifier for refactored pipeline option
-from mailq.classification.classifier import EmailClassifier
-from mailq.storage.models import ParsedEmail, RawEmail
+from shopq.classification.classifier import EmailClassifier
+from shopq.storage.models import ParsedEmail, RawEmail
 from datetime import datetime as dt
 
 # Verifier threshold - trigger second-pass if any confidence below this
@@ -475,7 +475,7 @@ def main():
                     received_ts=dt.now().isoformat(),
                     subject=subject,
                     from_address=from_email,
-                    to_address="eval@mailq.local",
+                    to_address="eval@shopq.local",
                     body=snippet,
                 )
                 parsed = ParsedEmail(base=base, body_text=snippet, body_html=None)
@@ -484,7 +484,7 @@ def main():
                 classified = email_classifier.classify(parsed, use_rules=True, use_llm=True)
 
                 # Convert ClassifiedEmail to dict for compatibility with rest of eval
-                from mailq.storage.classification import compute_client_label
+                from shopq.storage.classification import compute_client_label
 
                 result = {
                     "type": classified.category,

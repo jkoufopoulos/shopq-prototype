@@ -12,9 +12,9 @@ These tests measure performance under realistic load and verify that:
 
 import pytest
 
-from mailq.observability.telemetry import get_latency_stats, get_p95, reset_latencies
-from mailq.shared.pipeline import run_pipeline
-from mailq.storage.models import ClassifiedEmail, Digest, DigestItem, ParsedEmail
+from shopq.observability.telemetry import get_latency_stats, get_p95, reset_latencies
+from shopq.shared.pipeline import run_pipeline
+from shopq.storage.models import ClassifiedEmail, Digest, DigestItem, ParsedEmail
 
 
 def _generate_test_messages(count: int) -> list[dict]:

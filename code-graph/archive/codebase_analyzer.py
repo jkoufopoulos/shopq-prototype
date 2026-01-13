@@ -24,7 +24,7 @@ class CodebaseAnalyzer:
         js_files = []
 
         python_patterns = [
-            "mailq/**/*.py",
+            "shopq/**/*.py",
             "scripts/**/*.py",
             "experiments/**/*.py",
             "api/**/*.py",
@@ -133,11 +133,11 @@ class CodebaseAnalyzer:
         """Convert Python module name to file path.
 
         Examples:
-            mailq.memory_classifier → mailq/memory_classifier.py
-            mailq.config → mailq/config/__init__.py
+            shopq.memory_classifier → shopq/memory_classifier.py
+            shopq.config → shopq/config/__init__.py
             scripts.check_schema → scripts/check_schema.py
         """
-        # Remove any trailing imports (e.g., mailq.config.Config → mailq.config)
+        # Remove any trailing imports (e.g., shopq.config.Config → shopq.config)
         parts = module_name.split(".")
 
         # Try as a direct file first
@@ -150,7 +150,7 @@ class CodebaseAnalyzer:
         if (self.root_dir / package_path).exists():
             return package_path
 
-        # Try parent as package (for imports like mailq.config.Config)
+        # Try parent as package (for imports like shopq.config.Config)
         if len(parts) > 1:
             parent_path = "/".join(parts[:-1]) + ".py"
             if (self.root_dir / parent_path).exists():

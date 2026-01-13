@@ -2,7 +2,7 @@
 
 > **⚠️ HISTORICAL DOCUMENT**: This was guidance for parallel Agent A/B work during an earlier refactoring phase. Many referenced files have since been moved during the Nov 2025 restructuring (15→7 directories). The `concepts/` folder referenced here was never created. Preserved for historical context.
 
-**Role**: You are Agent B working in parallel with Agent A on the MailQ codebase.
+**Role**: You are Agent B working in parallel with Agent A on the ShopQ codebase.
 
 **Context**: Agent A is doing a major digest pipeline refactor (6-8 weeks). You will work on quick wins that improve code quality without conflicting with Agent A's work.
 
@@ -52,7 +52,7 @@ Agent A is refactoring the digest pipeline. **NEVER edit these**:
 
 ### Files to Type-Annotate
 
-#### 1.1: `mailq/observability.py`
+#### 1.1: `shopq/observability.py`
 **Current state**: ~50% type coverage, 213 mypy errors in codebase
 **Your job**:
 - Add type hints to all functions
@@ -83,10 +83,10 @@ def log_importance(
     ...
 ```
 
-#### 1.2: `mailq/email_tracker.py`
+#### 1.2: `shopq/email_tracker.py`
 **Your job**: Same as above - full type annotation
 
-#### 1.3: `mailq/filters.py`
+#### 1.3: `shopq/filters.py`
 **Your job**:
 - Add type hints ONLY
 - **DO NOT refactor logic** (Agent A may use these filters)
@@ -165,9 +165,9 @@ def record_classification(
 ### Files to Document
 
 Add "Side Effects:" sections to functions in:
-- `mailq/observability.py` (writes logs, sends metrics)
-- `mailq/email_tracker.py` (writes to database, updates state)
-- `mailq/storage.py` (database writes)
+- `shopq/observability.py` (writes logs, sends metrics)
+- `shopq/email_tracker.py` (writes to database, updates state)
+- `shopq/storage.py` (database writes)
 - `adapters/storage/checkpoint.py` (file writes)
 - `infra/telemetry.py` (network calls, metrics)
 
@@ -189,7 +189,7 @@ Look for functions with these patterns (they likely have side effects):
 
 ### Files to Add Validation
 
-#### 3.1: `mailq/api.py`
+#### 3.1: `shopq/api.py`
 Add Pydantic validation to request models:
 
 ```python
@@ -211,10 +211,10 @@ class SummaryRequest(BaseModel):
         return v
 ```
 
-#### 3.2: `mailq/api_feedback.py`
+#### 3.2: `shopq/api_feedback.py`
 Add validation to feedback endpoints
 
-#### 3.3: `mailq/api_debug.py`
+#### 3.3: `shopq/api_debug.py`
 Add validation to debug endpoints
 
 ---
@@ -225,9 +225,9 @@ Run mypy and fix errors in your assigned files:
 
 ```bash
 # From project root
-mypy mailq/observability.py --strict
-mypy mailq/email_tracker.py --strict
-mypy mailq/filters.py --strict
+mypy shopq/observability.py --strict
+mypy shopq/email_tracker.py --strict
+mypy shopq/filters.py --strict
 mypy adapters/storage/checkpoint.py --strict
 mypy infra/telemetry.py --strict
 ```
@@ -346,11 +346,11 @@ git push origin feat/agent-b-observability-types
 ## Agent B Week 2 Report
 
 ### Files Modified
-- mailq/observability.py (+150 type hints, +20 side effect docs)
-- mailq/email_tracker.py (+100 type hints, +15 side effect docs)
-- mailq/filters.py (+50 type hints)
+- shopq/observability.py (+150 type hints, +20 side effect docs)
+- shopq/email_tracker.py (+100 type hints, +15 side effect docs)
+- shopq/filters.py (+50 type hints)
 - adapters/storage/checkpoint.py (+30 type hints)
-- mailq/api.py (+3 validation models)
+- shopq/api.py (+3 validation models)
 
 ### Metrics
 - Type hint coverage: 50% → 96%
@@ -371,17 +371,17 @@ git push origin feat/agent-b-observability-types
 
 **Step 1**: Read this entire prompt
 **Step 2**: Check off-limits list one more time
-**Step 3**: Start with `mailq/observability.py` (smallest file)
+**Step 3**: Start with `shopq/observability.py` (smallest file)
 **Step 4**: Run tests frequently
 **Step 5**: Create PR when file is complete
 
 **First command to run**:
 ```bash
 # Check current mypy errors
-mypy mailq/observability.py --strict
+mypy shopq/observability.py --strict
 
 # Start fixing type hints
-# <your editor> mailq/observability.py
+# <your editor> shopq/observability.py
 ```
 
 Good luck! Remember: **DO NOT touch digest pipeline files.** If unsure, ask first.

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from mailq.classification.deduplicator import EntityDeduplicator
-from mailq.classification.models import Entity, FlightEntity
+from shopq.classification.deduplicator import EntityDeduplicator
+from shopq.classification.models import Entity, FlightEntity
 
 
 def _make_flight_entity(departure_time: datetime, confidence: float = 0.5) -> FlightEntity:

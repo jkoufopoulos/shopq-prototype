@@ -1,7 +1,7 @@
-# MailQ Digest Pipeline Security Review
+# ShopQ Digest Pipeline Security Review
 
 **Date:** 2025-11-30 (Post-Cleanup Audit), updated 2025-12-04
-**Scope:** Digest generation pipeline (mailq/digest/, mailq/api/app.py, LLM integration, HTML rendering)
+**Scope:** Digest generation pipeline (shopq/digest/, shopq/api/app.py, LLM integration, HTML rendering)
 **Reviewer:** Senior Application Security Engineer
 **Summary:** 2 High, 2 Medium, 3 Low findings (H1 resolved - LLM narrative feature removed)
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The MailQ digest generation pipeline demonstrates **strong security fundamentals** with comprehensive XSS prevention, input validation, and defense-in-depth measures. The codebase shows evidence of security-conscious design:
+The ShopQ digest generation pipeline demonstrates **strong security fundamentals** with comprehensive XSS prevention, input validation, and defense-in-depth measures. The codebase shows evidence of security-conscious design:
 
 ✅ **Strengths:**
 - Consistent use of `html.escape()` for all user-generated content
@@ -40,7 +40,7 @@ The MailQ digest generation pipeline demonstrates **strong security fundamentals
 
 **Evidence of Fix:**
 ```python
-# mailq/utils/redaction.py:73-107
+# shopq/utils/redaction.py:73-107
 INJECTION_PATTERNS = [
     r"ignore\s+(previous|above|all)\s+instructions?",
     r"disregard\s+(previous|above|all)\s+instructions?",
@@ -66,14 +66,14 @@ def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
 
 **Evidence of Fix:**
 ```python
-# mailq/digest/formatting.py:129,149,169,189 - ALL user content escaped
+# shopq/digest/formatting.py:129,149,169,189 - ALL user content escaped
 safe_description = html.escape(description)  # XSS prevention
 
-# mailq/digest/card_renderer.py:405,406,410 - Titles and snippets escaped
+# shopq/digest/card_renderer.py:405,406,410 - Titles and snippets escaped
 title = html.escape(item["title"]) if item["title"] else f"Item {number}"
 snippet_text = html.escape(item["snippet"]) if item["snippet"] else ""
 
-# mailq/digest/hybrid_digest_renderer.py:122,148,174,200 - All HTML output escaped
+# shopq/digest/hybrid_digest_renderer.py:122,148,174,200 - All HTML output escaped
 safe_description = html_lib.escape(description)
 ```
 
@@ -89,7 +89,7 @@ safe_description = html_lib.escape(description)
 
 **Evidence of Fix:**
 ```python
-# mailq/utils/redaction.py:32-39
+# shopq/utils/redaction.py:32-39
 def redact(value: str | None) -> str:
     """Return a stable hash representation of a sensitive string."""
     if not value:
@@ -97,10 +97,10 @@ def redact(value: str | None) -> str:
     digest = sha256(value.encode("utf-8")).hexdigest()[:12]
     return f"hash:{digest}"
 
-# mailq/api/app.py:170 - Redaction applied to logs
+# shopq/api/app.py:170 - Redaction applied to logs
 logger.warning("Validation error on %s: %s", redact(str(request.url)), exc.errors())
 
-# mailq/api/app.py:912 - Emails redacted in telemetry
+# shopq/api/app.py:912 - Emails redacted in telemetry
 sample_subject=redact(emails[0].get("subject", "")) if emails else None
 ```
 
@@ -115,11 +115,11 @@ sample_subject=redact(emails[0].get("subject", "")) if emails else None
 ### ✅ RESOLVED: [H1] LLM Prompt Injection via Unsanitized Email Content in Noise Narrative
 
 **Previous Severity:** High
-**Previous Location:** `mailq/digest/digest_stages_v2.py` (generate_noise_narrative function)
+**Previous Location:** `shopq/digest/digest_stages_v2.py` (generate_noise_narrative function)
 **Current Status:** ✅ **N/A - FEATURE REMOVED**
 
 **Resolution (2025-12-04):**
-The `generate_noise_narrative` function and `MAILQ_LLM_NARRATIVE` feature flag have been completely removed from the codebase. This feature was replaced by `MAILQ_LLM_SYNTHESIS`, which generates the entire digest using a more controlled prompt template (`digest_synthesis_prompt_v2.txt`).
+The `generate_noise_narrative` function and `SHOPQ_LLM_NARRATIVE` feature flag have been completely removed from the codebase. This feature was replaced by `SHOPQ_LLM_SYNTHESIS`, which generates the entire digest using a more controlled prompt template (`digest_synthesis_prompt_v2.txt`).
 
 The new LLM synthesis feature uses `sanitize_for_prompt()` for all email content before sending to Gemini, and the `_replace_link_placeholders()` post-processor ensures Gmail links are generated deterministically (not by the LLM).
 
@@ -133,26 +133,26 @@ The new LLM synthesis feature uses `sanitize_for_prompt()` for all email content
 
 **Evidence:**
 
-**Location 1:** `mailq/digest/digest_stages_v2.py:116`
+**Location 1:** `shopq/digest/digest_stages_v2.py:116`
 ```python
 except Exception as e:
     logger.warning(f"LLM narrative generation failed: {e}")
 ```
 Exception `e` may contain full traceback with email subjects/snippets if error occurred during prompt construction or response parsing.
 
-**Location 2:** `mailq/digest/context_digest.py:220`
+**Location 2:** `shopq/digest/context_digest.py:220`
 ```python
 logger.warning(f"⚠️  Failed to apply client timezone '{timezone_name}': {exc}")
 ```
 Logs raw timezone string (may contain PII if user provided unusual value) and full exception details.
 
-**Location 3:** `mailq/digest/temporal.py:135`
+**Location 3:** `shopq/digest/temporal.py:135`
 ```python
 logger.warning(f"Failed to parse Google Calendar time: {e}")
 ```
 Exception may contain calendar event titles or descriptions if parsing fails on structured data.
 
-**Location 4:** `mailq/digest/temporal.py:466`
+**Location 4:** `shopq/digest/temporal.py:466`
 ```python
 logger.warning(f"Failed to parse received_date '{date_str}': {e}")
 ```
@@ -176,8 +176,8 @@ An attacker crafts an email with content designed to manipulate the LLM into ret
 
 **Fix:**
 ```diff
-# mailq/digest/llm_section_classifier.py
-+from mailq.utils.redaction import sanitize_for_prompt
+# shopq/digest/llm_section_classifier.py
++from shopq.utils.redaction import sanitize_for_prompt
 +
 +# Define valid sections as constant
 +VALID_SECTIONS = {"critical", "time_sensitive", "routine", "skip", "everything-else"}
@@ -216,7 +216,7 @@ An attacker crafts an email with content designed to manipulate the LLM into ret
 ### [M1] Missing Rate Limiting on LLM-Heavy Endpoints
 
 **Severity:** Medium
-**Location:** `mailq/api/app.py:962` (`/api/context-digest`), `mailq/api/app.py:842` (`/api/verify`)
+**Location:** `shopq/api/app.py:962` (`/api/context-digest`), `shopq/api/app.py:842` (`/api/verify`)
 **CVSS:** 5.3 (Medium - DoS + cost amplification)
 
 **Evidence:**
@@ -253,7 +253,7 @@ No endpoint-specific limits for costly operations.
 
 **Fix:**
 ```diff
-# mailq/api/app.py
+# shopq/api/app.py
 
 +from slowapi import Limiter, _rate_limit_exceeded_handler
 +from slowapi.util import get_remote_address
@@ -288,7 +288,7 @@ slowapi==0.1.9
 ### [M2] Error Messages May Leak Implementation Details
 
 **Severity:** Medium
-**Location:** `mailq/digest/temporal.py:466`, `mailq/digest/categorizer.py:287`, multiple exception handlers
+**Location:** `shopq/digest/temporal.py:466`, `shopq/digest/categorizer.py:287`, multiple exception handlers
 **CVSS:** 4.3 (Medium - information disclosure, low exploitability)
 
 **Evidence:**
@@ -320,8 +320,8 @@ No centralized error sanitization for logs means developers must remember to red
 
 **Fix:**
 ```diff
-# mailq/digest/temporal.py
-+from mailq.utils.redaction import redact
+# shopq/digest/temporal.py
++from shopq.utils.redaction import redact
 +
 -logger.warning(f"Failed to parse received_date '{date_str}': {e}")
 +logger.warning(
@@ -330,7 +330,7 @@ No centralized error sanitization for logs means developers must remember to red
 +    extra={"date_hash": redact(date_str)}  # Hash for correlation
 +)
 
-# mailq/digest/categorizer.py
+# shopq/digest/categorizer.py
 -logger.error(f"Temporal keyword lookup failed: {e}")
 +logger.error(
 +    "Database query failed",
@@ -345,7 +345,7 @@ No centralized error sanitization for logs means developers must remember to red
 ### [M3] Prompt Injection Mitigation Not Applied Consistently
 
 **Severity:** Medium
-**Location:** `mailq/digest/context_digest.py`, LLM classification call sites
+**Location:** `shopq/digest/context_digest.py`, LLM classification call sites
 **CVSS:** 5.3 (Medium - requires user interaction, limited impact due to LLM guardrails)
 
 **Evidence:**
@@ -353,8 +353,8 @@ No centralized error sanitization for logs means developers must remember to red
 **Sanitization exists but is NOT called:**
 ```bash
 # Check where sanitize_for_prompt is actually used
-$ grep -r "sanitize_for_prompt" mailq/
-mailq/utils/redaction.py:def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
+$ grep -r "sanitize_for_prompt" shopq/
+shopq/utils/redaction.py:def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
 # ^^^ Function defined but no other files import or call it!
 ```
 
@@ -375,8 +375,8 @@ Relying solely on LLM provider safety is insufficient defense-in-depth.
 
 **Fix:**
 ```diff
-# mailq/api/routes/organize.py (or wherever classify_batch is defined)
-+from mailq.utils.redaction import sanitize_for_prompt
+# shopq/api/routes/organize.py (or wherever classify_batch is defined)
++from shopq.utils.redaction import sanitize_for_prompt
 
 def classify_batch(classifier, emails, user_prefs):
     results = []
@@ -392,8 +392,8 @@ def classify_batch(classifier, emails, user_prefs):
 
 **Also apply to digest generation:**
 ```diff
-# mailq/digest/context_digest.py (or entity extraction stage)
-+from mailq.utils.redaction import sanitize_for_prompt
+# shopq/digest/context_digest.py (or entity extraction stage)
++from shopq.utils.redaction import sanitize_for_prompt
 
 def extract_entities(emails: list[dict]) -> list[Entity]:
     for email in emails:
@@ -411,7 +411,7 @@ def extract_entities(emails: list[dict]) -> list[Entity]:
 ### [L1] Timezone Validation Could Be Stricter
 
 **Severity:** Low
-**Location:** `mailq/api/app.py:614-625`, `mailq/digest/context_digest.py:160-167`
+**Location:** `shopq/api/app.py:614-625`, `shopq/digest/context_digest.py:160-167`
 **CVSS:** 3.1 (Low - edge case, minimal impact)
 
 **Evidence:**
@@ -437,7 +437,7 @@ Attacker provides `timezone: "../../etc/passwd"` (path traversal attempt). Curre
 
 **Fix:**
 ```diff
-# mailq/api/app.py
+# shopq/api/app.py
 @field_validator("timezone")
 def validate_timezone(cls, v: str | None) -> str | None:
     if v is None:
@@ -461,7 +461,7 @@ def validate_timezone(cls, v: str | None) -> str | None:
 ### [L2] Weather API City Parameter Not Validated
 
 **Severity:** Low
-**Location:** `mailq/api/app.py:580-582` (SummaryRequest model)
+**Location:** `shopq/api/app.py:580-582` (SummaryRequest model)
 **CVSS:** 2.3 (Low - minimal impact, requires weather API key)
 
 **Evidence:**
@@ -481,7 +481,7 @@ If weather API returns error HTML containing the city name unsanitized, and that
 
 **Fix:**
 ```diff
-# mailq/api/app.py
+# shopq/api/app.py
 city: str | None = Field(
     default=None,
     max_length=100,
@@ -505,7 +505,7 @@ city: str | None = Field(
 
 ## Positive Security Observations
 
-### What MailQ Does Right
+### What ShopQ Does Right
 
 1. **XSS Prevention (Excellent)**
    - `html.escape()` used consistently in ALL rendering paths:
@@ -534,7 +534,7 @@ city: str | None = Field(
 4. **Secret Management (Good)**
    - No hardcoded API keys found
    - `.env.example` provides template
-   - Production startup fails if `MAILQ_ADMIN_API_KEY` unset (lines 260-273)
+   - Production startup fails if `SHOPQ_ADMIN_API_KEY` unset (lines 260-273)
    - Environment variable validation on startup
 
 5. **CORS Configuration (Appropriate)**
@@ -639,7 +639,7 @@ curl -X POST http://localhost:8000/api/context-digest \
 |------|--------|----------|
 | A03:2021 Injection | ✅ Mitigated | XSS via `html.escape()`, SQL via parameterized queries |
 | A05:2021 Security Misconfiguration | ✅ Mitigated | Security headers, CORS, admin auth required in prod |
-| A07:2021 Identification/Authentication | ✅ Mitigated | Admin endpoints require `MAILQ_ADMIN_API_KEY` |
+| A07:2021 Identification/Authentication | ✅ Mitigated | Admin endpoints require `SHOPQ_ADMIN_API_KEY` |
 | A08:2021 Software/Data Integrity | ⚠️ Partial | [M3] Prompt injection sanitization exists but not applied |
 | A04:2021 Insecure Design | ✅ Strong | Rate limiting, input validation, fail-safe defaults |
 
@@ -659,7 +659,7 @@ curl -X POST http://localhost:8000/api/context-digest \
 
 ## Conclusion
 
-MailQ's digest pipeline demonstrates **mature security practices** with comprehensive XSS prevention, strong input validation, and defense-in-depth architecture. Previous critical issues (C1-C3) have been **successfully resolved**.
+ShopQ's digest pipeline demonstrates **mature security practices** with comprehensive XSS prevention, strong input validation, and defense-in-depth architecture. Previous critical issues (C1-C3) have been **successfully resolved**.
 
 **Current findings are lower severity and fixable within 1-2 days.**
 
@@ -696,9 +696,9 @@ MailQ's digest pipeline demonstrates **mature security practices** with comprehe
 
 **Scope:** Changes to implement digest footer with client label counts and Gmail deep links
 **Files Reviewed:**
-- `mailq/gmail/gmail_link_builder.py` (new methods: `client_label_link()`, `build_client_label_links()`)
-- `mailq/digest/digest_stages_v2.py` (new methods: `_compute_label_counts()`, `_render_label_summary()`)
-- `mailq/digest/card_renderer.py` (new method: `_render_email_summary()`)
+- `shopq/gmail/gmail_link_builder.py` (new methods: `client_label_link()`, `build_client_label_links()`)
+- `shopq/digest/digest_stages_v2.py` (new methods: `_compute_label_counts()`, `_render_label_summary()`)
+- `shopq/digest/card_renderer.py` (new method: `_render_email_summary()`)
 
 **Summary:** 2 Medium findings, 0 Critical, 0 High, 0 Low
 
@@ -709,7 +709,7 @@ MailQ's digest pipeline demonstrates **mature security practices** with comprehe
 ### [M1] Missing HTML Attribute Escaping in Gmail Links (digest_stages_v2.py)
 
 **Severity:** Medium
-**Location:** `mailq/digest/digest_stages_v2.py:1019`
+**Location:** `shopq/digest/digest_stages_v2.py:1019`
 **CVSS:** 5.4 (Medium) - AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N
 
 **Evidence:**
@@ -758,8 +758,8 @@ for label in label_order:
 
 **Recommended Fix:**
 ```diff
---- a/mailq/digest/digest_stages_v2.py
-+++ b/mailq/digest/digest_stages_v2.py
+--- a/shopq/digest/digest_stages_v2.py
++++ b/shopq/digest/digest_stages_v2.py
 @@ -1016,7 +1016,7 @@ class SynthesisAndRenderingStage:
              if count > 0:
                  link = label_links.get(label, "#")
@@ -775,7 +775,7 @@ for label in label_order:
 ### [M2] Missing HTML Attribute Escaping in Gmail Links (card_renderer.py)
 
 **Severity:** Medium
-**Location:** `mailq/digest/card_renderer.py:432`
+**Location:** `shopq/digest/card_renderer.py:432`
 **CVSS:** 5.4 (Medium) - AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N
 
 **Evidence:**
@@ -788,8 +788,8 @@ This is the same vulnerability pattern as M1, present in the `CardRenderer` code
 
 **Recommended Fix:**
 ```diff
---- a/mailq/digest/card_renderer.py
-+++ b/mailq/digest/card_renderer.py
+--- a/shopq/digest/card_renderer.py
++++ b/shopq/digest/card_renderer.py
 @@ -429,7 +429,7 @@ class CardRenderer:
              if count > 0:
                  link = label_links.get(label, "#")
@@ -809,7 +809,7 @@ This is the same vulnerability pattern as M1, present in the `CardRenderer` code
   encoded_label = quote_plus(label_name)
   return f"{cls.BASE_URL}/#label/{encoded_label}"
   ```
-- Properly handles Gmail label names with slashes (`MailQ/Receipts` → `MailQ%2FReceipts`)
+- Properly handles Gmail label names with slashes (`ShopQ/Receipts` → `ShopQ%2FReceipts`)
 
 ### ✅ Input Validation (Strong)
 - `client_label` constrained to 4 known values via Pydantic `Literal` type
@@ -867,7 +867,7 @@ This is the same vulnerability pattern as M1, present in the `CardRenderer` code
 4. **Audit All Gmail Link Embeddings**
    - Search for all `f'<a href="{var}">'` patterns:
      ```bash
-     rg 'f\'<a href="|f"<a href="' mailq/digest/
+     rg 'f\'<a href="|f"<a href="' shopq/digest/
      ```
    - Verify Gmail links are always HTML-escaped when embedded in HTML attributes
    - Currently identified instances: digest_stages_v2.py:905, 1019; card_renderer.py:432, 920
@@ -898,7 +898,7 @@ This is the same vulnerability pattern as M1, present in the `CardRenderer` code
 - **Test:**
   ```python
   client_label = "../../etc/passwd"
-  # Result: https://mail.google.com/mail/u/0/#label/MailQ%2F..%2F..%2Fetc%2Fpasswd
+  # Result: https://mail.google.com/mail/u/0/#label/ShopQ%2F..%2F..%2Fetc%2Fpasswd
   # Gmail ignores malformed labels → no path traversal
   ```
 

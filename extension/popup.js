@@ -1,9 +1,9 @@
 /**
- * MailQ Popup Script
+ * ShopQ Popup Script
  * Handles popup UI interactions
  */
 
-const LABEL_CACHE_KEY = 'mailq_label_cache';
+const LABEL_CACHE_KEY = 'shopq_label_cache';
 
 // Update cache count display
 async function updateCacheCount() {

@@ -1,10 +1,10 @@
-# MailQ E2E Tests with Playwright
+# ShopQ E2E Tests with Playwright
 
-End-to-end tests for MailQ Chrome extension using Playwright.
+End-to-end tests for ShopQ Chrome extension using Playwright.
 
 ## Purpose
 
-These tests verify that the MailQ extension actually works with real Gmail, catching issues that unit tests and logs might miss.
+These tests verify that the ShopQ extension actually works with real Gmail, catching issues that unit tests and logs might miss.
 
 ### What These Tests Catch
 
@@ -52,7 +52,7 @@ GMAIL_TEST_PASSWORD=your-app-password
 Tests expect the backend running on `localhost:8000`:
 
 ```bash
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 ```
 
 ## Running Tests
@@ -126,9 +126,9 @@ test('example', async ({ gmailPage }) => {
   const labels = await gmailPage.getEmailLabels(email);
 
   // Search Gmail
-  await gmailPage.search('in:inbox -label:MailQ/*');
+  await gmailPage.search('in:inbox -label:ShopQ/*');
 
-  // Trigger MailQ auto-organize
+  // Trigger ShopQ auto-organize
   await gmailPage.triggerAutoOrganize();
 
   // Wait for extension processing
@@ -161,7 +161,7 @@ test('example', async ({ extensionBackground }) => {
 
 ```javascript
 ✓ should actually apply labels to Gmail emails
-  - Triggers MailQ auto-organize
+  - Triggers ShopQ auto-organize
   - Waits for processing
   - Reloads Gmail
   - VERIFIES labels actually appear (not just logs)
@@ -181,13 +181,13 @@ test('example', async ({ extensionBackground }) => {
 
 ```javascript
 ✓ should find unlabeled emails using extension search query
-  - Uses exact search: 'in:inbox -in:sent -label:MailQ/*'
+  - Uses exact search: 'in:inbox -in:sent -label:ShopQ/*'
   - Compares visible inbox vs search results
   - Catches Issue #2: 10 emails visible, 0 found
 
-✓ should correctly identify emails without MailQ labels
+✓ should correctly identify emails without ShopQ labels
   - Checks label detection logic
-  - Ensures MailQ labels are recognized
+  - Ensures ShopQ labels are recognized
 
 ✓ should handle Gmail category tabs correctly
   - Tests Primary, Promotions, Social, Updates tabs
@@ -301,7 +301,7 @@ Gmail may not have loaded. Try:
 Start the backend:
 
 ```bash
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 ```
 
 ### Tests hang or timeout
@@ -323,7 +323,7 @@ Add to GitHub Actions:
     npx playwright install chrome
 
 - name: Start Backend
-  run: uvicorn mailq.api:app &
+  run: uvicorn shopq.api:app &
 
 - name: Run E2E Tests
   run: npx playwright test
@@ -378,7 +378,7 @@ Once all tests are green:
 ## Getting Help
 
 - Playwright Docs: https://playwright.dev
-- MailQ Issues: See `ISSUES_2025-10-30.md`
+- ShopQ Issues: See `ISSUES_2025-10-30.md`
 - Debugging Guide: https://playwright.dev/docs/debug
 
 ---

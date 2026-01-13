@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Validation script for MailQ Core Principles (P2 and P3).
+Validation script for ShopQ Core Principles (P2 and P3).
 
 Checks:
 - P2: Side Effects Are Loud, Not Sneaky
@@ -17,7 +17,7 @@ Usage:
 
     --fix: Auto-add missing type hints where possible
     --verbose: Show detailed violations
-    path: Specific files/directories to check (default: mailq/, scripts/)
+    path: Specific files/directories to check (default: shopq/, scripts/)
 
 Exit codes:
     0: All checks passed
@@ -535,15 +535,15 @@ def print_summary(violations: list[Violation]) -> None:
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Validate MailQ code against Core Principles P2 and P3",
+        description="Validate ShopQ code against Core Principles P2 and P3",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Validate default paths (mailq/, backend/)
+  # Validate default paths (shopq/, backend/)
   python scripts/validate_principles.py
 
   # Validate specific file
-  python scripts/validate_principles.py mailq/rules_manager.py
+  python scripts/validate_principles.py shopq/rules_manager.py
 
   # Validate with verbose output
   python scripts/validate_principles.py --verbose
@@ -557,7 +557,7 @@ Examples:
         "paths",
         nargs="*",
         type=Path,
-        help="Files or directories to validate (default: mailq/, scripts/)",
+        help="Files or directories to validate (default: shopq/, scripts/)",
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Show detailed violation messages"

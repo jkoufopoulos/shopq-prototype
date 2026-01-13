@@ -26,7 +26,7 @@ def generate_analysis_md(analysis_path: Path, output_path: Path):
 
     md = """# CODEBASE_ANALYSIS.md
 
-# 📊 MailQ Codebase Analysis
+# 📊 ShopQ Codebase Analysis
 
 **Generated:** {datetime.now().strftime("%B %d, %Y at %H:%M")}
 
@@ -143,7 +143,7 @@ def generate_analysis_md(analysis_path: Path, output_path: Path):
         visited.add(path)
 
         # Simplify path for display
-        simple_path = path.replace("mailq/", "").replace(".py", "").replace("/__init__", "")
+        simple_path = path.replace("shopq/", "").replace(".py", "").replace("/__init__", "")
 
         output = "  " * indent + simple_path + "\n"
 

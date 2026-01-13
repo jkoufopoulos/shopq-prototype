@@ -31,14 +31,14 @@ def generate_detailed_html(analysis_path: Path, output_path: Path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MailQ Codebase Analysis - Detailed View</title>
+    <title>ShopQ Codebase Analysis - Detailed View</title>
     <style>
         {_get_css()}
     </style>
 </head>
 <body>
     <header>
-        <h1>📊 MailQ Codebase Analysis</h1>
+        <h1>📊 ShopQ Codebase Analysis</h1>
         <nav>
             <a href="summary.html">Summary</a>
             <a href="detailed.html" class="active">Detailed</a>
@@ -82,14 +82,14 @@ def generate_detailed_html(analysis_path: Path, output_path: Path):
     </main>
 
     <footer>
-        <p>MailQ Codebase Analyzer • Powered by Gemini Flash •
+        <p>ShopQ Codebase Analyzer • Powered by Gemini Flash •
         <a href="https://github.com/yourusername/mailq-prototype" target="_blank">GitHub</a></p>
     </footer>
 
     <script>
         // Add search/filter functionality
         document.addEventListener('DOMContentLoaded', () => {{
-            console.log('📊 MailQ Codebase Viewer loaded');
+            console.log('📊 ShopQ Codebase Viewer loaded');
         }});
     </script>
 </body>
@@ -469,7 +469,7 @@ def _render_python_files(files: dict, dependencies: dict) -> str:
             """
             for dep in sorted(file_deps)[:8]:
                 # Shorten path for display
-                short_dep = dep.replace("mailq/", "").replace(".py", "")
+                short_dep = dep.replace("shopq/", "").replace(".py", "")
                 html += f"<li>{short_dep}</li>"
             if len(file_deps) > 8:
                 html += f"<li class='empty-section'>+{len(file_deps) - 8} more...</li>"

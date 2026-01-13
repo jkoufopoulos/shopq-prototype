@@ -1,10 +1,10 @@
-# MailQ Configuration Directory
+# ShopQ Configuration Directory
 
 YAML configuration files for runtime behavior, classification rules, guardrails, and policy thresholds.
 
 ## Philosophy
 
-MailQ externalizes all runtime configuration to YAML files to enable:
+ShopQ externalizes all runtime configuration to YAML files to enable:
 - **Tuning without code changes** - Adjust thresholds, rules, and examples without redeployment
 - **Transparency** - Configuration is human-readable and version-controlled
 - **A/B testing** - Easy to swap configurations for experimentation
@@ -16,7 +16,7 @@ MailQ externalizes all runtime configuration to YAML files to enable:
 
 ## Configuration Files
 
-### 📋 mailq_policy.yaml
+### 📋 shopq_policy.yaml
 
 **Purpose**: Core runtime policy thresholds for classification, verification, quality monitoring, and temporal decay.
 
@@ -46,16 +46,16 @@ temporal_decay:
 **Example tuning**:
 ```bash
 # Make classification stricter (fewer uncategorized emails)
-sed -i '' 's/min_type_conf: 0.92/min_type_conf: 0.88/' config/mailq_policy.yaml
+sed -i '' 's/min_type_conf: 0.92/min_type_conf: 0.88/' config/shopq_policy.yaml
 
 # Expand active window for critical events (1h → 2h)
-sed -i '' 's/active_window_hours: 1/active_window_hours: 2/' config/mailq_policy.yaml
+sed -i '' 's/active_window_hours: 1/active_window_hours: 2/' config/shopq_policy.yaml
 ```
 
 **References**:
-- Code: `mailq/config/settings.py` (loads this file)
+- Code: `shopq/config/settings.py` (loads this file)
 - Docs: `/docs/CONFIGURATION.md`
-- Temporal logic: `mailq/temporal_decay.py`
+- Temporal logic: `shopq/temporal_decay.py`
 
 ---
 
@@ -97,7 +97,7 @@ force_non_critical:
 ```
 
 **References**:
-- Code: `mailq/bridge/guardrails.py` (implements matching)
+- Code: `shopq/bridge/guardrails.py` (implements matching)
 - Tests: `tests/unit/test_guardrails_precedence.py`
 - Docs: `/docs/VERIFY_FIRST_STRATEGY.md`
 
@@ -153,7 +153,7 @@ critical:
 - Include diverse email types (events, deadlines, notifications)
 
 **References**:
-- Code: `mailq/importance_classifier.py` (loads examples)
+- Code: `shopq/importance_classifier.py` (loads examples)
 - Evaluation: `scripts/check_importance_baseline.py`
 - Golden Dataset: `tests/golden_set/gds-1.0.csv` (labeled examples)
 
@@ -201,7 +201,7 @@ importance_to_labels:
 ```
 
 **References**:
-- Code: `mailq/bridge/mapper.py` (implements mapping)
+- Code: `shopq/bridge/mapper.py` (implements mapping)
 - Extension: `extension/modules/mapper.js` (client-side mapping)
 - Tests: `tests/unit/test_mapper.py`
 
@@ -250,7 +250,7 @@ invoice:
 ```
 
 **References**:
-- Code: `mailq/type_mapper.py` (implements matching)
+- Code: `shopq/type_mapper.py` (implements matching)
 - Tests: `tests/unit/test_type_mapper.py`
 - Golden Dataset: `tests/golden_set/gds-1.0.csv` (type labels)
 
@@ -295,7 +295,7 @@ daily_limits:
 
 **References**:
 - Code: `extension/modules/budget.js` (client-side tracking)
-- Backend: `mailq/observability.py` (server-side tracking)
+- Backend: `shopq/observability.py` (server-side tracking)
 - Docs: `/docs/COST_PERFORMANCE.md`
 
 ---
@@ -305,14 +305,14 @@ daily_limits:
 ### Python Backend
 
 ```python
-from mailq.config.settings import get_config
+from shopq.config.settings import get_config
 
 config = get_config()
 min_conf = config['classification']['min_type_conf']  # 0.92
 ```
 
 **Loading order**:
-1. Load YAML from `config/mailq_policy.yaml`
+1. Load YAML from `config/shopq_policy.yaml`
 2. Override with environment variables (if set)
 3. Cache in memory for performance
 
@@ -356,7 +356,7 @@ python scripts/compare_actual_vs_ideal.py
 Configuration is version-controlled. Use git to track changes:
 
 ```bash
-git diff config/mailq_policy.yaml
+git diff config/shopq_policy.yaml
 git log config/guardrails.yaml
 ```
 
@@ -365,7 +365,7 @@ git log config/guardrails.yaml
 For risky configuration changes, use feature flags:
 
 ```python
-from mailq.feature_gates import feature_gates
+from shopq.feature_gates import feature_gates
 
 if feature_gates.is_enabled('strict_classification'):
     min_conf = 0.95  # Stricter
@@ -457,7 +457,7 @@ See: `/docs/QUALITY_MONITOR.md`
 
 **Goal**: Change how event proximity affects importance.
 
-1. Edit `mailq_policy.yaml`:
+1. Edit `shopq_policy.yaml`:
    ```yaml
    temporal_decay:
      active_window_hours: 2  # Was 1 (meetings within 2h → critical)
@@ -482,7 +482,7 @@ See: `/docs/QUALITY_MONITOR.md`
 
 ```bash
 # Check YAML syntax
-python -c "import yaml; yaml.safe_load(open('config/mailq_policy.yaml'))"
+python -c "import yaml; yaml.safe_load(open('config/shopq_policy.yaml'))"
 ```
 
 ### Schema Validation
@@ -526,13 +526,13 @@ Some configuration can be overridden via environment variables:
 **Causes**:
 1. Configuration cached (restart backend)
 2. Environment variable override (check `.env`)
-3. Wrong file path (check `mailq/config/settings.py`)
+3. Wrong file path (check `shopq/config/settings.py`)
 
 **Fix**:
 ```bash
 # Restart backend to reload config
-pkill -f "uvicorn mailq.api:app"
-uvicorn mailq.api:app --reload
+pkill -f "uvicorn shopq.api:app"
+uvicorn shopq.api:app --reload
 
 # Check loaded config
 curl http://localhost:8000/api/debug/config
@@ -545,7 +545,7 @@ curl http://localhost:8000/api/debug/config
 **Fix**:
 ```bash
 # Validate YAML syntax
-python -c "import yaml; print(yaml.safe_load(open('config/mailq_policy.yaml')))"
+python -c "import yaml; print(yaml.safe_load(open('config/shopq_policy.yaml')))"
 
 # Common issues:
 # - Missing spaces after colons
@@ -560,7 +560,7 @@ python -c "import yaml; print(yaml.safe_load(open('config/mailq_policy.yaml')))"
 **Fix**:
 1. Check pattern matching logic:
    ```python
-   from mailq.bridge.guardrails import GuardrailMatcher
+   from shopq.bridge.guardrails import GuardrailMatcher
    matcher = GuardrailMatcher()
    result = matcher.match("subject", "body")
    print(result)  # Should show matched guardrail
@@ -573,10 +573,10 @@ python -c "import yaml; print(yaml.safe_load(open('config/mailq_policy.yaml')))"
 
 ## Related Documentation
 
-- **Settings Module**: `mailq/config/settings.py` (loads configuration)
+- **Settings Module**: `shopq/config/settings.py` (loads configuration)
 - **Configuration Guide**: `/docs/CONFIGURATION.md`
 - **Guardrails**: `/docs/VERIFY_FIRST_STRATEGY.md`
-- **Policy Overview**: `/claude.md` (section 8: MailQ-specific guardrails)
+- **Policy Overview**: `/claude.md` (section 8: ShopQ-specific guardrails)
 
 ---
 

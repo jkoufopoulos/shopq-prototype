@@ -36,7 +36,7 @@ except ImportError:
     sys.exit(1)
 
 
-CLIENT_LABEL_PROMPT = """You are labeling emails for MailQ, a Gmail assistant.
+CLIENT_LABEL_PROMPT = """You are labeling emails for ShopQ, a Gmail assistant.
 
 Your task: Assign ONE client_label that determines what the user sees in Gmail.
 
@@ -90,9 +90,9 @@ SPECIAL RULES:
   - If asking to RSVP/confirm AND missing it matters → "action-required"
   - If just FYI or informational reminder → "everything-else"
 
-- Newsletters/content → "everything-else" (NOT digest - that's reserved for MailQ's own summaries)
+- Newsletters/content → "everything-else" (NOT digest - that's reserved for ShopQ's own summaries)
 
-IMPORTANT: "digest" is RESERVED for MailQ's own summary emails ONLY.
+IMPORTANT: "digest" is RESERVED for ShopQ's own summary emails ONLY.
 Do NOT assign "digest" to regular emails. Choose from: action-required, receipts, messages, everything-else.
 
 Email to classify:
@@ -155,7 +155,7 @@ def classify_client_label(client: OpenAI, email: dict) -> dict:
 
         result = json.loads(output_text)
 
-        # Validate (digest is reserved for MailQ's own emails)
+        # Validate (digest is reserved for ShopQ's own emails)
         valid_labels = {"action-required", "receipts", "messages", "everything-else"}
         if result["client_label"] not in valid_labels:
             raise ValueError(f"Invalid client_label: {result['client_label']}")

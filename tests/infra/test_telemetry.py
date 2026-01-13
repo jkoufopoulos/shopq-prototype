@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from mailq.observability.telemetry import (
+from shopq.observability.telemetry import (
     counter,
     get_latency_stats,
     get_p95,

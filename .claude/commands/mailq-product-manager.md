@@ -1,6 +1,6 @@
-# MailQ Product Manager
+# ShopQ Product Manager
 
-Launch the mailq-product-manager agent to review, update, or create product documentation for MailQ including roadmaps, user stories, acceptance criteria, migration plans, and product vision narratives.
+Launch the mailq-product-manager agent to review, update, or create product documentation for ShopQ including roadmaps, user stories, acceptance criteria, migration plans, and product vision narratives.
 
 ## Instructions
 

@@ -53,7 +53,7 @@ CLASSIFICATION_PROMPT = """You are an email classifier. Use ONLY the subject and
    - receipts          (purchases, invoices, payments)
    - messages          (person-to-person communication)
    - everything-else   (all other automated emails)
-   - digest            (ONLY for MailQ-generated digests)
+   - digest            (ONLY for ShopQ-generated digests)
 
 Special rules:
 - OTP / verification code emails → type=notification, importance=critical, temporality=null, client_label=everything-else.

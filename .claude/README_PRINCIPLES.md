@@ -155,7 +155,7 @@ When principles evolve:
 
 ### **Verify Claude Reads Principles:**
 1. Start new Claude Code session
-2. Ask: "What are MailQ's core architectural principles?"
+2. Ask: "What are ShopQ's core architectural principles?"
 3. Claude should list all 5 from `CLAUDE.md` section 2a
 
 ### **Verify Claude Applies Principles:**

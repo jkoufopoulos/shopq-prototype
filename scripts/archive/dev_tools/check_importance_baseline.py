@@ -16,7 +16,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from tests.golden_set.utils import load_labels, load_messages  # type: ignore  # noqa: E402
 
-from mailq.classification.importance_classifier import (
+from shopq.classification.importance_classifier import (
     ImportanceClassifier,  # type: ignore  # noqa: E402
 )
 

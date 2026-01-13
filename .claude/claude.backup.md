@@ -1,4 +1,4 @@
-# MailQ - AI Assistant Guide
+# ShopQ - AI Assistant Guide
 
 > **TL;DR**: AI-powered Gmail classifier. Hybrid Python/FastAPI backend + Chrome extension. Uses Vertex AI Gemini 2.0 with two-pass verification. Rules-first, then LLM.
 
@@ -7,7 +7,7 @@
 **What**: Email classification system for Gmail
 **How**: Rules → LLM Classifier → Verifier → Gmail Labels
 **Stack**: Python (FastAPI) + Chrome Extension + Vertex AI (Gemini)
-**Databases**: SQLite (rules.db, feedback.db, mailq.sqlite)
+**Databases**: SQLite (rules.db, feedback.db, shopq.sqlite)
 
 ## Core Architecture
 
@@ -35,14 +35,14 @@ Email → Rules Engine → [Match?] → Cache result (T0 cost: free)
 ### Gmail Label Mapping
 
 ```
-Type → MailQ-{Type}              (e.g., MailQ-Newsletters)
-Domain → MailQ-{Domain}          (e.g., MailQ-Finance)
-Attention → MailQ-Action-Required
+Type → ShopQ-{Type}              (e.g., ShopQ-Newsletters)
+Domain → ShopQ-{Domain}          (e.g., ShopQ-Finance)
+Attention → ShopQ-Action-Required
 ```
 
 ## Key Files
 
-### Backend (mailq/)
+### Backend (shopq/)
 
 | File | Purpose |
 |------|---------|
@@ -71,7 +71,7 @@ Attention → MailQ-Action-Required
 
 ```bash
 # Backend
-uvicorn mailq.api:app --reload         # Dev server
+uvicorn shopq.api:app --reload         # Dev server
 pytest -v                               # Run tests
 
 # Extension
@@ -81,8 +81,8 @@ pytest -v                               # Run tests
 ./deploy.sh                             # Deploy to Cloud Run
 
 # Edit prompts (no code changes!)
-nano mailq/prompts/classifier_prompt.txt
-nano mailq/prompts/verifier_prompt.txt
+nano shopq/prompts/classifier_prompt.txt
+nano shopq/prompts/verifier_prompt.txt
 
 # Quality Monitoring (NEW!)
 ./scripts/start-quality-system.sh      # Start automated monitoring
@@ -119,7 +119,7 @@ USE_AI_CLASSIFIER=true
 - If not found → Continue to LLM
 
 ### 2. Gemini Classifier (T3 - ~$0.0001)
-- Load prompts from `mailq/prompts/classifier_prompt.txt`
+- Load prompts from `shopq/prompts/classifier_prompt.txt`
 - Include 12 static + 5 learned few-shot examples
 - Temperature: 0.2 (consistent)
 - Returns multi-dimensional classification
@@ -140,14 +140,14 @@ MIN_LABEL_CONF = 0.85   # Labels must be 85%+ confident (increased from 0.75)
 - Contradictions detected (e.g., promotion with order #)
 - Weak reasoning ("probably", "might be")
 
-**Verifier Prompt**: `mailq/prompts/verifier_prompt.txt`
+**Verifier Prompt**: `shopq/prompts/verifier_prompt.txt`
 - Challenges first classification
 - Applies strict rubrics
 - Temperature: 0.1 (conservative)
 - Returns: `verdict: "confirm"` or `"reject"` with correction
 
 ### 5. Gmail Label Application
-- Map dimensions to MailQ-* labels
+- Map dimensions to ShopQ-* labels
 - Apply via Gmail API
 - Cache label IDs (in-memory)
 - Archive from inbox
@@ -180,19 +180,19 @@ When ready to re-enable, this will track user interactions with digest emails (o
 ### Check Classification
 ```bash
 # Backend logs
-tail -f /tmp/mailq.log
+tail -f /tmp/shopq.log
 
 # Extension console (F12 in Gmail)
 # Look for: 🔍 🏷️ ✅ ❌ 💾 emojis
 ```
 
 ### Low Confidence?
-1. Edit `mailq/prompts/classifier_prompt.txt`
+1. Edit `shopq/prompts/classifier_prompt.txt`
 2. Add clearer rules or examples
 3. Test: curl -X POST localhost:8000/api/organize -d @test.json
 
 ### Verifier Rejecting Too Much?
-1. Edit `mailq/prompts/verifier_prompt.txt`
+1. Edit `shopq/prompts/verifier_prompt.txt`
 2. Adjust rubric strictness
 3. Check confidence_delta threshold (currently 0.15)
 
@@ -201,7 +201,7 @@ tail -f /tmp/mailq.log
 ```
 Gmail Inbox
   ↓ (Gmail API)
-Extension: Fetch unlabeled emails (query: -label:MailQ-*)
+Extension: Fetch unlabeled emails (query: -label:ShopQ-*)
   ↓
 Extension: Check cache → Deduplicate by sender
   ↓ (HTTP POST)
@@ -241,12 +241,12 @@ Content Script: Monitor corrections → /api/feedback
 
 ### Add a New Domain
 1. Update schema: `extension/Schema.json`
-2. Add to mapper: `mailq/mapper.py` + `extension/modules/mapper.js`
-3. Update prompts: `mailq/prompts/classifier_prompt.txt`
-4. Update verifier: `mailq/prompts/verifier_prompt.txt`
+2. Add to mapper: `shopq/mapper.py` + `extension/modules/mapper.js`
+3. Update prompts: `shopq/prompts/classifier_prompt.txt`
+4. Update verifier: `shopq/prompts/verifier_prompt.txt`
 
 ### Improve Classification
-1. Edit prompts in `mailq/prompts/*.txt` (no code changes!)
+1. Edit prompts in `shopq/prompts/*.txt` (no code changes!)
 2. Test classification
 3. Check confidence scores
 4. Iterate
@@ -265,7 +265,7 @@ Content Script: Monitor corrections → /api/feedback
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed system design
 - **[docs/TESTING.md](docs/TESTING.md)** - Test procedures
 - **[docs/PROMPT_IMPROVEMENTS.md](docs/PROMPT_IMPROVEMENTS.md)** - Prompt optimization history
-- **[mailq/prompts/README.md](mailq/prompts/README.md)** - Prompt management guide
+- **[shopq/prompts/README.md](shopq/prompts/README.md)** - Prompt management guide
 
 ### Quality Monitoring (NEW!)
 - **[SETUP_COMPLETE.md](SETUP_COMPLETE.md)** - Environment setup & current status
@@ -276,14 +276,14 @@ Content Script: Monitor corrections → /api/feedback
 
 ## Important Notes
 
-- **Prompts are external**: Edit `mailq/prompts/*.txt`, changes load automatically
+- **Prompts are external**: Edit `shopq/prompts/*.txt`, changes load automatically
 - **No "travel" domain**: Removed, use shopping for Uber/Lyft
 - **Label cache**: In-memory, prevents 409 errors
-- **Confidence thresholds**: Adjust in `mailq/api_organize.py`
+- **Confidence thresholds**: Adjust in `shopq/api_organize.py`
 - **Verifier is selective**: Only runs on ~5-10% of emails
 
 ---
 
 **For detailed architecture**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 **For quick tasks**: See [QUICKSTART.md](QUICKSTART.md)
-**For prompt editing**: See [mailq/prompts/README.md](mailq/prompts/README.md)
+**For prompt editing**: See [shopq/prompts/README.md](shopq/prompts/README.md)

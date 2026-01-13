@@ -11,7 +11,7 @@ echo ""
 # Ensure backend is running
 if ! curl -s http://localhost:8000/ > /dev/null 2>&1; then
   echo "❌ Backend not running at localhost:8000"
-  echo "   Start it with: uvicorn mailq.api:app --reload --port 8000"
+  echo "   Start it with: uvicorn shopq.api:app --reload --port 8000"
   exit 1
 fi
 

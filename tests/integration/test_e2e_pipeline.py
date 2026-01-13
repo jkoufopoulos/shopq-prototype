@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-End-to-end integration tests for the complete MailQ pipeline.
+End-to-end integration tests for the complete ShopQ pipeline.
 
 Tests the full flow: Raw Gmail messages → Parsed → Classified → Digest
 Validates all phases (0-5) work together correctly.
@@ -10,11 +10,11 @@ Validates all phases (0-5) work together correctly.
 
 import pytest
 
-from mailq.infrastructure.idempotency import reset_seen
-from mailq.observability.telemetry import _COUNTERS, get_latency_stats, reset_latencies
-from mailq.shared.pipeline import run_pipeline
-from mailq.storage.classify import batch_classify_emails
-from mailq.storage.models import Digest, DigestItem
+from shopq.infrastructure.idempotency import reset_seen
+from shopq.observability.telemetry import _COUNTERS, get_latency_stats, reset_latencies
+from shopq.shared.pipeline import run_pipeline
+from shopq.storage.classify import batch_classify_emails
+from shopq.storage.models import Digest, DigestItem
 
 
 @pytest.fixture(autouse=True)

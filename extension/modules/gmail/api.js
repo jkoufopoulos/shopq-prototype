@@ -73,22 +73,22 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
  */
 async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATCH) {
   // Search for emails in inbox only
-  // Explicitly exclude each MailQ label to avoid Gmail API caching issues
+  // Explicitly exclude each ShopQ label to avoid Gmail API caching issues
   // Note: We use explicit label names instead of wildcards because wildcards don't work reliably
-  // This ensures we get ONLY emails that don't have MailQ labels (Gmail search is source of truth)
+  // This ensures we get ONLY emails that don't have ShopQ labels (Gmail search is source of truth)
   const mailqLabels = [
-    'MailQ/Receipts',
-    'MailQ/Shopping',
-    'MailQ/Messages',
-    'MailQ/Work',
-    'MailQ/Newsletters',
-    'MailQ/Notifications',
-    'MailQ/Events',
-    'MailQ/Finance',
-    'MailQ/Action-Required',
-    'MailQ/Digest',
-    'MailQ/Professional',
-    'MailQ/Personal'
+    'ShopQ/Receipts',
+    'ShopQ/Shopping',
+    'ShopQ/Messages',
+    'ShopQ/Work',
+    'ShopQ/Newsletters',
+    'ShopQ/Notifications',
+    'ShopQ/Events',
+    'ShopQ/Finance',
+    'ShopQ/Action-Required',
+    'ShopQ/Digest',
+    'ShopQ/Professional',
+    'ShopQ/Personal'
   ];
 
   const excludeLabels = mailqLabels.map(l => `-label:${l}`).join(' ');
@@ -96,14 +96,14 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   const encodedQuery = encodeURIComponent(query);
 
   const scopeDescription = maxResults === 0 ? 'all unlabeled messages' : `up to ${maxResults} unlabeled threads`;
-  console.log(`🔍 MailQ scanning ${scopeDescription} in inbox...`);
+  console.log(`🔍 ShopQ scanning ${scopeDescription} in inbox...`);
 
   if (CONFIG.VERBOSE_LOGGING) {
     console.log('\n' + '='.repeat(80));
     console.log('🔍 GMAIL SEARCH QUERY:');
     console.log('='.repeat(80));
     console.log(`Query: "${query}"`);
-    console.log(`Purpose: Find ALL emails in inbox WITHOUT any MailQ labels`);
+    console.log(`Purpose: Find ALL emails in inbox WITHOUT any ShopQ labels`);
     console.log(`Strategy: Use messages endpoint to catch new replies to old threads`);
     console.log('='.repeat(80) + '\n');
   }
@@ -235,10 +235,10 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
 
   // Enforce maxResults limit (batch processing may overshoot)
   if (targetThreads > 0 && allEmails.length > targetThreads) {
-    console.log(`📋 MailQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads, trimming to ${targetThreads}`);
+    console.log(`📋 ShopQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads, trimming to ${targetThreads}`);
     allEmails = allEmails.slice(0, targetThreads);
   } else {
-    console.log(`📋 MailQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads`);
+    console.log(`📋 ShopQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads`);
   }
 
   // DETAILED LOGGING: Show what emails were fetched and what labels they have
@@ -246,9 +246,9 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
     console.log('\n📧 DETAILED EMAIL LIST:');
     console.log('='.repeat(80));
     allEmails.forEach((email, i) => {
-      const hasMailQLabel = (email.labels || []).some(l => l.startsWith('Label_2'));
+      const hasShopQLabel = (email.labels || []).some(l => l.startsWith('Label_2'));
       const labelStr = (email.labels || []).join(', ');
-      console.log(`[${i+1}/${allEmails.length}] ${hasMailQLabel ? '⚠️  HAS MailQ?' : '✅'} ${email.from}`);
+      console.log(`[${i+1}/${allEmails.length}] ${hasShopQLabel ? '⚠️  HAS ShopQ?' : '✅'} ${email.from}`);
       console.log(`        Subject: ${email.subject.substring(0, 60)}...`);
       console.log(`        Labels: ${labelStr || 'NONE'}`);
       console.log(`        ThreadID: ${email.threadId}`);
@@ -257,7 +257,7 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   }
 
   // NOTE: We no longer need to filter by checking label IDs because the search query
-  // explicitly excludes all MailQ labels. This avoids Gmail API caching issues where
+  // explicitly excludes all ShopQ labels. This avoids Gmail API caching issues where
   // labelIds arrays contain stale data. The search query is the source of truth.
   // DISABLED: const filteredEmails = await filterAlreadyLabeledThreads(allEmails, token);
   const filteredEmails = allEmails; // Trust the search query
@@ -265,12 +265,12 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   console.log(`✅ After filtering: ${filteredEmails.length} messages from ${new Set(filteredEmails.map(e => e.threadId)).size} unlabeled threads`);
 
   // Filter out digest emails (catches race condition where digest just sent but not labeled yet)
-  // Primary detection: X-MailQ-Digest header (new digests)
+  // Primary detection: X-ShopQ-Digest header (new digests)
   // Fallback detection: from yourself + "Your Inbox --" subject (old digests)
   const finalFiltered = filteredEmails.filter(email => {
     // Check custom header first (most reliable for new digests)
-    if (email.isMailQDigest) {
-      logVerbose(`🚫 Skipping MailQ digest (X-MailQ-Digest header): ${email.subject}`);
+    if (email.isShopQDigest) {
+      logVerbose(`🚫 Skipping ShopQ digest (X-ShopQ-Digest header): ${email.subject}`);
       return false;
     }
 
@@ -295,13 +295,13 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
 }
 
 /**
- * Filter out entire threads that already have MailQ labels on any message
+ * Filter out entire threads that already have ShopQ labels on any message
  */
 async function filterAlreadyLabeledThreads(emails, token) {
   // Get unique thread IDs
   const uniqueThreadIds = [...new Set(emails.map(e => e.threadId))];
 
-  logVerbose(`   🔍 Checking ${uniqueThreadIds.length} threads for existing MailQ labels...`);
+  logVerbose(`   🔍 Checking ${uniqueThreadIds.length} threads for existing ShopQ labels...`);
 
   // Check each thread (in batches for performance)
   const threadsToKeep = [];
@@ -313,7 +313,7 @@ async function filterAlreadyLabeledThreads(emails, token) {
     const batch = uniqueThreadIds.slice(i, Math.min(i + batchSize, uniqueThreadIds.length));
 
     const results = await Promise.all(
-      batch.map(threadId => checkThreadForMailQLabels(threadId, token))
+      batch.map(threadId => checkThreadForShopQLabels(threadId, token))
     );
 
     batch.forEach((threadId, index) => {
@@ -326,7 +326,7 @@ async function filterAlreadyLabeledThreads(emails, token) {
   }
 
   if (threadsToSkip.length > 0) {
-    logVerbose(`   ⏭️  Skipping ${threadsToSkip.length} threads that already have MailQ labels:`, threadsToSkip);
+    logVerbose(`   ⏭️  Skipping ${threadsToSkip.length} threads that already have ShopQ labels:`, threadsToSkip);
   }
   if (threadsToKeep.length > 0) {
     logVerbose(`   ✅ Keeping ${threadsToKeep.length} unlabeled threads:`, threadsToKeep);
@@ -337,9 +337,9 @@ async function filterAlreadyLabeledThreads(emails, token) {
 }
 
 /**
- * Check if a thread has any MailQ labels on any of its messages
+ * Check if a thread has any ShopQ labels on any of its messages
  */
-async function checkThreadForMailQLabels(threadId, token) {
+async function checkThreadForShopQLabels(threadId, token) {
   try {
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/threads/${threadId}?format=minimal`,
@@ -355,15 +355,15 @@ async function checkThreadForMailQLabels(threadId, token) {
 
     const thread = await response.json();
 
-    // Check if any message in the thread has a MailQ label
-    // MailQ labels are stored with names like "MailQ/Receipts", "MailQ/Finance", etc.
+    // Check if any message in the thread has a ShopQ label
+    // ShopQ labels are stored with names like "ShopQ/Receipts", "ShopQ/Finance", etc.
     if (thread.messages) {
       for (const message of thread.messages) {
         if (message.labelIds && message.labelIds.length > 0) {
-          // Fetch label names to check if any are MailQ labels
+          // Fetch label names to check if any are ShopQ labels
           // This is cached so it's fast after first call
-          const hasMailQ = await hasMailQLabels(message.labelIds, token);
-          if (hasMailQ) {
+          const hasShopQ = await hasShopQLabels(message.labelIds, token);
+          if (hasShopQ) {
             return true;
           }
         }
@@ -381,14 +381,14 @@ async function checkThreadForMailQLabels(threadId, token) {
 const labelIdToNameCache = new Map();
 
 /**
- * Check if any of the given label IDs are MailQ labels
+ * Check if any of the given label IDs are ShopQ labels
  */
-async function hasMailQLabels(labelIds, token) {
+async function hasShopQLabels(labelIds, token) {
   for (const labelId of labelIds) {
     // Check cache first
     if (labelIdToNameCache.has(labelId)) {
       const labelName = labelIdToNameCache.get(labelId);
-      if (labelName && labelName.startsWith('MailQ')) {
+      if (labelName && labelName.startsWith('ShopQ')) {
         return true;
       }
       continue;
@@ -407,7 +407,7 @@ async function hasMailQLabels(labelIds, token) {
         const label = await response.json();
         labelIdToNameCache.set(labelId, label.name);
 
-        if (label.name && label.name.startsWith('MailQ')) {
+        if (label.name && label.name.startsWith('ShopQ')) {
           return true;
         }
       }
@@ -491,7 +491,7 @@ function parseEmailMessage(message) {
   const headers = message.payload.headers;
   const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
   const from = headers.find(h => h.name === 'From')?.value || 'unknown';
-  const isMailQDigest = headers.find(h => h.name === 'X-MailQ-Digest')?.value === 'true';
+  const isShopQDigest = headers.find(h => h.name === 'X-ShopQ-Digest')?.value === 'true';
 
   // Extract attachment information
   const attachments = extractAttachments(message.payload);
@@ -503,7 +503,7 @@ function parseEmailMessage(message) {
     from,
     snippet: message.snippet || '',
     labelIds: message.labelIds || [],
-    isMailQDigest,  // Flag to identify digest emails
+    isShopQDigest,  // Flag to identify digest emails
     timestamp: message.internalDate,  // Gmail's timestamp in milliseconds since epoch
     attachments  // { hasPdf: boolean, pdfFilenames: string[], hasImages: boolean, count: number }
   };

@@ -1,10 +1,10 @@
-# MailQ Quality Monitor
+# ShopQ Quality Monitor
 
-**Automated quality analysis for MailQ classifications and digest formatting**
+**Automated quality analysis for ShopQ classifications and digest formatting**
 
 ## Simplified Workflow (Current)
 
-1. **Run MailQ** → Data saved to GCS automatically
+1. **Run ShopQ** → Data saved to GCS automatically
 2. **Run quality monitor** → Analyzes with Claude, creates GitHub issues
 3. **Fix issues** → Improve classification rules and digest format
 
@@ -15,7 +15,7 @@ No webhooks, no daemons - just simple manual analysis when you want it.
 ### Option 1: Manual Analysis (Recommended)
 
 ```bash
-# After running MailQ, analyze immediately:
+# After running ShopQ, analyze immediately:
 cd scripts/quality-monitor
 python3 quality_monitor.py --analyze-now --force
 ```
@@ -62,7 +62,7 @@ Edit `.env` in project root or set environment variables:
 # Optional (defaults shown)
 MIN_EMAILS_FOR_ANALYSIS=1
 CHECK_INTERVAL_MINUTES=30
-MAILQ_API_URL=https://mailq-api-488078904670.us-central1.run.app
+SHOPQ_API_URL=https://shopq-api-488078904670.us-central1.run.app
 GITHUB_REPO=jkoufopoulos/mailq-prototype
 ```
 
@@ -127,7 +127,7 @@ Creates GitHub issues with:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│           MailQ Backend (Cloud Run)             │
+│           ShopQ Backend (Cloud Run)             │
 │  - Classifies emails                            │
 │  - Generates digests                            │
 │  - Tracks sessions                              │
@@ -191,7 +191,7 @@ Environment variables:
 ```bash
 ANTHROPIC_API_KEY        # Required: Claude API key
 GITHUB_TOKEN             # Required: For creating issues
-MAILQ_API_URL            # Optional: Default is production URL
+SHOPQ_API_URL            # Optional: Default is production URL
 GITHUB_REPO              # Optional: Default is jkoufopoulos/mailq-prototype
 QUALITY_WEBHOOK_PORT     # Optional: Default is 9000
 MAX_LLM_CALLS_PER_DAY    # Optional: Default is 100 (~$1.50/day budget)
@@ -383,7 +383,7 @@ failed' → critical
 For instant analysis when digests are generated, add webhook notification to your backend:
 
 ```python
-# In mailq/api_digest.py
+# In shopq/api_digest.py
 import requests
 
 def notify_quality_monitor(session_id: str, email_count: int):
@@ -440,7 +440,7 @@ rm .monitor.pid .webhook.pid
 ### No sessions found
 ```bash
 # Verify API is reachable
-curl https://mailq-api-488078904670.us-central1.run.app/api/tracking/sessions
+curl https://shopq-api-488078904670.us-central1.run.app/api/tracking/sessions
 
 # Check if backend is tracking sessions
 # Open Chrome extension and process emails

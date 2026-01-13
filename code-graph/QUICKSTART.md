@@ -1,4 +1,4 @@
-# MailQ Code-Graph: 3-Lens Quick Reference
+# ShopQ Code-Graph: 3-Lens Quick Reference
 
 **Problem**: A single "everything graph" turns into TV static. You can't answer targeted questions quickly.
 

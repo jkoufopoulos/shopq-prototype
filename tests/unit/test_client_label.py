@@ -4,10 +4,10 @@ Tests for compute_client_label() function.
 This function is the SINGLE SOURCE OF TRUTH for type+attention → client_label mapping.
 Rules are defined in docs/TAXONOMY.md.
 
-See: mailq/storage/classification.py
+See: shopq/storage/classification.py
 """
 
-from mailq.storage.classification import compute_client_label
+from shopq.storage.classification import compute_client_label
 
 
 class TestComputeClientLabel:
@@ -137,7 +137,7 @@ class TestClientLabelTaxonomyAlignment:
     def test_informational_security_notice(self):
         """Informational security notice (no action required) → everything-else.
 
-        Example: "You allowed MailQ access to your Google Account"
+        Example: "You allowed ShopQ access to your Google Account"
         This is critical importance but does NOT require user action.
         """
         assert compute_client_label("notification", "none") == "everything-else"

@@ -4,7 +4,7 @@
 
 ```bash
 # 1. Start backend
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # 2. Run tests (in another terminal)
 npm run test:e2e
@@ -55,7 +55,7 @@ npm run test:labeling
 **If it fails:**
 ```
 ✗ should actually apply labels to Gmail emails
-  Error: Extension logged success but no MailQ labels found!
+  Error: Extension logged success but no ShopQ labels found!
 ```
 → Issue #7 confirmed. Fix label application before deploying.
 
@@ -125,7 +125,7 @@ Running 12 tests using 1 worker
   ✓ gmail-labeling.spec.js:42:3 › should match database logs (9s)
   ✓ gmail-labeling.spec.js:68:3 › should handle batch labeling (22s)
   ✓ gmail-search.spec.js:12:3 › should find unlabeled emails (6s)
-  ✓ gmail-search.spec.js:45:3 › should identify emails without MailQ (4s)
+  ✓ gmail-search.spec.js:45:3 › should identify emails without ShopQ (4s)
   ✓ gmail-search.spec.js:78:3 › should handle category tabs (7s)
   ✓ gmail-search.spec.js:112:3 › should verify problem emails (8s)
   ✓ dom-selectors.spec.js:10:3 › should find email rows (3s)
@@ -156,7 +156,7 @@ Running 12 tests using 1 worker
   9 passed, 1 failed (48s)
 
   1) gmail-labeling.spec.js › should actually apply labels
-     Error: Extension logged success but no MailQ labels found in Gmail! This is Issue #7.
+     Error: Extension logged success but no ShopQ labels found in Gmail! This is Issue #7.
 
 To view the HTML report, run:
   npx playwright show-report
@@ -170,7 +170,7 @@ To view the HTML report, run:
 
 ```bash
 # Make sure backend is running
-uvicorn mailq.api:app --reload
+uvicorn shopq.api:app --reload
 
 # In another terminal, run the labeling test
 npm run test:labeling

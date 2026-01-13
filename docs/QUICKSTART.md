@@ -1,6 +1,6 @@
-# MailQ Quickstart Guide
+# ShopQ Quickstart Guide
 
-Get MailQ running in 5 minutes.
+Get ShopQ running in 5 minutes.
 
 ## Prerequisites
 
@@ -54,7 +54,7 @@ MIN_EMAILS_FOR_ANALYSIS=25            # Trigger analysis threshold
 
 ```bash
 # Databases are created automatically on first run
-# Located in mailq/data/
+# Located in shopq/data/
 ```
 
 ## Running
@@ -63,10 +63,10 @@ MIN_EMAILS_FOR_ANALYSIS=25            # Trigger analysis threshold
 
 ```bash
 # Development (auto-reload)
-uvicorn mailq.api:app --host 0.0.0.0 --port 8000 --reload
+uvicorn shopq.api:app --host 0.0.0.0 --port 8000 --reload
 
 # Production
-uvicorn mailq.api:app --host 0.0.0.0 --port 8000
+uvicorn shopq.api:app --host 0.0.0.0 --port 8000
 ```
 
 **Test it works**:
@@ -82,11 +82,11 @@ curl http://localhost:8000/health
 3. **Load Extension**:
    - Click "Load unpacked"
    - Select `mailq-prototype/extension/` directory
-4. **Pin Extension**: Click puzzle icon, pin MailQ
+4. **Pin Extension**: Click puzzle icon, pin ShopQ
 
 **Test it works**:
 1. Open Gmail
-2. Click MailQ extension icon
+2. Click ShopQ extension icon
 3. Check console for logs (F12 → Console)
 
 ## Common Tasks
@@ -98,7 +98,7 @@ curl http://localhost:8000/health
 pytest                       # All tests
 pytest -v                    # Verbose
 pytest -m unit               # Unit tests only
-pytest mailq/tests/test_classifier.py  # Specific file
+pytest shopq/tests/test_classifier.py  # Specific file
 
 # Extension tests (vitest)
 cd extension && npm test
@@ -108,21 +108,21 @@ cd extension && npm test
 
 ```bash
 # Backend logs
-tail -f /tmp/mailq.log      # If configured
+tail -f /tmp/shopq.log      # If configured
 
 # Extension logs
 # Chrome DevTools → Console (F12)
-# Filter by "MailQ" or "🏷️" "🔍" emojis
+# Filter by "ShopQ" or "🏷️" "🔍" emojis
 ```
 
 ### Edit Prompts
 
 ```bash
 # Classifier prompt (LLM #1)
-nano mailq/prompts/classifier_prompt.txt
+nano shopq/prompts/classifier_prompt.txt
 
 # Verifier prompt (LLM #2)
-nano mailq/prompts/verifier_prompt.txt
+nano shopq/prompts/verifier_prompt.txt
 
 # Changes load automatically on next classification
 ```
@@ -143,7 +143,7 @@ Check classification output:
 # Extension console shows:
 # 🔍 Phase 6: Calling verifier...
 # ✅ Verifier response: confirm
-# 💾 Label cache hit: MailQ-Finance
+# 💾 Label cache hit: ShopQ-Finance
 ```
 
 ### Analyze Classification Results
@@ -217,21 +217,21 @@ For quick checks without exporting:
 
 ```bash
 # Classification summary
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT type, COUNT(*) as count, AVG(confidence) as avg_conf
   FROM classification_logs
   GROUP BY type
   ORDER BY count DESC;"
 
 # Find low-confidence classifications
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT sender, subject, type, confidence
   FROM classification_logs
   WHERE confidence < 0.85
   ORDER BY timestamp DESC LIMIT 10;"
 
 # Cost analysis
-sqlite3 mailq/data/mailq.db "
+sqlite3 shopq/data/shopq.db "
   SELECT decider, COUNT(*) as count,
          ROUND(COUNT(*) * 0.0001, 4) as est_cost_usd
   FROM classification_logs
@@ -242,7 +242,7 @@ For comprehensive analysis commands, see [COMMANDS.md](COMMANDS.md) → Analysis
 
 ### Auto-Organize for Continuous Inbox Zero
 
-MailQ can automatically organize your inbox at regular intervals using Chrome's Alarms API, keeping you at inbox zero without manual intervention.
+ShopQ can automatically organize your inbox at regular intervals using Chrome's Alarms API, keeping you at inbox zero without manual intervention.
 
 #### How It Works
 
@@ -254,7 +254,7 @@ MailQ can automatically organize your inbox at regular intervals using Chrome's 
 
 #### Enable Auto-Organize
 
-1. **Click MailQ extension icon** in Chrome toolbar
+1. **Click ShopQ extension icon** in Chrome toolbar
 2. **Settings popup opens** with auto-organize controls
 3. **Check "Enable auto-organize"**
 4. **Select check interval** (default: 15 minutes)
@@ -267,7 +267,7 @@ You'll see a confirmation notification that auto-organize is enabled.
 
 You can also manually trigger organization from the settings popup:
 
-1. **Click MailQ extension icon**
+1. **Click ShopQ extension icon**
 2. **Click "Organize Inbox Now"** button
 3. Wait for processing to complete
 
@@ -318,7 +318,7 @@ showStats()  // In background service worker console
 - View detailed logs: Open extension console (F12 in service worker)
 
 **Disable auto-organize**
-1. Click MailQ extension icon
+1. Click ShopQ extension icon
 2. Uncheck "Enable auto-organize"
 3. Click "Save Settings"
 
@@ -352,19 +352,19 @@ Alarm configuration:
 
 ### Generate Email Digests
 
-MailQ can generate glanceable email summaries following the specification in `mailq_digest_email_template.v2.yaml`.
+ShopQ can generate glanceable email summaries following the specification in `shopq_digest_email_template.v2.yaml`.
 
 #### Quick Start: Generate a Digest
 
 ```bash
 # Generate today's digest (plaintext)
-python3 mailq/cli_digest.py generate --period today
+python3 shopq/cli_digest.py generate --period today
 
 # Generate and save as HTML
-python3 mailq/cli_digest.py generate --period today --format html --output digest.html
+python3 shopq/cli_digest.py generate --period today --format html --output digest.html
 
 # Generate and email immediately
-python3 mailq/cli_digest.py generate --period today --email your-email@example.com
+python3 shopq/cli_digest.py generate --period today --email your-email@example.com
 ```
 
 #### Configure SMTP (for email delivery)
@@ -378,7 +378,7 @@ SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password      # Use App Password, not main password
 SMTP_FROM_EMAIL=your-email@gmail.com
-SMTP_FROM_NAME=MailQ
+SMTP_FROM_NAME=ShopQ
 ```
 
 **For Gmail:**
@@ -388,20 +388,20 @@ SMTP_FROM_NAME=MailQ
 
 **Test SMTP:**
 ```bash
-python3 mailq/cli_digest.py test-smtp --email your-email@example.com
+python3 shopq/cli_digest.py test-smtp --email your-email@example.com
 ```
 
 #### Schedule Automated Digests
 
 ```bash
 # Daily digest at 8:00 AM
-python3 mailq/cli_digest.py schedule --email your-email@example.com --time 08:00 --daily
+python3 shopq/cli_digest.py schedule --email your-email@example.com --time 08:00 --daily
 
 # Weekly digest on Monday at 9:00 AM
-python3 mailq/cli_digest.py schedule --email your-email@example.com --time 09:00 --weekly --day monday
+python3 shopq/cli_digest.py schedule --email your-email@example.com --time 09:00 --weekly --day monday
 
 # Both daily and weekly
-python3 mailq/cli_digest.py schedule --email your-email@example.com --time 08:00 --daily --weekly
+python3 shopq/cli_digest.py schedule --email your-email@example.com --time 08:00 --daily --weekly
 ```
 
 Press Ctrl+C to stop the scheduler.
@@ -410,18 +410,18 @@ Press Ctrl+C to stop the scheduler.
 
 ```bash
 # Using nohup
-nohup python3 mailq/cli_digest.py schedule --email your@email.com --time 08:00 --daily > digest.log 2>&1 &
+nohup python3 shopq/cli_digest.py schedule --email your@email.com --time 08:00 --daily > digest.log 2>&1 &
 
 # Using systemd (create /etc/systemd/system/mailq-digest.service)
 [Unit]
-Description=MailQ Digest Scheduler
+Description=ShopQ Digest Scheduler
 After=network.target
 
 [Service]
 Type=simple
 User=your-user
 WorkingDirectory=/path/to/mailq-prototype
-ExecStart=/usr/bin/python3 mailq/cli_digest.py schedule --email your@email.com --time 08:00 --daily
+ExecStart=/usr/bin/python3 shopq/cli_digest.py schedule --email your@email.com --time 08:00 --daily
 Restart=always
 
 [Install]
@@ -432,10 +432,10 @@ WantedBy=multi-user.target
 
 ```bash
 # Show email counts and breakdown
-python3 mailq/cli_digest.py stats --period today
+python3 shopq/cli_digest.py stats --period today
 
 # List emails in digest database
-python3 mailq/cli_digest.py list --period today --limit 20
+python3 shopq/cli_digest.py list --period today --limit 20
 ```
 
 #### API Endpoints
@@ -469,7 +469,7 @@ For complete documentation, see [DIGEST_FEATURE.md](DIGEST_FEATURE.md).
 
 ### Monitor Classification Quality
 
-MailQ includes an automated quality monitoring system that analyzes digest sessions and creates GitHub issues for classification problems.
+ShopQ includes an automated quality monitoring system that analyzes digest sessions and creates GitHub issues for classification problems.
 
 #### Quick Start
 
@@ -550,7 +550,7 @@ cat dead-code-report.md
 ./deploy.sh
 
 # Verify deployment
-curl https://mailq-api-<project-id>.run.app/health
+curl https://shopq-api-<project-id>.run.app/health
 ```
 
 ## Troubleshooting
@@ -581,9 +581,9 @@ gcloud auth application-default login
 - Check console for `💾 Label cache hit` messages
 
 **Classification incorrect**:
-1. Check prompts: `mailq/prompts/*.txt`
+1. Check prompts: `shopq/prompts/*.txt`
 2. Review confidence scores in console
-3. Adjust thresholds in `mailq/api_organize.py`
+3. Adjust thresholds in `shopq/api_organize.py`
 
 ### Classification Issues
 
@@ -594,7 +594,7 @@ gcloud auth application-default login
 
 **Verifier rejecting too much**:
 - Edit verifier prompt to be less strict
-- Review rubrics in `mailq/prompts/verifier_prompt.txt`
+- Review rubrics in `shopq/prompts/verifier_prompt.txt`
 
 **Wrong domain assignment**:
 - Update domain priority rules in classifier prompt
@@ -604,7 +604,7 @@ gcloud auth application-default login
 
 ```
 mailq-prototype/
-├── mailq/                    # Backend (Python/FastAPI)
+├── shopq/                    # Backend (Python/FastAPI)
 │   ├── api.py                # Main API entry point
 │   ├── vertex_gemini_classifier.py  # LLM classifier
 │   ├── api_verify.py         # Verifier logic
@@ -633,17 +633,17 @@ mailq-prototype/
 ## Next Steps
 
 1. **Understand the architecture**: Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-2. **Improve prompts**: See [mailq/prompts/README.md](mailq/prompts/README.md)
+2. **Improve prompts**: See [shopq/prompts/README.md](shopq/prompts/README.md)
 3. **Run tests**: Check [docs/TESTING.md](docs/TESTING.md)
 4. **Add features**: Review [PRD.md](PRD.md)
 
 ## Resources
 
 - **Full Documentation**: [INDEX.md](INDEX.md)
-- **AI Assistant Guide**: [MAILQ_REFERENCE.md](MAILQ_REFERENCE.md)
+- **AI Assistant Guide**: [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md)
 - **Development Guardrails**: [claude.md](claude.md)
-- **Runtime Configuration**: [config/mailq_policy.yaml](config/mailq_policy.yaml)
-- **Prompts Guide**: [mailq/prompts/README.md](mailq/prompts/README.md)
+- **Runtime Configuration**: [config/shopq_policy.yaml](config/shopq_policy.yaml)
+- **Prompts Guide**: [shopq/prompts/README.md](shopq/prompts/README.md)
 - **Testing Guide**: [docs/TESTING.md](docs/TESTING.md)
 - **Quality Monitoring**: [docs/QUALITY_CONTROL_PIPELINE.md](docs/QUALITY_CONTROL_PIPELINE.md)
 

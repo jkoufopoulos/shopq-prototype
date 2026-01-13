@@ -6,7 +6,7 @@
  * to render badges without calling Gmail API or parsing DOM.
  *
  * Storage Format:
- * chrome.storage.local['mailq_label_cache'] = {
+ * chrome.storage.local['shopq_label_cache'] = {
  *   [threadId]: {
  *     type: 'Event' | 'Notification' | 'Newsletter' | 'Promotion' | 'Receipt' | 'Message' | 'OTP',
  *     importance: 'critical' | 'time_sensitive' | 'routine',
@@ -16,7 +16,7 @@
  * }
  */
 
-const LABEL_CACHE_KEY = 'mailq_label_cache';
+const LABEL_CACHE_KEY = 'shopq_label_cache';
 const CACHE_TTL_DAYS = 30;
 const MAX_CACHE_ENTRIES = 20000;
 const EVICTION_RATIO = 0.2; // Evict oldest 20% when limit reached
@@ -120,7 +120,7 @@ async function getAllLabelCache() {
 }
 
 /**
- * Bootstrap sync: Fetch threads with MailQ labels from Gmail and populate cache
+ * Bootstrap sync: Fetch threads with ShopQ labels from Gmail and populate cache
  *
  * Extracts clientLabel from Gmail labels (type comes from API classification, not labels).
  *
@@ -130,8 +130,8 @@ async function getAllLabelCache() {
 async function syncFromGmail(token) {
   console.log('🔄 Syncing label cache from Gmail...');
 
-  // Query for threads with any of the 4 MailQ folder labels
-  const query = 'label:MailQ-Receipts OR label:MailQ-Messages OR label:MailQ-Action-Required OR label:MailQ-Everything-Else';
+  // Query for threads with any of the 4 ShopQ folder labels
+  const query = 'label:ShopQ-Receipts OR label:ShopQ-Messages OR label:ShopQ-Action-Required OR label:ShopQ-Everything-Else';
   const encodedQuery = encodeURIComponent(query);
 
   let synced = 0;
@@ -241,10 +241,10 @@ async function syncFromGmail(token) {
  */
 function extractClientLabel(labels) {
   for (const label of labels) {
-    if (label === 'MailQ-Receipts') return 'receipts';
-    if (label === 'MailQ-Messages') return 'messages';
-    if (label === 'MailQ-Action-Required') return 'action-required';
-    if (label === 'MailQ-Everything-Else') return 'everything-else';
+    if (label === 'ShopQ-Receipts') return 'receipts';
+    if (label === 'ShopQ-Messages') return 'messages';
+    if (label === 'ShopQ-Action-Required') return 'action-required';
+    if (label === 'ShopQ-Everything-Else') return 'everything-else';
   }
   return null;
 }

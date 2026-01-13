@@ -5,8 +5,8 @@ from __future__ import annotations
 Regression tests for API bridge idempotency stability.
 """
 
-from mailq.gmail.api_bridge import api_email_to_parsed
-from mailq.infrastructure.idempotency import email_key
+from shopq.gmail.api_bridge import api_email_to_parsed
+from shopq.infrastructure.idempotency import email_key
 
 
 class _MockEmail:

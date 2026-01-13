@@ -8,7 +8,7 @@ This guide shows exact patch locations for retrofitting structured logging at th
 
 ## ✅ COMPLETED
 
-### 1. Python Logging Kit (`mailq/structured_logging.py`)
+### 1. Python Logging Kit (`shopq/structured_logging.py`)
 - ✅ Created with EventType enum, sampling, rate limiting, privacy redaction
 - ✅ ~100 event target with 10% INFO sampling, 100% ERROR sampling
 
@@ -16,7 +16,7 @@ This guide shows exact patch locations for retrofitting structured logging at th
 - ✅ Mirrors Python kit with same EventType enum
 - ✅ Per-event rate limiting, one-line JSON output
 
-### 3. LLM Classification (`mailq/vertex_gemini_classifier.py`)
+### 3. LLM Classification (`shopq/vertex_gemini_classifier.py`)
 - ✅ Added structured logging for: `LLM_CALL_OK`, `LLM_CALL_ERROR`, `LLM_FALLBACK_INVOKED`
 - ✅ Logs email_id, error type, attempt count, subject (redacted)
 - ✅ Tracks circuit breaker trips, JSON errors, schema validation errors
@@ -25,13 +25,13 @@ This guide shows exact patch locations for retrofitting structured logging at th
 
 ## 🚧 REMAINING RETROFITS (Copy-Paste Ready)
 
-### 4. Bridge Mapper (`mailq/bridge/mapper.py`)
+### 4. Bridge Mapper (`shopq/bridge/mapper.py`)
 
 **Location**: Find `class BridgeMapper` or `def map_email`
 
 **Add import at top**:
 ```python
-from mailq.structured_logging import EventType, get_logger as get_structured_logger
+from shopq.structured_logging import EventType, get_logger as get_structured_logger
 
 s_logger = get_structured_logger()
 ```
@@ -93,13 +93,13 @@ return decision
 
 ---
 
-### 5. Temporal Enrichment (`mailq/temporal_enrichment.py` or `mailq/context_digest.py`)
+### 5. Temporal Enrichment (`shopq/temporal_enrichment.py` or `shopq/context_digest.py`)
 
 **Location**: Find `class TemporalEnricher` or `def enrich_temporal`
 
 **Add import**:
 ```python
-from mailq.structured_logging import EventType, get_logger as get_structured_logger
+from shopq.structured_logging import EventType, get_logger as get_structured_logger
 
 s_logger = get_structured_logger()
 ```
@@ -157,11 +157,11 @@ logger.info(
 
 ---
 
-### 6. Entity Extraction (`mailq/entity_extractor.py`)
+### 6. Entity Extraction (`shopq/entity_extractor.py`)
 
 **Add import**:
 ```python
-from mailq.structured_logging import EventType, get_logger as get_structured_logger
+from shopq.structured_logging import EventType, get_logger as get_structured_logger
 
 s_logger = get_structured_logger()
 ```

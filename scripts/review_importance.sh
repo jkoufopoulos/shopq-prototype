@@ -44,7 +44,7 @@ apply_corrections_if_pending() {
 case "${1:-}" in
   --fresh)
     echo "Running fresh classification eval..."
-    PYTHONPATH=. MAILQ_USE_LLM=true uv run python3 scripts/evals/classification_accuracy.py \
+    PYTHONPATH=. SHOPQ_USE_LLM=true uv run python3 scripts/evals/classification_accuracy.py \
       --name "importance_review_$(date +%Y%m%d)" --save-results
     echo ""
     echo "Starting importance review tool..."

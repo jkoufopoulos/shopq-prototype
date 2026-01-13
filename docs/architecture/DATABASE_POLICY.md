@@ -7,10 +7,10 @@
 
 ### Architecture
 
-MailQ uses **ONE** central SQLite database for all application data:
+ShopQ uses **ONE** central SQLite database for all application data:
 
 ```
-mailq/data/mailq.db (PRIMARY - 756 KB)
+shopq/data/shopq.db (PRIMARY - 756 KB)
 ├── Application tables (email_threads, rules, feedback)
 ├── Digest tables (digest_feedback, digest_sessions)
 ├── Quality monitoring (quality_issues, analyzed_sessions)
@@ -68,7 +68,7 @@ categories             -- Email categories
 All code MUST use the centralized connection pool:
 
 ```python
-from mailq.config.database import get_db_connection, db_transaction
+from shopq.config.database import get_db_connection, db_transaction
 
 # Read operations
 with get_db_connection() as conn:
@@ -87,7 +87,7 @@ with db_transaction() as conn:
 
 **Pre-commit hook** (`scripts/hooks/check-no-new-databases.sh`):
 - Blocks commits with new `*.db` files
-- Allows `mailq/data/mailq.db` (central database)
+- Allows `shopq/data/shopq.db` (central database)
 - Allows test fixtures (`tests/fixtures/*.db`)
 
 **Git ignore pattern**:
@@ -98,26 +98,26 @@ with db_transaction() as conn:
 *.sqlite3
 
 # Exception: Test fixtures
-!mailq/tests/fixtures/*.db
+!shopq/tests/fixtures/*.db
 ```
 
 ### What Changed (Nov 2025)
 
 **Before consolidation**:
 ```
-mailq/digest_rules.db (40 KB)          → Deleted (deprecated, unused)
-data/mailq_tracking.db (88 KB)         → Merged into mailq/data/mailq.db
+shopq/digest_rules.db (40 KB)          → Deleted (deprecated, unused)
+data/shopq_tracking.db (88 KB)         → Merged into shopq/data/shopq.db
 scripts/quality-monitor/quality_monitor.db (0 KB) → Deleted (unused)
 ```
 
 **After consolidation**:
 ```
-mailq/data/mailq.db (756 KB) ✅ ONLY database
+shopq/data/shopq.db (756 KB) ✅ ONLY database
 ```
 
 **Migration details**:
 - Date: November 11, 2025
-- Script: `mailq/scripts/consolidate_databases.py`
+- Script: `shopq/scripts/consolidate_databases.py`
 - Verification: All tables present, data intact
 - Archives deleted: `data/archived_dbs/` removed
 
@@ -174,9 +174,9 @@ def get_db_connection():
 ### Alternative Considered: 3-Database Architecture
 
 **Considered approach** (from architecture advisor):
-1. `mailq/data/mailq.db` - Application database
+1. `shopq/data/shopq.db` - Application database
 2. `scripts/quality-monitor/quality_monitor.db` - Observability
-3. `mailq/data/mailq_test.db` - Testing
+3. `shopq/data/shopq_test.db` - Testing
 
 **Why rejected**:
 - **Recent consolidation**: Just completed database merge (Nov 2025)
@@ -189,9 +189,9 @@ def get_db_connection():
 ### Related Documentation
 
 - **Database Architecture**: `/docs/DATABASE_ARCHITECTURE.md` (schema reference)
-- **Connection Pool**: `mailq/config/database.py` (implementation)
+- **Connection Pool**: `shopq/config/database.py` (implementation)
 - **Database Guardrails**: `/claude.md` (section 8: Database Policy)
-- **Consolidation Script**: `mailq/scripts/consolidate_databases.py`
+- **Consolidation Script**: `shopq/scripts/consolidate_databases.py`
 
 ### Troubleshooting
 
@@ -222,10 +222,10 @@ CREATE INDEX idx_rules_user_id ON rules(user_id, active);
 **Fix**:
 ```bash
 # Manual VACUUM (reclaims space)
-sqlite3 mailq/data/mailq.db "VACUUM;"
+sqlite3 shopq/data/shopq.db "VACUUM;"
 
 # Auto-vacuum (automatic space reclamation)
-sqlite3 mailq/data/mailq.db "PRAGMA auto_vacuum = FULL;"
+sqlite3 shopq/data/shopq.db "PRAGMA auto_vacuum = FULL;"
 ```
 
 ---

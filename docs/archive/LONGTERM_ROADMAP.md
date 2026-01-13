@@ -1,4 +1,4 @@
-# MailQ Roadmap — Now / Next / Later
+# ShopQ Roadmap — Now / Next / Later
 
 **Last Updated**: 2025-11-10
 
@@ -48,7 +48,7 @@
   * ✅ Temporal decay: deterministic up-ranks for events (Phase 4)
   * [ ] add failing CI test for illegal downstream mutation
   * [ ] restrict to up-rank rules + confidence down-rank only
-  * **Reference**: `mailq/temporal_decay.py`, `docs/TESTING_COMPLETE_SUMMARY.md`
+  * **Reference**: `shopq/temporal_decay.py`, `docs/TESTING_COMPLETE_SUMMARY.md`
 
 * **Freeze model/prompt policy**
   * pin model_name, model_version, prompt_version in logs

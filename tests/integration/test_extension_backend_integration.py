@@ -16,26 +16,26 @@ import pandas as pd
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 
 # Gmail label mapping (matches extension/modules/mapper.js)
 TYPE_TO_LABEL = {
-    "newsletter": "MailQ/Newsletters",
-    "notification": "MailQ/Notifications",
-    "receipt": "MailQ/Receipts",
-    "event": "MailQ/Events",
-    "promotion": "MailQ/Promotions",
-    "message": "MailQ/Messages",
-    "update": "MailQ/Notifications",  # Backend uses "update", extension treats as notification
+    "newsletter": "ShopQ/Newsletters",
+    "notification": "ShopQ/Notifications",
+    "receipt": "ShopQ/Receipts",
+    "event": "ShopQ/Events",
+    "promotion": "ShopQ/Promotions",
+    "message": "ShopQ/Messages",
+    "update": "ShopQ/Notifications",  # Backend uses "update", extension treats as notification
 }
 
 DOMAIN_TO_LABEL = {
-    "finance": "MailQ/Finance",
-    "shopping": "MailQ/Shopping",
-    "professional": "MailQ/Work",
-    "personal": "MailQ/Personal",
+    "finance": "ShopQ/Finance",
+    "shopping": "ShopQ/Shopping",
+    "professional": "ShopQ/Work",
+    "personal": "ShopQ/Personal",
 }
 
 
@@ -64,11 +64,11 @@ def map_classification_to_labels(classification: dict) -> list[str]:
 
     # Importance → Action-Required (use importance, not attention, to respect guardrails)
     if classification.get("importance") == "critical":
-        labels.append("MailQ/Action-Required")
+        labels.append("ShopQ/Action-Required")
 
     # Fallback
     if not labels:
-        labels.append("MailQ/Review-Later")
+        labels.append("ShopQ/Review-Later")
 
     return labels
 
@@ -154,17 +154,17 @@ def main():
     print("=" * 60)
     print()
 
-    # Check if critical emails get MailQ/Action-Required label
+    # Check if critical emails get ShopQ/Action-Required label
     critical_emails = results_df[results_df["ground_truth_importance"] == "critical"]
     critical_with_action_required = critical_emails[
-        critical_emails["gmail_labels"].apply(lambda labels: "MailQ/Action-Required" in labels)
+        critical_emails["gmail_labels"].apply(lambda labels: "ShopQ/Action-Required" in labels)
     ]
 
     critical_recall = (
         len(critical_with_action_required) / len(critical_emails) if len(critical_emails) > 0 else 0
     )
 
-    print("📊 Critical → MailQ/Action-Required:")
+    print("📊 Critical → ShopQ/Action-Required:")
     print(f"   Total critical emails: {len(critical_emails)}")
     print(f"   With Action-Required label: {len(critical_with_action_required)}")
     print(f"   Recall: {critical_recall:.1%}")
@@ -173,14 +173,14 @@ def main():
     if critical_recall < 0.85:
         print("⚠️  Missing Action-Required labels (first 3):")
         missing = critical_emails[
-            ~critical_emails["gmail_labels"].apply(lambda labels: "MailQ/Action-Required" in labels)
+            ~critical_emails["gmail_labels"].apply(lambda labels: "ShopQ/Action-Required" in labels)
         ]
         for _, row in missing.head(3).iterrows():
             print(f"   - {row['subject'][:60]}")
             print(f"     Labels: {', '.join(row['gmail_labels'])}")
         print()
 
-    # Check if event newsletters get MailQ/Events label (should NOT)
+    # Check if event newsletters get ShopQ/Events label (should NOT)
     event_newsletter_pattern = "lineup|festival|upcoming events"
     event_newsletters = results_df[
         (
@@ -191,7 +191,7 @@ def main():
     ]
 
     event_newsletters_with_events_label = event_newsletters[
-        event_newsletters["gmail_labels"].apply(lambda labels: "MailQ/Events" in labels)
+        event_newsletters["gmail_labels"].apply(lambda labels: "ShopQ/Events" in labels)
     ]
 
     event_newsletter_noise = (
@@ -200,9 +200,9 @@ def main():
         else 0
     )
 
-    print("📊 Event Newsletters → MailQ/Events (should be 0%):")
+    print("📊 Event Newsletters → ShopQ/Events (should be 0%):")
     print(f"   Total event newsletters: {len(event_newsletters)}")
-    print(f"   With MailQ/Events label: {len(event_newsletters_with_events_label)}")
+    print(f"   With ShopQ/Events label: {len(event_newsletters_with_events_label)}")
     print(f"   Noise rate: {event_newsletter_noise:.1%}")
     print()
 

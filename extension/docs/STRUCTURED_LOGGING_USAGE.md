@@ -114,7 +114,7 @@ async function handleHeartbeat() {
 
 ## Testing
 
-1. Open Chrome DevTools → Extensions → MailQ → Inspect
+1. Open Chrome DevTools → Extensions → ShopQ → Inspect
 2. Trigger organization (icon click or auto-organize)
 3. Check console for JSON logs
 4. Copy logs and paste into Claude Code for debugging

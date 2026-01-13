@@ -20,7 +20,7 @@ services:
       - ./quality_monitor.db:/app/quality_monitor.db
       - ./quality_monitor.log:/app/quality_monitor.log
     environment:
-      - MAILQ_API_URL=${MAILQ_API_URL}
+      - SHOPQ_API_URL=${SHOPQ_API_URL}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITHUB_REPO=${GITHUB_REPO:-justinkoufopoulos/mailq-prototype}

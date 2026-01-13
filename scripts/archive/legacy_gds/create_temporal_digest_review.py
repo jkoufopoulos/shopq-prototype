@@ -20,11 +20,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.decay import resolve_temporal_importance
+from shopq.classification.decay import resolve_temporal_importance
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 
 
 def _predict_digest_section(importance: str, email_type: str, category: str) -> str:

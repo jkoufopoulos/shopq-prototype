@@ -29,7 +29,7 @@ def load_csv_exports(exports_dir: Path, exclude_thread_ids: set, max_emails: int
     seen_threads = set()
 
     # Get all CSV files
-    csv_files = sorted(glob(str(exports_dir / "mailq_session_*.csv")))
+    csv_files = sorted(glob(str(exports_dir / "shopq_session_*.csv")))
     print(f"📂 Found {len(csv_files)} CSV export files")
 
     for csv_file in csv_files:
@@ -104,17 +104,17 @@ def load_csv_exports(exports_dir: Path, exclude_thread_ids: set, max_emails: int
 
 
 def map_labels_to_importance(labels: str) -> str:
-    """Map Gmail labels to MailQ importance."""
+    """Map Gmail labels to ShopQ importance."""
     if not labels:
         return None
 
     labels_lower = labels.lower()
 
-    if "mailq/critical" in labels_lower or "mailq/today" in labels_lower:
+    if "shopq/critical" in labels_lower or "shopq/today" in labels_lower:
         return "critical"
-    if "mailq/coming up" in labels_lower:
+    if "shopq/coming up" in labels_lower:
         return "time_sensitive"
-    if "mailq/worth knowing" in labels_lower:
+    if "shopq/worth knowing" in labels_lower:
         return "routine"
 
     return None
@@ -126,7 +126,7 @@ def main():
         "--exports-dir",
         type=Path,
         default=Path("exports"),
-        help="Directory containing mailq_session_*.csv files",
+        help="Directory containing shopq_session_*.csv files",
     )
     parser.add_argument(
         "--existing-dataset",
@@ -164,7 +164,7 @@ def main():
     new_emails = load_csv_exports(args.exports_dir, existing_threads, args.max_emails)
 
     if not new_emails:
-        print("❌ No new emails found with MailQ importance labels!")
+        print("❌ No new emails found with ShopQ importance labels!")
         return
 
     print(f"\n✅ Found {len(new_emails)} new emails")

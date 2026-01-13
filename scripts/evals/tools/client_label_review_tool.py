@@ -44,7 +44,7 @@ def clear_screen():
     print("\033[2J\033[H", end="")
 
 
-# Taxonomy rules for client labels (from mailq/storage/classification.py)
+# Taxonomy rules for client labels (from shopq/storage/classification.py)
 CLIENT_LABEL_TAXONOMY = {
     "receipts": {
         "description": "All purchase-related emails (orders, shipping, payments, refunds)",

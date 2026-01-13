@@ -1,6 +1,6 @@
 # Evaluation Datasets
 
-This directory contains ground truth datasets for evaluating MailQ's classification and digest generation.
+This directory contains ground truth datasets for evaluating ShopQ's classification and digest generation.
 
 ## Structure
 

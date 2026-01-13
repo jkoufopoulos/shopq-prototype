@@ -24,10 +24,10 @@ Hybrid digest renderer that combines entity-based rendering (when entities extra
 
 ### Implementation
 
-- **Module**: `mailq/hybrid_digest_renderer.py` (367 lines)
-- **Integration Point**: `mailq/context_digest.py:914-926`
-- **Feature Gate**: `mailq/feature_gates.py:44`
-- **Configuration**: `config/mailq_policy.yaml:54-68`
+- **Module**: `shopq/hybrid_digest_renderer.py` (367 lines)
+- **Integration Point**: `shopq/context_digest.py:914-926`
+- **Feature Gate**: `shopq/feature_gates.py:44`
+- **Configuration**: `config/shopq_policy.yaml:54-68`
 - **Unit Tests**: 31 tests, all passing (`tests/unit/test_hybrid_renderer.py`)
 - **Integration Tests**: 4 tests passing, 1 skipped (`tests/integration/test_hybrid_digest_integration.py`)
 
@@ -72,7 +72,7 @@ Have a great day!
 
 ### 1. Type Mapper Integration ✅
 
-**Location**: `mailq/memory_classifier.py` (lines 26-83)
+**Location**: `shopq/memory_classifier.py` (lines 26-83)
 
 **Flow**:
 ```python
@@ -109,7 +109,7 @@ else:
 
 ### 2. Temporal Decay Integration ✅
 
-**Location**: `mailq/digest_formatter.py` (lines 21, 64-80)
+**Location**: `shopq/digest_formatter.py` (lines 21, 64-80)
 
 **Flow**:
 ```python
@@ -167,7 +167,7 @@ Email → Type Mapper → Rules → LLM → Temporal Decay → Digest
 
 **Phase 3 (Mapping)**: `mapper.py`
 - Input: Classification result
-- Output: Gmail labels (MailQ-Events, MailQ-Finance, etc.)
+- Output: Gmail labels (ShopQ-Events, ShopQ-Finance, etc.)
 - Confidence gates applied
 
 **Phase 4 (Temporal Decay)**: `temporal_enrichment.py`
@@ -186,7 +186,7 @@ Email → Type Mapper → Rules → LLM → Temporal Decay → Digest
 
 ### Current Classifier Prompt ✅
 
-**Location**: `mailq/prompts/classifier_prompt.txt`
+**Location**: `shopq/prompts/classifier_prompt.txt`
 
 **Current Behavior**: ✅ **NO UPDATES NEEDED**
 - Prompt focuses on type, domains, attention classification
@@ -236,9 +236,9 @@ and attention classifications will always be used.
 **Location**: N/A (Temporal decay is algorithmic, not LLM-based)
 
 **Status**: ✅ **NO PROMPT NEEDED**
-- Temporal decay uses deterministic rules (mailq/temporal_decay.py)
+- Temporal decay uses deterministic rules (shopq/temporal_decay.py)
 - No LLM involved - pure Python logic
-- Rules in config/mailq_policy.yaml:
+- Rules in config/shopq_policy.yaml:
   - `grace_period_hours`: 1
   - `active_window_hours`: 1
   - `upcoming_horizon_days`: 7
@@ -260,7 +260,7 @@ and attention classifications will always be used.
 
 **Current State**:
 ```markdown
-MailQ is a hybrid email classification system with four tiers:
+ShopQ is a hybrid email classification system with four tiers:
 
 1. **T0 (Free)**: Type Mapper - Global deterministic type rules (NEW)
 2. **T0 (Free)**: Rules Engine - User-specific pattern matching
@@ -341,7 +341,7 @@ final_result = {
 
 **Phase 3 (Mapping)**:
 ```python
-gmail_labels = ["MailQ-Events"]
+gmail_labels = ["ShopQ-Events"]
 ```
 
 **Phase 4 (Temporal Decay)** (if used in digest):
@@ -443,8 +443,8 @@ enriched.hide_in_digest = False
 
 ## Quick Reference
 
-**Type Mapper Integration**: `mailq/memory_classifier.py:60-83`
-**Temporal Decay Integration**: `mailq/digest_formatter.py:64-67`
-**Config**: `config/type_mapper_rules.yaml` + `config/mailq_policy.yaml`
+**Type Mapper Integration**: `shopq/memory_classifier.py:60-83`
+**Temporal Decay Integration**: `shopq/digest_formatter.py:64-67`
+**Config**: `config/type_mapper_rules.yaml` + `config/shopq_policy.yaml`
 **Tests**: `tests/test_type_mapper*.py` + `tests/test_temporal*.py`
 **Docs**: `docs/ARCHITECTURE.md` + `docs/TYPE_MAPPER_IMPLEMENTATION_SUMMARY.md`

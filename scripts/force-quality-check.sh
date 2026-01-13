@@ -2,7 +2,7 @@
 # Force Quality Check - Run Full QC Pipeline Immediately
 #
 # This script forces analysis of ALL new sessions regardless of thresholds.
-# Use this after clicking "Organize" in MailQ to immediately check quality.
+# Use this after clicking "Organize" in ShopQ to immediately check quality.
 #
 # Usage:
 #   ./scripts/force-quality-check.sh
@@ -35,7 +35,7 @@ fi
 # Export environment for Python subprocess
 export ANTHROPIC_API_KEY
 export GITHUB_TOKEN
-export MAILQ_API_URL="${MAILQ_API_URL:-https://mailq-api-488078904670.us-central1.run.app}"
+export SHOPQ_API_URL="${SHOPQ_API_URL:-https://shopq-api-488078904670.us-central1.run.app}"
 
 cd "$PROJECT_ROOT"
 

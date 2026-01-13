@@ -18,7 +18,7 @@ from fixtures.test_busy_inbox import BUSY_INBOX_EMAILS, EXPECTED_CHARACTERISTICS
 from fixtures.test_email_storm import EMAIL_STORM_EMAILS, EXPECTED_CHARACTERISTICS_EMAIL_STORM
 from fixtures.test_quiet_inbox import EXPECTED_CHARACTERISTICS_QUIET, QUIET_INBOX_EMAILS
 
-from mailq.digest.context_digest import ContextDigest
+from shopq.digest.context_digest import ContextDigest
 
 
 def test_quiet_inbox():

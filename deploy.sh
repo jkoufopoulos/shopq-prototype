@@ -4,9 +4,9 @@ set -e
 
 PROJECT_ID="mailq-467118"
 REGION="us-central1"
-SERVICE_NAME="mailq-api"
+SERVICE_NAME="shopq-api"
 
-echo "🚀 Deploying MailQ API to Cloud Run..."
+echo "🚀 Deploying ShopQ API to Cloud Run..."
 
 # Set project
 gcloud config set project $PROJECT_ID
@@ -58,4 +58,4 @@ echo "🧪 Testing health endpoint..."
 curl -s "$SERVICE_URL/health" | jq .
 echo ""
 echo "⚙️  Update your extension/config.js with:"
-echo "  MAILQ_API_URL: '$SERVICE_URL'"
+echo "  SHOPQ_API_URL: '$SERVICE_URL'"

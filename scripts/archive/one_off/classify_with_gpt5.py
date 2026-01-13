@@ -37,7 +37,7 @@ except ImportError:
     sys.exit(1)
 
 
-CLASSIFICATION_PROMPT = """You are an email classifier for MailQ, a Gmail assistant.
+CLASSIFICATION_PROMPT = """You are an email classifier for ShopQ, a Gmail assistant.
 
 Classify this email into ONE type and ONE importance level.
 

@@ -8,7 +8,7 @@
 
 ## Summary
 
-Successfully implemented structured logging across the entire MailQ pipeline with:
+Successfully implemented structured logging across the entire ShopQ pipeline with:
 - **Event taxonomy**: 37 event types across 7 categories
 - **Privacy-safe**: Subjects redacted, email IDs hashed to 12 chars
 - **Sampling**: 10% INFO, 100% ERROR (prevents console spam)
@@ -21,7 +21,7 @@ Successfully implemented structured logging across the entire MailQ pipeline wit
 
 ### 1. Foundation Modules ✅
 
-#### `mailq/structured_logging.py` (Python)
+#### `shopq/structured_logging.py` (Python)
 - EventType enum with 37 events
 - StructuredLogger class with sampling & rate limiting
 - Privacy redaction (subjects, PII)
@@ -39,7 +39,7 @@ Successfully implemented structured logging across the entire MailQ pipeline wit
 
 ### 2. Backend Retrofits ✅
 
-#### `mailq/vertex_gemini_classifier.py` (LLM Classification)
+#### `shopq/vertex_gemini_classifier.py` (LLM Classification)
 **Events logged:**
 - `LLM_CALL_OK`: Successful classification with type, confidence, domains
 - `LLM_CALL_ERROR`: JSON parse errors, validation errors
@@ -52,7 +52,7 @@ Successfully implemented structured logging across the entire MailQ pipeline wit
 {"ts":"2025-11-11T23:45:13Z","level":"ERROR","session":"20251111_234512","event":"llm_call_error","email":"18c2a4f8e","error":"JSONDecodeError","attempt":2,"subject":"Your bill is..."}
 ```
 
-#### `mailq/bridge/mapper.py` (Bridge Mapper)
+#### `shopq/bridge/mapper.py` (Bridge Mapper)
 **Events logged:**
 - `MAP_DECISION`: Mapper rule matched (importance, source, rule_name)
 - `MAP_GUARDRAIL_APPLIED`: Guardrail override
@@ -65,7 +65,7 @@ Successfully implemented structured logging across the entire MailQ pipeline wit
 {"ts":"2025-11-11T23:45:15Z","level":"INFO","session":"20251111_234512","event":"map_guardrail_applied","email":"18c2a4f8e","rule":"fraud_alert","importance":"critical"}
 ```
 
-#### `mailq/temporal_enrichment.py` (Temporal Enrichment)
+#### `shopq/temporal_enrichment.py` (Temporal Enrichment)
 **Events logged:**
 - `TEMPORAL_PARSE_ERROR`: Failed to parse event_time or due_date
 - `TEMPORAL_RESOLVE_DECISION`: Escalation/downgrade with reason and hours_until
@@ -76,7 +76,7 @@ Successfully implemented structured logging across the entire MailQ pipeline wit
 {"ts":"2025-11-11T23:45:17Z","level":"INFO","session":"20251111_234512","event":"temporal_resolve_decision","email":"18c2a4f8g","decision":"escalated","reason":"event_in_0.5h","hours":0.5}
 ```
 
-#### `mailq/entity_extractor.py` (Entity Extraction)
+#### `shopq/entity_extractor.py` (Entity Extraction)
 **Events logged:**
 - `EXTRACT_INCONSISTENT`: Missing thread_id, failed recovery
 
@@ -172,7 +172,7 @@ Typical organization session (100 emails):
 ### 1. Backend (Python)
 
 ```python
-from mailq.structured_logging import get_logger, EventType
+from shopq.structured_logging import get_logger, EventType
 
 # Create session logger
 s_logger = get_logger(session_id="test_20251111_234512")
@@ -203,7 +203,7 @@ s_logger.temporal_resolve(
 ### 2. Extension (JavaScript)
 
 ```javascript
-// In Chrome DevTools console (chrome://extensions → MailQ → Inspect)
+// In Chrome DevTools console (chrome://extensions → ShopQ → Inspect)
 
 // Create logger
 const s_logger = new StructuredLogger('test_20251111_234512');
@@ -224,7 +224,7 @@ s_logger.extBatchDone(10, 0, 0);
 **Before (hard to debug):**
 ```
 INFO: Classified email from amazon.com
-INFO: Applied labels: MailQ/Shopping
+INFO: Applied labels: ShopQ/Shopping
 DEBUG: Type=receipt, domains=[shopping]
 ```
 No way to trace decision trail.
@@ -263,7 +263,7 @@ No way to trace decision trail.
 1. **This file**: Implementation summary
 2. `docs/STRUCTURED_LOGGING_RETROFIT_GUIDE.md`: Copy-paste patches (reference)
 3. `extension/STRUCTURED_LOGGING_USAGE.md`: Extension integration guide
-4. `mailq/structured_logging.py`: Python module (code reference)
+4. `shopq/structured_logging.py`: Python module (code reference)
 5. `extension/modules/structured-logger.js`: JavaScript module (code reference)
 
 ---

@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.memory_classifier import MemoryClassifier
+from shopq.classification.memory_classifier import MemoryClassifier
 
 # Email IDs that were corrected
 CORRECTED_IDS = {

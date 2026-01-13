@@ -2,11 +2,11 @@
 
 > **Manually maintained** - Last updated: 2025-12-04
 
-> 📊 This diagram shows how confidence scores flow through the MailQ classification system and which gates filter low-confidence results.
+> 📊 This diagram shows how confidence scores flow through the ShopQ classification system and which gates filter low-confidence results.
 
 ## Overview
 
-All confidence thresholds are centralized in **`config/mailq_policy.yaml`** and used throughout the system via the shared config module.
+All confidence thresholds are centralized in **`config/shopq_policy.yaml`** and used throughout the system via the shared config module.
 
 ## Confidence Flow Diagram
 
@@ -77,9 +77,9 @@ flowchart TD
 ## Confidence Gates Reference
 
 ### Gate 1: Type Confidence (Classification)
-**Location**: `mailq/api/routes/organize.py`
+**Location**: `shopq/api/routes/organize.py`
 ```python
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 type_confidence_min: 0.70
 
 if result['type_conf'] < TYPE_CONFIDENCE_MIN:
@@ -91,9 +91,9 @@ if result['type_conf'] < TYPE_CONFIDENCE_MIN:
 - **Why 0.70**: Balanced with verifier coverage (0.50-0.90) to catch edge cases
 
 ### Gate 2: Label Confidence (Classification)
-**Location**: `mailq/api/routes/organize.py`
+**Location**: `shopq/api/routes/organize.py`
 ```python
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 label_confidence_min: 0.70
 
 filtered = [
@@ -102,14 +102,14 @@ filtered = [
 ]
 ```
 - **Threshold**: 0.70 (70%)
-- **Purpose**: Filter individual labels (e.g., remove "MailQ-Finance" if only 60% confident)
+- **Purpose**: Filter individual labels (e.g., remove "ShopQ-Finance" if only 60% confident)
 - **Action**: Remove low-confidence labels
 - **Why 0.70**: Consistent with type gate; verifier catches uncertain cases
 
 ### Gate 3: Mapper Gates (Label Application)
-**Location**: `mailq/classification/mapper.py`
+**Location**: `shopq/classification/mapper.py`
 ```python
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 type_gate: 0.70
 domain_gate: 0.70
 attention_gate: 0.70
@@ -124,16 +124,16 @@ if domain_conf >= DOMAIN_GATE:
 
 # Attention gate
 if result['attention_conf'] >= ATTENTION_GATE:
-    labels.append('MailQ-Action-Required')
+    labels.append('ShopQ-Action-Required')
 ```
 - **Type Gate**: 0.70 (matches Gate 1)
 - **Domain Gate**: 0.70 (consistent across all gates)
 - **Attention Gate**: 0.70 (consistent across all gates)
 
 ### Gate 4: Learning Gate
-**Location**: `mailq/classification/memory_classifier.py`
+**Location**: `shopq/classification/memory_classifier.py`
 ```python
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 learning_min_confidence: 0.70
 
 if semantic_result['type_conf'] >= LEARNING_MIN_CONFIDENCE:
@@ -145,9 +145,9 @@ if semantic_result['type_conf'] >= LEARNING_MIN_CONFIDENCE:
 - **Why 0.70**: Consistent with classification gates; verifier provides safety net
 
 ### Gate 5: Domain Boost (LLM Internal)
-**Location**: `mailq/classification/vertex_gemini_classifier.py`
+**Location**: `shopq/classification/vertex_gemini_classifier.py`
 ```python
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 domain_min_threshold: 0.60
 domain_boost_value: 0.70
 
@@ -162,7 +162,7 @@ if result['domain_conf'][domain] < DOMAIN_MIN_THRESHOLD:
 ### Gate 6: Verifier Triggers
 **Location**: Backend verifier logic (config-driven)
 ```yaml
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 verifier:
   trigger_conf_min: 0.50
   trigger_conf_max: 0.90
@@ -178,7 +178,7 @@ verifier:
 ### Gate 7: Verifier Correction Acceptance
 **Location**: Backend verifier logic
 ```yaml
-# From config/mailq_policy.yaml
+# From config/shopq_policy.yaml
 verifier:
   correction_delta: 0.15
 
@@ -190,11 +190,11 @@ verifier:
 
 ## Confidence Logging
 
-**Location**: `mailq/observability/confidence.py`
+**Location**: `shopq/observability/confidence.py`
 
 Every classification is logged to `confidence_logs` table:
 ```python
-from mailq.observability.confidence import ConfidenceLogger
+from shopq.observability.confidence import ConfidenceLogger
 
 confidence_logger.log_classification(
     result={...},
@@ -244,11 +244,11 @@ Returns time-series data for monitoring confidence over time.
 
 ## How to Adjust Thresholds
 
-**All thresholds are in one place**: `config/mailq_policy.yaml`
+**All thresholds are in one place**: `config/shopq_policy.yaml`
 
 To adjust:
-1. Edit `config/mailq_policy.yaml`
-2. Restart API server: `uvicorn mailq.api:app --reload`
+1. Edit `config/shopq_policy.yaml`
+2. Restart API server: `uvicorn shopq.api:app --reload`
 3. Changes propagate automatically
 
 **Example**: Make classification more strict
@@ -267,7 +267,7 @@ confidence:
 1. **Balanced Gates**: 0.70 threshold across all gates for consistency
 2. **Wide Verifier Coverage**: 0.50-0.90 range ensures uncertain classifications get reviewed
 3. **Consistent Learning**: Learn from same threshold as classification (0.70)
-4. **Config-Driven**: All thresholds in `config/mailq_policy.yaml` for easy tuning
+4. **Config-Driven**: All thresholds in `config/shopq_policy.yaml` for easy tuning
 5. **Track Everything**: All confidence scores logged for analysis
 
 ## Future Improvements
@@ -280,5 +280,5 @@ confidence:
 
 ---
 
-**Configuration File**: `config/mailq_policy.yaml`
+**Configuration File**: `config/shopq_policy.yaml`
 **See also**: [CLASSIFICATION_FLOW.md](CLASSIFICATION_FLOW.md) for end-to-end classification pipeline

@@ -17,16 +17,16 @@ import os
 import pytest
 
 # Enable LLM for tests
-os.environ["MAILQ_USE_LLM"] = "true"
+os.environ["SHOPQ_USE_LLM"] = "true"
 
-from mailq.llm.client import (
+from shopq.llm.client import (
     LLMSchemaError,
     classify_email_llm,
     clear_llm_cache,
 )
-from mailq.observability.telemetry import _COUNTERS, counter
-from mailq.storage.classify import LLMClassification, batch_classify_emails, classify_email
-from mailq.storage.models import ParsedEmail, RawEmail
+from shopq.observability.telemetry import _COUNTERS, counter
+from shopq.storage.classify import LLMClassification, batch_classify_emails, classify_email
+from shopq.storage.models import ParsedEmail, RawEmail
 
 
 @pytest.fixture(autouse=True)
@@ -301,7 +301,7 @@ def test_llm_cache_key_deterministic():
 
 def test_schema_validation_in_llm_adapter():
     """Test: LLM adapter validates schema before returning."""
-    from mailq.llm.client import _compute_cache_key
+    from shopq.llm.client import _compute_cache_key
 
     email_key = "test-email-key-001"
     prompt = "Test prompt"

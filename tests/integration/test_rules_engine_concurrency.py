@@ -13,9 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from mailq.classification.rules_engine import RulesEngine
-from mailq.infrastructure.database import db_transaction, get_db_connection
-from mailq.runtime.gates import feature_gates
+from shopq.classification.rules_engine import RulesEngine
+from shopq.infrastructure.database import db_transaction, get_db_connection
+from shopq.runtime.gates import feature_gates
 
 
 class TestRulesEngineConcurrency:

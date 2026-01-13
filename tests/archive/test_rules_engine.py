@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from mailq.classification.rules_engine import RulesEngine
+from shopq.classification.rules_engine import RulesEngine
 
 
 class TestRulesEngine:

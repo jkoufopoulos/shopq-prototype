@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Extract golden dataset from mailq_tracking.db
+Extract golden dataset from shopq_tracking.db
 
-Pulls real emails with MailQ importance labels, balances classes,
+Pulls real emails with ShopQ importance labels, balances classes,
 and creates a golden dataset for Phase 0 validation.
 """
 
@@ -19,7 +19,7 @@ def extract_emails_from_db(db_path: Path, limit_per_class: dict = None):
     Extract emails from database, optionally limiting per class for balance.
 
     Args:
-        db_path: Path to mailq_tracking.db
+        db_path: Path to shopq_tracking.db
         limit_per_class: Dict of {importance: max_count} to balance dataset
     """
     conn = sqlite3.connect(db_path)
@@ -153,9 +153,9 @@ def write_golden_dataset(emails, output_path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract golden dataset from mailq_tracking.db")
+    parser = argparse.ArgumentParser(description="Extract golden dataset from shopq_tracking.db")
     parser.add_argument(
-        "--db", type=Path, default=Path("data/mailq_tracking.db"), help="Path to mailq_tracking.db"
+        "--db", type=Path, default=Path("data/shopq_tracking.db"), help="Path to shopq_tracking.db"
     )
     parser.add_argument(
         "--output",
@@ -172,7 +172,7 @@ def main():
 
     args = parser.parse_args()
 
-    print("🚀 Extracting golden dataset from MailQ tracking database...")
+    print("🚀 Extracting golden dataset from ShopQ tracking database...")
     print(f"   Database: {args.db}")
     print(f"   Output: {args.output}")
     print(f"   Target total: {args.total}")
@@ -281,7 +281,7 @@ def main():
         json.dump(analysis, f, indent=2)
     print(f"✅ Wrote metadata to {metadata_path}")
 
-    print("\n✅ Golden dataset from real MailQ data created!")
+    print("\n✅ Golden dataset from real ShopQ data created!")
     print("\n📝 Next steps:")
     print(f"   1. Review {args.output} for quality")
     print("   2. Manually review a sample to validate importance labels")

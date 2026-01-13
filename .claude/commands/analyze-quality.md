@@ -5,7 +5,7 @@ description: Show prioritized quality issues from GitHub created by automated an
 Run AI quality analysis on your most recent organize session and show prioritized GitHub issues.
 
 **Desired workflow:**
-1. Click MailQ icon (organize emails)
+1. Click ShopQ icon (organize emails)
 2. Type `/analyze-quality`
 3. View prioritized list of issues from most recent run
 
@@ -26,13 +26,13 @@ set -e
 # Load environment variables
 source scripts/load-env.sh 2>/dev/null || source ./scripts/load-env.sh 2>/dev/null || true
 
-echo "📊 MailQ Quality Control Pipeline Status"
+echo "📊 ShopQ Quality Control Pipeline Status"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 # Get latest session info
-MAILQ_API_URL="${MAILQ_API_URL:-https://mailq-api-488078904670.us-central1.run.app}"
-SESSION_DATA=$(curl -s "${MAILQ_API_URL}/api/tracking/latest" 2>/dev/null)
+SHOPQ_API_URL="${SHOPQ_API_URL:-https://shopq-api-488078904670.us-central1.run.app}"
+SESSION_DATA=$(curl -s "${SHOPQ_API_URL}/api/tracking/latest" 2>/dev/null)
 
 if [ $? -eq 0 ]; then
   SESSION_ID=$(echo "$SESSION_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('session_id', 'unknown'))" 2>/dev/null)

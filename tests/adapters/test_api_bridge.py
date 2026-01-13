@@ -9,13 +9,13 @@ Validates conversion between API models and domain models.
 
 from datetime import datetime
 
-from mailq.gmail.api_bridge import (
+from shopq.gmail.api_bridge import (
     api_email_to_parsed,
     batch_api_to_parsed,
     batch_classified_to_api_results,
     classified_to_api_result,
 )
-from mailq.storage.models import ClassifiedEmail, ParsedEmail, RawEmail
+from shopq.storage.models import ClassifiedEmail, ParsedEmail, RawEmail
 
 
 class MockEmailInput:
@@ -88,14 +88,14 @@ def test_classified_to_api_result_receipt():
     assert result["type"] == "receipt"
     assert result["type_conf"] == 0.95
     assert result["attention"] == "none"
-    # New 4-label system: receipts get MailQ-Receipts (no domain labels)
-    assert result["labels"] == ["MailQ-Receipts"]
+    # New 4-label system: receipts get ShopQ-Receipts (no domain labels)
+    assert result["labels"] == ["ShopQ-Receipts"]
     assert result["decider"] == "gemini"  # Now uses actual decider from cascade
     assert result["reason"] == "LLM classification"
 
 
 def test_classified_to_api_result_action_required():
-    """Test message type maps to MailQ-Messages (attention ignored for labels)"""
+    """Test message type maps to ShopQ-Messages (attention ignored for labels)"""
     base = RawEmail(
         message_id="msg-2",
         thread_id="thread-2",
@@ -117,14 +117,14 @@ def test_classified_to_api_result_action_required():
 
     result = classified_to_api_result(classified)
 
-    # New 4-label system: messages get MailQ-Messages (attention_required doesn't add separate label)
+    # New 4-label system: messages get ShopQ-Messages (attention_required doesn't add separate label)
     # client_label is based on type + importance, not attention
-    assert result["labels"] == ["MailQ-Messages"]
+    assert result["labels"] == ["ShopQ-Messages"]
     assert result["attention"] == "action_required"
 
 
 def test_classified_to_api_result_notification_maps_to_everything_else():
-    """Test notifications map to MailQ-Everything-Else"""
+    """Test notifications map to ShopQ-Everything-Else"""
     base = RawEmail(
         message_id="msg-3",
         thread_id="thread-3",
@@ -147,7 +147,7 @@ def test_classified_to_api_result_notification_maps_to_everything_else():
     result = classified_to_api_result(classified)
 
     # New 4-label system: notifications → everything-else (no domain labels)
-    assert result["labels"] == ["MailQ-Everything-Else"]
+    assert result["labels"] == ["ShopQ-Everything-Else"]
     assert result["type"] == "notification"
 
 
@@ -238,6 +238,6 @@ def test_api_bridge_round_trip():
     assert result["from"] == api_email.sender
     assert result["type"] == "receipt"
     assert result["type_conf"] == 0.98
-    # New 4-label system: receipts → MailQ-Receipts only (no domain labels)
-    assert result["labels"] == ["MailQ-Receipts"]
+    # New 4-label system: receipts → ShopQ-Receipts only (no domain labels)
+    assert result["labels"] == ["ShopQ-Receipts"]
     assert result["decider"] == "type_mapper"

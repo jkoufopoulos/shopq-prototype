@@ -80,59 +80,59 @@
     "tests": [],
     "description": "IndexedDB-backed logger for classifications used by summary-email and diagnostics."
   },
-  "mailq/api.py": {
+  "shopq/api.py": {
     "name": "FastAPI Gateway",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#fastapi-gateway",
-    "code": "mailq/api.py",
+    "code": "shopq/api.py",
     "tests": ["tests/integration/test_e2e_pipeline.py"],
     "description": "Public API surface that wires extension requests to organize, verify, and context digest handlers."
   },
-  "mailq/api_organize.py": {
+  "shopq/api_organize.py": {
     "name": "Organize API Adapter",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#organize-api-adapter",
-    "code": "mailq/api_organize.py",
+    "code": "shopq/api_organize.py",
     "tests": ["tests/integration/test_e2e_pipeline.py"],
     "description": "Bridges the legacy API contract to the refactored classification pipeline."
   },
-  "mailq/usecases/pipeline.py": {
+  "shopq/usecases/pipeline.py": {
     "name": "Pipeline Coordinator",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#pipeline-coordinator",
-    "code": "mailq/usecases/pipeline.py",
+    "code": "shopq/usecases/pipeline.py",
     "tests": ["tests/integration/test_e2e_pipeline.py", "tests/adapters/test_resilience.py"],
     "description": "Coordinates fetch → parse → classify → assemble flow and enforces idempotency."
   },
-  "mailq/domain/classify.py": {
+  "shopq/domain/classify.py": {
     "name": "Classification Domain Logic",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#classification-domain-logic",
-    "code": "mailq/domain/classify.py",
+    "code": "shopq/domain/classify.py",
     "tests": ["tests/llm/test_fallback.py"],
     "description": "Combines rules-based fallback and LLM invocation to produce validated classifications."
   },
-  "mailq/context_digest.py": {
+  "shopq/context_digest.py": {
     "name": "Context Digest Engine",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#context-digest-engine",
-    "code": "mailq/context_digest.py",
+    "code": "shopq/context_digest.py",
     "tests": [],
     "description": "Generates timeline-centric digests by orchestrating entity extraction and narrative synthesis."
   },
-  "mailq/card_renderer.py": {
+  "shopq/card_renderer.py": {
     "name": "Digest Card Renderer",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#digest-rendering--delivery",
-    "code": "mailq/card_renderer.py",
+    "code": "shopq/card_renderer.py",
     "tests": [],
     "description": "Renders HTML cards and Gmail search links used in the digest email."
   },
-  "mailq/adapters/gmail/client.py": {
+  "shopq/adapters/gmail/client.py": {
     "name": "Gmail Adapter (Backend)",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#gmail-adapters",
-    "code": "mailq/adapters/gmail/client.py",
+    "code": "shopq/adapters/gmail/client.py",
     "tests": ["tests/contracts/test_gmail_parser.py", "tests/adapters/test_resilience.py"],
     "description": "Fetches Gmail threads with retry/circuit protection and converts them into parsed domain models."
   },
@@ -152,11 +152,11 @@
     "tests": ["tests/adapters/test_resilience.py"],
     "description": "Shared retry policy and circuit breaker used by adapters to handle transient failures."
   },
-  "mailq/adapters/storage/checkpoint.py": {
+  "shopq/adapters/storage/checkpoint.py": {
     "name": "Storage Checkpoint Adapter",
     "layer": "backend",
     "doc": "docs/ARCHITECTURE_OVERVIEW.md#infrastructure--reliability-helpers",
-    "code": "mailq/adapters/storage/checkpoint.py",
+    "code": "shopq/adapters/storage/checkpoint.py",
     "tests": [],
     "description": "Stubbed checkpoint layer for persisting digest metadata; called at the end of the pipeline."
   }

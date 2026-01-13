@@ -9,7 +9,7 @@ Every digest generation is automatically logged and can be compared against the 
 ## Architecture
 
 ```
-Digest Generation (mailq/api.py)
+Digest Generation (shopq/api.py)
     ↓
 Automatic Logging
     ↓
@@ -166,17 +166,17 @@ Gap Analysis:
 Based on gaps, fix the classification logic:
 
 **For missing items:**
-- Check `mailq/importance_classifier.py` patterns
+- Check `shopq/importance_classifier.py` patterns
 - Add missing keywords (e.g., "bill due", "delivered:")
 - Update pattern categorization
 
 **For false positives:**
-- Strengthen filtering in `mailq/filters/time_decay.py`
+- Strengthen filtering in `shopq/filters/time_decay.py`
 - Add promotional detection patterns
 - Improve time-based filtering
 
 **For wrong framing:**
-- Update `mailq/context_digest.py` entity extraction
+- Update `shopq/context_digest.py` entity extraction
 - Improve title generation logic
 
 ### Step 7: Test & Iterate
@@ -283,6 +283,6 @@ cp docs/ACTUAL_VS_IDEAL_COMPARISON.md \
 ## See Also
 
 - `docs/ACTUAL_VS_IDEAL_COMPARISON.md` - Current comparison
-- `mailq/importance_classifier.py` - Pattern-based classification
-- `mailq/context_digest.py` - Digest generation logic
-- `mailq/filters/time_decay.py` - Time-based filtering
+- `shopq/importance_classifier.py` - Pattern-based classification
+- `shopq/context_digest.py` - Digest generation logic
+- `shopq/filters/time_decay.py` - Time-based filtering

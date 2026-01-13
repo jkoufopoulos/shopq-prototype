@@ -148,7 +148,7 @@ gcloud alpha services api-keys list
 
 # Create new API key
 gcloud alpha services api-keys create \
-  --display-name="MailQ Gemini API Key" \
+  --display-name="ShopQ Gemini API Key" \
   --api-target=service=generativelanguage.googleapis.com
 ```
 

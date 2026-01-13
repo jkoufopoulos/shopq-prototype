@@ -2,7 +2,7 @@
 """
 Build golden dataset from real Gmail emails for Phase 0 of classification refactor.
 
-This script pulls ~500 recent emails from your Gmail account (using your MailQ labels
+This script pulls ~500 recent emails from your Gmail account (using your ShopQ labels
 as ground truth for importance), extracts the fields needed for classification, and
 creates a CSV golden dataset.
 
@@ -14,7 +14,7 @@ Required columns per CLASSIFICATION_REFACTOR_PLAN.md Phase 0:
 - email_type (from extension LLM classification)
 - attention (from extension LLM classification)
 - domains (from extension LLM classification)
-- importance (GROUND TRUTH from MailQ labels)
+- importance (GROUND TRUTH from ShopQ labels)
 - current_labels (actual Gmail labels for validation)
 
 Usage:
@@ -41,9 +41,9 @@ def extract_domain(email_address: str) -> str:
 
 def map_labels_to_importance(labels: list[str]) -> str:
     """
-    Map Gmail labels to importance based on MailQ sections.
+    Map Gmail labels to importance based on ShopQ sections.
 
-    Current MailQ sections (from digest):
+    Current ShopQ sections (from digest):
     - CRITICAL: Critical priority emails
     - TODAY: Time-sensitive for today
     - COMING UP: Events/deadlines in next 7 days
@@ -52,7 +52,7 @@ def map_labels_to_importance(labels: list[str]) -> str:
     """
     labels_lower = [label.lower() for label in labels]
 
-    # Check for MailQ labels first
+    # Check for ShopQ labels first
     if any("mailq" in label for label in labels_lower):
         # Critical indicators
         if any(
@@ -124,7 +124,7 @@ def aggregate_csv_exports(exports_dir: Path, max_emails: int = 500) -> list[dict
 
     Returns list of email dicts with normalized fields.
     """
-    csv_files = sorted(exports_dir.glob("mailq_session_*.csv"), reverse=True)
+    csv_files = sorted(exports_dir.glob("shopq_session_*.csv"), reverse=True)
 
     if not csv_files:
         print(f"❌ No CSV files found in {exports_dir}")
@@ -244,7 +244,7 @@ def main():
         "--exports-dir",
         type=Path,
         default=Path("exports"),
-        help="Directory containing mailq_session_*.csv files",
+        help="Directory containing shopq_session_*.csv files",
     )
     parser.add_argument(
         "--output",

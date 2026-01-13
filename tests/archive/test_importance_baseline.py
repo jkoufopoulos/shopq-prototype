@@ -4,7 +4,7 @@ from collections import Counter
 
 import pytest
 
-from mailq.classification.importance_classifier import ImportanceClassifier
+from shopq.classification.importance_classifier import ImportanceClassifier
 from tests.fixtures.gds_utils import load_labels, load_messages
 
 GOLDEN_MESSAGES = load_messages()

@@ -7,7 +7,7 @@
  * 3. Batch labeling accuracy
  *
  * INSTRUCTIONS:
- * 1. Open Gmail in Chrome with MailQ extension loaded
+ * 1. Open Gmail in Chrome with ShopQ extension loaded
  * 2. Open DevTools (F12 or Cmd+Option+I)
  * 3. Go to Console tab
  * 4. Copy and paste this entire script
@@ -15,14 +15,14 @@
  * 6. Wait for results
  */
 
-(async function verifyMailQLabeling() {
-  console.log('🧪 MailQ Manual Verification Test');
+(async function verifyShopQLabeling() {
+  console.log('🧪 ShopQ Manual Verification Test');
   console.log('='.repeat(60));
 
   const results = {
     totalEmails: 0,
-    withMailQLabels: 0,
-    withoutMailQLabels: 0,
+    withShopQLabels: 0,
+    withoutShopQLabels: 0,
     claimedSuccesses: 0,
     actualSuccesses: 0,
     accuracy: 0,
@@ -67,8 +67,8 @@
   results.totalEmails = emailRows.length;
   console.log('');
 
-  // Step 3: Check each email for MailQ labels
-  console.log('🏷️  Step 2: Checking for MailQ labels...');
+  // Step 3: Check each email for ShopQ labels
+  console.log('🏷️  Step 2: Checking for ShopQ labels...');
   console.log('');
 
   for (let i = 0; i < Math.min(emailRows.length, 20); i++) {
@@ -98,15 +98,15 @@
       if (labels.length > 0) break;
     }
 
-    const hasMailQLabel = labels.some(label => label.includes('MailQ'));
+    const hasShopQLabel = labels.some(label => label.includes('ShopQ'));
 
-    if (hasMailQLabel) {
-      results.withMailQLabels++;
-      console.log(`   ✅ [${i + 1}] HAS MailQ labels: "${subject.substring(0, 50)}..."`);
-      console.log(`      Labels: ${labels.filter(l => l.includes('MailQ')).join(', ')}`);
+    if (hasShopQLabel) {
+      results.withShopQLabels++;
+      console.log(`   ✅ [${i + 1}] HAS ShopQ labels: "${subject.substring(0, 50)}..."`);
+      console.log(`      Labels: ${labels.filter(l => l.includes('ShopQ')).join(', ')}`);
     } else {
-      results.withoutMailQLabels++;
-      console.log(`   ❌ [${i + 1}] NO MailQ labels: "${subject.substring(0, 50)}..."`);
+      results.withoutShopQLabels++;
+      console.log(`   ❌ [${i + 1}] NO ShopQ labels: "${subject.substring(0, 50)}..."`);
       if (labels.length > 0) {
         console.log(`      Other labels: ${labels.join(', ')}`);
       }
@@ -114,8 +114,8 @@
 
     results.emails.push({
       subject: subject.substring(0, 60),
-      hasMailQLabel,
-      labels: labels.filter(l => l.includes('MailQ'))
+      hasShopQLabel,
+      labels: labels.filter(l => l.includes('ShopQ'))
     });
   }
 
@@ -134,13 +134,13 @@
   try {
     // Try to access extension's IndexedDB
     const dbs = await window.indexedDB.databases();
-    const mailqDB = dbs.find(db => db.name.includes('mailq') || db.name.includes('MailQ'));
+    const mailqDB = dbs.find(db => db.name.includes('mailq') || db.name.includes('ShopQ'));
 
     if (mailqDB) {
-      console.log(`   ✅ Found MailQ database: ${mailqDB.name}`);
+      console.log(`   ✅ Found ShopQ database: ${mailqDB.name}`);
       console.log('   (Database entries should match actual Gmail labels)');
     } else {
-      console.log('   ⚠️  MailQ database not found in this context');
+      console.log('   ⚠️  ShopQ database not found in this context');
     }
   } catch (error) {
     console.log('   ⚠️  Cannot access IndexedDB from this context');
@@ -153,21 +153,21 @@
   console.log('');
 
   console.log(`Total emails checked: ${results.totalEmails}`);
-  console.log(`With MailQ labels: ${results.withMailQLabels}`);
-  console.log(`Without MailQ labels: ${results.withoutMailQLabels}`);
+  console.log(`With ShopQ labels: ${results.withShopQLabels}`);
+  console.log(`Without ShopQ labels: ${results.withoutShopQLabels}`);
   console.log('');
 
   // Calculate percentages
-  const labeledPercentage = (results.withMailQLabels / results.totalEmails * 100).toFixed(1);
-  const unlabeledPercentage = (results.withoutMailQLabels / results.totalEmails * 100).toFixed(1);
+  const labeledPercentage = (results.withShopQLabels / results.totalEmails * 100).toFixed(1);
+  const unlabeledPercentage = (results.withoutShopQLabels / results.totalEmails * 100).toFixed(1);
 
   console.log(`Labeling rate: ${labeledPercentage}% labeled, ${unlabeledPercentage}% unlabeled`);
   console.log('');
 
   // Issue #7 detection
-  if (results.withoutMailQLabels > 0) {
+  if (results.withoutShopQLabels > 0) {
     console.log('⚠️  POTENTIAL ISSUE #7 DETECTED:');
-    console.log(`   ${results.withoutMailQLabels} emails have NO MailQ labels`);
+    console.log(`   ${results.withoutShopQLabels} emails have NO ShopQ labels`);
     console.log('');
     console.log('   Check if extension logs claimed these were labeled:');
     console.log('   - Search console for "labeled successfully"');
@@ -175,7 +175,7 @@
     console.log('   - If logs say "42/42 success" but only a few have labels → Issue #7');
     console.log('');
   } else {
-    console.log('✅ All checked emails have MailQ labels');
+    console.log('✅ All checked emails have ShopQ labels');
     console.log('   (If extension is working correctly, this is good!)');
     console.log('');
   }
@@ -184,15 +184,15 @@
   console.log('🔍 NEXT STEPS:');
   console.log('');
 
-  if (results.withoutMailQLabels > 0) {
-    console.log('1. Click the MailQ button to organize emails');
+  if (results.withoutShopQLabels > 0) {
+    console.log('1. Click the ShopQ button to organize emails');
     console.log('2. Watch console for "✅ [X/Y] Labeled: ..." messages');
     console.log('3. After it finishes, run this script again');
     console.log('4. Compare: Did the count of labeled emails increase?');
     console.log('5. If logs say success but labels don\'t appear → Issue #7 confirmed');
   } else {
-    console.log('1. Remove a MailQ label from an email manually');
-    console.log('2. Click MailQ button to re-organize');
+    console.log('1. Remove a ShopQ label from an email manually');
+    console.log('2. Click ShopQ button to re-organize');
     console.log('3. Run this script again');
     console.log('4. Check if label was re-applied');
   }

@@ -1,8 +1,8 @@
 version: 1
 guardrails:
   never_surface:
-    - name: mailq_digest
-      description: Filter out MailQ-generated digests or read receipts
+    - name: shopq_digest
+      description: Filter out ShopQ-generated digests or read receipts
       subject_any:
         - "mailq digest"
         - "read receipt"

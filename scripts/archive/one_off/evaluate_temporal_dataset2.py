@@ -2,7 +2,7 @@
 """
 Temporal Evaluation: Dataset 2 Full Pipeline Test
 
-This script evaluates the complete MailQ digest pipeline against Dataset 2:
+This script evaluates the complete ShopQ digest pipeline against Dataset 2:
 1. Loads 70 annotated emails from Dataset 2 (Nov 2-9, 2025)
 2. Sets digest creation time to T0 (Nov 10, 2025 18:20:07 - 24h after latest email)
 3. Runs full classification + temporal decay + digest categorization pipeline
@@ -25,11 +25,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.decay import resolve_temporal_importance
+from shopq.classification.decay import resolve_temporal_importance
 
-from mailq.classification.importance_mapping.guardrails import GuardrailMatcher
-from mailq.classification.importance_mapping.mapper import BridgeImportanceMapper
-from mailq.classification.pipeline_wrapper import RefactoredPipelineClassifier
+from shopq.classification.importance_mapping.guardrails import GuardrailMatcher
+from shopq.classification.importance_mapping.mapper import BridgeImportanceMapper
+from shopq.classification.pipeline_wrapper import RefactoredPipelineClassifier
 
 
 def parse_rfc2822_date(date_str: str) -> datetime | None:

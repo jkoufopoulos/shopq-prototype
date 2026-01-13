@@ -1,6 +1,6 @@
 #!/bin/bash
-# Start MailQ Quality Monitor
-# Manual quality analysis - run after MailQ digest generation
+# Start ShopQ Quality Monitor
+# Manual quality analysis - run after ShopQ digest generation
 
 set -e
 
@@ -12,7 +12,7 @@ MONITOR_LOG="$SCRIPT_DIR/quality-monitor/quality_monitor.log"
 # Configuration
 CHECK_INTERVAL="${QUALITY_CHECK_INTERVAL:-30}"  # minutes
 
-echo "🚀 Starting MailQ Quality Monitor"
+echo "🚀 Starting ShopQ Quality Monitor"
 echo "=================================="
 echo ""
 
@@ -79,7 +79,7 @@ echo "  3. 🤖 Claude analyzes classifications and digest format"
 echo "  4. 🐙 GitHub issues created for high/medium severity problems"
 echo ""
 echo "Manual Analysis:"
-echo "  Run immediately after MailQ digest generation:"
+echo "  Run immediately after ShopQ digest generation:"
 echo "  python3 scripts/quality-monitor/quality_monitor.py --analyze-now --force"
 echo ""
 echo "Commands:"

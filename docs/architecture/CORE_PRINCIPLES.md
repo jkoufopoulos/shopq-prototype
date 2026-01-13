@@ -1,4 +1,4 @@
-# MailQ Core Principles
+# ShopQ Core Principles
 
 **Purpose:** Canonical architectural and coding principles that guide all feature work, migrations, and refactoring decisions.
 
@@ -410,7 +410,7 @@ class ClassificationRepository:
 - **Clear prioritization:** Tune for performance, refactor for maintainability
 - **Scale confidently:** Clean architecture can handle 100x through tuning alone
 
-**MailQ Example:**
+**ShopQ Example:**
 - ✅ Missing database indexes = Production complexity (add indexes, 1 day)
 - ✅ In-memory cache limiting scale = Production complexity (add Redis, 2 days)
 - ⚠️ Feedback fragmented across 4 files = Architecture debt (consolidate, 5-7 days)
@@ -572,7 +572,7 @@ The validation script automatically checks P2 and P3 compliance:
 python scripts/validate_principles.py
 
 # Validate specific files
-python scripts/validate_principles.py mailq/rules_manager.py
+python scripts/validate_principles.py shopq/rules_manager.py
 
 # Show detailed violations
 python scripts/validate_principles.py --verbose
@@ -656,7 +656,7 @@ As of 2025-11-13:
 **Last Review:** 2025-11-13
 **Next Review Due:** 2025-12-13
 
-**Canonical Reference:** This document (`docs/CORE_PRINCIPLES.md`) is the source of truth for MailQ architectural philosophy.
+**Canonical Reference:** This document (`docs/CORE_PRINCIPLES.md`) is the source of truth for ShopQ architectural philosophy.
 
 ---
 

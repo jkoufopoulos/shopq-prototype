@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from mailq.infrastructure.idempotency import email_key, is_duplicate, reset_seen
-from mailq.infrastructure.retry import AdapterError, CircuitBreaker, RetryPolicy
-from mailq.observability.telemetry import _COUNTERS, counter
+from shopq.infrastructure.idempotency import email_key, is_duplicate, reset_seen
+from shopq.infrastructure.retry import AdapterError, CircuitBreaker, RetryPolicy
+from shopq.observability.telemetry import _COUNTERS, counter
 
 
 @pytest.fixture(autouse=True)

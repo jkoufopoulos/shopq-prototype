@@ -11,8 +11,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from mailq.digest.digest_pipeline import DigestPipeline
-from mailq.digest.digest_stages_v2 import (
+from shopq.digest.digest_pipeline import DigestPipeline
+from shopq.digest.digest_stages_v2 import (
     EnrichmentStage,
     EntityStage,
     SynthesisAndRenderingStage,

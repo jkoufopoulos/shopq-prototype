@@ -16,7 +16,7 @@ Usage:
         --skip-completed 19
 
 Principles Applied:
-- P1: UI logic only - pattern rules imported from mailq.classification.patterns
+- P1: UI logic only - pattern rules imported from shopq.classification.patterns
 - P2: Side effects explicit (auto-save every 5 emails)
 - P3: Typed EmailLabel for compile-time safety
 """
@@ -27,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Import pattern rules from canonical home (P1: Concepts Are Rooms)
-from mailq.classification.patterns import EmailLabel, apply_pattern_overrides
+from shopq.classification.patterns import EmailLabel, apply_pattern_overrides
 
 
 # Terminal colors for UX

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 Comprehensive tests for Span-Aware Entity Linker
 
-Tests all edge cases from prd_mailq_span_aware_entity_linker.yml
+Tests all edge cases from prd_shopq_span_aware_entity_linker.yml
 """
 
-from mailq.classification.linker import Entity, SpanAwareEntityLinker
+from shopq.classification.linker import Entity, SpanAwareEntityLinker
 
 
 class TestBasicMatching:
@@ -389,4 +389,4 @@ class TestFuzzyThreshold:
         assert result["stats"]["matched_entities"] == 1
 
 
-# Run with: pytest mailq/tests/test_span_linker.py -v
+# Run with: pytest shopq/tests/test_span_linker.py -v

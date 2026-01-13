@@ -12,13 +12,13 @@ Use this agent when you need architectural guidance, design decisions, or system
 
 <example>
 Context: User is designing a new service and needs to choose between different architectural approaches.
-user: "I'm building a background job processor for MailQ. Should I use Celery with Redis, or just use APScheduler with SQLite? We're currently on FastAPI with SQLite."
+user: "I'm building a background job processor for ShopQ. Should I use Celery with Redis, or just use APScheduler with SQLite? We're currently on FastAPI with SQLite."
 assistant: "Let me consult the architecture-advisor agent to evaluate these options in the context of your current stack and requirements."
 <tool_use>
 <tool_name>Agent</tool_name>
 <parameters>
 <agentId>architecture-advisor</agentId>
-<task>Evaluate job processing options for MailQ: Celery+Redis vs APScheduler+SQLite. Current stack is FastAPI with SQLite. Consider deployment complexity, cost, scalability needs for a Gmail assistant that processes digests daily.</task>
+<task>Evaluate job processing options for ShopQ: Celery+Redis vs APScheduler+SQLite. Current stack is FastAPI with SQLite. Consider deployment complexity, cost, scalability needs for a Gmail assistant that processes digests daily.</task>
 </parameters>
 </tool_use>
 </example>
@@ -44,7 +44,7 @@ assistant: "This requires architectural planning. Let me engage the architecture
 <tool_name>Agent</tool_name>
 <parameters>
 <agentId>architecture-advisor</agentId>
-<task>Design a refactor strategy for the rules engine to support complex conditions. Consider backwards compatibility, migration path, testing strategy, and alignment with MailQ's surgical edit principles from CLAUDE.md.</task>
+<task>Design a refactor strategy for the rules engine to support complex conditions. Consider backwards compatibility, migration path, testing strategy, and alignment with ShopQ's surgical edit principles from CLAUDE.md.</task>
 </parameters>
 </tool_use>
 </example>
@@ -57,7 +57,7 @@ assistant: "Let me use the architecture-advisor agent to compare these options s
 <tool_name>Agent</tool_name>
 <parameters>
 <agentId>architecture-advisor</agentId>
-<task>Compare Gemini vs OpenAI for classification verification in MailQ. Evaluate cost per email, latency, accuracy potential, API reliability, and alignment with existing Gemini-first architecture.</task>
+<task>Compare Gemini vs OpenAI for classification verification in ShopQ. Evaluate cost per email, latency, accuracy potential, API reliability, and alignment with existing Gemini-first architecture.</task>
 </parameters>
 </tool_use>
 </example>

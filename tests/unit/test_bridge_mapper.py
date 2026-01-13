@@ -4,7 +4,7 @@ The BridgeImportanceMapper now only applies guardrail overrides on top of
 Gemini's importance output. Mapper rules have been deprecated.
 """
 
-from mailq.classification.importance_mapping import BridgeImportanceMapper
+from shopq.classification.importance_mapping import BridgeImportanceMapper
 
 
 def make_mapper():

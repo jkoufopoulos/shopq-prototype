@@ -89,7 +89,7 @@ def categorize_noise(not_featured):
         elif "past event" in reasoning or "expired" in reasoning or "old email" in reasoning:
             categories["past_events"].append(email)
         elif "mailq" in reasoning:
-            categories["mailq_self"].append(email)
+            categories["shopq_self"].append(email)
         else:
             categories["updates"].append(email)
 
@@ -161,8 +161,8 @@ def generate_ideal_digest_text(categories_featured, categories_noise, _total_ema
         lines.append(f"  • {len(categories_noise['receipts'])} receipts")
     if categories_noise["past_events"]:
         lines.append(f"  • {len(categories_noise['past_events'])} past events (filtered)")
-    if categories_noise["mailq_self"]:
-        lines.append(f"  • {len(categories_noise['mailq_self'])} MailQ digest (filtered)")
+    if categories_noise["shopq_self"]:
+        lines.append(f"  • {len(categories_noise['shopq_self'])} ShopQ digest (filtered)")
     if categories_noise["updates"]:
         lines.append(f"  • {len(categories_noise['updates'])} updates & notifications")
 

@@ -1,10 +1,10 @@
-# MailQ Quality Control Workflow
+# ShopQ Quality Control Workflow
 
 **Complete guide to running quality checks on email classification and digests**
 
 ## System Overview
 
-The MailQ QC system has three modes of operation:
+The ShopQ QC system has three modes of operation:
 
 1. **Automatic Daemon** (Runs 24/7) - Polls every 30 minutes and analyzes when ≥25 emails processed
 2. **Webhook Notifications** (Real-time) - Backend sends notification immediately after digest generation
@@ -12,7 +12,7 @@ The MailQ QC system has three modes of operation:
 
 ## Quick Start: One-Click Quality Check
 
-After clicking "Organize" in the MailQ extension:
+After clicking "Organize" in the ShopQ extension:
 
 ```bash
 ./scripts/force-quality-check.sh
@@ -45,10 +45,10 @@ You'll see:
 
 ## Complete Workflow
 
-### 1. Generate a Digest (MailQ Extension)
+### 1. Generate a Digest (ShopQ Extension)
 
 1. Open Gmail in Chrome
-2. Click the MailQ extension icon
+2. Click the ShopQ extension icon
 3. Click "Organize" button
 4. Wait for digest to be generated (~10-30 seconds)
 
@@ -111,8 +111,8 @@ For each high-severity issue:
 
 1. **Read the issue details** (pattern, evidence, root cause, suggested fix)
 2. **Make code changes** in the appropriate module:
-   - Classification issues → `mailq/vertex_gemini_classifier.py`, rules, or prompts
-   - Digest format issues → `mailq/narrative_generator.py` or templates
+   - Classification issues → `shopq/vertex_gemini_classifier.py`, rules, or prompts
+   - Digest format issues → `shopq/narrative_generator.py` or templates
 3. **Test locally** by running another digest
 4. **Run QC again** to verify the fix worked
 5. **Deploy to Cloud Run** once confirmed
@@ -123,7 +123,7 @@ For each high-severity issue:
 After deploying fixes:
 
 ```bash
-# Generate new digest with the MailQ extension
+# Generate new digest with the ShopQ extension
 # Then run QC again
 ./scripts/force-quality-check.sh
 
@@ -140,7 +140,7 @@ You should see:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│         MailQ Chrome Extension                  │
+│         ShopQ Chrome Extension                  │
 │  User clicks "Organize" → sends emails to API   │
 └──────────────┬──────────────────────────────────┘
                │
@@ -187,7 +187,7 @@ ANTHROPIC_API_KEY=sk-ant-...        # For Claude analysis
 GITHUB_TOKEN=ghp_...                 # For creating issues
 
 # Optional
-MAILQ_API_URL=https://...            # Backend API endpoint
+SHOPQ_API_URL=https://...            # Backend API endpoint
 CHECK_INTERVAL_MINUTES=30            # Daemon polling frequency
 MIN_EMAILS_FOR_ANALYSIS=25           # Threshold before analysis
 MAX_LLM_CALLS_PER_DAY=100           # Budget limit (~$1.50/day)
@@ -234,7 +234,7 @@ Claude compares actual digest HTML against ideal structure:
 ## Troubleshooting
 
 ### "No new sessions to analyze"
-**Solution**: Generate a digest first using the MailQ extension, then run QC.
+**Solution**: Generate a digest first using the ShopQ extension, then run QC.
 
 ### "ANTHROPIC_API_KEY not set"
 **Solution**: Add to `.env` file:

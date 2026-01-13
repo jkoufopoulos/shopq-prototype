@@ -1,4 +1,4 @@
-# MailQ Extension Fixes - Mapper Crash & Duplicate Digests
+# ShopQ Extension Fixes - Mapper Crash & Duplicate Digests
 
 **Date**: November 6, 2025
 **Issues Fixed**: 2 critical bugs
@@ -30,7 +30,7 @@ const labels = [];
 let labels = [];
 ```
 
-**Impact**: All 113 unlabeled emails will now receive proper MailQ labels.
+**Impact**: All 113 unlabeled emails will now receive proper ShopQ labels.
 
 ---
 
@@ -54,7 +54,7 @@ Multiple race conditions:
 
 async function acquireDigestLock() {
   // Added session-based deduplication
-  const sessionStart = result.mailq_organize_session_start;
+  const sessionStart = result.shopq_organize_session_start;
 
   if (existingLock) {
     // Check if this is the same session trying to generate twice
@@ -120,7 +120,7 @@ lastDigestTimestamp = Date.now();
 ```bash
 # In Chrome:
 1. Go to chrome://extensions
-2. Find "MailQ" extension
+2. Find "ShopQ" extension
 3. Click the reload icon (circular arrow)
 4. Verify no errors in console
 ```
@@ -129,12 +129,12 @@ lastDigestTimestamp = Date.now();
 
 ```bash
 # In Gmail:
-1. Click the MailQ extension icon (or "Organize Now" button)
+1. Click the ShopQ extension icon (or "Organize Now" button)
 2. Wait for classification to complete
-3. Check that emails now have MailQ labels:
-   - MailQ/Notifications
-   - MailQ/Receipts
-   - MailQ/Events
+3. Check that emails now have ShopQ labels:
+   - ShopQ/Notifications
+   - ShopQ/Receipts
+   - ShopQ/Events
    - etc.
 4. Verify NO console error about "Assignment to constant variable"
 ```
@@ -216,7 +216,7 @@ cd /Users/justinkoufopoulos/Projects/mailq-prototype
 git checkout HEAD -- extension/modules/mapper.js extension/modules/summary-email.js
 
 # Reload extension
-# Go to chrome://extensions and reload MailQ
+# Go to chrome://extensions and reload ShopQ
 ```
 
 ---

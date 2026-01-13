@@ -3,7 +3,7 @@
  *
  * Uses client_label from API (single source of truth computed by backend)
  * See: docs/TAXONOMY.md for client_label definitions
- * See: mailq/storage/classification.py compute_client_label() for mapping logic
+ * See: shopq/storage/classification.py compute_client_label() for mapping logic
  */
 
 // =============================================================================
@@ -14,10 +14,10 @@
 // NOTE: Use hyphens to match backend gmail_labels format and avoid conflicts
 
 const CLIENT_LABEL_TO_GMAIL = {
-  'receipts': 'MailQ-Receipts',
-  'action-required': 'MailQ-Action-Required',
-  'messages': 'MailQ-Messages',
-  'everything-else': 'MailQ-Everything-Else'
+  'receipts': 'ShopQ-Receipts',
+  'action-required': 'ShopQ-Action-Required',
+  'messages': 'ShopQ-Messages',
+  'everything-else': 'ShopQ-Everything-Else'
 };
 
 // =============================================================================
@@ -39,7 +39,7 @@ function mapToLabels(classification, emailMeta = null) {
   // Defensive check: handle undefined/null classification
   if (!classification) {
     console.warn('⚠️ mapToLabels called with undefined classification');
-    return ['MailQ-Everything-Else'];
+    return ['ShopQ-Everything-Else'];
   }
 
   const labels = [];
@@ -55,7 +55,7 @@ function mapToLabels(classification, emailMeta = null) {
       attention: classification.attention
     });
     const clientLabel = computeClientLabel(classification.type, classification.attention);
-    labels.push(CLIENT_LABEL_TO_GMAIL[clientLabel] || 'MailQ-Everything-Else');
+    labels.push(CLIENT_LABEL_TO_GMAIL[clientLabel] || 'ShopQ-Everything-Else');
   }
 
   return labels;
@@ -63,7 +63,7 @@ function mapToLabels(classification, emailMeta = null) {
 
 /**
  * Compute client_label from type and attention.
- * Must match backend logic in mailq/storage/classification.py compute_client_label()
+ * Must match backend logic in shopq/storage/classification.py compute_client_label()
  *
  * Note: Uses attention (action_required/none), NOT importance (critical/time_sensitive/routine)
  */

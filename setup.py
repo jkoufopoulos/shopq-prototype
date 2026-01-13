@@ -45,7 +45,7 @@ setup(
     # CLI commands
     entry_points={
         "console_scripts": [
-            "mailq-api=mailq.api:main",
+            "shopq-api=shopq.api:main",
             "mailq-check=scripts.check_schema:main",
         ],
     },

@@ -23,8 +23,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.digest.digest_pipeline import DigestPipeline
-from mailq.digest.digest_stages import (
+from shopq.digest.digest_pipeline import DigestPipeline
+from shopq.digest.digest_stages import (
     BuildFeaturedItemsStage,
     DigestRenderingStage,
     EntityExtractionStage,

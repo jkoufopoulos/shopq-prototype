@@ -16,9 +16,9 @@ import sys
 from pathlib import Path
 
 # Determine database path
-DB_PATH = Path("data/mailq_tracking.db")
+DB_PATH = Path("data/shopq_tracking.db")
 
-print("MailQ Digest Sessions Table Migration")
+print("ShopQ Digest Sessions Table Migration")
 print("=" * 60)
 print(f"Database: {DB_PATH}")
 print()
@@ -91,5 +91,5 @@ print("=" * 60)
 print("✅ Migration complete!")
 print()
 print("Next steps:")
-print("  1. Run a MailQ digest to populate the table")
+print("  1. Run a ShopQ digest to populate the table")
 print("  2. Verify: SELECT * FROM digest_sessions")

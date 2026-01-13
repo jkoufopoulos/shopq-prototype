@@ -8,7 +8,7 @@ Inspect all databases and show their contents
 import sqlite3
 from pathlib import Path
 
-from mailq.observability.logging import get_logger
+from shopq.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -66,10 +66,10 @@ def main():
 
     locations = [
         project_root / "data",  # mailq-prototype/data/
-        project_root / "mailq" / "data",  # mailq-prototype/mailq/data/
+        project_root / "mailq" / "data",  # mailq-prototype/shopq/data/
     ]
 
-    databases = ["feedback.db", "mailq.db", "mailq.sqlite", "rules.db", "rules.sqlite"]
+    databases = ["feedback.db", "shopq.db", "shopq.sqlite", "rules.db", "rules.sqlite"]
 
     logger.info("🔍 Database Inspection Report")
     logger.info("=" * 80)
@@ -119,8 +119,8 @@ def main():
 
     logger.info("\n%s", "=" * 80)
     logger.info("\n💡 Recommendation:")
-    logger.info("   1. Consolidate all tables into ONE database (mailq.db)")
-    logger.info("   2. Choose ONE location (recommend: mailq/data/)")
+    logger.info("   1. Consolidate all tables into ONE database (shopq.db)")
+    logger.info("   2. Choose ONE location (recommend: shopq/data/)")
     logger.info("   3. Delete duplicate/empty databases")
     logger.info("   4. Update code to use single database path")
 

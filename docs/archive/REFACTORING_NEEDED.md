@@ -1,4 +1,4 @@
-# MailQ Refactoring Roadmap
+# ShopQ Refactoring Roadmap
 
 **Last Updated:** 2025-01-13
 **Current Principles Score:** 33/50 (66%) - Grade C+
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document consolidates all known refactoring needs across the MailQ codebase, prioritized by impact and aligned with the 5 Core Principles. All issues are categorized as either **Architecture Debt** (requires code restructuring) or **Production Complexity** (requires tuning/configuration).
+This document consolidates all known refactoring needs across the ShopQ codebase, prioritized by impact and aligned with the 5 Core Principles. All issues are categorized as either **Architecture Debt** (requires code restructuring) or **Production Complexity** (requires tuning/configuration).
 
 **Quick Stats:**
 - **3 Critical Violations** requiring immediate attention
@@ -50,10 +50,10 @@ This document consolidates all known refactoring needs across the MailQ codebase
 
 | File | Lines | Responsibility | Problem |
 |------|-------|----------------|---------|
-| `mailq/feedback_manager.py` | 31-196 | Records corrections, triggers learning | Hidden side effect: calls `_learn_from_correction()` |
-| `mailq/rules_manager.py` | 34-142 | CRUD operations for rules | No awareness of feedback lifecycle |
-| `mailq/rules_engine.py` | 59-341 | Applies rules, learns from classification | Duplicates some feedback logic |
-| `mailq/api_feedback.py` | - | HTTP endpoints | Doesn't understand full lifecycle |
+| `shopq/feedback_manager.py` | 31-196 | Records corrections, triggers learning | Hidden side effect: calls `_learn_from_correction()` |
+| `shopq/rules_manager.py` | 34-142 | CRUD operations for rules | No awareness of feedback lifecycle |
+| `shopq/rules_engine.py` | 59-341 | Applies rules, learns from classification | Duplicates some feedback logic |
+| `shopq/api_feedback.py` | - | HTTP endpoints | Doesn't understand full lifecycle |
 
 #### Impact
 
@@ -105,10 +105,10 @@ class FeedbackLearning:
 #### Files to Modify
 
 - ✅ **Create:** `concepts/feedback_learning.py` (~300 lines)
-- 🔄 **Refactor:** `mailq/feedback_manager.py` → wrapper over concept
-- 🔄 **Refactor:** `mailq/rules_manager.py` → wrapper over concept
-- 🔄 **Refactor:** `mailq/rules_engine.py` → move learning logic
-- 🔄 **Update:** `mailq/api_feedback.py` → call concept module
+- 🔄 **Refactor:** `shopq/feedback_manager.py` → wrapper over concept
+- 🔄 **Refactor:** `shopq/rules_manager.py` → wrapper over concept
+- 🔄 **Refactor:** `shopq/rules_engine.py` → move learning logic
+- 🔄 **Update:** `shopq/api_feedback.py` → call concept module
 - ✅ **Tests:** `tests/unit/test_feedback_learning.py` (~200 lines)
 
 #### Success Metrics
@@ -136,12 +136,12 @@ class FeedbackLearning:
 
 | File | Responsibility | Lines |
 |------|----------------|-------|
-| `mailq/context_digest.py` | Orchestrator - wires 13 dependencies | 509-1200 |
-| `mailq/entity_extractor.py` | Stage 1: Entity extraction | ~300 |
-| `mailq/importance_classifier.py` | Stage 2: Classification | ~200 |
-| `mailq/temporal_enrichment.py` | Stage 3: Temporal decay | ~250 |
-| `mailq/digest/categorizer.py` | Stage 4: Categorization | ~150 |
-| `mailq/digest/card_renderer.py` | Stage 5: Rendering | ~200 |
+| `shopq/context_digest.py` | Orchestrator - wires 13 dependencies | 509-1200 |
+| `shopq/entity_extractor.py` | Stage 1: Entity extraction | ~300 |
+| `shopq/importance_classifier.py` | Stage 2: Classification | ~200 |
+| `shopq/temporal_enrichment.py` | Stage 3: Temporal decay | ~250 |
+| `shopq/digest/categorizer.py` | Stage 4: Categorization | ~150 |
+| `shopq/digest/card_renderer.py` | Stage 5: Rendering | ~200 |
 | ...and 8 more modules | Various stages | ~400 |
 
 **Problem:** No declarative specification of "what is a digest"
@@ -204,29 +204,29 @@ class FeedbackLearning:
 
 | File | Lines | Responsibility |
 |------|-------|----------------|
-| `mailq/importance_classifier.py` | ~200 | Pattern-based rules |
-| `mailq/bridge/mapper.py` | ~150 | LLM → importance mapping |
-| `mailq/bridge/guardrails.py` | ~100 | Override rules |
+| `shopq/importance_classifier.py` | ~200 | Pattern-based rules |
+| `shopq/bridge/mapper.py` | ~150 | LLM → importance mapping |
+| `shopq/bridge/guardrails.py` | ~100 | Override rules |
 
 **Problem:** Cannot answer "what is important" without reading 3 files
 
 #### Target State
 
 **Option 1:** Consolidate into `concepts/importance_resolution.py`
-**Option 2:** Rename `mailq/bridge/` → `mailq/importance_mapping/` and merge mapper + guardrails
+**Option 2:** Rename `shopq/bridge/` → `shopq/importance_mapping/` and merge mapper + guardrails
 
 **Recommendation:** Option 2 (lower risk, 1 day effort)
 
 #### Migration Plan
 
-1. Rename `mailq/bridge/` → `mailq/importance_mapping/`
+1. Rename `shopq/bridge/` → `shopq/importance_mapping/`
 2. Merge `mapper.py` + `guardrails.py` into `importance_resolver.py`
 3. Update imports across codebase
 4. Add comprehensive module docstring
 
 #### Files to Modify
 
-- 🔄 **Rename:** `mailq/bridge/` → `mailq/importance_mapping/`
+- 🔄 **Rename:** `shopq/bridge/` → `shopq/importance_mapping/`
 - 🔄 **Merge:** `mapper.py` + `guardrails.py` → `importance_resolver.py`
 - 🔄 **Update:** All imports (6 files)
 - ✅ **Tests:** No new tests needed (existing tests still valid)
@@ -247,7 +247,7 @@ class FeedbackLearning:
 
 ##### Example 1: `record_correction()` - Hidden Learning
 
-**File:** `mailq/feedback_manager.py:31-100`
+**File:** `shopq/feedback_manager.py:31-100`
 
 ```python
 # Current (misleading)
@@ -290,7 +290,7 @@ def learn_patterns_from_correction(self, correction_id: int) -> None:
 
 ##### Example 2: `classify()` - Hidden Use Count Increment
 
-**File:** `mailq/rules_engine.py:59-101`
+**File:** `shopq/rules_engine.py:59-101`
 
 ```python
 # Current (misleading)
@@ -323,11 +323,11 @@ def classify_and_track_usage(self, subject: str, ...) -> dict:
 
 | File | Functions | Side Effects |
 |------|-----------|--------------|
-| `mailq/feedback_manager.py` | 3 | DB writes, pattern learning |
-| `mailq/rules_engine.py` | 4 | DB writes, use count tracking |
-| `mailq/rules_manager.py` | 5 | DB CRUD operations |
-| `mailq/context_digest.py` | 2 | Global state mutation, debug storage |
-| `mailq/observability.py` | 1 | Logging, metrics collection |
+| `shopq/feedback_manager.py` | 3 | DB writes, pattern learning |
+| `shopq/rules_engine.py` | 4 | DB writes, use count tracking |
+| `shopq/rules_manager.py` | 5 | DB CRUD operations |
+| `shopq/context_digest.py` | 2 | Global state mutation, debug storage |
+| `shopq/observability.py` | 1 | Logging, metrics collection |
 
 #### Implementation Plan
 
@@ -460,9 +460,9 @@ class DigestCategorizer:
 
 - ✅ **Create:** `concepts/pipeline_types.py`
 - 🔄 **Update:** `concepts/digest_stages.py` (7 stage classes)
-- 🔄 **Update:** `mailq/entities.py` (deprecate old Entity class)
+- 🔄 **Update:** `shopq/entities.py` (deprecate old Entity class)
 - 🔄 **Update:** All tests using Entity class
-- 🔄 **Update:** `mailq/context_digest.py` (V1 pipeline)
+- 🔄 **Update:** `shopq/context_digest.py` (V1 pipeline)
 
 ---
 
@@ -479,7 +479,7 @@ class DigestCategorizer:
 **Problem:** Pipeline ordering dependencies are implicit
 
 ```python
-# mailq/context_digest.py:509-1200
+# shopq/context_digest.py:509-1200
 def generate(self, emails: list[dict], ...) -> dict:
     # Stage 1: Extract entities
     entities = self.entity_extractor.extract(emails)
@@ -576,11 +576,11 @@ def function_with_side_effects(self, ...) -> ReturnType:
 
 | File | Functions | Estimated Time |
 |------|-----------|----------------|
-| `mailq/feedback_manager.py` | 3 | 45 min |
-| `mailq/rules_engine.py` | 4 | 1 hour |
-| `mailq/rules_manager.py` | 5 | 1 hour |
-| `mailq/context_digest.py` | 2 | 30 min |
-| `mailq/observability.py` | 1 | 15 min |
+| `shopq/feedback_manager.py` | 3 | 45 min |
+| `shopq/rules_engine.py` | 4 | 1 hour |
+| `shopq/rules_manager.py` | 5 | 1 hour |
+| `shopq/context_digest.py` | 2 | 30 min |
+| `shopq/observability.py` | 1 | 15 min |
 
 **Total:** 4 hours
 
@@ -604,8 +604,8 @@ def function_with_side_effects(self, ...) -> ReturnType:
 
 | Current Path | New Path | Reason |
 |--------------|----------|--------|
-| `mailq/bridge/` | `mailq/importance_mapping/` | "bridge" is too generic |
-| `mailq/bridge/shadow_logger.py` | `mailq/decision_audit_logger.py` | "shadow" is unclear |
+| `shopq/bridge/` | `shopq/importance_mapping/` | "bridge" is too generic |
+| `shopq/bridge/shadow_logger.py` | `shopq/decision_audit_logger.py` | "shadow" is unclear |
 
 #### Implementation
 
@@ -633,7 +633,7 @@ def function_with_side_effects(self, ...) -> ReturnType:
 
 ```python
 """
-Module: mailq/feedback_manager.py
+Module: shopq/feedback_manager.py
 
 Purpose: Records user corrections and learns patterns
 
@@ -654,21 +654,21 @@ Side Effects:
     - May create new rules
 
 Dependencies:
-    - mailq.config.database (database access)
-    - mailq.rules_engine (rule creation)
+    - shopq.config.database (database access)
+    - shopq.rules_engine (rule creation)
 """
 ```
 
 #### Files to Update
 
-- `mailq/feedback_manager.py`
-- `mailq/rules_engine.py`
-- `mailq/rules_manager.py`
-- `mailq/importance_classifier.py`
-- `mailq/entity_extractor.py`
-- `mailq/temporal_enrichment.py`
-- `mailq/digest/categorizer.py`
-- `mailq/digest/card_renderer.py`
+- `shopq/feedback_manager.py`
+- `shopq/rules_engine.py`
+- `shopq/rules_manager.py`
+- `shopq/importance_classifier.py`
+- `shopq/entity_extractor.py`
+- `shopq/temporal_enrichment.py`
+- `shopq/digest/categorizer.py`
+- `shopq/digest/card_renderer.py`
 - ...and 12 more modules
 
 **Estimated Time:** 2 hours (6 minutes per module)
@@ -688,7 +688,7 @@ Dependencies:
 
 | File | Lines | Logic |
 |------|-------|-------|
-| `mailq/logging_utils.py` | ~50 | Email/subject redaction for logs |
+| `shopq/logging_utils.py` | ~50 | Email/subject redaction for logs |
 | `adapters/llm/client.py` | ~30 | Email/subject redaction for LLM calls |
 
 #### Target State
@@ -715,7 +715,7 @@ def redact_snippet(snippet: str) -> str:
 #### Files to Modify
 
 - ✅ **Create:** `infra/pii.py`
-- 🔄 **Update:** `mailq/logging_utils.py` (use infra/pii)
+- 🔄 **Update:** `shopq/logging_utils.py` (use infra/pii)
 - 🔄 **Update:** `adapters/llm/client.py` (use infra/pii)
 - ✅ **Tests:** `tests/unit/test_pii.py`
 
@@ -763,7 +763,7 @@ CREATE INDEX idx_rules_use_count ON rules(use_count DESC);
 
 #### Current State
 
-- LRU cache in `mailq/llm_client.py`
+- LRU cache in `shopq/llm_client.py`
 - Singleton pattern limits to single process
 - No cache invalidation across instances
 
@@ -783,7 +783,7 @@ CREATE INDEX idx_rules_use_count ON rules(use_count DESC);
 **Category:** Production Complexity
 **Effort:** 1 day (already done)
 
-Connection pooling already implemented in `mailq/config/database.py`
+Connection pooling already implemented in `shopq/config/database.py`
 
 ---
 
@@ -959,7 +959,7 @@ Connection pooling already implemented in `mailq/config/database.py`
 - [ ] Zero production incidents
 
 #### Wednesday-Thursday
-- [ ] Mark `mailq/context_digest.py` as deprecated
+- [ ] Mark `shopq/context_digest.py` as deprecated
 - [ ] Update all documentation to reference V2
 - [ ] Create migration guide for external users
 

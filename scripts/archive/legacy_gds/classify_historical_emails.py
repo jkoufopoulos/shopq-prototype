@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Pull historical emails from Gmail and run MailQ classification on them.
+Pull historical emails from Gmail and run ShopQ classification on them.
 
-This pulls ~500 diverse emails, runs MailQ's importance classifier,
+This pulls ~500 diverse emails, runs ShopQ's importance classifier,
 then stratifies to fill coverage gaps for the golden dataset.
 
 Target coverage gaps (need ~279 more after P0's 73):
@@ -28,7 +28,7 @@ from pathlib import Path
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-# Add project root to path to import MailQ modules
+# Add project root to path to import ShopQ modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
@@ -68,16 +68,16 @@ def fetch_diverse_emails(service, exclude_ids: set[str], total_target: int) -> l
     # Diverse query patterns targeting coverage gaps
     queries = [
         # Events (target: +57)
-        f"label:MailQ/Events after:{date_str}",
+        f"label:ShopQ/Events after:{date_str}",
         f"subject:meeting after:{date_str}",
         f"subject:invite after:{date_str}",
         f"subject:(calendar OR event) after:{date_str}",
         # Receipts (target: +48)
-        f"label:MailQ/Receipts after:{date_str}",
+        f"label:ShopQ/Receipts after:{date_str}",
         f"subject:(receipt OR order OR purchase) after:{date_str}",
         f"from:(amazon.com OR uber.com OR doordash.com) after:{date_str}",
         # Bills/Finance (target: +40)
-        f"label:MailQ/Finance after:{date_str}",
+        f"label:ShopQ/Finance after:{date_str}",
         f"subject:(bill OR invoice OR statement OR payment) after:{date_str}",
         f"subject:(autopay OR auto-pay) after:{date_str}",
         # Deliveries/Shipments (target: +40)
@@ -85,20 +85,20 @@ def fetch_diverse_emails(service, exclude_ids: set[str], total_target: int) -> l
         f'subject:"out for delivery" after:{date_str}',
         f'subject:"package" after:{date_str}',
         # Newsletters (target: +30)
-        f"label:MailQ/Newsletters after:{date_str}",
+        f"label:ShopQ/Newsletters after:{date_str}",
         f"from:substack.com after:{date_str}",
         f"from:beehiiv.com after:{date_str}",
         # Promotions (target: +40)
-        f"label:MailQ/Promotions after:{date_str}",
+        f"label:ShopQ/Promotions after:{date_str}",
         f"category:promotions after:{date_str}",
         f'subject:(sale OR discount OR "% off") after:{date_str}',
         # Deadlines/Action Required (target: +50)
-        f"label:MailQ/Action-Required after:{date_str}",
+        f"label:ShopQ/Action-Required after:{date_str}",
         f'subject:(deadline OR "due date" OR expires OR expiring) after:{date_str}',
         f'subject:("action required" OR "attention needed") after:{date_str}',
         # Thread conversations (target: +53)
         f"in:sent after:{date_str}",  # Your sent emails = threads
-        f"label:MailQ/Messages after:{date_str}",
+        f"label:ShopQ/Messages after:{date_str}",
     ]
 
     print(f"📬 Fetching diverse historical emails (target: {total_target})")
@@ -151,7 +151,7 @@ def fetch_diverse_emails(service, exclude_ids: set[str], total_target: int) -> l
                 thread_id = msg.get("threadId", msg_id)
                 snippet = msg.get("snippet", "")
 
-                # Store for MailQ classification
+                # Store for ShopQ classification
                 emails.append(
                     {
                         "message_id": msg_id,
@@ -176,16 +176,16 @@ def fetch_diverse_emails(service, exclude_ids: set[str], total_target: int) -> l
     return emails
 
 
-def run_mailq_classification(emails: list[dict]) -> list[dict]:
+def run_shopq_classification(emails: list[dict]) -> list[dict]:
     """
-    Run MailQ's importance classifier on emails.
+    Run ShopQ's importance classifier on emails.
 
     Returns emails with importance labels added.
     """
-    print(f"\n🤖 Running MailQ classification on {len(emails)} emails...")
-    print("   (This would call MailQ's classifier - for now using placeholder)")
+    print(f"\n🤖 Running ShopQ classification on {len(emails)} emails...")
+    print("   (This would call ShopQ's classifier - for now using placeholder)")
 
-    # TODO: Actually call MailQ classification pipeline
+    # TODO: Actually call ShopQ classification pipeline
     # For now, return emails with placeholder classifications
     # You'll need to wire this up to your actual classification logic
 
@@ -203,8 +203,8 @@ def run_mailq_classification(emails: list[dict]) -> list[dict]:
                 "domains": "",
                 "domain_confidence": "",
                 "importance": "routine",  # TODO: from classifier
-                "importance_reason": "mailq_classifier_placeholder",
-                "decider": "mailq_historical",
+                "importance_reason": "shopq_classifier_placeholder",
+                "decider": "shopq_historical",
                 "verifier_used": "",
                 "verifier_verdict": "",
                 "verifier_reason": "",
@@ -235,7 +235,7 @@ def run_mailq_classification(emails: list[dict]) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Classify historical Gmail emails with MailQ")
+    parser = argparse.ArgumentParser(description="Classify historical Gmail emails with ShopQ")
     parser.add_argument(
         "--existing-datasets",
         nargs="+",
@@ -255,7 +255,7 @@ def main():
 
     args = parser.parse_args()
 
-    print("🚀 Fetching and classifying historical emails with MailQ...")
+    print("🚀 Fetching and classifying historical emails with ShopQ...")
     print(f"   Target: {args.target} emails")
     print()
 
@@ -280,8 +280,8 @@ def main():
 
     print(f"\n✅ Fetched {len(emails)} diverse historical emails")
 
-    # Run MailQ classification
-    classified_emails = run_mailq_classification(emails)
+    # Run ShopQ classification
+    classified_emails = run_shopq_classification(emails)
 
     # Show preview distribution
     importance_dist = Counter(e["importance"] for e in classified_emails)
@@ -303,7 +303,7 @@ def main():
 
     print(f"\n✅ Wrote {len(classified_emails)} classified emails to {args.output}")
     print("\n⚠️  NOTE: Classifications are currently placeholders!")
-    print("   TODO: Wire up actual MailQ classifier to run_mailq_classification()")
+    print("   TODO: Wire up actual ShopQ classifier to run_shopq_classification()")
     print("\n📝 Next step: Stratify sample to fill coverage gaps")
 
 

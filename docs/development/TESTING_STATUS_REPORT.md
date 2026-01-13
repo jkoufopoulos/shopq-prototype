@@ -147,7 +147,7 @@ now = datetime(2025, 11, 10, 10:00, UTC)  # Today
 # Actual: temporal_active → critical
 ```
 
-**Location**: `mailq/temporal_decay.py` - `resolve_temporal_importance()` function
+**Location**: `shopq/temporal_decay.py` - `resolve_temporal_importance()` function
 
 **Fix Needed**: When `event_end_time=None`, use `event_time` (start) as the expiration check:
 - If `now > event_time + grace_period`, treat as expired
@@ -182,7 +182,7 @@ PYTHONPATH=. pytest tests/test_importance_baseline.py -v -s
 
 ### Priority 1: Fix Temporal Decay for Events Without End Time
 
-**File**: `mailq/temporal_decay.py`
+**File**: `shopq/temporal_decay.py`
 **Function**: `resolve_temporal_importance()`
 
 **Current Logic** (line ~80-120):
@@ -287,7 +287,7 @@ Once all automated tests pass:
 **Classification Plan**: `docs/CLASSIFICATION_REFACTOR_PLAN.md`
 
 **Code Needing Fix**:
-- `mailq/temporal_decay.py` - Line ~80-120 (expired event logic)
+- `shopq/temporal_decay.py` - Line ~80-120 (expired event logic)
 
 **Tests to Monitor**:
 - `tests/test_temporal_integration.py` - Will pass after fix

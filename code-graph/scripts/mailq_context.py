@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MailQ Context Extractor
+ShopQ Context Extractor
 
 Extracts relevant information from CLAUDE.md and codebase to inject into diagrams.
 Provides context-aware information based on diagram type.
@@ -25,8 +25,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 CLAUDE_MD = PROJECT_ROOT / "CLAUDE.md"
 
 
-class MailQContext:
-    """Extract and provide MailQ-specific context for diagrams (now dynamic!)"""
+class ShopQContext:
+    """Extract and provide ShopQ-specific context for diagrams (now dynamic!)"""
 
     def __init__(self):
         self.content = self._load_claude_md()
@@ -67,9 +67,9 @@ class MailQContext:
         return sections
 
     def _detect_database_config(self) -> dict:
-        """Detect database configuration from mailq/config/database.py"""
+        """Detect database configuration from shopq/config/database.py"""
         config = {
-            "path": "mailq.db",  # default
+            "path": "shopq.db",  # default
             "tables": [],
             "pool_size": 5,
         }
@@ -220,7 +220,7 @@ class MailQContext:
     def get_architecture_context(self) -> dict[str, any]:
         """Get context for system architecture diagram"""
         return {
-            "title": "MailQ Architecture",
+            "title": "ShopQ Architecture",
             "sections": [
                 {
                     "heading": "Core Flow",
@@ -283,8 +283,8 @@ Cache expiry: {self.extension_config["cache_expiry_hours"]} hours
                 {
                     "heading": "Prompt Files",
                     "content": """
-mailq/prompts/classifier_prompt.txt - LLM #1 (editable!)
-mailq/prompts/verifier_prompt.txt - LLM #2 (editable!)
+shopq/prompts/classifier_prompt.txt - LLM #1 (editable!)
+shopq/prompts/verifier_prompt.txt - LLM #2 (editable!)
 Changes load automatically - no code changes needed
                     """.strip(),
                     "type": "list",
@@ -398,10 +398,10 @@ Pattern types:
             location = os.getenv("GEMINI_LOCATION", "us-central1")
 
             vertexai.init(project=project_id, location=location)
-            # Use same model as MailQ classifier
+            # Use same model as ShopQ classifier
             model = GenerativeModel("gemini-2.0-flash")
 
-            prompt = """You are explaining a technical diagram for MailQ, an AI-powered Gmail email classification system.
+            prompt = """You are explaining a technical diagram for ShopQ, an AI-powered Gmail email classification system.
 
 The diagram shows: {diagram_type}
 
@@ -500,7 +500,7 @@ Month 3: ~$0.03/day (70% rules)
 
     def _extract_key_files(self) -> str:
         """Extract key files from CLAUDE.md"""
-        pattern = r"### Backend \(mailq/\)\n\n\| File \| Purpose \|(.*?)(?=###|$)"
+        pattern = r"### Backend \(shopq/\)\n\n\| File \| Purpose \|(.*?)(?=###|$)"
         match = re.search(pattern, self.content, re.DOTALL)
         if match:
             lines = match.group(1).strip().split("\n")[1:]  # Skip header separator
@@ -532,7 +532,7 @@ Month 3: ~$0.03/day (70% rules)
 
 if __name__ == "__main__":
     # Test the extractor
-    context = MailQContext()
+    context = ShopQContext()
 
     print("Testing context extraction...")
     print("\nArchitecture Context:")

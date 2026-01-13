@@ -1,5 +1,5 @@
 """
-Proper Temporal Evaluation: Using ACTUAL MailQ Digest System
+Proper Temporal Evaluation: Using ACTUAL ShopQ Digest System
 
 This script runs Dataset 2 through the ACTUAL digest creation pipeline:
 1. Loads 70 emails from Dataset 2
@@ -22,10 +22,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mailq.classification.enrichment import enrich_entities_with_temporal_decay
-from mailq.classification.extractor import HybridExtractor
-from mailq.digest.categorizer import DigestCategorizer
-from mailq.digest.context_digest import ContextDigest
+from shopq.classification.enrichment import enrich_entities_with_temporal_decay
+from shopq.classification.extractor import HybridExtractor
+from shopq.digest.categorizer import DigestCategorizer
+from shopq.digest.context_digest import ContextDigest
 
 
 def parse_rfc2822_date(date_str: str) -> datetime | None:
@@ -132,7 +132,7 @@ def main():
     print()
 
     # Initialize actual digest system
-    print("🔄 Initializing MailQ Context Digest system...")
+    print("🔄 Initializing ShopQ Context Digest system...")
     context_digest = ContextDigest(verbose=args.verbose)
     print("✅ System initialized")
     print()
@@ -314,7 +314,7 @@ def main():
         f.write(f"**Dataset**: {args.dataset}\n\n")
         f.write(f"**Digest Time**: {digest_time.isoformat()}\n\n")
         f.write(
-            "**System**: ✅ ACTUAL MailQ digest pipeline (HybridExtractor + DigestCategorizer)\n\n"
+            "**System**: ✅ ACTUAL ShopQ digest pipeline (HybridExtractor + DigestCategorizer)\n\n"
         )
         f.write("---\n\n")
 

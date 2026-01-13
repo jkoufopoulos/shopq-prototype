@@ -368,7 +368,7 @@ class DigestFormatAnalyzer:
                         "even though narrative already includes inline emoji sections"
                     ),
                     "suggested_fix": (
-                        'In mailq/card_renderer.py line 267-268, set sections_html = "" to prevent '
+                        'In shopq/card_renderer.py line 267-268, set sections_html = "" to prevent '
                         "duplicate generation, OR add conditional check: only generate styled "
                         "sections if narrative lacks inline sections"
                     ),

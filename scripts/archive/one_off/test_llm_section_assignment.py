@@ -6,10 +6,10 @@ the ground truth T1 annotations.
 
 Usage:
     # Test with LLM fallback enabled
-    MAILQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
+    SHOPQ_LLM_SECTION_FALLBACK=true python scripts/test_llm_section_assignment.py
 
     # Test rules-only (baseline)
-    MAILQ_LLM_SECTION_FALLBACK=false python scripts/test_llm_section_assignment.py
+    SHOPQ_LLM_SECTION_FALLBACK=false python scripts/test_llm_section_assignment.py
 """
 
 import os
@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Enable LLM fallback for testing
-os.environ["MAILQ_LLM_SECTION_FALLBACK"] = "true"
+os.environ["SHOPQ_LLM_SECTION_FALLBACK"] = "true"
 
 from scripts.evaluate_dataset2_ground_truth import (
     calculate_metrics,
@@ -34,7 +34,7 @@ def main():
     """Run evaluation with LLM-based section assignment"""
 
     # Check if LLM fallback is enabled
-    llm_enabled = os.getenv("MAILQ_LLM_SECTION_FALLBACK", "false").lower() == "true"
+    llm_enabled = os.getenv("SHOPQ_LLM_SECTION_FALLBACK", "false").lower() == "true"
 
     print(f"\n{'=' * 80}")
     print("Testing Section Assignment")

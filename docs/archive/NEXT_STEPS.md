@@ -1,4 +1,4 @@
-# MailQ Next Steps & Action Items
+# ShopQ Next Steps & Action Items
 
 **Last Updated**: 2025-11-10
 **Purpose**: Central tracking for pending tasks, future work, and action items across all features
@@ -96,13 +96,13 @@
 **Context**: Pre-commit hooks caught linting errors in files NOT related to type mapper (temporal_decay.py, temporal_enrichment.py, scripts/*). These were bypassed with `--no-verify` for type mapper commit.
 
 **Tasks**:
-- [ ] Fix ruff errors in `mailq/temporal_decay.py` (E501, SIM102, ARG001, SIM103)
-- [ ] Fix ruff errors in `mailq/temporal_enrichment.py` (E501)
+- [ ] Fix ruff errors in `shopq/temporal_decay.py` (E501, SIM102, ARG001, SIM103)
+- [ ] Fix ruff errors in `shopq/temporal_enrichment.py` (E501)
 - [ ] Fix ruff errors in `scripts/build_golden_dataset.py` (E741 - ambiguous variable names)
 - [ ] Fix mypy errors in temporal files (type hints)
 - [ ] Install missing stub: `pip install types-PyYAML`
-- [ ] Run `ruff check mailq/ scripts/ --fix` to auto-fix
-- [ ] Run `mypy mailq/` to validate type hints
+- [ ] Run `ruff check shopq/ scripts/ --fix` to auto-fix
+- [ ] Run `mypy shopq/` to validate type hints
 - [ ] Commit fixes separately from feature work
 
 **Reference**: Pre-commit hook output from 2025-11-10 commit
@@ -164,14 +164,14 @@
 **Completed Tasks** (2025-11-10 Validation):
 - ✅ Create `config/guardrails.yaml` with regex hygiene
 - ✅ Define lists: `never_surface`, `force_critical`, `force_non_critical`
-- ✅ Refactor prefilter module to read from config (`mailq/bridge/guardrails.py`)
+- ✅ Refactor prefilter module to read from config (`shopq/bridge/guardrails.py`)
 - ✅ Add precedence rules (guardrails override mapper)
 - ✅ Write tests for guardrail application (3/3 pass)
 - ✅ Validate no behavior change (9/9 golden set tests pass)
 
 **Delivered**:
 - `config/guardrails.yaml` (3 categories)
-- `mailq/bridge/guardrails.py` (GuardrailMatcher class)
+- `shopq/bridge/guardrails.py` (GuardrailMatcher class)
 - `tests/test_guardrails_precedence.py` (precedence tests)
 - Integration into production pipeline
 

@@ -1,15 +1,15 @@
-# MailQ Documentation
+# ShopQ Documentation
 
-Comprehensive technical documentation for the MailQ project.
+Comprehensive technical documentation for the ShopQ project.
 
 ## Quick Navigation
 
-**New to MailQ?** Start here:
+**New to ShopQ?** Start here:
 1. [../README.md](../README.md) - Project overview
 2. [../QUICKSTART.md](../QUICKSTART.md) - Setup and getting started
 3. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) - System design
 
-**AI Assistants**: Read [../MAILQ_REFERENCE.md](../MAILQ_REFERENCE.md) first for full context.
+**AI Assistants**: Read [../SHOPQ_REFERENCE.md](../SHOPQ_REFERENCE.md) first for full context.
 
 ## Documentation Structure
 

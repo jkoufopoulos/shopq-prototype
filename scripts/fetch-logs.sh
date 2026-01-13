@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Fetch and analyze Cloud Run logs for MailQ debugging
+# Fetch and analyze Cloud Run logs for ShopQ debugging
 #
 # Usage:
 #   ./fetch-logs.sh          # Last 2 hours
@@ -12,7 +12,7 @@ set -e
 
 PROJECT_ID="mailq-467118"
 HOURS_AGO="${1:-2}"  # Default to 2 hours
-API_URL="https://mailq-api-488078904670.us-central1.run.app"
+API_URL="https://shopq-api-488078904670.us-central1.run.app"
 
 # Calculate timestamp for N hours ago
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -23,7 +23,7 @@ else
     START_TIME=$(date -u -d "${HOURS_AGO} hours ago" +"%Y-%m-%dT%H:%M:%SZ")
 fi
 
-echo "🔍 Fetching MailQ production logs since $START_TIME (last ${HOURS_AGO} hours)..."
+echo "🔍 Fetching ShopQ production logs since $START_TIME (last ${HOURS_AGO} hours)..."
 echo ""
 
 # Create temp file for logs
@@ -33,7 +33,7 @@ trap "rm -f $TEMP_LOGS" EXIT
 # Fetch logs (production only)
 gcloud logging read \
 "resource.type=\"cloud_run_revision\"
-AND resource.labels.service_name=\"mailq-api\"
+AND resource.labels.service_name=\"shopq-api\"
 AND timestamp>=\"$START_TIME\"" \
 --limit 500 \
 --format json \
@@ -140,7 +140,7 @@ print(f"Found {len(session_ids)} digest sessions\n")
 for session_id in sorted(session_ids, reverse=True)[:5]:  # Last 5 sessions
     session_info = digest_sessions.get(session_id, {})
     ts = session_info.get('timestamp', '')[:19].replace('T', ' ')
-    svc_name = 'PROD' if 'mailq-api' == session_info.get('service') else 'STAGING'
+    svc_name = 'PROD' if 'shopq-api' == session_info.get('service') else 'STAGING'
 
     print('─' * 80)
     print(f"📅 Session: {session_id} ({ts}) [{svc_name}]")

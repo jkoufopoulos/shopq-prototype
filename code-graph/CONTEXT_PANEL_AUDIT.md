@@ -49,7 +49,7 @@ Email → Rules Engine → [Match?] → Cache result (T0 cost: free)
 ### 1.2 Redundant "Tip" Section
 **Problem:** Every single panel ends with:
 ```
-💡 Tip: Edit prompts in mailq/prompts/ - no code changes needed!
+💡 Tip: Edit prompts in shopq/prompts/ - no code changes needed!
 ```
 
 **Issues:**
@@ -286,7 +286,7 @@ With CSS:
 **Problem:** Some code uses `<pre><code>`, some uses inline `<code>`, some uses plain text.
 
 **Recommendation:** Standardize:
-- **Single values:** Inline code `<code>mailq.db</code>`
+- **Single values:** Inline code `<code>shopq.db</code>`
 - **Multiple lines:** Pre block with syntax highlighting
 - **Flows/ASCII art:** Pre block with monospace
 

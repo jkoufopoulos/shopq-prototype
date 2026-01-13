@@ -1,4 +1,4 @@
-# MailQ MVP Roadmap — 95% Accurate, Never Weird
+# ShopQ MVP Roadmap — 95% Accurate, Never Weird
 
 **Goal:** Ship a digest that feels good, is 95% accurate, and won't do anything "very wrong or odd."
 
@@ -11,7 +11,7 @@
 
 - **Default mode: Read-only.** Onboarding requests only `gmail.readonly`. The digest can run fully in read-only.
 - **Optional writes:** If a user enables "Smart labels," we request `gmail.modify` (no send). All writes are reversible.
-- **No sending, no drafts (MVP):** MailQ does **not** request `gmail.send`. We won't email anyone on your behalf.
+- **No sending, no drafts (MVP):** ShopQ does **not** request `gmail.send`. We won't email anyone on your behalf.
 - **Data minimization:** We store message IDs, headers, sender domain, timestamps, and extracted entities — **not** full bodies.
 - **Transparency:** Every card shows "Why is this here?" with `{importance, reason, source}`. Overrides apply in one click and can expire.
 - **Revocation:** Users can pause syncing anytime and revoke access via Google's "Manage third-party access."

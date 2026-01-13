@@ -9,7 +9,7 @@ color: purple
 
 Use this agent when:
 
-1. You have created or modified a prompt file (especially in mailq/prompts/ directory like classifier_prompt.txt or verifier_prompt.txt)
+1. You have created or modified a prompt file (especially in shopq/prompts/ directory like classifier_prompt.txt or verifier_prompt.txt)
 2. You want to evaluate if a prompt will produce consistent, repeatable results across multiple runs
 3. You need to assess prompt quality before deploying changes to production
 4. You're experiencing inconsistent LLM outputs and want to identify prompt weaknesses
@@ -96,7 +96,7 @@ When reviewing a prompt, systematically evaluate these dimensions:
 ### Step 1: Initial Assessment
 - Read the entire prompt carefully
 - Identify the prompt's primary purpose and expected outputs
-- Note any project-specific context (e.g., MailQ classification requirements)
+- Note any project-specific context (e.g., ShopQ classification requirements)
 - Check if this is a classifier, verifier, or other prompt type
 
 ### Step 2: Repeatability Analysis
@@ -187,9 +187,9 @@ Structure your review as follows:
 **With Changes**: Repeatability ≥70, Accuracy ≥75, Fixable critical issues
 **No**: Below thresholds or unfixable structural problems
 
-## Special Considerations for MailQ Context
+## Special Considerations for ShopQ Context
 
-When reviewing MailQ prompts (classifier_prompt.txt, verifier_prompt.txt):
+When reviewing ShopQ prompts (classifier_prompt.txt, verifier_prompt.txt):
 - Evaluate alignment with multi-dimensional classification schema
 - Check if confidence thresholds are appropriate (MIN_TYPE_CONF=0.92, MIN_LABEL_CONF=0.85)
 - Verify few-shot examples match the production classification dimensions

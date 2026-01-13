@@ -1,6 +1,6 @@
-# MailQ User Stories
+# ShopQ User Stories
 
-**Purpose**: Formal user stories with acceptance criteria for MailQ features, extracted from roadmaps and organized by priority.
+**Purpose**: Formal user stories with acceptance criteria for ShopQ features, extracted from roadmaps and organized by priority.
 
 **Last Updated**: 2025-11-10
 
@@ -35,9 +35,9 @@
 - Non-calendar event types
 
 **Technical Implementation**:
-- Module: `mailq/type_mapper.py`
+- Module: `shopq/type_mapper.py`
 - Config: `config/type_mapper_rules.yaml`
-- Integration: `mailq/memory_classifier.py:60-83`
+- Integration: `shopq/memory_classifier.py:60-83`
 - Tests: `tests/test_type_mapper*.py`
 
 **Reference**: `docs/TYPE_MAPPER_IMPLEMENTATION_SUMMARY.md`
@@ -73,9 +73,9 @@
 - Custom grace periods per user (future)
 
 **Technical Implementation**:
-- Module: `mailq/temporal_enrichment.py`, `mailq/temporal_decay.py`
-- Config: `config/mailq_policy.yaml` (grace_period_hours, active_window_hours, etc.)
-- Integration: `mailq/digest_formatter.py:64-80`
+- Module: `shopq/temporal_enrichment.py`, `shopq/temporal_decay.py`
+- Config: `config/shopq_policy.yaml` (grace_period_hours, active_window_hours, etc.)
+- Integration: `shopq/digest_formatter.py:64-80`
 - Tests: `tests/test_temporal*.py`
 
 **Reference**: `docs/TESTING_COMPLETE_SUMMARY.md`
@@ -89,7 +89,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want my digest to look the same every time I view it for the same set of emails,
 > So that I can trust the digest won't randomly change or show different information.
 
@@ -107,7 +107,7 @@
 - Personalized greeting messages
 
 **Technical Implementation**:
-- Module: `mailq/digest_formatter.py`, `mailq/card_renderer.py`
+- Module: `shopq/digest_formatter.py`, `shopq/card_renderer.py`
 - Schema: `shared/schemas/classification.json`
 - Tests: TBD (snapshot tests)
 
@@ -122,7 +122,7 @@
 **Effort**: 3 days
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want to use LLM classification with deterministic type mapper overrides,
 > So that I get the best of both worlds: LLM flexibility and rule-based consistency.
 
@@ -140,9 +140,9 @@
 - Confidence-based routing (P4)
 
 **Technical Implementation**:
-- Module: `mailq/mapper.py`
+- Module: `shopq/mapper.py`
 - Config: `config/mapper_rules.yaml` (to be created)
-- Integration: `mailq/memory_classifier.py`
+- Integration: `shopq/memory_classifier.py`
 - Tests: TBD
 
 **Reference**: `docs/MVP_ROADMAP.md` (Section 2)
@@ -156,7 +156,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want sensitive emails (OTP codes, verification emails) to never appear in my digest,
 > So that I can feel confident my security isn't compromised by the digest.
 
@@ -191,7 +191,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ developer,
+> As a ShopQ developer,
 > I want importance to only be up-ranked by deterministic rules or down-ranked by confidence,
 > So that classification behavior is predictable and doesn't drift over time.
 
@@ -214,7 +214,7 @@
 
 **Technical Implementation**:
 - Module: TBD (post-processor or mapper refactor)
-- Config: `config/mailq_policy.yaml` (route_threshold)
+- Config: `config/shopq_policy.yaml` (route_threshold)
 - Tests: TBD (mutation guard + distribution tests)
 
 **Reference**: `docs/MVP_ROADMAP.md` (Section 4)
@@ -228,7 +228,7 @@
 **Effort**: 1 day
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want every classification to be logged with model and prompt versions,
 > So that I can rollback to previous versions if classification quality degrades.
 
@@ -248,7 +248,7 @@
 - Multi-model comparison
 
 **Technical Implementation**:
-- Module: `mailq/vertex_gemini_classifier.py` (add version logging)
+- Module: `shopq/vertex_gemini_classifier.py` (add version logging)
 - Config: `config/rollback_conditions.yaml` (to be created or update existing)
 - Documentation: `docs/ROLLBACK_CONDITIONS.md`
 
@@ -263,9 +263,9 @@
 **Effort**: 3 days
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want to override incorrect classifications and see why each email was categorized,
-> So that I can quickly fix mistakes and understand MailQ's reasoning.
+> So that I can quickly fix mistakes and understand ShopQ's reasoning.
 
 **Acceptance Criteria**:
 - [ ] User Overrides (P5) apply after LLM/mapper/guardrails and before digest sectioning
@@ -299,7 +299,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want my data completely isolated from other users,
 > So that I can trust no one else can see my emails or rules.
 
@@ -334,7 +334,7 @@
 **Effort**: 1 day
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want my digest artifacts to be automatically deleted after 14 days,
 > So that my email data isn't stored indefinitely.
 
@@ -367,8 +367,8 @@
 
 **User Story**:
 > As a privacy-conscious user,
-> I want to use MailQ with read-only access by default,
-> So that I can trust MailQ won't modify my emails without my explicit permission.
+> I want to use ShopQ with read-only access by default,
+> So that I can trust ShopQ won't modify my emails without my explicit permission.
 
 **Acceptance Criteria**:
 - [ ] MVP ships `gmail.readonly` only
@@ -399,7 +399,7 @@
 **Effort**: 1 day
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want clear documented thresholds for when to rollback,
 > So that I can act quickly when classification quality degrades.
 
@@ -440,7 +440,7 @@
 **Depends On**: US-008 (User Overrides MVP)
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want to override the importance/type for specific email threads,
 > So that future emails in that thread are classified correctly.
 
@@ -472,7 +472,7 @@
 **Effort**: 1 day
 
 **User Story**:
-> As a MailQ system,
+> As a ShopQ system,
 > I want to gracefully handle Gmail API rate limits with exponential backoff,
 > So that I don't bombard Gmail with requests when throttled.
 
@@ -503,7 +503,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ system,
+> As a ShopQ system,
 > I want to queue LLM classification requests when under load,
 > So that I don't drop requests or timeout during traffic spikes.
 
@@ -535,7 +535,7 @@
 **Effort**: 3 days
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want to migrate from SQLite to Postgres when we hit scaling limits,
 > So that we can support hundreds of concurrent users.
 
@@ -568,7 +568,7 @@
 **Effort**: 2 days
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want to automatically run golden set validation every night,
 > So that I catch classification drift before it affects users.
 
@@ -600,7 +600,7 @@
 **Effort**: 5 days
 
 **User Story**:
-> As a MailQ user,
+> As a ShopQ user,
 > I want to see suggested next steps based on my emails and calendar,
 > So that I can act on important tasks without manually reviewing everything.
 
@@ -638,7 +638,7 @@
 **Effort**: 4 days
 
 **User Story**:
-> As a MailQ operator,
+> As a ShopQ operator,
 > I want to gradually roll out new features with automatic rollback,
 > So that I can catch issues before they affect all users.
 
@@ -674,7 +674,7 @@
 **Depends On**: US-016 (Postgres migration)
 
 **User Story**:
-> As a MailQ system,
+> As a ShopQ system,
 > I want to scale horizontally with worker processes,
 > So that I can handle thousands of concurrent users.
 
@@ -708,8 +708,8 @@
 **Depends On**: US-018 (Agent v0)
 
 **User Story**:
-> As a MailQ user,
-> I want MailQ to suggest bumping emails I haven't responded to,
+> As a ShopQ user,
+> I want ShopQ to suggest bumping emails I haven't responded to,
 > So that I don't forget to follow up on important conversations.
 
 **Acceptance Criteria**:
@@ -741,8 +741,8 @@
 **Depends On**: US-021 (Agent v1)
 
 **User Story**:
-> As a MailQ power user,
-> I want MailQ to create calendar events and draft emails on my behalf,
+> As a ShopQ power user,
+> I want ShopQ to create calendar events and draft emails on my behalf,
 > So that I can save time on repetitive tasks.
 
 **Acceptance Criteria**:
@@ -774,7 +774,7 @@
 **Effort**: 3 days
 
 **User Story**:
-> As a MailQ developer,
+> As a ShopQ developer,
 > I want comprehensive documentation for all features,
 > So that new contributors can onboard quickly.
 
@@ -808,8 +808,8 @@
 **Depends On**: US-022 (Agent v2)
 
 **User Story**:
-> As a MailQ user,
-> I want MailQ to feel like a helpful assistant,
+> As a ShopQ user,
+> I want ShopQ to feel like a helpful assistant,
 > So that interacting with my email feels natural and conversational.
 
 **Acceptance Criteria**:

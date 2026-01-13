@@ -1,4 +1,4 @@
-# MailQ System Verification Guide
+# ShopQ System Verification Guide
 
 **Date**: November 6, 2025 @ 4:00 AM EST
 **Status**: Ready for testing after extension reload
@@ -10,13 +10,13 @@
 1. **Reload Chrome Extension**
    - Open Chrome
    - Go to: `chrome://extensions`
-   - Find "MailQ" extension
+   - Find "ShopQ" extension
    - Click reload icon (circular arrow)
    - ✅ Verify no errors in console
 
 2. **Test Classification & Digest**
    - Open Gmail
-   - Click "Organize" in MailQ extension
+   - Click "Organize" in ShopQ extension
    - Watch console for logs (see below)
    - Check inbox for digest (should see ONLY ONE)
 
@@ -36,7 +36,7 @@
 ✅ OAuth token obtained
 📧 Found X unlabeled emails to organize
 🤖 Classifying X emails...
-✅ Labels applied: MailQ/Receipts (N), MailQ/Finance (N), ...
+✅ Labels applied: ShopQ/Receipts (N), ShopQ/Finance (N), ...
 📧 [SUMMARY] Starting summary email generation...
 ✅ [SUMMARY] Digest generation lock acquired (ID: ..., session: 20251106_040000)
 ✅ [SUMMARY] Summary email sent successfully! Total time: 2500ms
@@ -44,11 +44,11 @@
 ```
 
 **Gmail Results**:
-- Labels appear on emails (MailQ/Receipts, MailQ/Finance, etc.)
+- Labels appear on emails (ShopQ/Receipts, ShopQ/Finance, etc.)
 - ONE digest email arrives in inbox
 - No duplicate digests
 
-**Backend Logs** (`/tmp/mailq-api.log`):
+**Backend Logs** (`/tmp/shopq-api.log`):
 ```
 INFO: 127.0.0.1:xxxxx - "POST /api/classify HTTP/1.1" 200 OK
 INFO: 127.0.0.1:xxxxx - "POST /api/context-digest HTTP/1.1" 200 OK
@@ -92,10 +92,10 @@ input_emails_20251106_040000.json     # Input emails for this session
 
 ```bash
 # Open Chrome DevTools before reloading
-1. Right-click MailQ extension icon → Inspect
+1. Right-click ShopQ extension icon → Inspect
 2. Keep DevTools open during testing
 3. Go to chrome://extensions
-4. Find MailQ → Click reload icon
+4. Find ShopQ → Click reload icon
 5. Check DevTools console for any errors
 ```
 
@@ -107,16 +107,16 @@ input_emails_20251106_040000.json     # Input emails for this session
 
 ```bash
 # In Gmail:
-1. Click "Organize" button in MailQ extension
+1. Click "Organize" button in ShopQ extension
 2. Watch console logs in real-time
 3. Wait for "Labels applied" message
-4. Check emails for MailQ/* labels
+4. Check emails for ShopQ/* labels
 ```
 
 **Expected Behavior**:
 - ✅ Classification completes without errors
-- ✅ All unlabeled emails receive MailQ labels
-- ✅ Console shows: "Labels applied: MailQ/Receipts (N), MailQ/Finance (N), ..."
+- ✅ All unlabeled emails receive ShopQ labels
+- ✅ Console shows: "Labels applied: ShopQ/Receipts (N), ShopQ/Finance (N), ..."
 
 **If It Fails**:
 - Check console for "Assignment to constant variable" error
@@ -225,9 +225,9 @@ ls -lh quality_logs/input_emails_${SESSION_ID}.json
 **Solution**:
 ```bash
 # Hard refresh extension:
-1. chrome://extensions → Disable MailQ
+1. chrome://extensions → Disable ShopQ
 2. Wait 5 seconds
-3. chrome://extensions → Enable MailQ
+3. chrome://extensions → Enable ShopQ
 4. Clear browser cache (Ctrl+Shift+Delete)
 5. Reload Gmail tab
 6. Try "Organize" again
@@ -246,7 +246,7 @@ ls -lh quality_logs/input_emails_${SESSION_ID}.json
 **Solution**:
 ```bash
 # Clear extension storage:
-1. Right-click MailQ icon → Inspect
+1. Right-click ShopQ icon → Inspect
 2. In DevTools console:
    chrome.storage.local.clear(() => console.log('Storage cleared'))
 3. Reload extension
@@ -269,8 +269,8 @@ ls -lh quality_logs/input_emails_${SESSION_ID}.json
 ps aux | grep uvicorn | grep 23712
 
 # If PID is different or not found:
-pkill -f "uvicorn mailq.api"
-nohup uvicorn mailq.api:app --host 127.0.0.1 --port 8000 > /tmp/mailq-api.log 2>&1 &
+pkill -f "uvicorn shopq.api"
+nohup uvicorn shopq.api:app --host 127.0.0.1 --port 8000 > /tmp/shopq-api.log 2>&1 &
 
 # Get new PID:
 ps aux | grep uvicorn | grep -v grep
@@ -289,10 +289,10 @@ ps aux | grep uvicorn | grep -v grep
 **Solution**:
 ```bash
 # Force service worker restart:
-1. chrome://extensions → MailQ → "service worker" link
+1. chrome://extensions → ShopQ → "service worker" link
 2. In DevTools: Right-click "Reload" → Hard Reload
 3. Or: chrome://serviceworker-internals
-4. Find MailQ → Click "Unregister"
+4. Find ShopQ → Click "Unregister"
 5. Reload extension
 ```
 
@@ -308,10 +308,10 @@ If any fixes cause new issues:
 kill 23712
 
 # Revert changes
-git checkout HEAD -- mailq/api.py
+git checkout HEAD -- shopq/api.py
 
 # Restart with old code
-uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 ### Extension Rollback
@@ -320,7 +320,7 @@ uvicorn mailq.api:app --host 127.0.0.1 --port 8000
 git checkout HEAD -- extension/modules/mapper.js extension/modules/summary-email.js
 
 # Reload extension in Chrome
-# Go to chrome://extensions → Reload MailQ
+# Go to chrome://extensions → Reload ShopQ
 ```
 
 ---
@@ -332,7 +332,7 @@ After testing, verify ALL of these:
 - [ ] Extension reloaded without errors
 - [ ] DevTools console shows no errors
 - [ ] Labels applied to all unlabeled emails
-- [ ] Console shows proper MailQ/* label names
+- [ ] Console shows proper ShopQ/* label names
 - [ ] Single digest email sent (not two)
 - [ ] Console shows lock acquisition with session_id
 - [ ] Console shows lock release after digest sent
@@ -378,7 +378,7 @@ After testing, verify ALL of these:
 curl http://127.0.0.1:8000/health
 
 # View recent backend logs
-tail -20 /tmp/mailq-api.log
+tail -20 /tmp/shopq-api.log
 
 # Check quality monitor status
 ./scripts/quality-system-status.sh

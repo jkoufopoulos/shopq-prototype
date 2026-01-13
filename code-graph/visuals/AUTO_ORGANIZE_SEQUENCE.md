@@ -26,35 +26,35 @@ sequenceDiagram
         Backend-->>Worker: Classification results
         Worker->>Gmail: Apply labels & archive
         Worker->>Store: Update cache + telemetry
-        Worker->>Store: Set mailq_digest_pending=true
+        Worker->>Store: Set shopq_digest_pending=true
         par Digest Trigger
             Worker->>Digest: generateAndSendSummaryEmail()
-            Digest->>Gmail: Send MailQ digest
+            Digest->>Gmail: Send ShopQ digest
         end
     else Inbox empty
         Worker->>Store: Clear digest pending flag
     end
-    Worker->>Store: Update mailq_last_auto_organize_at
+    Worker->>Store: Update shopq_last_auto_organize_at
 ```
 
 ## Execution Flow
 
-1. **Alarm fires** based on the configured interval (`mailq_auto_organize_settings.intervalMinutes`).
+1. **Alarm fires** based on the configured interval (`shopq_auto_organize_settings.intervalMinutes`).
 2. **Service worker** validates settings, records session start, and queries Gmail for unlabeled threads.
 3. **When threads exist**:
    - Calls the backend `/api/organize` endpoint with deduplicated threads.
    - Applies Gmail labels/archives via `gmail.js`.
-   - Marks `mailq_digest_pending` so the next foreground Gmail tab triggers a digest.
+   - Marks `shopq_digest_pending` so the next foreground Gmail tab triggers a digest.
 4. **When inbox is empty**, the digest pending flag is cleared.
 5. **Digest pipeline** runs when Gmail becomes active, using `generateAndSendSummaryEmail` to send the context digest.
 
 ## Key Metrics
 
-- Alarm interval & settings in `mailq_auto_organize_settings`
+- Alarm interval & settings in `shopq_auto_organize_settings`
 - Cache hit/miss (`extension/modules/telemetry.js`)
 - Pipeline timing (`infra/telemetry.py`:
   `pipeline.total_ms`, `gmail.fetch.latency_ms`, etc.)
-- Digest timestamps (`mailq_last_digest_sent_at` sync storage)
+- Digest timestamps (`shopq_last_digest_sent_at` sync storage)
 
 ---
 
@@ -66,4 +66,4 @@ sequenceDiagram
 **Key files**:
 - `extension/background.js` – Service worker
 - `extension/modules/auto-organize.js` – Auto-organize logic
-- `mailq/api/routes/organize.py` – Backend endpoint
+- `shopq/api/routes/organize.py` – Backend endpoint

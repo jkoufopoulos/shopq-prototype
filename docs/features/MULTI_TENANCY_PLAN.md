@@ -36,7 +36,7 @@ async def classify(payload: ClassifyRequest):
 
 ### Step 1.1: Create Auth Dependency
 
-Create `mailq/auth.py`:
+Create `shopq/auth.py`:
 
 ```python
 """Authentication utilities for FastAPI"""
@@ -93,8 +93,8 @@ def validate_and_extract_user_id(token: str) -> Optional[str]:
 **Pattern**: Add auth dependency to all endpoints
 
 ```python
-# mailq/api.py
-from mailq.auth import get_current_user_id
+# shopq/api.py
+from shopq.auth import get_current_user_id
 from fastapi import Depends
 
 @app.post("/api/classify")
@@ -148,12 +148,12 @@ AUTH_REQUIRED=true   # Validates OAuth tokens, extracts user_id
 
 ```bash
 # Search results
-mailq/rules_engine.py:        user_id: str = "default"  # 5 occurrences
-mailq/rules_manager.py:       user_id: str = "default"  # 4 occurrences
-mailq/category_manager.py:    user_id: str = "default"  # 4 occurrences
-mailq/memory_classifier.py:   user_id: str = "default"  # 3 occurrences
-mailq/api.py:                 user_id: str = "default"  # 1 occurrence
-mailq/api_feedback.py:        user_id: str = "default"  # 3 occurrences
+shopq/rules_engine.py:        user_id: str = "default"  # 5 occurrences
+shopq/rules_manager.py:       user_id: str = "default"  # 4 occurrences
+shopq/category_manager.py:    user_id: str = "default"  # 4 occurrences
+shopq/memory_classifier.py:   user_id: str = "default"  # 3 occurrences
+shopq/api.py:                 user_id: str = "default"  # 1 occurrence
+shopq/api_feedback.py:        user_id: str = "default"  # 3 occurrences
 ```
 
 ### Step 2.2: Refactoring Strategy
@@ -188,19 +188,19 @@ async def get_rules_endpoint(user_id: str = Depends(get_current_user_id)):
 
 **Recommended: Minimal changes, use dependency injection**
 
-1. ✅ Add `mailq/auth.py` (auth dependency)
+1. ✅ Add `shopq/auth.py` (auth dependency)
 2. ✅ Update API endpoints to use `Depends(get_current_user_id)`
 3. ✅ Keep `user_id="default"` in function signatures (backward compatible)
 4. ✅ Set `AUTH_REQUIRED=false` for MVP (no behavior change)
 5. ⏭️ Later: Enable `AUTH_REQUIRED=true` for multi-user
 
 **Files to change**:
-- `mailq/auth.py` (NEW) - Auth dependency
-- `mailq/api.py` - Add auth to endpoints
-- `mailq/api_feedback.py` - Add auth to endpoints
-- `mailq/api_tracking.py` - Add auth to endpoints
-- `mailq/api_verify.py` - Add auth to endpoints
-- `mailq/api_linker.py` - Add auth to endpoints
+- `shopq/auth.py` (NEW) - Auth dependency
+- `shopq/api.py` - Add auth to endpoints
+- `shopq/api_feedback.py` - Add auth to endpoints
+- `shopq/api_tracking.py` - Add auth to endpoints
+- `shopq/api_verify.py` - Add auth to endpoints
+- `shopq/api_linker.py` - Add auth to endpoints
 
 ## Phase 3: Database Indexes (Performance)
 
@@ -215,13 +215,13 @@ CREATE INDEX IF NOT EXISTS idx_digest_sessions_user_id ON digest_sessions(user_i
 CREATE INDEX IF NOT EXISTS idx_quality_issues_user_id ON quality_issues(user_id, created_at DESC);
 ```
 
-**Migration script**: `mailq/scripts/add_user_indexes.py`
+**Migration script**: `shopq/scripts/add_user_indexes.py`
 
 ```python
 import sqlite3
 
 def add_indexes():
-    conn = sqlite3.connect("mailq/data/mailq.db")
+    conn = sqlite3.connect("shopq/data/shopq.db")
     cursor = conn.cursor()
 
     indexes = [
@@ -251,7 +251,7 @@ Create `tests/unit/test_multi_tenancy.py`:
 """Test tenant isolation"""
 
 import pytest
-from mailq.rules_manager import get_rules, add_rule
+from shopq.rules_manager import get_rules, add_rule
 
 def test_rules_isolated_by_user():
     """Rules for user A should not be visible to user B"""
@@ -293,7 +293,7 @@ pytest tests/unit/test_multi_tenancy.py -v
 ### Implement Google OAuth validation
 
 ```python
-# mailq/auth.py
+# shopq/auth.py
 import requests
 from functools import lru_cache
 from datetime import datetime, timedelta
@@ -358,7 +358,7 @@ def validate_and_extract_user_id(token: str) -> Optional[str]:
 ```javascript
 // extension/background.js
 const token = await getAuthToken();
-const response = await fetch(`${CONFIG.MAILQ_API_URL}/api/classify`, {
+const response = await fetch(`${CONFIG.SHOPQ_API_URL}/api/classify`, {
   headers: {
     'Authorization': `Bearer ${token}`  // ✅ Already implemented!
   }
@@ -372,7 +372,7 @@ const response = await fetch(`${CONFIG.MAILQ_API_URL}/api/classify`, {
 ### Step-by-step deployment
 
 **Week 1**: Infrastructure prep
-1. ✅ Create `mailq/auth.py` with MVP mode (`AUTH_REQUIRED=false`)
+1. ✅ Create `shopq/auth.py` with MVP mode (`AUTH_REQUIRED=false`)
 2. ✅ Update API endpoints to accept auth dependency
 3. ✅ Deploy with `AUTH_REQUIRED=false` (no behavior change)
 4. ✅ Test in development
@@ -436,7 +436,7 @@ logger.error(f"SECURITY: User {user_id} attempted to access data for {other_user
 # Disable auth immediately
 export AUTH_REQUIRED=false
 # Restart service
-systemctl restart mailq-api
+systemctl restart shopq-api
 ```
 
 **Symptom**: Performance degradation after index addition
@@ -460,7 +460,7 @@ DROP INDEX IF EXISTS idx_email_threads_user_id;
 
 **Before enabling AUTH_REQUIRED=true**:
 
-- [ ] `mailq/auth.py` implemented with OAuth validation
+- [ ] `shopq/auth.py` implemented with OAuth validation
 - [ ] All API endpoints use `Depends(get_current_user_id)`
 - [ ] Database indexes added for `user_id`
 - [ ] Multi-tenancy unit tests passing
@@ -473,11 +473,11 @@ DROP INDEX IF EXISTS idx_email_threads_user_id;
 
 - **Database Policy**: `/docs/DATABASE_POLICY.md`
 - **Extension Security**: `/docs/EXTENSION_SECURITY.md`
-- **API Documentation**: `/mailq/api.py`
-- **Auth Module**: `/mailq/auth.py` (to be created)
+- **API Documentation**: `/shopq/api.py`
+- **Auth Module**: `/shopq/auth.py` (to be created)
 
 ---
 
 **Status**: 📋 Planning phase
-**Next Action**: Create `mailq/auth.py` with MVP mode
+**Next Action**: Create `shopq/auth.py` with MVP mode
 **Owner**: See `/CONTRIBUTING.md`

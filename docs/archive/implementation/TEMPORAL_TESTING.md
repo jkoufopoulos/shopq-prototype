@@ -159,12 +159,12 @@ Report includes:
 ### Low Critical Precision (❌ FAIL)
 - **Issue**: Showing stale urgent items (bills after deadline)
 - **Fix**: Review temporal decay downgrade timing
-- **Check**: `mailq/temporal_enrichment.py` windows
+- **Check**: `shopq/temporal_enrichment.py` windows
 
 ### Low TODAY Recall (❌ FAIL)
 - **Issue**: Missing items happening today (< 1 hour)
 - **Fix**: Expand TODAY cutoff or temporal keyword detection
-- **Check**: `mailq/digest/categorizer.py` temporal logic
+- **Check**: `shopq/digest/categorizer.py` temporal logic
 
 ### Low Receipt Stability (❌ FAIL)
 - **Issue**: Receipts jumping between sections
@@ -223,8 +223,8 @@ Modify `scripts/create_edge_case_emails.py` to generate additional cases.
 
 ### Configuration
 - `config/guardrails.yaml` - Filtering rules
-- `mailq/digest/categorizer.py` - Section assignment logic
-- `mailq/temporal_enrichment.py` - Decay windows
+- `shopq/digest/categorizer.py` - Section assignment logic
+- `shopq/temporal_enrichment.py` - Decay windows
 
 ## Troubleshooting
 
@@ -235,7 +235,7 @@ Modify `scripts/create_edge_case_emails.py` to generate additional cases.
 
 **Q: System predictions all wrong**
 - Verify temporal enrichment is enabled
-- Check `mailq.db` has temporal keyword rules (22 entries)
+- Check `shopq.db` has temporal keyword rules (22 entries)
 - Review logs for entity extraction failures
 
 **Q: Edge cases not included**
@@ -266,6 +266,6 @@ Modify `scripts/create_edge_case_emails.py` to generate additional cases.
 ## References
 
 - [CLAUDE.md](CLAUDE.md) - Development guardrails
-- [MAILQ_REFERENCE.md](MAILQ_REFERENCE.md) - Architecture reference
+- [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md) - Architecture reference
 - [config/guardrails.yaml](config/guardrails.yaml) - Filtering rules
-- [mailq/temporal_enrichment.py](mailq/temporal_enrichment.py) - Decay logic
+- [shopq/temporal_enrichment.py](shopq/temporal_enrichment.py) - Decay logic

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test MailQ against Golden Dataset (gds-1.0.csv)
+# Test ShopQ against Golden Dataset (gds-1.0.csv)
 #
 # Usage:
 #   ./scripts/test_against_gds.sh
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  MailQ Golden Dataset Test Suite                          ║${NC}"
+echo -e "${BLUE}║  ShopQ Golden Dataset Test Suite                          ║${NC}"
 echo -e "${BLUE}║  Testing against gds-1.0.csv (500 emails)                 ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""

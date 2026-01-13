@@ -13,7 +13,7 @@
 
 ### Step 1: Reload Extension
 1. Open `chrome://extensions`
-2. Find "MailQ" extension
+2. Find "ShopQ" extension
 3. Click the reload icon (🔄)
 4. Verify: No error messages appear
 
@@ -45,7 +45,7 @@ triggerAutoOrganizeNow()
 
 **Key Things to Check:**
 - ✅ Every email shows "🔧 [DEBUG] Modifying thread XXX"
-- ✅ Each shows `addLabelIds` with MailQ label IDs
+- ✅ Each shows `addLabelIds` with ShopQ label IDs
 - ✅ Each shows `removeLabelIds: ["INBOX","UNREAD","IMPORTANT"]`
 - ✅ Final message says "0 remaining"
 - ✅ No errors like "❌ Failed to fetch thread" or "⚠️ No labels for email"
@@ -57,15 +57,15 @@ triggerAutoOrganizeNow()
 
 ### Step 6: Verify Labels Applied
 1. Click "All Mail" in Gmail sidebar
-2. In search box, type: `label:MailQ-*`
+2. In search box, type: `label:ShopQ-*`
 3. Press Enter
-4. **Expected**: All recently organized emails appear with MailQ labels visible
-5. Click on a few emails - each should show 1-2 MailQ labels
+4. **Expected**: All recently organized emails appear with ShopQ labels visible
+5. Click on a few emails - each should show 1-2 ShopQ labels
 
 ### Step 7: Verify Taskrabbit Email
 1. In "All Mail", search for: `from:taskrabbit`
 2. Find the "Your upcoming General Mounting task" email
-3. **Expected**: Should have MailQ labels (likely MailQ-Events or MailQ-Notifications)
+3. **Expected**: Should have ShopQ labels (likely ShopQ-Events or ShopQ-Notifications)
 4. **Expected**: Should NOT be in inbox
 
 ### Step 8: Verify Digest
@@ -112,8 +112,8 @@ triggerAutoOrganizeNow()
 ## Acceptance Criteria (User Requirements)
 
 ✅ **Every email has an appropriate label (1-2 labels max)**
-- Check: All emails in "label:MailQ-*" search have visible labels
-- Check: No emails have more than 2 MailQ labels
+- Check: All emails in "label:ShopQ-*" search have visible labels
+- Check: No emails have more than 2 ShopQ labels
 
 ✅ **Every email is archived**
 - Check: Inbox count is 0

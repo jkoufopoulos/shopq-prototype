@@ -1,4 +1,4 @@
-# MailQ Quality Issues Summary
+# ShopQ Quality Issues Summary
 **Generated**: 2025-11-06 01:32 AM
 **Status**: 16 issues identified, 0 created on GitHub
 

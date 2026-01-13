@@ -14,12 +14,12 @@ sys.path.insert(0, "/Users/justinkoufopoulos/Projects/mailq-prototype")
 import sqlite3
 from datetime import datetime, timedelta
 
-from mailq.digest.context_digest import ContextDigest
+from shopq.digest.context_digest import ContextDigest
 
 
 def fetch_recent_emails(hours: int = 24):
     """Fetch emails from database from last N hours"""
-    db_path = "/Users/justinkoufopoulos/Projects/mailq-prototype/mailq.sqlite"
+    db_path = "/Users/justinkoufopoulos/Projects/mailq-prototype/shopq.sqlite"
 
     try:
         conn = sqlite3.connect(db_path)

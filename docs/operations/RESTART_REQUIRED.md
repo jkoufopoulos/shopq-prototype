@@ -12,8 +12,8 @@ Our code fixes are in place but **NOT ACTIVE** because:
 ## Current Log Volume
 
 ```bash
-$ wc -l /tmp/mailq-api.log
-9685 /tmp/mailq-api.log
+$ wc -l /tmp/shopq-api.log
+9685 /tmp/shopq-api.log
 ```
 
 This will continue to grow until you restart the server properly.
@@ -27,7 +27,7 @@ This will continue to grow until you restart the server properly.
 kill 65409 89899
 
 # Or kill all uvicorn processes:
-pkill -f "uvicorn mailq.api"
+pkill -f "uvicorn shopq.api"
 
 # Verify it's stopped:
 lsof -ti:8000
@@ -37,28 +37,28 @@ lsof -ti:8000
 ### Step 2: Clear the log file
 
 ```bash
-> /tmp/mailq-api.log
-echo "Log file cleared at $(date)" > /tmp/mailq-api.log
+> /tmp/shopq-api.log
+echo "Log file cleared at $(date)" > /tmp/shopq-api.log
 ```
 
 ### Step 3: Start the server WITHOUT --reload
 
 ```bash
 # Production mode (no reload, minimal logging)
-uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 
 # If you need debugging:
-DEBUG=true uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+DEBUG=true uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 **DO NOT USE `--reload` flag** - it causes restart loops when files are written.
 
 ### Step 4: Test a manual run
 
-1. Click "Organize" in the MailQ extension
+1. Click "Organize" in the ShopQ extension
 2. Check the log:
    ```bash
-   tail -100 /tmp/mailq-api.log
+   tail -100 /tmp/shopq-api.log
    ```
 3. You should see:
    - **NO `[Importance]` logs** (unless DEBUG=true)
@@ -70,7 +70,7 @@ DEBUG=true uvicorn mailq.api:app --host 127.0.0.1 --port 8000
 
 ### Production Mode (default)
 ```bash
-$ tail -20 /tmp/mailq-api.log
+$ tail -20 /tmp/shopq-api.log
 
 Log file cleared at Wed Nov  6 [time]
 INFO:     Started server process [12345]
@@ -89,7 +89,7 @@ That's it! **~10 lines** for startup, **1-2 lines per request**.
 
 ### Debug Mode (DEBUG=true)
 ```bash
-$ tail -100 /tmp/mailq-api.log
+$ tail -100 /tmp/shopq-api.log
 
 [Same startup logs]
 [ContextDigest] Starting context digest generation...
@@ -108,7 +108,7 @@ After restarting, run one digest and check:
 
 ```bash
 # Count logs from a single run
-tail -200 /tmp/mailq-api.log | grep -E "\[Importance\]|\[Entity\]|\[ContextDigest\]" | wc -l
+tail -200 /tmp/shopq-api.log | grep -E "\[Importance\]|\[Entity\]|\[ContextDigest\]" | wc -l
 ```
 
 **Expected:**
@@ -129,13 +129,13 @@ For development, use one of these approaches:
 
 **Option A: Disable reload** (recommended)
 ```bash
-uvicorn mailq.api:app --host 127.0.0.1 --port 8000
+uvicorn shopq.api:app --host 127.0.0.1 --port 8000
 ```
 
 **Option B: Use reload with exclusions** (requires uvicorn config)
 ```python
 # uvicorn_config.py
-reload_dirs = ["mailq"]  # Only watch mailq/ directory
+reload_dirs = ["mailq"]  # Only watch shopq/ directory
 reload_excludes = ["scripts/*", "quality_logs/*", "*.db"]
 ```
 

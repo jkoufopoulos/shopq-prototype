@@ -33,15 +33,15 @@ while [ $ITERATION -le $MAX_ITERATIONS ]; do
   echo "📊 Phase 1: Capturing current state..."
 
   # Get latest backend session
-  LATEST_SESSION=$(ls -t exports/mailq_session_*.csv 2>/dev/null | head -1)
+  LATEST_SESSION=$(ls -t exports/shopq_session_*.csv 2>/dev/null | head -1)
 
   if [ -z "$LATEST_SESSION" ]; then
     echo "❌ No session data found. Need to generate digest first."
     echo ""
     echo "Please:"
-    echo "1. Reload extension: chrome://extensions → MailQ → 🔄"
+    echo "1. Reload extension: chrome://extensions → ShopQ → 🔄"
     echo "2. Clear data in Gmail console (F12):"
-    echo "   indexedDB.deleteDatabase('MailQLogger');"
+    echo "   indexedDB.deleteDatabase('ShopQLogger');"
     echo "   await chrome.storage.local.clear();"
     echo "   location.reload();"
     echo "3. Wait 10 seconds for digest to appear"
@@ -56,7 +56,7 @@ while [ $ITERATION -le $MAX_ITERATIONS ]; do
   echo "📧 Fetching latest digest email..."
 
   # Extract session ID from filename
-  SESSION_ID=$(basename "$LATEST_SESSION" .csv | sed 's/mailq_session_//')
+  SESSION_ID=$(basename "$LATEST_SESSION" .csv | sed 's/shopq_session_//')
 
   # Try to get digest from backend
   DIGEST_TEXT=$(curl -s "http://localhost:8000/api/tracking/session/$SESSION_ID" 2>/dev/null | jq -r '.digest_text // empty' 2>/dev/null || echo "")
@@ -240,10 +240,10 @@ EOF
     fi
 
     # Check if api.py extracts emailTimestamp
-    if ! grep -q "item.get('emailTimestamp'" mailq/api.py; then
+    if ! grep -q "item.get('emailTimestamp'" shopq/api.py; then
       echo "  → Updating api.py to extract emailTimestamp"
 
-      sed -i.bak "s/'timestamp': item.get('timestamp'/'timestamp': item.get('emailTimestamp'/g" mailq/api.py
+      sed -i.bak "s/'timestamp': item.get('timestamp'/'timestamp': item.get('emailTimestamp'/g" shopq/api.py
 
       CHANGES_MADE=1
       echo "  ✅ Updated api.py"
@@ -254,9 +254,9 @@ EOF
     if [ $CHANGES_MADE -eq 1 ]; then
       echo ""
       echo "⚠️  CODE CHANGES MADE - Manual steps required:"
-      echo "  1. Reload extension: chrome://extensions → MailQ → 🔄"
+      echo "  1. Reload extension: chrome://extensions → ShopQ → 🔄"
       echo "  2. Clear data in Gmail console (F12):"
-      echo "     indexedDB.deleteDatabase('MailQLogger');"
+      echo "     indexedDB.deleteDatabase('ShopQLogger');"
       echo "     await chrome.storage.local.clear();"
       echo "     location.reload();"
       echo "  3. Wait 10 seconds for new digest"
@@ -275,12 +275,12 @@ EOF
     echo "🔧 Fixing: NO_AGE_MARKERS"
 
     # Check if _entity_to_text has age marker logic
-    if ! grep -q 'age_days > 2' mailq/timeline_synthesizer.py; then
+    if ! grep -q 'age_days > 2' shopq/timeline_synthesizer.py; then
       echo "  → Age marker threshold might be too high"
-      echo "  ℹ️  Current threshold: $(grep -A 2 'age_days >' mailq/timeline_synthesizer.py | head -1)"
+      echo "  ℹ️  Current threshold: $(grep -A 2 'age_days >' shopq/timeline_synthesizer.py | head -1)"
 
       # Lower threshold from 7 to 2 days
-      sed -i.bak 's/elif age_days > 7:/elif age_days > 2:/g' mailq/timeline_synthesizer.py
+      sed -i.bak 's/elif age_days > 7:/elif age_days > 2:/g' shopq/timeline_synthesizer.py
 
       CHANGES_MADE=1
       echo "  ✅ Lowered age marker threshold to 2 days"

@@ -1,5 +1,5 @@
 /**
- * Structured Logger for MailQ Extension
+ * Structured Logger for ShopQ Extension
  *
  * Mirrors Python structured_logging.py with:
  * - Event taxonomy (same EventType enum)

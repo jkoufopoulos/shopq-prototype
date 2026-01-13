@@ -11,9 +11,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RET", "ARG"]
 ignore = ["E712"]
 
 [tool.ruff.lint.per-file-ignores]
-"mailq/context_digest.py" = ["E501"]
-"mailq/card_renderer.py" = ["E501"]
-"mailq/digest_formatter.py" = ["E501"]
+"shopq/context_digest.py" = ["E501"]
+"shopq/card_renderer.py" = ["E501"]
+"shopq/digest_formatter.py" = ["E501"]
 "tests/**" = ["E501"]
 "archive/old_digest_systems/**" = ["E501"]
 
