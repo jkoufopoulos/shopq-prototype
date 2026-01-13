@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ShopQ",
   "version": "1.0.15",
-  "description": "AI-powered email organization for Gmail",
+  "description": "Track return windows on your online purchases",
 
   "permissions": [
     "identity",
@@ -76,7 +76,9 @@
         "styles.css",
         "pageWorld.js",
         "sidebar.html",
-        "sidebar-inner.js"
+        "sidebar-inner.js",
+        "returns-sidebar.html",
+        "returns-sidebar-inner.js"
       ],
       "matches": ["https://mail.google.com/*"]
     }

@@ -364,3 +364,116 @@ async def delete_return(card_id: str) -> None:
     deleted = ReturnCardRepository.delete(card_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Return card not found")
+
+
+@router.post("/refresh-statuses")
+async def refresh_statuses(
+    user_id: str = Query(..., description="User ID"),
+    threshold_days: int = Query(7, ge=1, le=30, description="Days threshold for expiring_soon"),
+) -> dict[str, Any]:
+    """
+    Refresh return card statuses based on current date.
+
+    Updates:
+    - active -> expiring_soon if within threshold_days
+    - active/expiring_soon -> expired if past return_by_date
+    """
+    try:
+        updated_count = ReturnCardRepository.refresh_statuses(user_id, threshold_days)
+        return {
+            "updated_count": updated_count,
+            "message": f"Refreshed statuses for user {user_id}",
+        }
+    except Exception as e:
+        logger.error("Failed to refresh statuses: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to refresh statuses")
+
+
+class ProcessEmailRequest(BaseModel):
+    """Request to process an email through the extraction pipeline."""
+
+    user_id: str
+    email_id: str
+    from_address: str
+    subject: str
+    body: str
+
+
+class ProcessEmailResponse(BaseModel):
+    """Response from email processing."""
+
+    success: bool
+    stage_reached: str
+    rejection_reason: str | None = None
+    card: ReturnCardResponse | None = None
+
+
+@router.post("/process", response_model=ProcessEmailResponse)
+async def process_email(request: ProcessEmailRequest) -> ProcessEmailResponse:
+    """
+    Process an email through the 3-stage extraction pipeline.
+
+    Stages:
+    1. Domain Filter - Fast rule-based pre-filter (FREE)
+    2. Returnability Classifier - LLM determines if returnable (~$0.0001)
+    3. Field Extractor - LLM + rules extract fields (~$0.0002)
+
+    Returns the created ReturnCard if email is a returnable purchase.
+    """
+    from shopq.returns import ReturnableReceiptExtractor
+
+    try:
+        extractor = ReturnableReceiptExtractor()
+        result = extractor.extract_from_email(
+            user_id=request.user_id,
+            email_id=request.email_id,
+            from_address=request.from_address,
+            subject=request.subject,
+            body=request.body,
+        )
+
+        if result.success and result.card:
+            # Save the card to the database
+            from shopq.returns import ReturnCardCreate, ReturnConfidence
+
+            card_create = ReturnCardCreate(
+                user_id=result.card.user_id,
+                merchant=result.card.merchant,
+                merchant_domain=result.card.merchant_domain,
+                item_summary=result.card.item_summary,
+                confidence=result.card.confidence,
+                source_email_ids=result.card.source_email_ids,
+                order_number=result.card.order_number,
+                amount=result.card.amount,
+                currency=result.card.currency,
+                order_date=result.card.order_date,
+                delivery_date=result.card.delivery_date,
+                return_by_date=result.card.return_by_date,
+                return_portal_link=result.card.return_portal_link,
+                shipping_tracking_link=result.card.shipping_tracking_link,
+                evidence_snippet=result.card.evidence_snippet,
+            )
+
+            saved_card = ReturnCardRepository.create(card_create)
+            logger.info(
+                "Processed email %s -> created card %s for %s",
+                request.email_id,
+                saved_card.id,
+                saved_card.merchant,
+            )
+
+            return ProcessEmailResponse(
+                success=True,
+                stage_reached=result.stage_reached,
+                card=ReturnCardResponse.from_card(saved_card),
+            )
+
+        return ProcessEmailResponse(
+            success=False,
+            stage_reached=result.stage_reached,
+            rejection_reason=result.rejection_reason,
+        )
+
+    except Exception as e:
+        logger.error("Failed to process email %s: %s", request.email_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to process email: {str(e)}")

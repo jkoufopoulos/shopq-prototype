@@ -208,6 +208,193 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 /**
+ * Scan recent emails for returnable purchases
+ * Uses Gmail search to find potential purchase emails, then processes each
+ * through the backend's extraction pipeline.
+ */
+async function scanForPurchases() {
+  console.log('🛒 Starting purchase email scan...');
+
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      throw new Error('No auth token available');
+    }
+
+    // Get user ID from storage
+    const stored = await chrome.storage.local.get('userId');
+    const userId = stored.userId || 'default_user';
+
+    // Search for recent emails that might be purchases
+    // Look for common purchase-related terms in the last 30 days
+    const searchQueries = [
+      'subject:(order confirmation) newer_than:30d',
+      'subject:(your order) newer_than:30d',
+      'subject:(order shipped) newer_than:30d',
+      'subject:(delivery) newer_than:30d',
+      'from:(amazon) subject:(order) newer_than:30d',
+      'from:(target) subject:(order) newer_than:30d',
+      'from:(walmart) subject:(order) newer_than:30d',
+    ];
+
+    const processedIds = new Set();
+    let totalProcessed = 0;
+    let totalReturnable = 0;
+
+    for (const query of searchQueries) {
+      try {
+        // Search for messages matching query
+        const searchResponse = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=10`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }
+        );
+
+        if (!searchResponse.ok) {
+          console.warn(`⚠️ Search failed for query "${query}":`, searchResponse.status);
+          continue;
+        }
+
+        const searchData = await searchResponse.json();
+        const messages = searchData.messages || [];
+
+        console.log(`📧 Found ${messages.length} messages for query: ${query.substring(0, 30)}...`);
+
+        // Process each message
+        for (const msg of messages) {
+          if (processedIds.has(msg.id)) {
+            continue; // Skip duplicates
+          }
+          processedIds.add(msg.id);
+
+          try {
+            // Get full message details
+            const msgResponse = await fetch(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
+              {
+                headers: { 'Authorization': `Bearer ${token}` }
+              }
+            );
+
+            if (!msgResponse.ok) {
+              console.warn(`⚠️ Failed to fetch message ${msg.id}`);
+              continue;
+            }
+
+            const msgData = await msgResponse.json();
+
+            // Extract email details
+            const headers = msgData.payload?.headers || [];
+            const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+
+            const from = getHeader('From');
+            const subject = getHeader('Subject');
+            const body = extractBodyText(msgData.payload);
+
+            // Send to backend extraction pipeline
+            const processResponse = await fetch(`${CONFIG.SHOPQ_API_URL}/api/returns/process`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                user_id: userId,
+                email_id: msg.id,
+                from_address: from,
+                subject: subject,
+                body: body.substring(0, 5000), // Limit body size
+              })
+            });
+
+            if (processResponse.ok) {
+              const result = await processResponse.json();
+              totalProcessed++;
+
+              if (result.success) {
+                totalReturnable++;
+                console.log(`✅ Returnable purchase found: ${result.card?.merchant} - ${result.card?.item_summary}`);
+              } else {
+                console.log(`⏭️ Not returnable: ${subject.substring(0, 40)}... (${result.rejection_reason})`);
+              }
+            }
+
+          } catch (msgError) {
+            console.warn(`⚠️ Error processing message ${msg.id}:`, msgError.message);
+          }
+        }
+
+      } catch (queryError) {
+        console.warn(`⚠️ Error with query "${query}":`, queryError.message);
+      }
+    }
+
+    console.log(`📊 Scan complete: ${totalProcessed} emails processed, ${totalReturnable} returnable purchases found`);
+
+    return {
+      success: true,
+      processedCount: totalProcessed,
+      returnableCount: totalReturnable,
+    };
+
+  } catch (error) {
+    console.error('❌ Scan for purchases failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Extract plain text body from Gmail message payload
+ */
+function extractBodyText(payload) {
+  if (!payload) return '';
+
+  // Check for plain text part
+  if (payload.mimeType === 'text/plain' && payload.body?.data) {
+    return decodeBase64(payload.body.data);
+  }
+
+  // Check for HTML part (will strip tags)
+  if (payload.mimeType === 'text/html' && payload.body?.data) {
+    const html = decodeBase64(payload.body.data);
+    return stripHtmlTags(html);
+  }
+
+  // Handle multipart messages
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      const text = extractBodyText(part);
+      if (text) return text;
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Decode base64url encoded string
+ */
+function decodeBase64(data) {
+  try {
+    // Gmail uses URL-safe base64
+    const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+    return decodeURIComponent(escape(atob(base64)));
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Strip HTML tags from text
+ */
+function stripHtmlTags(html) {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Handle messages from content scripts and popup
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -331,6 +518,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         sendResponse({ success: true });
+      }
+      else if (message.type === 'SCAN_FOR_PURCHASES') {
+        // Scan recent emails for returnable purchases
+        console.log('🛒 Scanning for purchase emails...');
+        try {
+          const result = await scanForPurchases();
+          console.log('📊 Scan result:', JSON.stringify(result));
+          sendResponse(result);
+        } catch (error) {
+          console.error('❌ Scan failed:', error);
+          sendResponse({ success: false, error: error.message });
+        }
       }
     } catch (error) {
       console.error('❌ Message handler error:', error);

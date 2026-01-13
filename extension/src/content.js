@@ -819,24 +819,17 @@ function createDigestPanelContent() {
 }
 
 /**
- * Initialize the digest sidebar using InboxSDK's Global sidebar API
+ * Initialize the returns sidebar using InboxSDK's Global sidebar API
  * This adds an icon to Gmail's native sidebar area (like Keep, Calendar, Tasks)
  * which should push Gmail content when opened.
  *
- * PHASE 3: IFRAME ISOLATION
- * Gmail's layout breaks when we modify DOM inside the panel (confirmed by testing).
- * Solution: Use an iframe as a "firewall" - DOM changes inside iframe don't
- * trigger Gmail's layout recalculation.
+ * IFRAME ISOLATION: DOM changes inside iframe don't trigger Gmail's layout recalculation.
  */
 async function initializeDigestSidebar(sdk) {
-  console.log('ShopQ: Setting up global sidebar panel with IFRAME ISOLATION...');
+  console.log('ShopQ: Setting up Return Watch sidebar with IFRAME ISOLATION...');
 
-  // ==========================================================================
-  // PHASE 3: IFRAME ISOLATION
-  // The iframe acts as a DOM firewall - Gmail's observers can't see changes inside
-  // ==========================================================================
   const panelEl = document.createElement('div');
-  panelEl.id = 'mailq-sidebar-panel';
+  panelEl.id = 'shopq-returns-panel';
   panelEl.style.cssText = `
     width: 100%;
     height: 100%;
@@ -846,10 +839,10 @@ async function initializeDigestSidebar(sdk) {
     contain: layout paint style;
   `;
 
-  // Create iframe pointing to our isolated HTML page
+  // Create iframe pointing to our returns sidebar HTML
   const iframe = document.createElement('iframe');
-  iframe.src = chrome.runtime.getURL('sidebar.html');
-  iframe.id = 'mailq-sidebar-iframe';
+  iframe.src = chrome.runtime.getURL('returns-sidebar.html');
+  iframe.id = 'shopq-returns-iframe';
   iframe.style.cssText = `
     width: 100%;
     height: 100%;
@@ -859,111 +852,159 @@ async function initializeDigestSidebar(sdk) {
   `;
   panelEl.appendChild(iframe);
 
-  // Track iframe ready state for postMessage communication
+  // Track iframe ready state
   let iframeReady = false;
-  let pendingHtml = null;
+  let pendingReturns = null;
 
   // Listen for messages from iframe
-  window.addEventListener('message', (event) => {
-    if (event.data?.type === 'SHOPQ_SIDEBAR_READY') {
-      console.log('ShopQ: Sidebar iframe ready');
+  window.addEventListener('message', async (event) => {
+    // Returns sidebar ready
+    if (event.data?.type === 'SHOPQ_RETURNS_SIDEBAR_READY') {
+      console.log('ShopQ: Returns sidebar iframe ready');
       iframeReady = true;
-      // Send any pending content
-      if (pendingHtml !== null) {
-        sendContentToIframe(pendingHtml);
-        pendingHtml = null;
-      }
+      // Fetch and send returns data
+      await fetchAndSendReturns();
     }
 
-    // Handle back button - navigate to inbox
-    if (event.data?.type === 'SHOPQ_GO_TO_INBOX') {
-      console.log('ShopQ: Navigating to inbox');
-      window.location.hash = '#inbox';
+    // Fetch returns request from sidebar
+    if (event.data?.type === 'SHOPQ_FETCH_RETURNS') {
+      console.log('ShopQ: Fetching returns data...');
+      await fetchAndSendReturns();
+    }
+
+    // Update return status request
+    if (event.data?.type === 'SHOPQ_UPDATE_RETURN_STATUS') {
+      console.log('ShopQ: Updating return status:', event.data.returnId, event.data.status);
+      await updateReturnStatus(event.data.returnId, event.data.status);
     }
 
     // Handle close button - close the sidebar panel
     if (event.data?.type === 'SHOPQ_CLOSE_SIDEBAR') {
       console.log('ShopQ: Closing sidebar');
-      // Click the ShopQ icon in Gmail's sidebar to toggle it closed
-      const mailqIcon = document.querySelector('[data-tooltip="ShopQ Digest"]');
-      if (mailqIcon) {
-        mailqIcon.click();
+      const shopqIcon = document.querySelector('[data-tooltip="Return Watch"]');
+      if (shopqIcon) {
+        shopqIcon.click();
       }
     }
   });
 
-  // Function to send content to iframe via postMessage
-  function sendContentToIframe(html) {
-    if (iframeReady && iframe.contentWindow) {
-      // Fix Gmail Inception: Add target="_top" to all links so they navigate
-      // the main window instead of the cross-origin iframe
-      const fixedHtml = html.replace(/<a href="/g, '<a target="_top" href="');
-      iframe.contentWindow.postMessage({
-        type: 'SHOPQ_UPDATE_DIGEST',
-        html: fixedHtml
-      }, '*');
-      console.log('ShopQ: Sent content to iframe via postMessage');
-    } else {
-      // Queue for when iframe is ready
-      pendingHtml = html;
-      console.log('ShopQ: Queued content (iframe not ready yet)');
+  // Fetch returns from API and send to iframe
+  async function fetchAndSendReturns() {
+    try {
+      const userId = await getUserId();
+      const response = await fetch(
+        `${API_BASE_URL}/api/returns?user_id=${encodeURIComponent(userId)}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('ShopQ: Fetched', data.cards?.length || 0, 'returns');
+
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_RETURNS_DATA',
+          returns: data.cards || [],
+        }, '*');
+      } else {
+        pendingReturns = data.cards || [];
+      }
+    } catch (error) {
+      console.error('ShopQ: Failed to fetch returns:', error);
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_RETURNS_ERROR',
+          message: error.message,
+        }, '*');
+      }
     }
   }
 
-  // Store the send function for loadDigestIntoPanel to use
-  panelEl._sendToIframe = sendContentToIframe;
+  // Update return status via API
+  async function updateReturnStatus(returnId, newStatus) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/returns/${encodeURIComponent(returnId)}/status`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      console.log('ShopQ: Status updated successfully');
+
+      // Notify iframe of success
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_STATUS_UPDATED',
+          returnId,
+          status: newStatus,
+        }, '*');
+      }
+
+      // Refresh the list
+      await fetchAndSendReturns();
+    } catch (error) {
+      console.error('ShopQ: Failed to update status:', error);
+    }
+  }
+
+  // Get user ID from storage
+  async function getUserId() {
+    try {
+      const data = await chrome.storage.local.get('userId');
+      return data.userId || 'default_user';
+    } catch {
+      return 'default_user';
+    }
+  }
 
   try {
     // Use InboxSDK's Global.addSidebarContentPanel API
     console.log('ShopQ: Calling sdk.Global.addSidebarContentPanel...');
     const panelView = await sdk.Global.addSidebarContentPanel({
       el: panelEl,
-      title: 'ShopQ Digest',
+      title: 'Return Watch',
       iconUrl: chrome.runtime.getURL('icons/icon48.png'),
     });
 
-    console.log('ShopQ: Global sidebar panel registered successfully:', panelView);
+    console.log('ShopQ: Return Watch sidebar registered successfully:', panelView);
 
     // Track sidebar state for persistence across navigation
-    // sidebarShouldBeOpen: user intent (true until they explicitly close it)
-    // This stays true even when Gmail temporarily deactivates during navigation
     let sidebarShouldBeOpen = true;  // Start open by default
-    let digestContentLoaded = false;  // Only fetch once per session
-    let cachedDigestHtml = null;      // Cache the digest content
-    let isNavigating = false;         // Track if we're in the middle of navigation
+    let isNavigating = false;
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
-      console.log('ShopQ: Sidebar panel activated');
-
-      // Only fetch new content on first activation
-      // Subsequent activations (after navigation) reuse cached content
-      if (!digestContentLoaded) {
-        loadDigestIntoPanel(panelEl);
-        digestContentLoaded = true;
-      } else if (cachedDigestHtml) {
-        // Restore cached content without API call
-        console.log('ShopQ: Restoring cached digest content');
-        sendContentToIframe(cachedDigestHtml);
-      }
+      console.log('ShopQ: Return Watch panel activated');
+      // Refresh returns data when panel opens
+      fetchAndSendReturns();
     });
 
     panelView.on('deactivate', () => {
-      console.log('ShopQ: Sidebar panel deactivated, isNavigating:', isNavigating);
-      // Only mark as "should be closed" if user explicitly closed it (not during navigation)
+      console.log('ShopQ: Return Watch panel deactivated, isNavigating:', isNavigating);
       if (!isNavigating) {
         sidebarShouldBeOpen = false;
         console.log('ShopQ: User closed sidebar');
       }
     });
 
-    // Keep sidebar open during navigation (like Gmail's native side panels)
-    // Using Router.handleAllRoutes to detect when user navigates
+    // Keep sidebar open during navigation
     sdk.Router.handleAllRoutes((routeView) => {
       console.log('ShopQ: Route changed to:', routeView.getRouteID());
       isNavigating = true;
 
-      // Re-open sidebar after navigation if it should be open
       setTimeout(() => {
         isNavigating = false;
         if (sidebarShouldBeOpen) {
@@ -977,37 +1018,26 @@ async function initializeDigestSidebar(sdk) {
       }, 150);
     });
 
-    // Store cache function for loadDigestIntoPanel to use
-    panelEl._setCachedHtml = (html) => { cachedDigestHtml = html; };
-
-    // Expose refresh function for storage listener (continuous organization)
+    // Expose refresh function for external triggers
     triggerDigestRefresh = () => {
       const now = Date.now();
       if (now - lastDigestRefreshTime < DIGEST_REFRESH_DEBOUNCE_MS) {
-        console.log('ShopQ: Digest refresh debounced (too soon)');
+        console.log('ShopQ: Returns refresh debounced (too soon)');
         return;
       }
       lastDigestRefreshTime = now;
 
-      console.log('ShopQ: External digest refresh triggered');
-      digestContentLoaded = false;
-      cachedDigestHtml = null;
-      loadDigestIntoPanel(panelEl);
-      digestContentLoaded = true;
+      console.log('ShopQ: External returns refresh triggered');
+      fetchAndSendReturns();
     };
 
-    // Load initial content
-    loadDigestIntoPanel(panelEl);
-    digestContentLoaded = true;
-
-    // Auto-open on first load to show the digest
+    // Auto-open on first load
     panelView.open();
-    console.log('ShopQ: Sidebar opened on initial load');
+    console.log('ShopQ: Return Watch sidebar opened on initial load');
 
   } catch (error) {
-    console.error('ShopQ: Failed to add global sidebar panel:', error);
+    console.error('ShopQ: Failed to add Return Watch sidebar panel:', error);
     console.log('ShopQ: Falling back to manual button injection...');
-    // Fallback to manual button if Global sidebar fails
     injectShopQButton();
 
     const observer = new MutationObserver(() => {
