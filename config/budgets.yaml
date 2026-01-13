@@ -1,8 +1,0 @@
-budgets:
-  critical_precision: 0.95
-  critical_recall: 0.85
-  otp_misfires_max: 0
-  event_noise_max: 0.02
-  invalid_json_rate_max: 0.01
-  p95_latency_ms: 500
-  cost_per_email_usd: 0.0005

@@ -1,9 +1,0 @@
-# Large generated files
-*.csv
-*.json
-*.html
-*.tmp
-*.bak
-
-# Generated experiment reports (markdown summaries, error reports)
-experiments/*.md

@@ -434,7 +434,7 @@ async def process_email(request: ProcessEmailRequest) -> ProcessEmailResponse:
 
         if result.success and result.card:
             # Save the card to the database
-            from shopq.returns import ReturnCardCreate, ReturnConfidence
+            from shopq.returns import ReturnCardCreate
 
             card_create = ReturnCardCreate(
                 user_id=result.card.user_id,

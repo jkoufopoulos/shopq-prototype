@@ -23,7 +23,7 @@ from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.field_extractor import ExtractedFields, ReturnFieldExtractor
 from shopq.returns.filters import FilterResult, MerchantDomainFilter
-from shopq.returns.models import ReturnCard, ReturnCardCreate, ReturnConfidence
+from shopq.returns.models import ReturnCard
 from shopq.returns.returnability_classifier import (
     ReturnabilityClassifier,
     ReturnabilityResult,

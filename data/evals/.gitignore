@@ -1,9 +1,0 @@
-# Backup files from GDS correction process
-*.backup_*
-
-# Generated digest outputs (for testing only)
-digests/*/generated_*.html
-
-# Reports generated during evaluation
-reports/*.json
-reports/*.md

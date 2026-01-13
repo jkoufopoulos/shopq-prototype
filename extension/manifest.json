@@ -1,17 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "ShopQ",
-  "version": "1.0.15",
-  "description": "Track return windows on your online purchases",
+  "name": "ShopQ Return Watch",
+  "version": "1.0.0",
+  "description": "Track return windows on your online purchases. Never miss a return deadline again.",
 
   "permissions": [
     "identity",
     "storage",
     "tabs",
     "scripting",
-    "notifications",
-    "downloads",
-    "alarms"
+    "notifications"
   ],
 
   "host_permissions": [
@@ -19,9 +17,7 @@
     "https://gmail.googleapis.com/*",
     "https://www.googleapis.com/gmail/*",
     "https://www.googleapis.com/oauth2/*",
-    "https://people.googleapis.com/*",
     "https://shopq-api-488078904670.us-central1.run.app/*",
-    "https://ipapi.co/*",
     "https://*.inboxsdk.com/*"
   ],
 
@@ -39,7 +35,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "ShopQ",
+    "default_title": "ShopQ Return Watch",
     "default_popup": "popup.html"
   },
 
@@ -55,8 +51,7 @@
   "oauth2": {
     "client_id": "488078904670-eddkde05mhmuvplhgb9ks37mj7rbmhhp.apps.googleusercontent.com",
     "scopes": [
-      "https://www.googleapis.com/auth/gmail.modify",
-      "https://www.googleapis.com/auth/gmail.labels",
+      "https://www.googleapis.com/auth/gmail.readonly",
       "https://www.googleapis.com/auth/userinfo.profile"
     ]
   },
@@ -75,8 +70,6 @@
         "icons/icon128.png",
         "styles.css",
         "pageWorld.js",
-        "sidebar.html",
-        "sidebar-inner.js",
         "returns-sidebar.html",
         "returns-sidebar-inner.js"
       ],

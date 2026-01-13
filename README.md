@@ -1,274 +1,227 @@
-# ShopQ - AI-Powered Gmail Assistant
+# ShopQ - Return Watch
 
-**Privacy-first email classification and digest generation for Gmail**
-
-[![Status](https://img.shields.io/badge/status-MVP%20Development-blue)]()
-[![Python](https://img.shields.io/badge/python-3.11+-blue)]()
-[![License](https://img.shields.io/badge/license-Proprietary-red)]()
+**Track return windows on your online purchases. Never miss a return deadline again.**
 
 ---
 
-## What is ShopQ?
+## What is Return Watch?
 
-ShopQ is an AI-powered Gmail assistant that automatically organizes your inbox and generates glanceable daily email digests. It uses a hybrid classification system combining deterministic rules with Gemini LLM fallback to achieve high precision while keeping costs low.
+Return Watch is a Gmail companion that automatically detects your online purchases and tracks return deadlines. It uses a 3-stage AI pipeline to identify returnable purchases and calculate when your return window closes.
 
 **Key Features:**
-- 🎯 **Smart Classification** - Rules engine + Gemini LLM with two-pass verification
-- 📧 **Auto-Organization** - Automatic Gmail label application and archiving
-- 📊 **Daily Digests** - Glanceable HTML summaries of what matters
-- 🔒 **Privacy-First** - Read-only by default, 14-day retention, no third-party data sharing
-- 💰 **Cost-Efficient** - ~$0.0001 per email, rules cache saves 50-70% of LLM costs
-
-**Architecture:**
-- **Backend**: Python FastAPI + SQLite + Vertex AI (Gemini 2.0 Flash)
-- **Frontend**: Chrome Extension (TypeScript)
-- **Classification**: Rules engine → Gemini classifier → Verifier → Gmail labels
-- **Digest**: Multi-stage pipeline with temporal decay and importance scoring
+- **Automatic Detection** - Scans Gmail for purchase receipts and shipping confirmations
+- **Smart Filtering** - Filters out non-returnable transactions (subscriptions, services, digital goods)
+- **Return Window Tracking** - Calculates return-by dates using merchant-specific policies
+- **Gmail Sidebar** - View all returnable purchases in Gmail's native sidebar
 
 ---
 
-## Quick Start
+## Architecture
 
-### For Developers
-
-```bash
-# Clone and setup
-git clone <repo-url>
-cd mailq-prototype
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-nano .env  # Add your GOOGLE_API_KEY
-
-# Run backend
-uvicorn shopq.api:app --reload
-
-# Load Chrome extension
-# 1. Open chrome://extensions/
-# 2. Enable Developer Mode
-# 3. Load unpacked from extension/ directory
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       Return Watch                               │
+├─────────────────────────────────────────────────────────────────┤
+│  Chrome Extension          │  FastAPI Backend                   │
+│                            │                                    │
+│  ┌──────────────┐          │  ┌──────────────────────────────┐ │
+│  │ Popup        │──────────┼─▶│ GET /api/returns             │ │
+│  │ Sidebar UI   │          │  │ POST /api/returns/process    │ │
+│  │ Gmail Scan   │          │  │ PUT /api/returns/{id}/status │ │
+│  └──────────────┘          │  └──────────────────────────────┘ │
+│                            │                                    │
+│                            │  ┌──────────────────────────────┐ │
+│                            │  │ 3-Stage Extraction Pipeline  │ │
+│                            │  │ 1. Domain Filter (FREE)      │ │
+│                            │  │ 2. Returnability Classifier  │ │
+│                            │  │ 3. Field Extractor           │ │
+│                            │  └──────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-👉 **Complete setup guide**: [QUICKSTART.md](QUICKSTART.md)
+### Extraction Pipeline
 
-### For AI Assistants (Claude, Cursor, etc.)
-
-Start with these files for full context:
-1. **[SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md)** - Complete system reference and architecture
-2. **[claude.md](claude.md)** - Development guardrails and workflows
-3. **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed technical design
-
----
-
-## Documentation
-
-### Essential Reading
-- **[INDEX.md](INDEX.md)** - 📚 Complete documentation map
-- **[QUICKSTART.md](QUICKSTART.md)** - 🚀 Setup, running, and common tasks
-- **[SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md)** - 📖 AI assistant guide and project overview
-- **[ROADMAP.md](ROADMAP.md)** - 🗺️ Feature roadmap and development status
-
-### Technical Documentation
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design and data flow
-- **[docs/DATABASE_ARCHITECTURE.md](docs/DATABASE_ARCHITECTURE.md)** - Database schema and policies
-- **[docs/TESTING.md](docs/TESTING.md)** - Test procedures and workflows
-- **[docs/DEPLOYMENT_PLAYBOOK.md](docs/DEPLOYMENT_PLAYBOOK.md)** - Production deployment guide
-
-### Development
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development conventions and changelog
-- **[claude.md](claude.md)** - AI pair-programming guardrails
-- **[config/shopq_policy.yaml](config/shopq_policy.yaml)** - Runtime configuration
-
-### Visual Documentation
-- **[code-graph/](code-graph/)** - Auto-generated system diagrams
-- **[code-graph/visuals/html/index.html](code-graph/visuals/html/index.html)** - Interactive diagram viewer
+```
+Email → Stage 1: Domain Filter (FREE)
+              │
+              ├─ Blocklist (Uber, Netflix, etc.) → Reject
+              ├─ Allowlist (Amazon, Target, etc.) → Pass
+              └─ Unknown → Keyword heuristics
+              │
+        Stage 2: Returnability Classifier (~$0.0001)
+              │
+              └─ LLM determines: product_order | service | subscription | digital
+              │
+        Stage 3: Field Extractor (~$0.0002)
+              │
+              └─ Extract: merchant, items, dates, order number
+              └─ Compute: return_by_date using merchant rules
+              │
+        Result: ReturnCard with confidence (exact | estimated | unknown)
+```
 
 ---
 
 ## Project Structure
 
 ```
-mailq-prototype/
-├── shopq/                    # Backend (Python/FastAPI)
-│   ├── api.py                # Main API entry point
-│   ├── digest/               # Digest generation pipeline
-│   ├── bridge/               # Classification bridge components
-│   ├── config/               # Configuration and database
-│   ├── prompts/              # LLM prompts (editable!)
-│   └── tests/                # Backend tests
+shopq-prototype/
+├── extension/               # Chrome extension
+│   ├── background.js        # Service worker, Gmail scanning
+│   ├── popup.*              # Extension popup UI
+│   ├── returns-sidebar.*    # Gmail sidebar for returns
+│   ├── src/content.js       # Gmail page integration
+│   └── modules/             # Shared modules
 │
-├── extension/                # Chrome extension (TypeScript)
-│   ├── background.js         # Service worker
-│   ├── content.js            # Gmail page integration
-│   └── modules/              # Core extension modules
+├── shopq/                   # Python backend
+│   ├── api/                 # FastAPI routes
+│   │   └── routes/returns.py
+│   ├── returns/             # Return Watch core
+│   │   ├── filters.py       # Domain blocklist/allowlist
+│   │   ├── returnability_classifier.py
+│   │   ├── field_extractor.py
+│   │   ├── extractor.py     # Pipeline orchestrator
+│   │   ├── models.py        # ReturnCard model
+│   │   └── repository.py    # Database operations
+│   ├── gmail/               # Gmail API client
+│   ├── infrastructure/      # Database, auth
+│   └── observability/       # Logging, telemetry
 │
-├── docs/                     # Detailed documentation
-├── tests/                    # Test suites
-├── scripts/                  # Utility scripts
-├── config/                   # Configuration files
-└── code-graph/               # Visual documentation
+├── config/
+│   └── merchant_rules.yaml  # Return window policies
+│
+├── docs/
+│   └── RETURN_WATCH_PRD.yaml
+│
+└── tests/
+    └── integration/
+        └── test_extraction_pipeline.py
 ```
 
 ---
 
-## Key Concepts
+## Quick Start
 
-### Classification Pipeline
+### Backend
 
-```
-Email → Rules Engine → [Match?] → Cache result (Free)
-              ↓ No match
-       Gemini Classifier → Classification (~$0.0001)
-              ↓
-       Confidence Filter → [High?] → Apply labels
-              ↓ Suspicious
-          Verifier LLM → Verify/Correct → Final labels
-```
+```bash
+cd shopq-prototype
 
-### Digest Pipeline
+# Install dependencies
+uv sync
 
-```
-Emails → Stage 1: Importance Classification (CRITICAL/TIME_SENSITIVE/ROUTINE/NOISE)
-       → Stage 2: Temporal Enrichment (event times, deadlines, OTPs)
-       → Stage 3: Temporal Modulation (adjust importance based on timing)
-       → Stage 4: Categorization (CRITICAL/TODAY/COMING_UP/WORTH_KNOWING/etc.)
-       → Stage 5: Rendering (deterministic HTML output)
+# Configure environment
+cp .env.example .env
+# Edit .env with your GOOGLE_CLOUD_PROJECT
+
+# Run backend
+uv run uvicorn shopq.api.app:app --reload
 ```
 
-### Database Policy
+### Extension
 
-ShopQ uses **ONE central SQLite database**: `shopq/data/shopq.db`
+```bash
+cd extension
 
-- All tables use `user_id` for multi-tenancy
-- Connection pooling for performance
-- 14-day retention policy with automated cleanup
-- WAL mode with regular checkpointing
+# Install dependencies
+npm install
+
+# Build
+npm run build
+
+# Load in Chrome
+# 1. Open chrome://extensions/
+# 2. Enable Developer Mode
+# 3. Load unpacked from extension/ directory
+```
 
 ---
 
 ## Configuration
 
-All configuration is in `.env` file:
+### Merchant Rules
+
+Return window policies are defined in `config/merchant_rules.yaml`:
+
+```yaml
+merchants:
+  amazon.com:
+    days: 30
+    anchor: delivery
+    return_url: https://www.amazon.com/gp/css/returns
+
+  target.com:
+    days: 90
+    anchor: purchase
+
+  _default:
+    days: 30
+    anchor: delivery
+```
+
+### Environment Variables
 
 ```bash
 # Required
-GOOGLE_API_KEY=AIzaSy...              # Vertex AI API key
-GOOGLE_CLOUD_PROJECT=your-project     # GCP project ID
-GEMINI_MODEL=gemini-2.0-flash         # Model to use
+GOOGLE_CLOUD_PROJECT=your-project-id
 
 # Optional
-API_PORT=8000                         # API server port
-USE_RULES_ENGINE=true                 # Enable rules (recommended)
-USE_AI_CLASSIFIER=true                # Enable LLM fallback
-
-# Quality Monitoring
-ANTHROPIC_API_KEY=sk-ant-...          # For automated quality analysis
-GITHUB_TOKEN=ghp_...                  # For creating quality issues
+SHOPQ_USE_LLM=true  # Enable LLM classification
 ```
-
-See [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md) for complete configuration reference.
 
 ---
 
-## Development Status
+## API Endpoints
 
-**Current Phase**: MVP Development (20-40 users)
-
-**Completed** ✅:
-- Type Mapper (100% calendar event accuracy)
-- Database Consolidation + Multi-tenancy
-- Temporal Decay for Events
-- Privacy & Retention (14-day policy)
-- Model/Prompt Versioning
-- Quality Monitoring System
-
-**In Progress** 🟡:
-- Deterministic Digest Rendering
-- Importance Mapper Rules
-
-**Upcoming** 🔴:
-- Multi-user Authentication (OAuth)
-- Public Beta Launch
-
-See [ROADMAP.md](ROADMAP.md) for detailed development plan.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/returns` | GET | List return cards for user |
+| `/api/returns/process` | POST | Process email through extraction pipeline |
+| `/api/returns/{id}/status` | PUT | Update card status (returned/dismissed) |
+| `/api/returns/counts` | GET | Get status counts by status |
+| `/api/returns/expiring` | GET | Get cards expiring soon |
+| `/api/health` | GET | Health check |
 
 ---
 
 ## Testing
 
 ```bash
-# Backend tests
-pytest                       # All tests
-pytest -v                    # Verbose output
-pytest -m unit               # Unit tests only
-
-# Extension tests
-cd extension && npm test
-
-# Quality monitoring
-./scripts/start-quality-system.sh
+# Run extraction pipeline tests
+PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/integration/test_extraction_pipeline.py -v
 ```
-
-See [docs/TESTING.md](docs/TESTING.md) for comprehensive testing guide.
 
 ---
 
-## Deployment
+## Data Model
 
-```bash
-# Deploy to Google Cloud Run
-./deploy.sh
+### ReturnCard
 
-# Verify deployment
-curl https://your-service-url/health
+```python
+class ReturnCard:
+    id: str
+    user_id: str
+    merchant: str
+    merchant_domain: str
+    item_summary: str
+    status: active | expiring_soon | expired | returned | dismissed
+    confidence: exact | estimated | unknown
+    return_by_date: datetime | None
+    order_number: str | None
+    amount: float | None
+    # ... more fields
 ```
 
-See [docs/DEPLOYMENT_PLAYBOOK.md](docs/DEPLOYMENT_PLAYBOOK.md) for detailed deployment procedures.
+### Confidence Levels
 
----
-
-## Support & Contributing
-
-- **Documentation**: See [INDEX.md](INDEX.md) for complete navigation
-- **Issues**: GitHub Issues (quality issues auto-created by monitoring system)
-- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
-- **AI Development**: Follow [claude.md](claude.md) guardrails
+| Level | Description |
+|-------|-------------|
+| `exact` | Return-by date explicitly stated in email |
+| `estimated` | Calculated from merchant rules + anchor date |
+| `unknown` | No date information available |
 
 ---
 
 ## License
 
-Proprietary - All rights reserved
-
----
-
-## Architecture Highlights
-
-### Rules Engine (T0 - Free)
-- Exact sender matching in SQLite
-- Learns from user corrections
-- 50-70% cache hit rate = $0 cost
-
-### Gemini Classifier (T3 - ~$0.0001)
-- Gemini 2.0 Flash (fast, cheap)
-- Temperature 0.2 (consistent)
-- Multi-dimensional classification
-
-### Verifier (Selective, ~10-20%)
-- Second LLM pass for suspicious cases
-- Temperature 0.1 (conservative)
-- Challenges first classification
-
-### Hybrid Digest Renderer
-- Deterministic Pydantic-based rendering
-- No LLM prose in output
-- Byte-identical snapshots for testing
-
----
-
-**For complete documentation, start with [INDEX.md](INDEX.md) or [QUICKSTART.md](QUICKSTART.md)**
-
-**For AI assistants, read [SHOPQ_REFERENCE.md](SHOPQ_REFERENCE.md) first**
+Proprietary
