@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MailQ Codebase Overview</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/analysis.css">
+    <script src="../assets/js/mermaid-init.js"></script>
+</head>
+<body>
+    <header>
+        <h1>MailQ Codebase Overview</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="summary.html">Summary</a></li>
+                <li><a href="detailed.html">Detailed Report</a></li>
+                <li><a href="dependencies.html">Dependencies</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Introduction</h2>
+            <p>This document provides an overview of the MailQ codebase, including its structure, key components, and interactions.</p>
+        </section>
+        <section>
+            <h2>Key Components</h2>
+            <ul>
+                <li><strong>API:</strong> Handles incoming email data and triggers classification.</li>
+                <li><strong>Memory Classifier:</strong> The core engine that classifies emails using rules and AI.</li>
+                <li><strong>Rules Engine:</strong> Contains predefined rules for email classification.</li>
+                <li><strong>Vertex Gemini Classifier:</strong> Utilizes AI for advanced email classification.</li>
+                <li><strong>Mapper:</strong> Converts classification results into Gmail labels.</li>
+                <li><strong>Category Manager:</strong> Manages user-specific email categories.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Data Flow</h2>
+            <p>Emails are received through the API, classified by the Memory Classifier using the Rules Engine or AI, and then labeled by the Mapper before being returned to the user.</p>
+        </section>
+        <section>
+            <h2>Visualizations</h2>
+            <div class="mermaid">
+                graph TD
+                API --> MemoryClassifier
+                MemoryClassifier -->|Uses| RulesEngine
+                MemoryClassifier -->|Uses| VertexGeminiClassifier
+                VertexGeminiClassifier -->|Returns| MemoryClassifier
+                MemoryClassifier -->|Maps| Mapper
+                Mapper -->|Returns| API
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 MailQ Project. All rights reserved.</p>
+    </footer>
+</body>
+</html>

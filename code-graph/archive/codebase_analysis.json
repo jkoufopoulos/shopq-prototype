@@ -1,0 +1,1454 @@
+{
+  "metadata": {
+    "generated": "2025-10-22T03:06:59.654558",
+    "root_dir": "/Users/justinkoufopoulos/Projects/mailq-prototype"
+  },
+  "files": {
+    "mailq/mapper.py": {
+      "type": "python",
+      "path": "mailq/mapper.py",
+      "lines": 120,
+      "docstring": "Gmail label mapper - converts semantic classification to Gmail label strings\nMulti-dimensional: each dimension gets its own label",
+      "imports": [
+        "typing.Dict",
+        "typing.List",
+        "typing.Any"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "typing.Dict",
+        "typing.List",
+        "typing.Any"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "map_to_gmail_labels",
+          "docstring": "Map semantic classification to Gmail labels (multi-dimensional).\nEach dimension gets separate labels."
+        },
+        {
+          "name": "validate_classification_result",
+          "docstring": "Validate classification result matches schema"
+        }
+      ],
+      "complexity": 2
+    },
+    "mailq/feedback_manager.py": {
+      "type": "python",
+      "path": "mailq/feedback_manager.py",
+      "lines": 365,
+      "docstring": "Feedback management for user corrections.\nStores corrections and learns patterns for improved classification.",
+      "imports": [
+        "sqlite3",
+        "typing.Dict",
+        "typing.List",
+        "typing.Optional",
+        "datetime.datetime",
+        "pathlib.Path",
+        "json"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sqlite3",
+        "typing.Dict",
+        "typing.List",
+        "typing.Optional",
+        "datetime.datetime",
+        "pathlib.Path",
+        "json"
+      ],
+      "classes": [
+        {
+          "name": "FeedbackManager",
+          "methods": [
+            "__init__",
+            "_init_db",
+            "record_correction",
+            "_extract_type_from_labels",
+            "_extract_domains_from_labels",
+            "_learn_from_correction",
+            "get_high_confidence_patterns",
+            "get_correction_stats",
+            "get_fewshot_examples",
+            "get_top_corrected_senders",
+            "get_recent_corrections"
+          ],
+          "method_count": 11,
+          "docstring": ""
+        }
+      ],
+      "functions": [],
+      "complexity": 11
+    },
+    "mailq/__init__.py": {
+      "type": "python",
+      "path": "mailq/__init__.py",
+      "lines": 8,
+      "docstring": "MailQ Production System",
+      "imports": [
+        "mailq.rules_engine.RulesEngine",
+        "mailq.memory_classifier.MemoryClassifier"
+      ],
+      "internal_imports": [
+        "mailq/rules_engine.py",
+        "mailq/memory_classifier.py"
+      ],
+      "external_imports": [],
+      "classes": [],
+      "functions": [],
+      "complexity": 0
+    },
+    "mailq/rules_manager.py": {
+      "type": "python",
+      "path": "mailq/rules_manager.py",
+      "lines": 157,
+      "docstring": "Rules Management Module\n\nHandles CRUD operations for classification rules:\n- Fetching rules from database\n- Adding new rules\n- Updating existing rules\n- Deleting rules",
+      "imports": [
+        "mailq.config.database.get_db_connection",
+        "mailq.config.database.db_transaction",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional"
+      ],
+      "internal_imports": [
+        "mailq/config/database.py"
+      ],
+      "external_imports": [
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_rules",
+          "docstring": "Fetch all active rules for a user\n\nArgs:\n    user_id: User identifier (default: 'default')\n\nReturns:\n    List of rule dictionaries with pattern_type, pattern, category"
+        },
+        {
+          "name": "add_rule",
+          "docstring": "Add a new classification rule\n\nArgs:\n    pattern_type: Type of pattern ('from', 'subject', 'keyword')\n    pattern: The actual pattern to match\n    category: Category to assign (e.g., 'Finance', 'Promotions')\n    confidence: Confidence score (0-100)\n    user_id: User identifier\n\nReturns:\n    ID of the newly created rule\n\nRaises:\n    sqlite3.IntegrityError: If rule already exists (duplicate)"
+        },
+        {
+          "name": "update_rule",
+          "docstring": "Update an existing rule\n\nArgs:\n    rule_id: ID of rule to update\n    **kwargs: Fields to update (pattern, category, confidence, etc.)\n\nReturns:\n    True if rule was updated, False if not found"
+        },
+        {
+          "name": "delete_rule",
+          "docstring": "Delete a rule by ID\n\nArgs:\n    rule_id: ID of rule to delete\n\nReturns:\n    True if deleted, False if not found"
+        },
+        {
+          "name": "get_rule_stats",
+          "docstring": "Get statistics about rules\n\nReturns:\n    Dict with total_rules, by_type, by_category, etc."
+        }
+      ],
+      "complexity": 5
+    },
+    "mailq/logger.py": {
+      "type": "python",
+      "path": "mailq/logger.py",
+      "lines": 21,
+      "docstring": "Centralized logging - CREATE THIS FILE",
+      "imports": [
+        "logging",
+        "sys"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "logging",
+        "sys"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "setup_logger",
+          "docstring": ""
+        }
+      ],
+      "complexity": 1
+    },
+    "mailq/memory_classifier.py": {
+      "type": "python",
+      "path": "mailq/memory_classifier.py",
+      "lines": 190,
+      "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
+      "imports": [
+        "os",
+        "typing.Dict",
+        "mailq.rules_engine.RulesEngine",
+        "mailq.vertex_gemini_classifier.VertexGeminiClassifier",
+        "mailq.mapper.map_to_gmail_labels",
+        "mailq.mapper.validate_classification_result"
+      ],
+      "internal_imports": [
+        "mailq/rules_engine.py",
+        "mailq/vertex_gemini_classifier.py",
+        "mailq/mapper.py"
+      ],
+      "external_imports": [
+        "os",
+        "typing.Dict"
+      ],
+      "classes": [
+        {
+          "name": "MemoryClassifier",
+          "methods": [
+            "__init__",
+            "classify",
+            "_rule_to_semantic",
+            "_fallback_semantic",
+            "get_stats"
+          ],
+          "method_count": 5,
+          "docstring": ""
+        }
+      ],
+      "functions": [],
+      "complexity": 5
+    },
+    "mailq/api.py": {
+      "type": "python",
+      "path": "mailq/api.py",
+      "lines": 300,
+      "docstring": "FastAPI server for MailQ email classification",
+      "imports": [
+        "fastapi.FastAPI",
+        "fastapi.HTTPException",
+        "fastapi.middleware.cors.CORSMiddleware",
+        "pydantic.BaseModel",
+        "pydantic.Field",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "time",
+        "datetime.datetime",
+        "mailq.memory_classifier.MemoryClassifier",
+        "mailq.category_manager.CategoryManager",
+        "mailq.feedback_manager.FeedbackManager",
+        "mailq.rules_manager.get_rules",
+        "mailq.rules_manager.add_rule",
+        "mailq.rules_manager.update_rule",
+        "mailq.rules_manager.delete_rule",
+        "mailq.rules_manager.get_rule_stats",
+        "mailq.api_debug.router",
+        "mailq.api_debug.set_last_batch",
+        "mailq.api_feedback.router",
+        "mailq.api_feedback.set_feedback_manager",
+        "mailq.api_organize.classify_batch",
+        "uvicorn"
+      ],
+      "internal_imports": [
+        "mailq/api_organize.py",
+        "mailq/api_feedback.py",
+        "mailq/memory_classifier.py",
+        "mailq/api_debug.py",
+        "mailq/rules_manager.py",
+        "mailq/category_manager.py",
+        "mailq/feedback_manager.py"
+      ],
+      "external_imports": [
+        "fastapi.FastAPI",
+        "fastapi.HTTPException",
+        "fastapi.middleware.cors.CORSMiddleware",
+        "pydantic.BaseModel",
+        "pydantic.Field",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "time",
+        "datetime.datetime",
+        "uvicorn"
+      ],
+      "classes": [
+        {
+          "name": "EmailInput",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "EmailBatch",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "ClassificationResult",
+          "methods": [],
+          "method_count": 0,
+          "docstring": "Multi-dimensional classification result"
+        },
+        {
+          "name": "OrganizeResponse",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "CategoryCreate",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "RuleCreate",
+          "methods": [],
+          "method_count": 0,
+          "docstring": "Request model for creating a rule"
+        },
+        {
+          "name": "RuleUpdate",
+          "methods": [],
+          "method_count": 0,
+          "docstring": "Request model for updating a rule"
+        },
+        {
+          "name": "Config",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "Config",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        }
+      ],
+      "functions": [
+        {
+          "name": "root",
+          "docstring": ""
+        },
+        {
+          "name": "health",
+          "docstring": ""
+        }
+      ],
+      "complexity": 2
+    },
+    "mailq/api_feedback.py": {
+      "type": "python",
+      "path": "mailq/api_feedback.py",
+      "lines": 97,
+      "docstring": "Feedback API endpoints for user corrections",
+      "imports": [
+        "fastapi.APIRouter",
+        "fastapi.HTTPException",
+        "pydantic.BaseModel",
+        "pydantic.Field",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "mailq.feedback_manager.FeedbackManager",
+        "mailq.api_dashboard.render_dashboard",
+        "fastapi.responses.HTMLResponse"
+      ],
+      "internal_imports": [
+        "mailq/api_dashboard.py",
+        "mailq/feedback_manager.py"
+      ],
+      "external_imports": [
+        "fastapi.APIRouter",
+        "fastapi.HTTPException",
+        "pydantic.BaseModel",
+        "pydantic.Field",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "fastapi.responses.HTMLResponse"
+      ],
+      "classes": [
+        {
+          "name": "FeedbackInput",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        },
+        {
+          "name": "Config",
+          "methods": [],
+          "method_count": 0,
+          "docstring": ""
+        }
+      ],
+      "functions": [
+        {
+          "name": "set_feedback_manager",
+          "docstring": "Inject feedback manager instance"
+        }
+      ],
+      "complexity": 1
+    },
+    "mailq/api_dashboard.py": {
+      "type": "python",
+      "path": "mailq/api_dashboard.py",
+      "lines": 255,
+      "docstring": "Dashboard HTML rendering for feedback visualization",
+      "imports": [
+        "datetime.datetime",
+        "json",
+        "typing.List",
+        "typing.Dict"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "datetime.datetime",
+        "json",
+        "typing.List",
+        "typing.Dict"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "render_dashboard",
+          "docstring": "Render feedback dashboard HTML"
+        },
+        {
+          "name": "_get_dashboard_css",
+          "docstring": "Dashboard CSS styles"
+        },
+        {
+          "name": "_render_top_senders",
+          "docstring": "Render top corrected senders"
+        },
+        {
+          "name": "_render_patterns",
+          "docstring": "Render high-confidence patterns ready for allowlist"
+        },
+        {
+          "name": "_render_recent_corrections",
+          "docstring": "Render recent corrections table"
+        }
+      ],
+      "complexity": 5
+    },
+    "mailq/rules_engine.py": {
+      "type": "python",
+      "path": "mailq/rules_engine.py",
+      "lines": 282,
+      "docstring": "Rules-based email classification with learning",
+      "imports": [
+        "sqlite3",
+        "os",
+        "typing.Dict",
+        "typing.List",
+        "collections.Counter",
+        "re",
+        "mailq.logger.setup_logger"
+      ],
+      "internal_imports": [
+        "mailq/logger.py"
+      ],
+      "external_imports": [
+        "sqlite3",
+        "os",
+        "typing.Dict",
+        "typing.List",
+        "collections.Counter",
+        "re"
+      ],
+      "classes": [
+        {
+          "name": "RulesEngine",
+          "methods": [
+            "__init__",
+            "_init_db",
+            "_extract_email_address",
+            "_patterns_match",
+            "classify",
+            "get_matching_rules",
+            "learn_from_classification",
+            "_extract_keywords",
+            "get_rule_count",
+            "get_rules_for_category",
+            "get_rule",
+            "count",
+            "learn_from_correction"
+          ],
+          "method_count": 13,
+          "docstring": ""
+        }
+      ],
+      "functions": [],
+      "complexity": 13
+    },
+    "mailq/api_organize.py": {
+      "type": "python",
+      "path": "mailq/api_organize.py",
+      "lines": 175,
+      "docstring": "Email classification logic for /api/organize endpoint",
+      "imports": [
+        "time",
+        "traceback",
+        "typing.List",
+        "typing.Dict",
+        "typing.Tuple"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "time",
+        "traceback",
+        "typing.List",
+        "typing.Dict",
+        "typing.Tuple"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "classify_batch",
+          "docstring": "Classify a batch of emails.\n\nReturns:\n    (results, stats) - Classification results and statistics"
+        },
+        {
+          "name": "_update_stats",
+          "docstring": "Update statistics counters"
+        },
+        {
+          "name": "_filter_labels",
+          "docstring": "Filter labels by confidence threshold"
+        },
+        {
+          "name": "_print_low_confidence",
+          "docstring": "Print low confidence warning"
+        },
+        {
+          "name": "_print_classification",
+          "docstring": "Print successful classification"
+        },
+        {
+          "name": "_create_error_result",
+          "docstring": "Create error result for failed classification"
+        },
+        {
+          "name": "_print_summary",
+          "docstring": "Print classification summary"
+        }
+      ],
+      "complexity": 7
+    },
+    "mailq/api_debug.py": {
+      "type": "python",
+      "path": "mailq/api_debug.py",
+      "lines": 93,
+      "docstring": "Debug endpoints for monitoring classification batches",
+      "imports": [
+        "fastapi.APIRouter",
+        "datetime.datetime",
+        "typing.Dict",
+        "typing.List"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "fastapi.APIRouter",
+        "datetime.datetime",
+        "typing.Dict",
+        "typing.List"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "set_last_batch",
+          "docstring": "Update last batch (called from main app)"
+        }
+      ],
+      "complexity": 1
+    },
+    "mailq/category_manager.py": {
+      "type": "python",
+      "path": "mailq/category_manager.py",
+      "lines": 118,
+      "docstring": "Manage user-specific email categories",
+      "imports": [
+        "sqlite3",
+        "os",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "config.default_categories.DEFAULT_CATEGORIES",
+        "config.default_categories.DEFAULT_CATEGORIES"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sqlite3",
+        "os",
+        "typing.List",
+        "typing.Dict",
+        "typing.Optional",
+        "config.default_categories.DEFAULT_CATEGORIES",
+        "config.default_categories.DEFAULT_CATEGORIES"
+      ],
+      "classes": [
+        {
+          "name": "CategoryManager",
+          "methods": [
+            "__init__",
+            "_init_db",
+            "get_categories",
+            "_initialize_default_categories",
+            "add_category",
+            "get_category_names",
+            "get_prompt_context"
+          ],
+          "method_count": 7,
+          "docstring": "Manages email categories for each user"
+        }
+      ],
+      "functions": [],
+      "complexity": 7
+    },
+    "mailq/vertex_gemini_classifier.py": {
+      "type": "python",
+      "path": "mailq/vertex_gemini_classifier.py",
+      "lines": 521,
+      "docstring": "Vertex AI Gemini - Multi-dimensional email classifier",
+      "imports": [
+        "vertexai",
+        "vertexai.generative_models.GenerativeModel",
+        "typing.Dict",
+        "dotenv.load_dotenv",
+        "json",
+        "re",
+        "mailq.feedback_manager.FeedbackManager"
+      ],
+      "internal_imports": [
+        "mailq/feedback_manager.py"
+      ],
+      "external_imports": [
+        "vertexai",
+        "vertexai.generative_models.GenerativeModel",
+        "typing.Dict",
+        "dotenv.load_dotenv",
+        "json",
+        "re"
+      ],
+      "classes": [
+        {
+          "name": "VertexGeminiClassifier",
+          "methods": [
+            "__init__",
+            "_build_fewshot_examples",
+            "_get_static_examples",
+            "classify",
+            "_validate_and_normalize",
+            "_extract_json",
+            "_validate_result",
+            "_fallback_result"
+          ],
+          "method_count": 8,
+          "docstring": ""
+        }
+      ],
+      "functions": [],
+      "complexity": 8
+    },
+    "mailq/config/default_categories.py": {
+      "type": "python",
+      "path": "mailq/config/default_categories.py",
+      "lines": 49,
+      "docstring": "Default email categories for new users",
+      "imports": [],
+      "internal_imports": [],
+      "external_imports": [],
+      "classes": [],
+      "functions": [],
+      "complexity": 0
+    },
+    "mailq/config/database.py": {
+      "type": "python",
+      "path": "mailq/config/database.py",
+      "lines": 234,
+      "docstring": "Centralized database configuration\n\nProvides:\n- Single source of truth for database path\n- Connection management with proper settings\n- Schema validation\n- Test database support",
+      "imports": [
+        "os",
+        "sqlite3",
+        "pathlib.Path",
+        "contextlib.contextmanager"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "os",
+        "sqlite3",
+        "pathlib.Path",
+        "contextlib.contextmanager"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_db_path",
+          "docstring": "Get database path (environment-aware)\n\nChecks MAILQ_DB_PATH environment variable first,\nfalls back to default location."
+        },
+        {
+          "name": "get_db_connection",
+          "docstring": "Get SQLite connection with optimized settings\n\nArgs:\n    timeout: How long to wait for locks (seconds)\n\nReturns:\n    sqlite3.Connection with Row factory enabled\n\nRaises:\n    FileNotFoundError: If database doesn't exist"
+        },
+        {
+          "name": "db_transaction",
+          "docstring": "Context manager for database transactions\n\nUsage:\n    with db_transaction() as conn:\n        conn.execute(\"INSERT INTO rules ...\")\n        conn.execute(\"UPDATE categories ...\")\n    # Auto-commits on success, rolls back on error"
+        },
+        {
+          "name": "execute_query",
+          "docstring": "Execute a query and return results\n\nArgs:\n    query: SQL query string\n    params: Query parameters (tuple or dict)\n    fetch: 'all', 'one', or 'none'\n\nReturns:\n    Query results (list of Rows, single Row, or None)"
+        },
+        {
+          "name": "validate_schema",
+          "docstring": "Validate database has expected schema\n\nReturns:\n    True if valid\n\nRaises:\n    ValueError: If tables are missing"
+        },
+        {
+          "name": "get_test_db_connection",
+          "docstring": "Get connection to test database (isolated from production)\n\nUseful for unit tests - creates a separate database."
+        },
+        {
+          "name": "init_database",
+          "docstring": "Initialize database with schema (idempotent)\n\nSafe to run multiple times - uses CREATE TABLE IF NOT EXISTS."
+        }
+      ],
+      "complexity": 7
+    },
+    "mailq/config/__init__.py": {
+      "type": "python",
+      "path": "mailq/config/__init__.py",
+      "lines": 112,
+      "docstring": "Configuration module for MailQ.\nUses the MVP v1 classification schema from Schema.json.",
+      "imports": [
+        "pathlib.Path"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "pathlib.Path"
+      ],
+      "classes": [],
+      "functions": [],
+      "complexity": 0
+    },
+    "mailq/config/settings.py": {
+      "type": "python",
+      "path": "mailq/config/settings.py",
+      "lines": 77,
+      "docstring": "Application-wide settings and environment configuration",
+      "imports": [
+        "os",
+        "pathlib.Path"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "os",
+        "pathlib.Path"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "is_production",
+          "docstring": "Check if running in production"
+        },
+        {
+          "name": "is_development",
+          "docstring": "Check if running in development"
+        },
+        {
+          "name": "get_env",
+          "docstring": "Get environment variable with fallback"
+        }
+      ],
+      "complexity": 3
+    },
+    "mailq/scripts/consolidate_databases.py": {
+      "type": "python",
+      "path": "mailq/scripts/consolidate_databases.py",
+      "lines": 204,
+      "docstring": "Consolidate all databases into mailq/data/mailq.db",
+      "imports": [
+        "sqlite3",
+        "shutil",
+        "pathlib.Path",
+        "datetime.datetime"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sqlite3",
+        "shutil",
+        "pathlib.Path",
+        "datetime.datetime"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "consolidate",
+          "docstring": "Merge all databases into mailq/data/mailq.db"
+        }
+      ],
+      "complexity": 1
+    },
+    "mailq/scripts/inspect_databases.py": {
+      "type": "python",
+      "path": "mailq/scripts/inspect_databases.py",
+      "lines": 114,
+      "docstring": "Inspect all databases and show their contents",
+      "imports": [
+        "sqlite3",
+        "pathlib.Path"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sqlite3",
+        "pathlib.Path"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "inspect_db",
+          "docstring": "Show tables and row counts for a database"
+        },
+        {
+          "name": "main",
+          "docstring": ""
+        }
+      ],
+      "complexity": 2
+    },
+    "scripts/fetch_emails_bulk.py": {
+      "type": "python",
+      "path": "scripts/fetch_emails_bulk.py",
+      "lines": 196,
+      "docstring": "",
+      "imports": [
+        "pandas",
+        "os",
+        "time",
+        "datetime.datetime",
+        "fetch_emails.fetch_unread_emails"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "pandas",
+        "os",
+        "time",
+        "datetime.datetime",
+        "fetch_emails.fetch_unread_emails"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "create_bulk_dataset",
+          "docstring": "One-time fetch of emails for large-scale experiments with API safety"
+        },
+        {
+          "name": "fetch_unread_emails_safe",
+          "docstring": "Safely fetch emails with retries and exponential backoff"
+        },
+        {
+          "name": "estimate_fetch_time",
+          "docstring": "Estimate how long the fetch will take"
+        }
+      ],
+      "complexity": 3
+    },
+    "scripts/bootstrap_from_gold_standard.py": {
+      "type": "python",
+      "path": "scripts/bootstrap_from_gold_standard.py",
+      "lines": 95,
+      "docstring": "Bootstrap rules database from manually labeled emails",
+      "imports": [
+        "sys",
+        "os",
+        "pandas",
+        "rules_engine.RulesEngine"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sys",
+        "os",
+        "pandas",
+        "rules_engine.RulesEngine"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "bootstrap_rules",
+          "docstring": ""
+        }
+      ],
+      "complexity": 1
+    },
+    "scripts/fetch_emails.py": {
+      "type": "python",
+      "path": "scripts/fetch_emails.py",
+      "lines": 86,
+      "docstring": "",
+      "imports": [
+        "os",
+        "base64",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google.oauth2.credentials.Credentials",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "os",
+        "base64",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google.oauth2.credentials.Credentials",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_service",
+          "docstring": "Get Gmail API service"
+        },
+        {
+          "name": "fetch_unread_emails",
+          "docstring": "Fetch recent emails from Gmail"
+        }
+      ],
+      "complexity": 2
+    },
+    "experiments/src/remove_priority.py": {
+      "type": "python",
+      "path": "experiments/src/remove_priority.py",
+      "lines": 29,
+      "docstring": "",
+      "imports": [
+        "re"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "re"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "remove_priority_from_file",
+          "docstring": ""
+        }
+      ],
+      "complexity": 1
+    },
+    "experiments/src/label_utils.py": {
+      "type": "python",
+      "path": "experiments/src/label_utils.py",
+      "lines": 50,
+      "docstring": "",
+      "imports": [
+        "fetch_emails.get_service"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "fetch_emails.get_service"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_gmail_labels",
+          "docstring": "Fetch all labels from Gmail and return a dict mapping label names to IDs."
+        },
+        {
+          "name": "apply_label_to_email",
+          "docstring": "Apply a label to an email by ID."
+        },
+        {
+          "name": "create_gmail_label",
+          "docstring": "Create a new label in Gmail, checking for duplicates first."
+        }
+      ],
+      "complexity": 3
+    },
+    "experiments/src/label_setup.py": {
+      "type": "python",
+      "path": "experiments/src/label_setup.py",
+      "lines": 75,
+      "docstring": "",
+      "imports": [
+        "os",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build",
+        "google.oauth2.credentials.Credentials"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "os",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build",
+        "google.oauth2.credentials.Credentials"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_gmail_service",
+          "docstring": ""
+        },
+        {
+          "name": "fetch_labels",
+          "docstring": ""
+        },
+        {
+          "name": "run_label_setup_wizard",
+          "docstring": ""
+        }
+      ],
+      "complexity": 3
+    },
+    "experiments/src/ai_utils.py": {
+      "type": "python",
+      "path": "experiments/src/ai_utils.py",
+      "lines": 55,
+      "docstring": "Legacy wrapper for backward compatibility.\nThis delegates to the new LLMClassifier in mailq package.\n\nTODO: Migrate all code to use LLMClassifier directly, then deprecate this file.",
+      "imports": [
+        "sys",
+        "os",
+        "llm_classifier.LLMClassifier",
+        "category_manager.CategoryManager"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sys",
+        "os",
+        "llm_classifier.LLMClassifier",
+        "category_manager.CategoryManager"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "_get_classifier",
+          "docstring": "Lazy initialization of classifier"
+        },
+        {
+          "name": "clean_text",
+          "docstring": "Remove multiple invisible Unicode characters and strip whitespace."
+        },
+        {
+          "name": "classify_email",
+          "docstring": "Classify email using LLM.\n\nDEPRECATED: This is a legacy wrapper. New code should use:\n    from mailq.llm_classifier import LLMClassifier\n    classifier = LLMClassifier()\n    result = classifier.classify(subject, snippet, from_field)\n\nArgs:\n    subject: Email subject line\n    snippet: Email preview text\n    from_field: Sender email address\n\nReturns:\n    dict: {'category': str, 'confidence': int}"
+        }
+      ],
+      "complexity": 3
+    },
+    "experiments/src/compare_gemini_gpt.py": {
+      "type": "python",
+      "path": "experiments/src/compare_gemini_gpt.py",
+      "lines": 353,
+      "docstring": "Compare Gemini vs GPT-4 classification on 100 emails\nPure classification - NO reasoning to avoid chain-of-thought bias",
+      "imports": [
+        "sys",
+        "os",
+        "pandas",
+        "datetime.datetime",
+        "json",
+        "typing.Dict",
+        "typing.List",
+        "asyncio",
+        "memory_classifier.MemoryClassifier",
+        "category_manager.CategoryManager",
+        "openai",
+        "sys"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "sys",
+        "os",
+        "pandas",
+        "datetime.datetime",
+        "json",
+        "typing.Dict",
+        "typing.List",
+        "asyncio",
+        "memory_classifier.MemoryClassifier",
+        "category_manager.CategoryManager",
+        "openai",
+        "sys"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "classify_with_gpt",
+          "docstring": "Classify email using GPT-4 with actual confidence score"
+        },
+        {
+          "name": "check_rule_match",
+          "docstring": "Check if a rule matches an email"
+        }
+      ],
+      "complexity": 2
+    },
+    "experiments/src/__init__.py": {
+      "type": "python",
+      "path": "experiments/src/__init__.py",
+      "lines": 1,
+      "docstring": "",
+      "imports": [],
+      "internal_imports": [],
+      "external_imports": [],
+      "classes": [],
+      "functions": [],
+      "complexity": 0
+    },
+    "experiments/src/fetch_emails.py": {
+      "type": "python",
+      "path": "experiments/src/fetch_emails.py",
+      "lines": 86,
+      "docstring": "",
+      "imports": [
+        "os",
+        "base64",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google.oauth2.credentials.Credentials",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build"
+      ],
+      "internal_imports": [],
+      "external_imports": [
+        "os",
+        "base64",
+        "json",
+        "google.auth.transport.requests.Request",
+        "google.oauth2.credentials.Credentials",
+        "google_auth_oauthlib.flow.InstalledAppFlow",
+        "googleapiclient.discovery.build"
+      ],
+      "classes": [],
+      "functions": [
+        {
+          "name": "get_service",
+          "docstring": "Get Gmail API service"
+        },
+        {
+          "name": "fetch_unread_emails",
+          "docstring": "Fetch recent emails from Gmail"
+        }
+      ],
+      "complexity": 2
+    },
+    "extension/background.js": {
+      "type": "javascript",
+      "path": "extension/background.js",
+      "lines": 111,
+      "description": "Mailq Background Service Worker",
+      "imports": [
+        "./config.js",
+        "./modules/auth.js",
+        "./modules/gmail.js",
+        "./modules/classifier.js",
+        "./modules/utils.js",
+        "./modules/telemetry.js"
+      ],
+      "internal_imports": [
+        "extension/config.js",
+        "extension/modules/auth.js",
+        "extension/modules/gmail.js",
+        "extension/modules/classifier.js",
+        "extension/modules/utils.js",
+        "extension/modules/telemetry.js"
+      ],
+      "has_async": true,
+      "has_fetch": true,
+      "has_export": false,
+      "has_import": true
+    },
+    "extension/config.js": {
+      "type": "javascript",
+      "path": "extension/config.js",
+      "lines": 52,
+      "description": "Mailq Extension Configuration",
+      "imports": [],
+      "internal_imports": [],
+      "has_async": false,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": false
+    },
+    "extension/content.js": {
+      "type": "javascript",
+      "path": "extension/content.js",
+      "lines": 100,
+      "description": "Content script for Gmail DOM monitoring",
+      "imports": [],
+      "internal_imports": [],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": false,
+      "has_import": true
+    },
+    "extension/modules/budget.js": {
+      "type": "javascript",
+      "path": "extension/modules/budget.js",
+      "lines": 80,
+      "description": "Spend Tracking & Budget Module",
+      "imports": [
+        "../config.js",
+        "./utils.js"
+      ],
+      "internal_imports": [
+        "extension/modules/../config.js",
+        "extension/modules/utils.js"
+      ],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": true
+    },
+    "extension/modules/telemetry.js": {
+      "type": "javascript",
+      "path": "extension/modules/telemetry.js",
+      "lines": 120,
+      "description": "Telemetry Module",
+      "imports": [
+        "../config.js"
+      ],
+      "internal_imports": [
+        "extension/modules/../config.js"
+      ],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": true
+    },
+    "extension/modules/cache.js": {
+      "type": "javascript",
+      "path": "extension/modules/cache.js",
+      "lines": 70,
+      "description": "Classification Cache Module",
+      "imports": [
+        "../config.js"
+      ],
+      "internal_imports": [
+        "extension/modules/../config.js"
+      ],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": true
+    },
+    "extension/modules/auth.js": {
+      "type": "javascript",
+      "path": "extension/modules/auth.js",
+      "lines": 38,
+      "description": "Gmail OAuth Authentication Module",
+      "imports": [],
+      "internal_imports": [],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": false
+    },
+    "extension/modules/classifier.js": {
+      "type": "javascript",
+      "path": "extension/modules/classifier.js",
+      "lines": 200,
+      "description": "Email Classification Module",
+      "imports": [
+        "../config.js",
+        "./cache.js",
+        "./telemetry.js"
+      ],
+      "internal_imports": [
+        "extension/modules/../config.js",
+        "extension/modules/cache.js",
+        "extension/modules/telemetry.js"
+      ],
+      "has_async": true,
+      "has_fetch": true,
+      "has_export": true,
+      "has_import": true
+    },
+    "extension/modules/utils.js": {
+      "type": "javascript",
+      "path": "extension/modules/utils.js",
+      "lines": 106,
+      "description": "Shared Utility Functions",
+      "imports": [],
+      "internal_imports": [],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": false
+    },
+    "extension/modules/gmail.js": {
+      "type": "javascript",
+      "path": "extension/modules/gmail.js",
+      "lines": 224,
+      "description": "Gmail API Operations Module",
+      "imports": [
+        "../config.js"
+      ],
+      "internal_imports": [
+        "extension/modules/../config.js"
+      ],
+      "has_async": true,
+      "has_fetch": true,
+      "has_export": true,
+      "has_import": true
+    },
+    "extension/modules/notifications.js": {
+      "type": "javascript",
+      "path": "extension/modules/notifications.js",
+      "lines": 35,
+      "description": "User Notifications Module",
+      "imports": [],
+      "internal_imports": [],
+      "has_async": true,
+      "has_fetch": false,
+      "has_export": true,
+      "has_import": true
+    }
+  },
+  "dependencies": {
+    "mailq/__init__.py": [
+      "mailq/rules_engine.py",
+      "mailq/memory_classifier.py"
+    ],
+    "mailq/rules_manager.py": [
+      "mailq/config/database.py"
+    ],
+    "mailq/memory_classifier.py": [
+      "mailq/rules_engine.py",
+      "mailq/vertex_gemini_classifier.py",
+      "mailq/mapper.py"
+    ],
+    "mailq/api.py": [
+      "mailq/api_organize.py",
+      "mailq/api_feedback.py",
+      "mailq/memory_classifier.py",
+      "mailq/api_debug.py",
+      "mailq/rules_manager.py",
+      "mailq/category_manager.py",
+      "mailq/feedback_manager.py"
+    ],
+    "mailq/api_feedback.py": [
+      "mailq/api_dashboard.py",
+      "mailq/feedback_manager.py"
+    ],
+    "mailq/rules_engine.py": [
+      "mailq/logger.py"
+    ],
+    "mailq/vertex_gemini_classifier.py": [
+      "mailq/feedback_manager.py"
+    ]
+  },
+  "js_dependencies": {
+    "extension/background.js": [
+      "extension/config.js",
+      "extension/modules/auth.js",
+      "extension/modules/gmail.js",
+      "extension/modules/classifier.js",
+      "extension/modules/utils.js",
+      "extension/modules/telemetry.js"
+    ],
+    "extension/modules/budget.js": [
+      "extension/modules/../config.js",
+      "extension/modules/utils.js"
+    ],
+    "extension/modules/telemetry.js": [
+      "extension/modules/../config.js"
+    ],
+    "extension/modules/cache.js": [
+      "extension/modules/../config.js"
+    ],
+    "extension/modules/classifier.js": [
+      "extension/modules/../config.js",
+      "extension/modules/cache.js",
+      "extension/modules/telemetry.js"
+    ],
+    "extension/modules/gmail.js": [
+      "extension/modules/../config.js"
+    ]
+  },
+  "statistics": {
+    "total_files": 41,
+    "python_files": 30,
+    "js_files": 11,
+    "total_lines": 5654,
+    "total_classes": 16,
+    "total_functions": 57,
+    "orchestrators": [
+      {
+        "path": "mailq/api.py",
+        "import_count": 7,
+        "docstring": "FastAPI server for MailQ email classification",
+        "type": "python"
+      },
+      {
+        "path": "extension/background.js",
+        "import_count": 6,
+        "docstring": "",
+        "type": "javascript"
+      },
+      {
+        "path": "mailq/memory_classifier.py",
+        "import_count": 3,
+        "docstring": "Memory-enhanced email classifier using rules + LLM with Vertex AI",
+        "type": "python"
+      },
+      {
+        "path": "extension/modules/classifier.js",
+        "import_count": 3,
+        "docstring": "",
+        "type": "javascript"
+      }
+    ],
+    "core_classes": [
+      {
+        "path": "mailq/rules_engine.py",
+        "class_name": "RulesEngine",
+        "method_count": 13,
+        "docstring": ""
+      },
+      {
+        "path": "mailq/feedback_manager.py",
+        "class_name": "FeedbackManager",
+        "method_count": 11,
+        "docstring": ""
+      },
+      {
+        "path": "mailq/vertex_gemini_classifier.py",
+        "class_name": "VertexGeminiClassifier",
+        "method_count": 8,
+        "docstring": ""
+      },
+      {
+        "path": "mailq/category_manager.py",
+        "class_name": "CategoryManager",
+        "method_count": 7,
+        "docstring": "Manages email categories for each user"
+      },
+      {
+        "path": "mailq/memory_classifier.py",
+        "class_name": "MemoryClassifier",
+        "method_count": 5,
+        "docstring": ""
+      }
+    ],
+    "by_directory": {
+      "mailq": {
+        "files": 20,
+        "lines": 3492,
+        "python": 20,
+        "javascript": 0
+      },
+      "scripts": {
+        "files": 3,
+        "lines": 377,
+        "python": 3,
+        "javascript": 0
+      },
+      "experiments": {
+        "files": 7,
+        "lines": 649,
+        "python": 7,
+        "javascript": 0
+      },
+      "extension": {
+        "files": 11,
+        "lines": 1136,
+        "python": 0,
+        "javascript": 11
+      }
+    }
+  }
+}

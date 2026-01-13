@@ -1,0 +1,84 @@
+{
+  "manifest_version": 3,
+  "name": "MailQ",
+  "version": "1.0.15",
+  "description": "AI-powered email organization for Gmail",
+
+  "permissions": [
+    "identity",
+    "storage",
+    "tabs",
+    "scripting",
+    "notifications",
+    "downloads",
+    "alarms"
+  ],
+
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://gmail.googleapis.com/*",
+    "https://www.googleapis.com/gmail/*",
+    "https://www.googleapis.com/oauth2/*",
+    "https://people.googleapis.com/*",
+    "https://mailq-api-488078904670.us-central1.run.app/*",
+    "https://ipapi.co/*",
+    "https://*.inboxsdk.com/*"
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "MailQ",
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["dist/content.bundle.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "oauth2": {
+    "client_id": "488078904670-eddkde05mhmuvplhgb9ks37mj7rbmhhp.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.labels",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon16.png",
+        "icons/icon48.png",
+        "icons/icon128.png",
+        "styles.css",
+        "pageWorld.js",
+        "sidebar.html",
+        "sidebar-inner.js"
+      ],
+      "matches": ["https://mail.google.com/*"]
+    }
+  ]
+}

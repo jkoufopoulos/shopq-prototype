@@ -1,0 +1,139 @@
+You are analyzing a MailQ email digest to identify format and categorization issues.
+
+Compare the ACTUAL digest output against the IDEAL format structure.
+
+## IDEAL DIGEST FORMAT
+
+The digest MUST match this exact format - flag ANY deviations in structure, styling, content presentation, or formatting.
+
+```
+🚨 CRITICAL (X emails):
+  • Bills due soon
+  • Security alerts
+  • Account alerts
+  • Low balance warnings
+  • Statement availability (if actionable)
+
+📦 TODAY (X emails):
+  • Package deliveries arriving today
+  • Urgent deadlines today
+  • Time-sensitive notifications
+
+📅 COMING UP (X emails):
+  • Appointments in next 7 days
+  • Events scheduled
+  • Tasks due soon
+  • Meetings
+
+💼 WORTH KNOWING (X emails):
+  • Job postings
+  • Shipment notifications (not arriving today)
+  • Financial updates (non-critical)
+  • Professional updates
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Everything else (X emails):
+  • 18 promotional (sales, offers, surveys)
+  • 12 past events (yesterday, concluded, finished)
+  • 33 updates & notifications (routine)
+```
+
+**Required format characteristics:**
+- ✅ Simple bullet points (•) with item titles and numbered links: `• Title (1)`
+- ✅ Exact emojis: 🚨📦📅💼 (not ⏰ or other variants)
+- ✅ Plain text, no styled boxes or gray backgrounds
+- ✅ No email snippets or preview text
+- ✅ No `<div class="category-summaries">` or expandable sections
+- ✅ Items appear ONCE only, not duplicated in different formats
+
+## ANTI-PATTERNS (What Should NOT Exist)
+
+**❌ Duplicate Content**: Same items appearing multiple times in different formats
+
+Bad example:
+```html
+<!-- First occurrence: Inline in narrative -->
+<div class="content">
+  🚨 CRITICAL
+  • Bill due Nov 12 (1)
+  📅 COMING UP
+  • Dentist appointment (2)
+</div>
+
+<!-- Second occurrence: Styled boxes -->
+<div class="category-summaries">
+  <div class="category-section">
+    <div class="category-title">🚨 CRITICAL</div>
+    <li>(1) Bill due Nov 12 <snippet>...</snippet></li>
+  </div>
+  <div class="category-section">
+    <div class="category-title">⏰ Coming Up</div>
+    <li>(2) Dentist appointment <snippet>...</snippet></li>
+  </div>
+</div>
+```
+
+**Problem**: Items (1) and (2) appear TWICE - once inline, once in styled boxes.
+
+## ACTUAL DIGEST OUTPUT
+
+{actual_digest}
+
+## YOUR TASK
+
+Analyze the actual digest and identify format/categorization issues:
+
+### 1. STRUCTURE & FORMAT ISSUES
+- Is the digest using categorized sections (🚨📦📅💼) or a numbered list (1. 2. 3.)?
+- Are all 4 required sections present?
+- Is there an "Everything else" separator (━━━━)?
+- **Does content appear multiple times?** (Check for items appearing both inline AND in `category-summaries` div)
+- **Is there a `<div class="category-summaries">` element?** (Should NOT exist - this creates duplicate content)
+- **Are items formatted as simple bullets (`• Title (1)`) or as styled boxes?** (Should be simple bullets only)
+- **Do items include email snippets or preview text?** (Should NOT - only title and link number)
+- **Are section emojis correct?** (Must be exactly 🚨📦📅💼, not ⏰ or other variants)
+- **Are items in gray boxes with backgrounds?** (Should NOT - plain text only)
+- **Is content in expandable sections?** (Should NOT - all content inline)
+
+### 2. CATEGORIZATION ISSUES
+- Are promotional emails (vote, feedback, surveys) in main list instead of "Everything else"?
+- Are past events (yesterday, concluded, adjourned) in main list instead of "Everything else"?
+- Are deliveries in TODAY section (or featured at all)?
+- Are appointments in COMING UP section?
+- Are bills/alerts in CRITICAL section?
+
+### 3. PRIORITY ISSUES
+- Are routine notifications elevated to main sections?
+- Are critical items (bills, security) missing from featured areas?
+- Is the relative importance correct (CRITICAL > TODAY > COMING UP > WORTH KNOWING)?
+
+## OUTPUT FORMAT
+
+Return a JSON array of issues. Each issue should have:
+
+```json
+{
+  "severity": "high|medium|low",
+  "category": "digest_format",
+  "pattern": "Brief description of the issue",
+  "evidence": "Specific examples from actual digest (quote items)",
+  "root_cause": "Why this is happening",
+  "suggested_fix": "Specific action to fix it"
+}
+```
+
+### SEVERITY GUIDELINES
+
+- **high**: Structural problems (missing sections, wrong format), **duplicate content**, **styled boxes instead of bullets**, **email snippets present**, critical items missing, noise heavily featured, wrong emojis used
+- **medium**: Some miscategorization, promotional items in main list, past events featured, minor formatting deviations
+- **low**: Minor category placement issues, edge cases, acceptable alternate wording
+
+### IMPORTANT
+
+- **Flag ANY deviation from the ideal format** - structure, styling, formatting, content presentation, emojis, duplicates
+- Provide specific evidence with quotes/HTML from actual digest
+- Focus on actionable problems with clear fixes
+- Compare actual HTML structure against ideal format requirements
+- If digest matches ideal format exactly, return empty array []
+
+Return ONLY the JSON array, no other text.

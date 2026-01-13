@@ -1,0 +1,203 @@
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+/dist/
+build/
+wheels/
+*.whl
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# ============================================
+# Secrets & Credentials
+# ============================================
+.env
+.env.*
+!.env.example
+token.json
+credentials.json
+service-account-key.json
+*.pem
+*.key
+
+# ============================================
+# Databases
+# ============================================
+# Ignore all databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Keep test fixtures
+!mailq/tests/fixtures/*.db
+
+# Keep structure (empty directories)
+!mailq/data/.gitkeep
+!data/.gitkeep
+
+# Ignore backups
+*.db.backup.*
+*.sqlite.backup.*
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+!logs/.gitkeep
+mailq/logs/*.log
+!mailq/logs/.gitkeep
+validation_success.log
+
+# ============================================
+# Data Files
+# ============================================
+*.csv
+emails.json
+categorized_emails.json
+label_schema.json
+*.jsonl
+
+# Keep test data
+!mailq/tests/fixtures/*.json
+!mailq/tests/fixtures/*.csv
+
+# Keep eval ground truth data
+!data/evals/classification/gds-2.0.csv
+!data/evals/classification/importance_review_decisions.csv
+
+# ============================================
+# IDE & Editors
+# ============================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# OS Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# Google Cloud SDK
+# ============================================
+.gcloud/
+
+# ============================================
+# Extension Build Artifacts
+# ============================================
+extension/node_modules/
+# Note: extension/dist/ is tracked - contains bundled InboxSDK for content script
+extension/build/
+extension/*.zip
+
+# ============================================
+# Testing
+# ============================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+node_modules/
+test-results/
+playwright-report/
+
+# Keep test structure
+!tests/
+!mailq/tests/
+tests/__pycache__/
+tests/*.pyc
+mailq/tests/__pycache__/
+mailq/tests/*.pyc
+
+# ============================================
+# Documentation
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.cache
+
+# ============================================
+# Project Specific
+# ============================================
+# Data directory (keep structure)
+data/*.db
+data/*.sqlite
+data/*.csv
+!data/.gitkeep
+
+# Backups
+backups/
+*.backup
+
+# Cache
+.cache/
+*.cache
+# CSV exports from organize sessions
+exports/
+
+# Dead code analysis reports
+dead-code-report.md
+
+# Quality monitoring outputs
+quality_logs/
+.claude/github_token.sh
+.claude/activity.log
+.claude/activity_archive/
+credentials/

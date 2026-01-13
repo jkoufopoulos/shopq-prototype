@@ -1,0 +1,33 @@
+# Systemd service for Quality Monitor
+#
+# Installation:
+#   sudo cp quality-monitor.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable quality-monitor
+#   sudo systemctl start quality-monitor
+#
+# Check status:
+#   sudo systemctl status quality-monitor
+#   tail -f /path/to/mailq-prototype/quality_monitor.log
+
+[Unit]
+Description=MailQ Quality Monitor Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=justinkoufopoulos
+WorkingDirectory=/Users/justinkoufopoulos/Projects/mailq-prototype
+ExecStart=/Users/justinkoufopoulos/Projects/mailq-prototype/run-quality-monitor.sh --daemon
+Restart=always
+RestartSec=60
+
+# Environment
+EnvironmentFile=/Users/justinkoufopoulos/Projects/mailq-prototype/.env
+
+# Logging
+StandardOutput=append:/Users/justinkoufopoulos/Projects/mailq-prototype/quality_monitor.log
+StandardError=append:/Users/justinkoufopoulos/Projects/mailq-prototype/quality_monitor.log
+
+[Install]
+WantedBy=multi-user.target

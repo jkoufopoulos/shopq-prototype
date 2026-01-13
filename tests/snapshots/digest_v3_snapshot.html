@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailQ Glance Digest</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+            background-color: #f9fafb;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        .period {
+            font-size: 14px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tagline {
+            font-size: 18px;
+            color: #4b5563;
+            margin-top: 8px;
+        }
+        .opener {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            border-left: 3px solid #3b82f6;
+        }
+        .section {
+            margin-bottom: 32px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+        .item {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #fafbfc;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+        .item.actionable {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .item-sender {
+            font-weight: 600;
+            color: #111827;
+            font-size: 15px;
+        }
+        .item-summary {
+            color: #374151;
+            margin: 4px 0;
+        }
+        .item-meta {
+            font-size: 13px;
+            color: #6b7280;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .item-action {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .item-action:hover {
+            background: #2563eb;
+        }
+        .action-strip {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .action-item {
+            padding: 16px;
+            background: #fef3c7;
+            border-radius: 6px;
+            border-left: 3px solid #f59e0b;
+        }
+        .action-item a {
+            color: #b45309;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .hidden-value-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .bucket {
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+        .bucket-title {
+            font-weight: 600;
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+        .bucket-items {
+            font-size: 14px;
+            color: #374151;
+        }
+        .footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 13px;
+            color: #6b7280;
+            text-align: center;
+        }
+        .footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div class="period">This morning</div>
+            <div class="tagline">Most of your inbox can wait.</div>
+        </div>
+
+        <div class="opener">
+            You had 2 critical items Confidence is high on this summary.
+        </div>
+
+        <div class="section">
+            <div class="section-title">What mattered</div>
+
+            <div class="item">
+                <div class="item-sender">Security alert</div>
+                <div class="item-summary">Fraud alert</div>
+                <div class="item-meta">
+                    <span>why: Important to know</span>
+                    <a href="https://mail.google.com/mail/u/0/#inbox/id1" class="item-action">Review</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">If you do one thing</div>
+            <div class="action-strip">
+
+            <div class="action-item">
+                <a href="https://mail.google.com/mail/u/0/#inbox/id2">Review</a> —
+                Important to know
+            </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">FYIs you can skim</div>
+
+            <div class="item">
+                <div class="item-sender">Newsletter</div>
+                <div class="item-summary">Weekly digest</div>
+                <div class="item-meta">
+                    <span>2h ago</span>
+                    <a href="https://mail.google.com/mail/u/0/#inbox/id3" class="item-action">View</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Hidden value found</div>
+            <div class="hidden-value-grid">
+
+            <div class="bucket">
+                <div class="bucket-title">🧾 Receipts</div>
+                <div class="bucket-items">
+                    • Receipt — You spent
+
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Synced just now · MailQ<br>
+            <a href="#">Preferences</a> · <a href="#">Unsubscribe</a>
+        </div>
+    </div>
+</body>
+</html>

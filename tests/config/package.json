@@ -1,0 +1,22 @@
+{
+  "name": "mailq-prototype",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:extension && npm run test:backend",
+    "test:extension": "npm --prefix extension run test",
+    "test:backend": "python3 scripts/run_backend_tests.py",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "DEBUG=1 playwright test --debug",
+    "test:e2e:ui": "playwright test --ui",
+    "test:labeling": "playwright test gmail-labeling",
+    "test:search": "playwright test gmail-search",
+    "test:selectors": "playwright test dom-selectors",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "playwright": "^1.56.1"
+  }
+}

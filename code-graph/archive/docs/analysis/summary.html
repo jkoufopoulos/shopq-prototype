@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MailQ Summary</title>
+    <style>
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        header h1 { font-size: 2rem; margin-bottom: 1rem; }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+        }
+        main { max-width: 900px; margin: 2rem auto; padding: 0 2rem; }
+        section {
+            background: white;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #1a202c;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .overview p { font-size: 1.1rem; color: #4a5568; }
+        .architecture {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .arch-box {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .arch-box h3 { color: #2d3748; margin-bottom: 0.5rem; }
+        .file-item {
+            background: #f7fafc;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            border-left: 4px solid #9f7aea;
+        }
+        .file-item h3 {
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #2d3748;
+            font-size: 1rem;
+        }
+        .file-item p { color: #4a5568; margin: 0.5rem 0; }
+        .meta { color: #718096 !important; font-size: 0.9rem; }
+        .changes-list {
+            list-style: none;
+        }
+        .changes-list li {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+        code {
+            background: #edf2f7;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+        }
+        footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📝 MailQ Architecture Summary</h1>
+        <nav>
+            <a href="index.html">← Back to Dashboard</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="overview">
+            <h2>What This System Does</h2>
+            <p>
+                MailQ is an AI-powered email classification system that automatically
+                organizes Gmail messages into categories. It combines rule-based logic
+                for common patterns with Gemini AI for complex emails.
+            </p>
+        </section>
+
+        <section>
+            <h2>How It Works</h2>
+            <div class="architecture">
+                <div class="arch-box">
+                    <h3>1. Chrome Extension</h3>
+                    <p>User clicks icon → Fetches unread emails from Gmail API</p>
+                </div>
+                <div class="arch-box">
+                    <h3>2. Classification Pipeline</h3>
+                    <p>Rules Engine (fast) → AI Classifier (complex cases)</p>
+                </div>
+                <div class="arch-box">
+                    <h3>3. Apply Labels</h3>
+                    <p>Multi-dimensional labels applied via Gmail API</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Key Files to Know</h2>
+            <div class="file-list">
+
+                <div class="file-item">
+                    <h3>mailq/api.py</h3>
+                    <p>FastAPI server for classifying emails using AI and rule-based methods. It provides endpoints for email classification and category management.</p>
+                    <p class="meta">7 dependencies</p>
+                </div>
+
+                <div class="file-item">
+                    <h3>extension/background.js</h3>
+                    <p>Mailq Background Service Worker</p>
+                    <p class="meta">6 dependencies</p>
+                </div>
+
+                <div class="file-item">
+                    <h3>mailq/memory_classifier.py</h3>
+                    <p>This file implements an email classifier that combines rule-based logic and LLM classification for improved accuracy. It leverages a rules engine and Gemini AI to intelligently label emails.</p>
+                    <p class="meta">3 dependencies</p>
+                </div>
+
+                <div class="file-item">
+                    <h3>extension/modules/classifier.js</h3>
+                    <p>Email Classification Module</p>
+                    <p class="meta">3 dependencies</p>
+                </div>
+
+            </div>
+        </section>
+
+        <section>
+            <h2>Where to Make Common Changes</h2>
+            <ul class="changes-list">
+                <li><strong>Add new email type:</strong> Edit <code>mailq/mapper.py</code> schema</li>
+                <li><strong>Change AI model:</strong> Update <code>mailq/vertex_gemini_classifier.py</code></li>
+                <li><strong>Modify label formats:</strong> Edit <code>mailq/mapper.py</code></li>
+                <li><strong>Add classification domains:</strong> Update <code>mailq/config/sender_allowlist.py</code></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>MailQ Codebase Analyzer</p>
+    </footer>
+</body>
+</html>

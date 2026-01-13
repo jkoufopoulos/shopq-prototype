@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Components Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../assets/css/analysis.css">
+</head>
+<body>
+    <header>
+        <h1>Components Documentation</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="detailed.html">Detailed Report</a></li>
+                <li><a href="dependencies.html">Dependency Graph</a></li>
+                <li><a href="summary.html">Summary</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Key Components</h2>
+            <p>This section provides an overview of the key components in the MailQ codebase.</p>
+            <ul>
+                <li><strong>API (mailq/api.py):</strong> The entry point for email classification.</li>
+                <li><strong>Memory Classifier (mailq/memory_classifier.py):</strong> The core logic for classifying emails.</li>
+                <li><strong>Rules Engine (mailq/rules_engine.py):</strong> Contains predefined rules for email classification.</li>
+                <li><strong>Vertex Gemini Classifier (mailq/vertex_gemini_classifier.py):</strong> AI model for advanced classification.</li>
+                <li><strong>Mapper (mailq/mapper.py):</strong> Translates classification results into Gmail labels.</li>
+                <li><strong>Category Manager (mailq/category_manager.py):</strong> Manages user-specific email categories.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Component Interactions</h2>
+            <p>Understanding how components interact is crucial for maintaining and extending the system.</p>
+            <ul>
+                <li>The API receives emails and triggers the classification process.</li>
+                <li>The Memory Classifier uses the Rules Engine and AI for classification.</li>
+                <li>Classification results are mapped to Gmail labels by the Mapper.</li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 MailQ Project. All rights reserved.</p>
+    </footer>
+    <script src="../assets/js/mermaid-init.js"></script>
+    <script src="../assets/js/interactive.js"></script>
+</body>
+</html>

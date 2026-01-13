@@ -1,0 +1,9 @@
+# Default ownership for MailQ repository
+* @justinkoufopoulos
+mailq/ @justinkoufopoulos
+extension/ @justinkoufopoulos
+scripts/ @justinkoufopoulos
+docs/ @justinkoufopoulos
+/claude.md @justin
+/MAILQ_REFERENCE.md @justin
+/config/mailq_policy.yaml @justin

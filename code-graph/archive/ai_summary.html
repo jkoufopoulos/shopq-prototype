@@ -1,0 +1,123 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>MailQ Codebase Summary</title>
+<style>
+body {
+  font-family: sans-serif;
+  line-height: 1.6;
+  margin: 20px;
+}
+h2 {
+  color: #333;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
+}
+h3 {
+  color: #555;
+}
+.file-list {
+  list-style-type: none;
+  padding: 0;
+}
+.file-list li {
+  margin-bottom: 10px;
+}
+.file-name {
+  font-weight: bold;
+}
+.file-description {
+  color: #777;
+}
+.change-section {
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<h2>1. WHAT THIS SYSTEM DOES</h2>
+
+<p>MailQ is an email classification system.  It automatically sorts emails into categories (like "Finance" or "Social") and can apply Gmail labels accordingly. It also learns from user feedback to improve its accuracy.</p>
+
+<h2>2. HOW IT WORKS</h2>
+
+<p>MailQ uses a multi-layered approach to classify emails:</p>
+
+<ul>
+    <li><b>Email Source:</b> The system gets emails from Gmail using the Gmail API. This is handled by Javascript code in the Chrome Extension.</li>
+    <li><b>Classification:</b> The core classification happens on a backend server.  First, a rules engine checks for simple, known patterns. If a rule matches, the email is classified. If not, a more complex AI model (Gemini) tries to classify the email based on the email's content.</li>
+    <li><b>Labeling:</b> The system then maps the classification to specific Gmail labels and applies those labels to the email.</li>
+    <li><b>Feedback:</b>  Users can correct the system's classifications. This feedback is stored and used to refine the rules engine and improve the AI model's future performance.</li>
+    <li><b>API:</b> A FastAPI server provides an API endpoint for the Chrome Extension to send emails for classification.  It also serves a debug dashboard.</li>
+</ul>
+
+<p><b>Data Flow:</b> Email data flows from the Chrome Extension to the FastAPI server. The server processes the email, classifies it, and sends the classification result back to the extension. The extension then applies labels to the email within Gmail. Feedback from users flows back to the FastAPI server for learning.</p>
+
+<h2>3. KEY FILES TO KNOW</h2>
+
+<ul class="file-list">
+    <li>
+        <span class="file-name">mailq/api.py</span>
+        <span class="file-description"> - The main FastAPI server. Handles API requests from the extension and orchestrates classification.</span>
+        <span class="file-description"> - Matters because it's the entry point for email classification requests and where you'll configure the API.</span>
+    </li>
+    <li>
+        <span class="file-name">mailq/memory_classifier.py</span>
+        <span class="file-description"> - Combines the rules engine and the AI model for classification.</span>
+        <span class="file-description"> - Matters because it decides which classification method to use and manages the overall classification process.</span>
+    </li>
+    <li>
+        <span class="file-name">mailq/rules_engine.py</span>
+        <span class="file-description"> - Implements the rules-based classification system.</span>
+        <span class="file-description"> - Matters because it provides a fast and accurate way to classify emails based on known patterns.</span>
+    </li>
+    <li>
+        <span class="file-name">mailq/vertex_gemini_classifier.py</span>
+        <span class="file-description"> - Implements the AI-powered classification using Google's Gemini model.</span>
+        <span class="file-description"> - Matters because it provides a more sophisticated way to classify emails when the rules engine can't.</span>
+    </li>
+    <li>
+        <span class="file-name">mailq/feedback_manager.py</span>
+        <span class="file-description"> - Manages user feedback and learns from it to improve classification accuracy.</span>
+        <span class="file-description"> - Matters because it allows the system to adapt to user preferences and improve over time.</span>
+    </li>
+    <li>
+        <span class="file-name">extension/background.js</span>
+        <span class="file-description"> - The main background script for the Chrome extension. Handles communication with Gmail and the backend API.</span>
+        <span class="file-description"> - Matters because it's the interface between the browser and the email classification system.</span>
+    </li>
+    <li>
+        <span class="file-name">extension/modules/gmail.js</span>
+        <span class="file-description"> - Contains code for interacting with the Gmail API.</span>
+        <span class="file-description"> - Matters because it retrieves email data and applies labels to emails in Gmail.</span>
+    </li>
+</ul>
+
+<div class="change-section">
+<h2>4. WHERE TO MAKE COMMON CHANGES</h2>
+
+<ul>
+    <li>
+        <b>Adding a new email type:</b>
+        Modify `mailq/config/__init__.py` to define the new email type in the classification schema. Update `mailq/vertex_gemini_classifier.py` and potentially `mailq/rules_engine.py` to handle the new type during classification.
+    </li>
+    <li>
+        <b>Changing the AI model:</b>
+        Modify `mailq/vertex_gemini_classifier.py` to use a different Gemini model or API endpoint. You might also need to adjust the prompt or parsing logic.
+    </li>
+    <li>
+        <b>Modifying label formats:</b>
+        Modify `mailq/mapper.py` to change how classifications are mapped to Gmail labels.
+    </li>
+    <li>
+        <b>Adding new classification domains:</b>
+        Modify the database schema in `mailq/feedback_manager.py` and `mailq/rules_engine.py` to accommodate the new domains.  Update the UI to collect feedback for these new domains. Also, modify `mailq/vertex_gemini_classifier.py` and potentially `mailq/rules_engine.py` to handle classifications in these domains. Modify `mailq/api.py` and `mailq/api_organize.py` if needed.
+    </li>
+</ul>
+</div>
+
+</body>
+</html>
+```

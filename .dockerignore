@@ -1,0 +1,29 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.venv
+venv
+.git
+.gitignore
+.pytest_cache
+*.db
+*.sqlite
+.DS_Store
+*.log
+
+# Don't copy these to Cloud Run
+extension/
+tests/
+backups/
+credentials/
+code-graph/
+.vscode/
+
+# scripts/ needed for init_db_standalone.py and migrate_to_central_database.py

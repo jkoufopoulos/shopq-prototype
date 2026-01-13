@@ -1,0 +1,353 @@
+#!/usr/bin/env python3
+"""
+MailQ Debug CLI Tool
+
+Provides command-line access to debug endpoints for featured selection and category analysis.
+
+Usage:
+    mailq-debug featured                              # Show featured selection
+    mailq-debug labels --labels MailQ-Uncategorized   # Check label counts
+    mailq-debug snapshot                              # Get full snapshot
+    mailq-debug categories                            # Show category summary
+    mailq-debug missed --k 20                         # Show missed featured emails
+"""
+
+import argparse
+import json
+import sys
+
+import requests
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+# Default API URL (can be overridden)
+DEFAULT_API_URL = "http://localhost:8000"
+
+
+def get_api_url() -> str:
+    """Get API URL from environment or use default"""
+    import os
+
+    return os.getenv("MAILQ_API_URL", DEFAULT_API_URL)
+
+
+def format_score(score: float) -> str:
+    """Format score with color"""
+    if score >= 0.8:
+        return f"[green]{score:.3f}[/green]"
+    if score >= 0.5:
+        return f"[yellow]{score:.3f}[/yellow]"
+    return f"[red]{score:.3f}[/red]"
+
+
+def cmd_featured(args):
+    """Show featured selection details"""
+    console = Console()
+    api_url = get_api_url()
+
+    console.print(f"\n[bold]Fetching featured selection from {api_url}...[/bold]\n")
+
+    try:
+        response = requests.get(f"{api_url}/api/debug/featured-selection")
+        response.raise_for_status()
+        data = response.json()
+
+        if "error" in data:
+            console.print(f"[red]Error: {data['error']}[/red]")
+            console.print(f"[dim]{data.get('message', '')}[/dim]")
+            return
+
+        # Summary
+        console.print(
+            Panel(
+                f"Total ranked: {data['total_ranked']}\n"
+                f"Featured: {len(data['featured'])}\n"
+                f"Filtered out: {data['filtered_remaining']}",
+                title="Pipeline Summary",
+            )
+        )
+
+        # Featured table
+        if data["featured"]:
+            table = Table(
+                title="\n✨ Featured Entities", show_header=True, header_style="bold magenta"
+            )
+            table.add_column("Subject", style="cyan", width=40)
+            table.add_column("Attention", justify="right")
+            table.add_column("Contextual", justify="right")
+            table.add_column("Reason", width=30)
+
+            for item in data["featured"]:
+                table.add_row(
+                    item["subject"][:40],
+                    format_score(item["attention_score"]),
+                    format_score(item["contextual_score"]),
+                    item["reason"],
+                )
+
+            console.print(table)
+
+        # Top candidates table
+        if data["top15_candidates"]:
+            table = Table(
+                title="\n📊 Top 15 Candidates", show_header=True, header_style="bold blue"
+            )
+            table.add_column("Rank", justify="right", style="dim")
+            table.add_column("Subject", style="cyan", width=50)
+            table.add_column("Attention", justify="right")
+            table.add_column("Contextual", justify="right")
+
+            for i, item in enumerate(data["top15_candidates"], 1):
+                contextual = item.get("contextual_score")
+                contextual_str = (
+                    format_score(contextual) if contextual is not None else "[dim]N/A[/dim]"
+                )
+
+                table.add_row(
+                    str(i),
+                    item["subject"][:50],
+                    format_score(item["attention_score"]),
+                    contextual_str,
+                )
+
+            console.print(table)
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"[red]Failed to connect to API: {e}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+def cmd_labels(args):
+    """Check label counts and discrepancies"""
+    console = Console()
+    api_url = get_api_url()
+
+    labels = (
+        args.labels.split(",") if args.labels else ["MailQ-Uncategorized", "MailQ-Notifications"]
+    )
+
+    console.print(f"\n[bold]Checking label counts for: {', '.join(labels)}[/bold]\n")
+
+    try:
+        params = {"labels": labels, "newer_than_days": args.days}
+        response = requests.get(f"{api_url}/api/debug/label-counts", params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if "error" in data:
+            console.print(f"[red]Error: {data['error']}[/red]")
+            return
+
+        # Create table
+        table = Table(
+            title=f"Label Counts (last {args.days} days)", show_header=True, header_style="bold"
+        )
+        table.add_column("Label", style="cyan")
+        table.add_column("Count", justify="right")
+        table.add_column("Gmail Query", style="dim")
+
+        for item in data["gmail_counts"]:
+            table.add_row(item["label"], str(item["count"]), item["query"])
+
+        console.print(table)
+
+        # Show discrepancy
+        discrepancy = data.get("discrepancy", 0)
+        if discrepancy == 0:
+            console.print("\n[green]✓ No discrepancies detected[/green]")
+        else:
+            console.print(f"\n[yellow]⚠  Discrepancy: {discrepancy}[/yellow]")
+
+        console.print(f"\n[dim]Computed at: {data['computed_at']}[/dim]")
+        if "note" in data:
+            console.print(f"[dim]{data['note']}[/dim]")
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"[red]Failed to connect to API: {e}[/red]")
+
+
+def cmd_snapshot(args):
+    """Get full digest snapshot"""
+    console = Console()
+    api_url = get_api_url()
+
+    console.print("\n[bold]Fetching digest snapshot...[/bold]\n")
+
+    try:
+        params = {}
+        if args.batch:
+            params["batch_id"] = args.batch
+
+        response = requests.get(f"{api_url}/api/debug/digest-snapshot", params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if "error" in data:
+            console.print(f"[red]Error: {data['error']}[/red]")
+            return
+
+        # Save to file
+        filename = f"/tmp/mailq_snapshot_{args.batch or 'latest'}.json"
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)
+
+        console.print(f"[green]✓ Snapshot saved to {filename}[/green]\n")
+
+        # Display summary
+        header = data["header"]
+        console.print(
+            Panel(
+                f"Day: {header['day']}\n"
+                f"Generated: {header['generated_at']}\n"
+                f"Batch ID: {header['batch_id']}",
+                title="Header",
+            )
+        )
+
+        # Featured count
+        console.print(f"\n[bold]Featured:[/bold] {len(data['featured'])} entities")
+
+        # Bottom links
+        reported = data["bottom_links"]["reported_counts"]
+        console.print("\n[bold]Bottom Links (Reported Counts):[/bold]")
+        console.print(f"  Critical: {reported.get('critical', 0)}")
+        console.print(f"  Time-sensitive: {reported.get('time_sensitive', 0)}")
+        console.print(f"  Routine: {reported.get('routine', 0)}")
+
+        # Notes
+        if data.get("notes"):
+            console.print("\n[bold]Notes:[/bold]")
+            for note in data["notes"]:
+                console.print(f"  • {note}")
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"[red]Failed to connect to API: {e}[/red]")
+
+
+def cmd_categories(args):
+    """Show category summary"""
+    console = Console()
+    api_url = get_api_url()
+
+    console.print("\n[bold]Fetching category summary...[/bold]\n")
+
+    try:
+        params = {"newer_than_days": args.days}
+        response = requests.get(f"{api_url}/api/debug/category-summary", params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if "error" in data:
+            console.print(f"[red]Error: {data['error']}[/red]")
+            return
+
+        for category in data["categories"]:
+            console.print(
+                f"\n[bold cyan]{category['key'].upper()}[/bold cyan] ({category['count']} emails)"
+            )
+            console.print(f"[dim]Gmail query: {category['gmail_search_query']}[/dim]")
+
+            if category["sample_subjects"]:
+                console.print("\nSample subjects:")
+                for subject in category["sample_subjects"][:3]:
+                    console.print(f"  • {subject}")
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"[red]Failed to connect to API: {e}[/red]")
+
+
+def cmd_missed(args):
+    """Show missed featured emails"""
+    console = Console()
+    api_url = get_api_url()
+
+    console.print(f"\n[bold]Checking for missed featured emails (top {args.k})...[/bold]\n")
+
+    try:
+        params = {"k": args.k}
+        response = requests.get(f"{api_url}/api/debug/missed-featured", params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        if "error" in data:
+            console.print(f"[red]Error: {data['error']}[/red]")
+            return
+
+        console.print(f"[dim]Cutoff score: {format_score(data['cutoff_contextual_score'])}[/dim]")
+        console.print(f"[dim]Featured IDs: {len(data['featured_ids'])}[/dim]\n")
+
+        if not data["missed"]:
+            console.print("[green]✓ No high-scoring emails were missed![/green]")
+            return
+
+        # Missed table
+        table = Table(
+            title="⚠️  Missed Featured Emails", show_header=True, header_style="bold yellow"
+        )
+        table.add_column("Subject", style="cyan", width=50)
+        table.add_column("Score", justify="right")
+        table.add_column("Reason Excluded", width=30)
+
+        for item in data["missed"]:
+            table.add_row(
+                item["subject"][:50],
+                format_score(item["contextual_score"]),
+                item["reason_excluded"],
+            )
+
+        console.print(table)
+
+    except requests.exceptions.RequestException as e:
+        console.print(f"[red]Failed to connect to API: {e}[/red]")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="MailQ Debug CLI - Inspect digest generation and featured selection",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    # Featured command
+    parser_featured = subparsers.add_parser("featured", help="Show featured selection details")
+    parser_featured.set_defaults(func=cmd_featured)
+
+    # Labels command
+    parser_labels = subparsers.add_parser("labels", help="Check label counts")
+    parser_labels.add_argument("--labels", type=str, help="Comma-separated labels to check")
+    parser_labels.add_argument("--days", type=int, default=1, help="Number of days to look back")
+    parser_labels.set_defaults(func=cmd_labels)
+
+    # Snapshot command
+    parser_snapshot = subparsers.add_parser("snapshot", help="Get full digest snapshot")
+    parser_snapshot.add_argument("--batch", type=str, help="Batch ID to retrieve")
+    parser_snapshot.set_defaults(func=cmd_snapshot)
+
+    # Categories command
+    parser_categories = subparsers.add_parser("categories", help="Show category summary")
+    parser_categories.add_argument(
+        "--days", type=int, default=1, help="Number of days to look back"
+    )
+    parser_categories.set_defaults(func=cmd_categories)
+
+    # Missed command
+    parser_missed = subparsers.add_parser("missed", help="Show missed featured emails")
+    parser_missed.add_argument(
+        "--k", type=int, default=15, help="Number of top candidates to check"
+    )
+    parser_missed.set_defaults(func=cmd_missed)
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    # Execute command
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

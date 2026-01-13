@@ -1,0 +1,9 @@
+# Auto-generated backup files from correction tools
+*.backup_*
+
+# Session/progress files (tool state)
+.gds_session.txt
+.labeling_progress.txt
+
+# History files
+gds_correction_history.jsonl

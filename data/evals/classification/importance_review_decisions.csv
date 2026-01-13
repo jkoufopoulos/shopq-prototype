@@ -1,0 +1,80 @@
+email_id,subject,llm_importance,gds_importance,decision,correct_value,note,reviewed_at
+31,HCA data breach affects 11 million patients,routine,critical,llm,routine,misclassification by me,2025-11-30T20:34:13.847252
+32,Security alert for justinkoufappletv@gmail.com,critical,routine,llm,critical,error,2025-11-30T20:34:36.845096
+33,Security Alert,critical,routine,llm,critical,,2025-11-30T20:34:45.382816
+34,Pinterest account security alert: Did you make this change to your Pinterest account?,critical,routine,llm,critical,,2025-11-30T20:34:48.790079
+46,Taste. Vibe. Celebrate. — Bites & Beyond Food Festival Takes Over Discovery Green!,time_sensitive,routine,gds,routine,this is an advertisement,2025-11-30T20:36:22.921623
+67,Reminder: Braun Men's Aesthetic Event in 2 weeks,time_sensitive,routine,gds,routine,"This is a newsletter, braun is a dermatology clinic.",2025-11-30T20:36:53.167509
+69,River Road Drop-in Class is not meeting tomorrow.,time_sensitive,routine,llm,time_sensitive,,2025-11-30T20:38:12.485034
+72,[P+S] we're meeting 2nd + 4th sundays!,time_sensitive,routine,gds,routine,,2025-11-30T20:38:48.341989
+73,[Downtown Dharma Sangha Listserv] This Sunday at Downtown Dharma: Meeting this Moment with the Buddh,time_sensitive,routine,gds,routine,,2025-11-30T20:40:11.510562
+82,Enjoy the event!,time_sensitive,routine,gds,routine,,2025-11-30T20:40:20.193610
+88,[PIF Alumni] PIFF event in NYC and Election,routine,time_sensitive,gds,time_sensitive,,2025-11-30T21:25:17.033779
+122,Fwd: Own the patient journey @ Nourish | Series B unicorn digital health startup 🚀,routine,time_sensitive,gds,time_sensitive,job interview,2025-11-30T21:25:31.074966
+123,[PIFF] Survey for Nov 10,time_sensitive,routine,gds,routine,subtle but this does not have the same level of urgency,2025-11-30T21:25:57.858921
+126,"Your AutoPay is set for Nov 12, 2025",time_sensitive,routine,gds,routine,autopays are generally routine,2025-11-30T21:26:25.980817
+129,"Shipped: ""Slippers""",routine,time_sensitive,llm,routine,,2025-11-30T21:31:52.428299
+60,"Monday Night Meditation Webcast, Oct 27 Living from the Still Point",time_sensitive,routine,gds,routine,this is just an event without any urgency,2025-11-30T23:30:35.030004
+133,[billing] Heroku Invoice for October 2025 (Invoice #108679010),time_sensitive,routine,gds,routine,just an invoice,2025-11-30T23:31:45.277454
+144,We've delivered your order!,time_sensitive,routine,gds,routine,routine -- not an imminent delivery,2025-11-30T23:33:13.669780
+186,We've transferred money to cover one or more transactions,time_sensitive,routine,llm,time_sensitive,,2025-11-30T23:35:09.654445
+187,⚠️ Account balance alert,time_sensitive,critical,gds,critical,i think this should be critical -- requires action otherwise there will be an impact to the user,2025-11-30T23:35:43.505785
+188,Missing your Chime Visa Debit Card?,routine,time_sensitive,gds,time_sensitive,impact on user's life -- missed replacement card,2025-11-30T23:36:11.612691
+190,Storm Alert: Prepare Now for Possible Outages,time_sensitive,routine,llm,time_sensitive,no impact to user if missed,2025-11-30T23:36:22.789017
+203,Automatic payment scheduled for BANK OF AMERICA CREDIT CARD as requested,time_sensitive,routine,gds,routine,no impact to user if missed,2025-11-30T23:36:30.884031
+207,We've sent your payment to BANK OF AMERICA - CREDIT CARD as requested,time_sensitive,routine,gds,routine,no impact to user if missed,2025-11-30T23:36:42.940628
+213,[billing] Heroku Invoice for September 2025 (Invoice #108141356),time_sensitive,routine,gds,routine,,2025-11-30T23:46:27.524561
+216,"Your AutoPay is set for Oct 29, 2025",time_sensitive,routine,gds,routine,no inmpact to user if ignored,2025-11-30T23:46:43.826437
+217,"Your AutoPay is set for Sep 29, 2025",time_sensitive,routine,gds,routine,no impact to user if ignored,2025-11-30T23:46:55.533076
+223,"Your AutoPay is set for Jul 1, 2025",time_sensitive,routine,gds,routine,no impact to user if ignored,2025-11-30T23:47:05.722840
+225,"Your AutoPay is set for Jun 17, 2025",time_sensitive,routine,gds,routine,no impact to user if ignore,2025-11-30T23:47:17.114511
+226,"Your AutoPay is set for Jun 3, 2025",time_sensitive,routine,gds,routine,autopays are routine unless they fail because of low balance,2025-11-30T23:49:51.438252
+227,"Your AutoPay is set for May 20, 2025",time_sensitive,routine,gds,routine,autopays routine,2025-11-30T23:50:48.971342
+228,Delivery Status Notification (Failure),time_sensitive,routine,llm,time_sensitive,impacts user if email cannot be sent,2025-11-30T23:51:08.777512
+236,Delivery status of debit card - 6884 - Created,routine,time_sensitive,llm,routine,probably routine because no impact if user misses this email,2025-11-30T23:52:52.884771
+239,Ding dong! Your special delivery is on the way✨,routine,time_sensitive,gds,time_sensitive,should be timesensitive in aligning with taxonomy (out for delivery),2025-11-30T23:53:18.835264
+244,Dispatched to Destination. Tracking Number: DEL0013GB00083043001,routine,time_sensitive,llm,routine,CORRECTED: taxonomy says in_transit (2-3 days away) = routine,2025-11-30T23:53:35.590598
+249,Re: A shipment from order Beckett S #517104 is on the way,routine,time_sensitive,gds,time_sensitive,impact if missed (customer service),2025-11-30T23:56:00.639840
+263,UPS Update: Package Delivered,time_sensitive,routine,gds,routine,CORRECTED: taxonomy says delivered = routine (already happened),2025-11-30T23:56:15.014674
+267,Your Package Has Shipped,routine,time_sensitive,llm,routine,CORRECTED: taxonomy says shipped = routine (no action possible),2025-11-30T23:56:39.973824
+268,Sendle delivered your package from Attn: Shipping [SGHK24K],time_sensitive,routine,gds,routine,should line up with taxonomy,2025-11-30T23:57:54.848699
+269,Your package from Attn: Shipping is on its way – here's your tracking link! [SGHK24K],routine,time_sensitive,llm,routine,CORRECTED: taxonomy says shipped/on its way = routine (no action possible),2025-11-30T23:58:04.949777
+275,"Justin, Free Intuit Tech Stories Webinar 11/6: Bayesian Testing in Action",time_sensitive,routine,gds,routine,just a newsletter,2025-11-30T23:58:15.773472
+278,Reminder: Register for G.E.H.A’s online cooking class webinar,time_sensitive,routine,gds,routine,,2025-12-01T00:09:38.133355
+290,Wi-Fi and entertainment options for your October 13 flight,routine,time_sensitive,gds,time_sensitive,UA flight upcoming,2025-12-01T00:11:02.204021
+292,Wi-Fi and entertainment options for your October 9 flight,routine,time_sensitive,gds,time_sensitive,,2025-12-01T00:11:09.989560
+295,Confirmation of final invoice,time_sensitive,routine,llm,time_sensitive,would impact user if not done,2025-12-01T00:11:29.615264
+247,Your Royal Mail parcel from PERCIVAL is being processed for delivery,routine,time_sensitive,llm,routine,,2025-12-04T00:39:56.382249
+308,"UPS Ship Notification, Tracking Number 1Z16Y4F50397923109",routine,time_sensitive,llm,routine,,2025-12-04T00:40:04.914431
+339,Your Etsy Order Shipped (Receipt #3785587501),time_sensitive,routine,gds,routine,,2025-12-04T00:40:13.293055
+341,Updates to: Cleaning,time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:40:24.580152
+351,Reminder: Register for G.E.H.A’s “Healing and Oral-Systemic Health” webinar,time_sensitive,routine,gds,routine,this is basically just a webinar,2025-12-04T00:40:50.821016
+357,"<*Reminder*> Permits and Reservations Open on Monday, August 18, 2025, thru August 25, 2025",routine,time_sensitive,gds,time_sensitive,,2025-12-04T00:41:02.292370
+378,"Justin, Discover Bayesian Testing Insights in Intuit Tech Stories Webinar 11/6",time_sensitive,routine,gds,routine,,2025-12-04T00:41:07.985991
+379,You’re invited: Register for G.E.H.A’s online cooking class webinar,time_sensitive,routine,gds,routine,,2025-12-04T00:41:13.592248
+380,"You're invited: Register for G.E.H.A's ""FEHB Pre-Retirement"" webinar",time_sensitive,routine,gds,routine,,2025-12-04T00:41:15.397026
+384,[Webinar] Still thinking about AI for advocacy? Don’t miss this.,time_sensitive,routine,gds,routine,,2025-12-04T00:41:18.771085
+386,[Webinar] AI Tools Meet Advocacy Experience — Join Brian Rubenstein Live,time_sensitive,routine,gds,routine,,2025-12-04T00:41:20.693440
+387,The Next Wave Is Here: Summit At Sea 2026 | April 23-26,time_sensitive,routine,gds,routine,,2025-12-04T00:41:22.617387
+389,[Webinar] Don’t miss it! Measuring beyond your North Star metric,time_sensitive,routine,gds,routine,,2025-12-04T00:41:24.332616
+390,[Webinar] Beyond the North Star: Turning Data into Impact with Metric Trees,time_sensitive,routine,gds,routine,,2025-12-04T00:41:28.715059
+391,Reminder: Register for G.E.H.A's financial wellness webinar,time_sensitive,routine,gds,routine,newsletters are almost always routine - their events tend to be marketing focused,2025-12-04T00:41:45.978373
+393,Please share this upcoming webinar with your employees,time_sensitive,routine,gds,routine,newsletter event,2025-12-04T00:42:01.310568
+394,[Live Webinar Series] Break into AI Product Management in 2025 w/ Corebridge AI Expert,time_sensitive,routine,gds,routine,newsletter event,2025-12-04T00:42:09.496021
+396,My Hertz Reservation L36608555B0,time_sensitive,routine,gds,routine,,2025-12-04T00:42:21.484916
+404,Your Booking Confirmation at Athens Hawks,time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:42:38.223818
+405,"Hostelworld.com booking confirmation - Athens Hawks Hostel, Athens",time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:42:48.437969
+406,Your booking #1106804 is confirmed! ✅,time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:42:52.722836
+407,Ferry Booking Confirmation,time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:42:56.747642
+408,You have a new message from eLea through Booking.com,time_sensitive,routine,llm,time_sensitive,,2025-12-04T00:42:59.190036
+433,Your Con Edison bill is ready,time_sensitive,routine,gds,routine,not requiring action,2025-12-04T00:44:40.437528
+456,Security alert,critical,routine,llm,critical,,2025-12-04T00:44:57.042274
+461,🆓 Reminder: Share Your Anonymized Offer & Unlock Lifetime Access to Product Uplevel,routine,time_sensitive,gds,time_sensitive,,2025-12-04T00:50:48.591900
+469,🚗 Auto & Transport budget update,routine,time_sensitive,llm,routine,,2025-12-04T00:51:49.736201
+474,🛍 Shopping budget update,routine,time_sensitive,llm,routine,,2025-12-04T00:51:53.430760
+477,OpenWeatherMap Account confirmation,routine,critical,gds,critical,,2025-12-04T00:52:24.410319
+479,eTicket Itinerary and Receipt for Confirmation HQWWY1,critical,time_sensitive,gds,time_sensitive,,2025-12-04T00:56:23.089091
+498,Your WABA membership has expired,routine,time_sensitive,gds,time_sensitive,,2025-12-04T00:56:36.053200
+508,"Hi Justin, Can You Do Us A Quick Favor?",routine,time_sensitive,llm,routine,,2025-12-04T00:56:56.676829
+511,Join us for Future of Cancer event at The Post's D.C. HQ,time_sensitive,routine,gds,routine,,2025-12-04T00:57:10.760713
+517,"Your AutoPay is set for Nov 26, 2025",time_sensitive,routine,gds,routine,,2025-12-04T00:57:18.610224

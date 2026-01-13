@@ -1,0 +1,59 @@
+# Pre-commit hooks for code quality and security
+# Install: pip install pre-commit
+# Setup: pre-commit install
+
+repos:
+  # Security: Detect committed secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: 'package.lock.json|extension/dist/.*|extension/pageWorld\.js'
+
+  # Python code formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Python type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        args: [--ignore-missing-imports, --no-strict-optional]
+        additional_dependencies: [pydantic]
+
+  # General file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # Custom: Validate architectural principles
+  - repo: local
+    hooks:
+      - id: validate-principles
+        name: Validate CORE_PRINCIPLES (P1-P5)
+        entry: python scripts/validate_principles.py
+        language: python
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: check-file-size
+        name: Check file size limit (800 LOC)
+        entry: python scripts/check_file_size.py --max-lines 800
+        language: python
+        types: [python]
+        files: ^mailq/
+        stages: [pre-commit]

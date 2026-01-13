@@ -1,0 +1,73 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = [
+  "archive/**",
+  "code-graph/**",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RET", "ARG"]
+ignore = ["E712"]
+
+[tool.ruff.lint.per-file-ignores]
+"mailq/context_digest.py" = ["E501"]
+"mailq/card_renderer.py" = ["E501"]
+"mailq/digest_formatter.py" = ["E501"]
+"tests/**" = ["E501"]
+"archive/old_digest_systems/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+namespace_packages = true
+explicit_package_bases = true
+warn_unused_configs = true
+show_error_codes = true
+follow_imports = "silent"
+no_implicit_optional = true
+check_untyped_defs = false
+disallow_untyped_defs = false
+mypy_path = ["."]
+
+files = ["mailq", "domain"]
+
+exclude = """(?x)(
+    ^tests/|
+    ^scripts/|
+    ^notebooks/|
+    ^examples/|
+    ^archive/|
+    ^code-graph/
+)$"""
+
+[[tool.mypy.overrides]]
+module = ["requests.*", "dateutil.*", "pandas.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "fastapi",
+  "fastapi.*",
+  "pydantic",
+  "pydantic.*",
+  "jinja2",
+  "jinja2.*",
+  "vertexai",
+  "vertexai.*",
+  "google",
+  "google.*",
+  "rapidfuzz",
+  "rapidfuzz.*",
+  "dotenv",
+  "dotenv.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pytest", "pytest.*"]
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "fastapi>=0.123.9",
+]

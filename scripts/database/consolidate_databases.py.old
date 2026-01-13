@@ -1,0 +1,218 @@
+"""
+
+from __future__ import annotations
+
+Consolidate all databases into mailq/data/mailq.db
+"""
+
+import shutil
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+
+from mailq.logging import get_logger
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_ROOT = PROJECT_ROOT / "data"
+MAILQ_DATA = PROJECT_ROOT / "mailq" / "data"
+TARGET_DB = MAILQ_DATA / "mailq.db"
+logger = get_logger(__name__)
+
+
+def consolidate():
+    """Merge all databases into mailq/data/mailq.db"""
+
+    logger.info("Consolidating databases into mailq/data/mailq.db")
+    logger.info("=" * 80)
+
+    # Ensure target directory exists
+    MAILQ_DATA.mkdir(parents=True, exist_ok=True)
+
+    # Remove old target if it exists
+    if TARGET_DB.exists():
+        backup = MAILQ_DATA / f"mailq.db.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        shutil.copy2(TARGET_DB, backup)
+        logger.info("Backed up existing mailq.db to %s", backup.name)
+        TARGET_DB.unlink()
+
+    # Create target database with schema
+    target_conn = sqlite3.connect(TARGET_DB)
+    target_cursor = target_conn.cursor()
+
+    target_cursor.executescript("""
+        CREATE TABLE rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT DEFAULT 'default',
+            pattern_type TEXT NOT NULL,
+            pattern TEXT NOT NULL,
+            category TEXT NOT NULL,
+            confidence INTEGER DEFAULT 85,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            use_count INTEGER DEFAULT 0,
+            UNIQUE(pattern_type, pattern, category)
+        );
+
+        CREATE TABLE categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT DEFAULT 'default',
+            name TEXT UNIQUE NOT NULL,
+            description TEXT,
+            color TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email_id TEXT NOT NULL,
+            user_id TEXT DEFAULT 'default',
+            from_field TEXT,
+            subject TEXT,
+            snippet TEXT,
+            predicted_labels TEXT,
+            actual_labels TEXT,
+            corrected INTEGER DEFAULT 0,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE learned_patterns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pattern_type TEXT NOT NULL,
+            pattern_value TEXT NOT NULL,
+            classification TEXT NOT NULL,
+            support_count INTEGER DEFAULT 1,
+            confidence REAL DEFAULT 0.5,
+            first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(pattern_type, pattern_value, classification)
+        );
+    """)
+
+    logger.info("Created schema with 4 tables")
+
+    # Import rules from rules.sqlite (63 golden rules)
+    logger.info("\n📥 Importing golden dataset (63 rules)...")
+    rules_sqlite = DATA_ROOT / "rules.sqlite"
+
+    if rules_sqlite.exists():
+        source_conn = sqlite3.connect(rules_sqlite)
+        source_cursor = source_conn.cursor()
+
+        source_cursor.execute("""
+            SELECT user_id, pattern_type, pattern, category,
+                   confidence, created_at, use_count
+            FROM rules
+            WHERE id <= 63
+            ORDER BY id
+        """)
+
+        imported = 0
+        for row in source_cursor.fetchall():
+            try:
+                target_cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO rules
+                    (user_id, pattern_type, pattern, category,
+                     confidence, created_at, use_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                    row,
+                )
+
+                if target_cursor.rowcount > 0:
+                    imported += 1
+            except Exception as e:
+                logger.warning("   ⚠️  Error importing rule: %s", e)
+
+        source_conn.close()
+        logger.info("   ✅ Imported %s golden rules", imported)
+
+    # Import categories from mailq.sqlite
+    logger.info("\n📥 Importing categories (9 categories)...")
+    mailq_sqlite = DATA_ROOT / "mailq.sqlite"
+
+    if mailq_sqlite.exists():
+        source_conn = sqlite3.connect(mailq_sqlite)
+        source_cursor = source_conn.cursor()
+
+        source_cursor.execute("""
+            SELECT user_id, name, description, color, is_active, created_at
+            FROM categories
+        """)
+
+        imported = 0
+        for row in source_cursor.fetchall():
+            try:
+                target_cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO categories
+                    (user_id, name, description, color, is_active, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                    row,
+                )
+
+                if target_cursor.rowcount > 0:
+                    imported += 1
+            except Exception as e:
+                logger.warning("   ⚠️  Error importing category: %s", e)
+
+        source_conn.close()
+        logger.info("   ✅ Imported %s categories", imported)
+
+    target_conn.commit()
+
+    # Show final stats
+    logger.info("\n📊 Final Database Stats (mailq/data/mailq.db):")
+    target_cursor.execute("SELECT COUNT(*) FROM rules")
+    logger.info("   Rules: %s", target_cursor.fetchone()[0])
+
+    target_cursor.execute("SELECT COUNT(*) FROM categories")
+    logger.info("   Categories: %s", target_cursor.fetchone()[0])
+
+    target_cursor.execute("SELECT COUNT(*) FROM feedback")
+    logger.info("   Feedback: %s", target_cursor.fetchone()[0])
+
+    target_cursor.execute("SELECT COUNT(*) FROM learned_patterns")
+    logger.info("   Learned Patterns: %s", target_cursor.fetchone()[0])
+
+    target_conn.close()
+
+    logger.info("\n%s", "=" * 80)
+    logger.info("✅ Consolidation complete!")
+    logger.info("📍 Master database: %s", TARGET_DB)
+
+    # Ask about deleting old databases
+    logger.info("\n🗑️  Old databases to delete:")
+    old_dbs = [
+        DATA_ROOT / "feedback.db",
+        DATA_ROOT / "mailq.db",
+        DATA_ROOT / "mailq.sqlite",
+        DATA_ROOT / "rules.db",
+        DATA_ROOT / "rules.sqlite",
+        MAILQ_DATA / "rules.db",
+    ]
+
+    for db in old_dbs:
+        if db.exists():
+            logger.info("   - %s", db.relative_to(PROJECT_ROOT))
+
+    delete = input("\nDelete old databases? (yes/no): ")
+
+    if delete.lower() == "yes":
+        for db in old_dbs:
+            if db.exists():
+                db.unlink()
+                logger.info("   ✅ Deleted %s", db.name)
+        logger.info("\n✅ Cleanup complete!")
+    else:
+        logger.warning("\n⚠️  Old databases kept (remember to delete manually)")
+
+    logger.info("\n💡 Next steps:")
+    logger.info("   1. Update code to use: mailq/data/mailq.db")
+    logger.info("   2. Test classification with golden rules")
+    logger.info("   3. Monitor rules table (should stay at 63)")
+
+
+if __name__ == "__main__":
+    consolidate()

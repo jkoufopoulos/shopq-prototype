@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task-Flow: Email Classification - MailQ</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            logLevel: 'debug',
+            sequence: {
+                actorMargin: 80,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                useMaxWidth: false,
+                mirrorActors: true
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            },
+            state: {
+                useMaxWidth: true
+            },
+            themeVariables: {
+                darkMode: true,
+                background: '#1c1c1e',
+                primaryColor: '#2c2c2e',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#0a84ff',
+                lineColor: '#0a84ff',
+                secondaryColor: '#3a3a3c',
+                secondaryTextColor: '#ffffff',
+                tertiaryColor: '#48484a',
+                tertiaryTextColor: '#ffffff',
+                mainBkg: '#2c2c2e',
+                secondBkg: '#3a3a3c',
+                mainContrastColor: '#ffffff',
+                darkTextColor: '#ffffff',
+                textColor: '#ffffff',
+                labelTextColor: '#ffffff',
+                loopTextColor: '#ffffff',
+                noteBkgColor: '#fef3c7',
+                noteTextColor: '#000000',
+                noteBorderColor: '#f59e0b',
+                activationBkgColor: '#0a84ff',
+                activationBorderColor: '#0070e0',
+                sequenceNumberColor: '#ffffff',
+                actorBkg: '#2c2c2e',
+                actorBorder: '#0a84ff',
+                actorTextColor: '#ffffff',
+                actorLineColor: '#0a84ff',
+                signalColor: '#ffffff',
+                signalTextColor: '#ffffff',
+                labelBoxBkgColor: '#2c2c2e',
+                labelBoxBorderColor: '#0a84ff',
+                labelColor: '#ffffff',
+                edgeLabelBackground: '#1c1c1e',
+                nodeBorder: '#0a84ff',
+                clusterBkg: '#2c2c2e',
+                clusterBorder: '#0a84ff',
+                defaultLinkColor: '#0a84ff',
+                titleColor: '#ffffff',
+                nodeTextColor: '#ffffff',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
+                fontSize: '16px'
+            }
+        });
+
+        // Add error logging
+        window.addEventListener('error', (e) => {
+            console.error('Error:', e.message);
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            padding: 20px;
+            color: #f5f5f7;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #1c1c1e;
+            border-radius: 18px;
+            padding: 24px 32px;
+            margin-bottom: 20px;
+            border: 1px solid #2c2c2e;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #a1a1a6;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #2c2c2e;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #0a84ff;
+            color: #ffffff;
+            border-color: #0a84ff;
+        }
+
+        .btn-primary:hover {
+            background: #0070e0;
+            border-color: #0070e0;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #2c2c2e;
+            color: #f5f5f7;
+            border-color: #3a3a3c;
+        }
+
+        .btn-secondary:hover {
+            background: #3a3a3c;
+            border-color: #48484a;
+        }
+
+        .diagram-container {
+            background: #1c1c1e;
+            border-radius: 18px;
+            padding: 40px;
+            border: 1px solid #2c2c2e;
+            overflow: auto;
+            position: relative;
+            min-height: 600px;
+        }
+
+        /* Mermaid diagram text improvements */
+        #diagram text {
+            font-weight: 700 !important;
+            font-size: 15px !important;
+        }
+
+        /* Enhance readability */
+        #diagram .nodeLabel,
+        #diagram .cluster-label,
+        #diagram .subgraph-label {
+            font-weight: 700 !important;
+            stroke: none !important;
+        }
+
+        #diagram tspan {
+            font-weight: 700 !important;
+        }
+
+        /* Subgraph/cluster titles */
+        #diagram g.cluster text {
+            font-weight: 700 !important;
+            font-size: 16px !important;
+        }
+
+        /* Edge labels need white text on dark background */
+        #diagram .edgeLabel {
+            background-color: #1c1c1e !important;
+        }
+
+        #diagram .edgeLabel tspan {
+            fill: #ffffff !important;
+        }
+
+
+
+        .diagram-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 500px;
+            transform-origin: top center;
+            padding: 20px 0;
+        }
+
+        #diagram {
+            width: 100%;
+            min-height: 500px;
+            user-select: none;
+        }
+
+        #diagram svg {
+            max-width: none;
+            height: auto;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: flex-end;
+        }
+
+        .zoom-controls button {
+            background: #2c2c2e;
+            border: 1px solid #3a3a3c;
+            color: #ffffff;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .zoom-controls button:hover {
+            background: #3a3a3c;
+            border-color: #0a84ff;
+        }
+
+        .footer {
+            text-align: center;
+            color: #a1a1a6;
+            margin-top: 20px;
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #0a84ff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1c1c1e;
+            border: 1px solid #2c2c2e;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #3a3a3c;
+            background: #2c2c2e;
+            color: #f5f5f7;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: #3a3a3c;
+            border-color: #48484a;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            color: #a1a1a6;
+            padding: 40px;
+        }
+
+        /* Info panel */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .header, .controls, .zoom-controls, .footer, .context-drawer {
+                display: none;
+            }
+            .diagram-container {
+                box-shadow: none;
+            }
+        }
+
+        /* Context Drawer Styles */
+        .context-drawer {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 380px;
+            background: #1c1c1e;
+            border-left: 1px solid #2c2c2e;
+            box-shadow: -4px 0 16px rgba(0,0,0,0.5);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .context-drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            background: #2c2c2e;
+            border-bottom: 1px solid #3a3a3c;
+            color: #ffffff;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .drawer-header h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .drawer-header p {
+            font-size: 13px;
+            color: #a1a1a6;
+        }
+
+        .drawer-toggle {
+            position: fixed;
+            right: 20px;
+            bottom: 80px;
+            background: #0a84ff;
+            color: white;
+            border: 1px solid #0a84ff;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(10,132,255,0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .drawer-toggle:hover {
+            background: #0070e0;
+            border-color: #0070e0;
+            transform: scale(1.1);
+        }
+
+        .drawer-toggle.drawer-open {
+            right: 400px;
+        }
+
+        .step-item {
+            padding: 20px;
+            border-bottom: 1px solid #2c2c2e;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover {
+            background: #2c2c2e;
+        }
+
+        .step-item.active {
+            background: #0a1929;
+            border-left: 4px solid #0a84ff;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #0a84ff;
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .step-item.active .step-number {
+            background: #0070e0;
+            box-shadow: 0 0 0 4px rgba(10,132,255,0.2);
+        }
+
+        .step-content {
+            display: inline-block;
+            vertical-align: top;
+            width: calc(100% - 50px);
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+
+        .step-description {
+            color: #a1a1a6;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Task-Flow: Email Classification</h1>
+            <p>What happens when an email is classified? (Rules → LLM → Verifier → Labels)</p>
+            <p style="color: #86868b; font-size: 12px;">Auto-generated: 2025-12-04 02:44</p>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="exportDiagram()">
+                    📥 Export SVG
+                </button>
+                <button class="btn btn-primary" onclick="exportPNG()">
+                    📸 Export PNG
+                </button>
+                <button class="btn btn-secondary" onclick="window.print()">
+                    🖨️ Print
+                </button>
+                <a href="index.html" class="btn btn-secondary">
+                    ← All Diagrams
+                </a>
+                <a href="../CLASSIFICATION_FLOW.md" class="btn btn-secondary" target="_blank">
+                    📄 View Markdown
+                </a>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-wrapper">
+                <div class="loading">Loading diagram...</div>
+                <pre class="mermaid" id="diagram">
+flowchart TB
+    subgraph input[" 📥 INPUT "]
+        email[/"📧 Incoming Email"/]
+    end
+
+    subgraph cache[" 💾 CACHE CHECK "]
+        cacheCheck{Sender in cache?}
+        cacheHit[✅ Use cached labels]
+    end
+
+    subgraph rules[" 📋 RULES ENGINE "]
+        direction TB
+        rulesCheck{Rule matches?}
+        ruleMatch[✅ Apply rule<br/>Cost: $0]
+        noRule[❌ No match]
+    end
+
+    subgraph llm[" 🤖 LLM CLASSIFICATION "]
+        direction TB
+        llmCall[gemini-2.0-flash]
+        extract[Extract:<br/>• type<br/>• attention<br/>• domains]
+        llmResult[Return classification<br/>Cost: ~$0.001]
+    end
+
+    subgraph importance[" 📊 IMPORTANCE "]
+        direction TB
+        importClass{Importance?}
+        critical[🔴 Critical]
+        timeSens[🟡 Time Sensitive]
+        routine[🟢 Routine]
+    end
+
+    subgraph temporal[" ⏰ TEMPORAL DECAY "]
+        decay[Apply time-based decay<br/>Near → boost<br/>Far → decay]
+    end
+
+    subgraph mapper[" 🏷️ LABEL MAPPING "]
+        mapLabels[Map to Gmail labels]
+    end
+
+    subgraph output[" 📤 OUTPUT "]
+        apply[Apply labels & archive]
+        updateCache[Update cache 24hr]
+        done[/"✨ Organized Inbox"/]
+    end
+
+    email --> cacheCheck
+    cacheCheck -->|Yes| cacheHit
+    cacheCheck -->|No| rulesCheck
+    cacheHit --> apply
+
+    rulesCheck -->|Yes 50-70%| ruleMatch
+    rulesCheck -->|No| noRule
+    ruleMatch --> importClass
+    noRule --> llmCall
+
+    llmCall --> extract --> llmResult --> importClass
+
+    importClass -->|Critical| critical
+    importClass -->|Time Sensitive| timeSens
+    importClass -->|Routine| routine
+    critical --> decay
+    timeSens --> decay
+    routine --> decay
+
+    decay --> mapLabels --> apply --> updateCache --> done
+                </pre>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Context Drawer -->
+
+    <button class="drawer-toggle" onclick="toggleDrawer()" title="Show Step Guide">📖</button>
+    <div class="context-drawer" id="contextDrawer">
+        <div class="drawer-header">
+            <h2>Classification Pipeline</h2>
+            <p>How emails get classified and labeled</p>
+        </div>
+
+            <div class="step-item" data-step="1" onclick="highlightStep(1)">
+                <span class="step-number">1</span>
+                <div class="step-content">
+                    <div class="step-title">Trigger</div>
+                    <div class="step-description">User clicks MailQ icon or auto-organize alarm fires.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="2" onclick="highlightStep(2)">
+                <span class="step-number">2</span>
+                <div class="step-content">
+                    <div class="step-title">Cache Check</div>
+                    <div class="step-description">Check 24-hour cache for previously classified senders. Cache hits skip the API entirely.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="3" onclick="highlightStep(3)">
+                <span class="step-number">3</span>
+                <div class="step-content">
+                    <div class="step-title">Deduplication</div>
+                    <div class="step-description">Reduce ~100 emails to ~30 unique senders to minimize API calls and costs.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="4" onclick="highlightStep(4)">
+                <span class="step-number">4</span>
+                <div class="step-content">
+                    <div class="step-title">Rules Engine</div>
+                    <div class="step-description">Check learned rules first (50-70% match rate). Rules are free and fast. File: rules_engine.py</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="5" onclick="highlightStep(5)">
+                <span class="step-number">5</span>
+                <div class="step-content">
+                    <div class="step-title">LLM Classification</div>
+                    <div class="step-description">If no rule matches, use gemini-2.0-flash to extract type, attention level, and domains. Cost: ~$0.001/email.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="6" onclick="highlightStep(6)">
+                <span class="step-number">6</span>
+                <div class="step-content">
+                    <div class="step-title">Importance Classification</div>
+                    <div class="step-description">Classify as critical, time_sensitive, or routine based on content signals. File: importance_mapping/mapper.py</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="7" onclick="highlightStep(7)">
+                <span class="step-number">7</span>
+                <div class="step-content">
+                    <div class="step-title">Temporal Decay</div>
+                    <div class="step-description">Adjust importance based on time distance. Near-term events get boosted, distant events decay. File: temporal.py</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="8" onclick="highlightStep(8)">
+                <span class="step-number">8</span>
+                <div class="step-content">
+                    <div class="step-title">Label Mapping</div>
+                    <div class="step-description">Convert classification to Gmail labels (MailQ-Critical, MailQ-Finance, etc). File: mapper.py</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="9" onclick="highlightStep(9)">
+                <span class="step-number">9</span>
+                <div class="step-content">
+                    <div class="step-title">Apply & Cache</div>
+                    <div class="step-description">Apply labels via Gmail API, archive emails, cache results for 24hr, expand to same-sender emails.</div>
+                </div>
+            </div>
+            <div class="step-item" data-step="10" onclick="highlightStep(10)">
+                <span class="step-number">10</span>
+                <div class="step-content">
+                    <div class="step-title">Learning Loop</div>
+                    <div class="step-description">User corrections create new rules via /api/feedback. Rules have 0.95 confidence and override LLM.</div>
+                </div>
+            </div>
+    </div>
+
+    <div class="footer">
+        <p>MailQ Code-Graph v2 | <a href="../../QUICKSTART.md">Documentation</a></p>
+    </div>
+
+    <script>
+
+
+        // Wait for Mermaid to render - use MutationObserver for reliable detection
+        const observer = new MutationObserver((mutations, obs) => {
+            const svg = document.querySelector('#diagram svg');
+            if (svg) {
+                document.querySelector('.loading').style.display = 'none';
+                svg.style.transition = 'none';
+                obs.disconnect();
+            }
+        });
+        observer.observe(document.getElementById('diagram'), { childList: true, subtree: true });
+
+        // Fallback timeout in case observer doesn't trigger
+        setTimeout(() => {
+            document.querySelector('.loading').style.display = 'none';
+        }, 2000);
+
+
+
+
+        // Context Drawer Functionality
+        const executionSteps = [{"number": 1, "title": "User \u2192 Extension", "description": "User clicks the MailQ icon to trigger email organization."}, {"number": 2, "title": "Extension \u2192 Extension", "description": "Extension fetches unlabeled emails from the inbox."}, {"number": 3, "title": "Extension \u2192 Cache", "description": "Extension checks the cache to see if this sender was recently classified."}, {"number": 4, "title": "Cache \u2192 Extension", "description": "Cache returns cached labels."}, {"number": 5, "title": "Extension \u2192 Gmail", "description": "Extension applies the classification labels and archives the emails."}, {"number": 6, "title": "Extension \u2192 Extension", "description": "Extension reduces ~100 emails to ~30 unique senders to minimize API calls."}, {"number": 7, "title": "Extension \u2192 /api/organize", "description": "Extension sends a batch request to /api/organize for processing."}, {"number": 8, "title": "/api/organize \u2192 Rules", "description": "/api/organize checks the rules engine for learned patterns that match this email."}, {"number": 9, "title": "Rules \u2192 /api/organize", "description": "Rules returns classification."}, {"number": 10, "title": "Rules \u2192 gemini-2.0-flash-exp", "description": "Rules uses the LLM to classify emails when no rule matches."}, {"number": 11, "title": "gemini-2.0-flash-exp \u2192 gemini-2.0-flash-exp", "description": "gemini-2.0-flash-exp analyzes the email subject and content snippet."}, {"number": 12, "title": "gemini-2.0-flash-exp \u2192 Rules", "description": "gemini-2.0-flash-exp returns classification."}, {"number": 13, "title": "/api/organize \u2192 Label", "description": "/api/organize converts the classification into Gmail label names."}, {"number": 14, "title": "Label \u2192 /api/organize", "description": "Label returns label decisions."}, {"number": 15, "title": "/api/organize \u2192 Extension", "description": "/api/organize responds with classification results."}, {"number": 16, "title": "Extension \u2192 Gmail", "description": "Extension applies the classification labels and archives the emails."}, {"number": 17, "title": "Extension \u2192 Cache", "description": "Extension updates the cache with results for 24-hour reuse."}, {"number": 18, "title": "Extension \u2192 Extension", "description": "Extension applies the classification to all emails from the same sender."}, {"number": 19, "title": "Gmail \u2192 User", "description": "Gmail responds with organized inbox."}, {"number": 20, "title": "User \u2192 Extension", "description": "User manually changes a label, providing feedback to improve classification."}, {"number": 21, "title": "Extension \u2192 /api/organize", "description": "Extension sends a batch request to /api/organize for processing."}, {"number": 22, "title": "/api/organize \u2192 Rules", "description": "/api/organize creates a new classification rule based on the user's correction."}];
+        let drawerOpen = false;
+
+        function toggleDrawer() {
+            const drawer = document.getElementById('contextDrawer');
+            const toggle = document.querySelector('.drawer-toggle');
+            drawerOpen = !drawerOpen;
+
+            if (drawerOpen) {
+                drawer.classList.add('open');
+                toggle.classList.add('drawer-open');
+                toggle.textContent = '✕';
+            } else {
+                drawer.classList.remove('open');
+                toggle.classList.remove('drawer-open');
+                toggle.textContent = '📖';
+            }
+        }
+
+        function highlightStep(stepNumber) {
+            // Remove previous highlights
+            document.querySelectorAll('.step-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Highlight selected step
+            const stepItem = document.querySelector(`[data-step="${stepNumber}"]`);
+            if (stepItem) {
+                stepItem.classList.add('active');
+            }
+
+            // Try to highlight corresponding diagram elements (sequence numbers)
+            const svg = document.querySelector('#diagram svg');
+            if (svg) {
+                // Remove previous diagram highlights
+                svg.querySelectorAll('.seq-highlight').forEach(el => {
+                    el.classList.remove('seq-highlight');
+                });
+
+                // Find and highlight the sequence number in the diagram
+                const seqNumbers = svg.querySelectorAll('text');
+                seqNumbers.forEach(text => {
+                    if (text.textContent.trim() === String(stepNumber)) {
+                        const parent = text.closest('g');
+                        if (parent) {
+                            parent.classList.add('seq-highlight');
+                            // Scroll diagram to show this element
+                            text.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            }
+        }
+
+        // Add CSS for diagram highlights
+        const style = document.createElement('style');
+        style.textContent = `
+            .seq-highlight {
+                filter: drop-shadow(0 0 8px rgba(102,126,234,0.8));
+                animation: pulse 1.5s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { filter: drop-shadow(0 0 8px rgba(102,126,234,0.8)); }
+                50% { filter: drop-shadow(0 0 16px rgba(102,126,234,1)); }
+            }
+        `;
+        document.head.appendChild(style);
+
+
+        function exportDiagram() {
+            const svg = document.querySelector('#diagram svg');
+            if (!svg) return;
+
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Task-Flow:_Email_Classification.svg';
+            link.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        function exportPNG() {
+            const svg = document.querySelector('#diagram svg');
+            if (!svg) return;
+
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = function() {
+                canvas.width = img.width * 2;
+                canvas.height = img.height * 2;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'Task-Flow:_Email_Classification.png';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            };
+
+            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        }
+
+        // Removed annoying node click functionality that dimmed the graph
+
+        // Pan and Zoom functionality
+        (function() {
+            let scale = 1;
+            let panX = 0;
+            let panY = 0;
+            let isPanning = false;
+            let startX, startY;
+            const minScale = 0.25;
+            const maxScale = 3;
+            const zoomSensitivity = 0.003;
+
+            function waitForDiagram() {
+                const diagram = document.getElementById('diagram');
+                const svg = diagram.querySelector('svg');
+                if (svg) {
+                    initPanZoom(diagram, svg);
+                } else {
+                    setTimeout(waitForDiagram, 100);
+                }
+            }
+
+            function initPanZoom(container, svg) {
+                svg.style.transformOrigin = '0 0';
+                svg.style.cursor = 'grab';
+
+                function updateTransform() {
+                    svg.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+                }
+
+                function fitToContainer() {
+                    // Start at scale 1, users can zoom out if needed
+                    scale = 1;
+                    panX = 20;
+                    panY = 20;
+                    updateTransform();
+                }
+
+                fitToContainer();
+
+                container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    const prevScale = scale;
+                    const delta = -e.deltaY * zoomSensitivity;
+                    scale = Math.min(maxScale, Math.max(minScale, scale + delta * scale));
+
+                    const scaleChange = scale / prevScale;
+                    panX = mouseX - (mouseX - panX) * scaleChange;
+                    panY = mouseY - (mouseY - panY) * scaleChange;
+
+                    updateTransform();
+                }, { passive: false });
+
+                container.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) {
+                        isPanning = true;
+                        startX = e.clientX - panX;
+                        startY = e.clientY - panY;
+                        svg.style.cursor = 'grabbing';
+                    }
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isPanning) {
+                        panX = e.clientX - startX;
+                        panY = e.clientY - startY;
+                        updateTransform();
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isPanning = false;
+                    svg.style.cursor = 'grab';
+                });
+
+                container.addEventListener('dblclick', () => {
+                    scale = 1;
+                    panX = 0;
+                    panY = 0;
+                    updateTransform();
+                });
+
+                const controls = document.createElement('div');
+                controls.className = 'zoom-controls';
+                controls.innerHTML = `
+                    <button onclick="window.zoomIn()" title="Zoom In">+</button>
+                    <button onclick="window.zoomOut()" title="Zoom Out">−</button>
+                    <button onclick="window.zoomReset()" title="Reset View">⟲</button>
+                `;
+                container.parentElement.insertBefore(controls, container);
+
+                window.zoomIn = () => { scale = Math.min(maxScale, scale * 1.2); updateTransform(); };
+                window.zoomOut = () => { scale = Math.max(minScale, scale / 1.2); updateTransform(); };
+                window.zoomReset = () => { fitToContainer(); };
+            }
+
+            waitForDiagram();
+        })();
+
+    </script>
+</body>
+</html>

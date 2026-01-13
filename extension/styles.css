@@ -1,0 +1,111 @@
+/**
+ * MailQ Visual Layer Styles
+ *
+ * Taxonomy-based styling:
+ * - Type Badges: Colored badges per email type (Event=purple, Newsletter=green, etc.)
+ * - Critical Badges: Red badge + row border for critical importance
+ */
+
+/* =============================================================================
+ * TYPE BADGES - Logic 1
+ * Colored per type (defined in content.js getTypeColor())
+ * ============================================================================= */
+
+.mailq-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  margin-left: 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.mailq-badge-type {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+/* =============================================================================
+ * CRITICAL BADGES (Red) + ROW BORDER - Logic 2
+ * For importance === 'critical'
+ * ============================================================================= */
+
+.mailq-badge-critical {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+  font-weight: 600;
+}
+
+/* Red left border for critical rows */
+tr.zA.mailq-critical-row,
+.zA.mailq-critical-row {
+  border-left: 3px solid #c62828 !important;
+  background-color: rgba(255, 235, 238, 0.3);
+}
+
+/* Dimming removed - all emails now have equal visual weight */
+
+/* =============================================================================
+ * INBOX SDK LABEL INTEGRATION
+ * ============================================================================= */
+
+/* InboxSDK adds labels as spans */
+.inboxsdk__thread_row_label .mailq-badge {
+  margin-right: 4px;
+}
+
+/* =============================================================================
+ * SIDEBAR PANEL - Fix blue edge (issue #113)
+ * InboxSDK wraps our panel in containers that may have default borders/backgrounds
+ * ============================================================================= */
+
+/* Target our sidebar panel and its parents */
+#mailq-sidebar-panel,
+#mailq-sidebar-iframe {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* InboxSDK content panel wrappers - be very aggressive */
+.inboxsdk__sidebar_content_panel,
+.inboxsdk__sidebar_content_panel > *,
+.inboxsdk__sidebar_content_panel div,
+[class*="inboxsdk__sidebar"],
+[class*="inboxsdk__sidebar"] > * {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Gmail's sidebar container may have blue accent */
+.bq9,
+.brC-dA-I-Jw,
+.bq9 > div,
+.aeN .brC-dA-I-Jw {
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* Target any element with inline blue border/background near sidebar */
+[style*="border"][style*="rgb(26, 115, 232)"],
+[style*="border"][style*="#1a73e8"],
+[style*="background"][style*="rgb(26, 115, 232)"],
+[style*="background"][style*="#1a73e8"] {
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Hide InboxSDK's blue selected indicator (issue #113) */
+.inboxsdk__button_selectedIndicator {
+  display: none !important;
+}

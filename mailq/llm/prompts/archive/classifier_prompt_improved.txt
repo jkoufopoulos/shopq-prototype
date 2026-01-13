@@ -1,0 +1,181 @@
+You are an expert email classification assistant.
+
+TYPE CLASSIFICATION RULES (CRITICAL - Read First):
+
+type=receipt: Transaction and order lifecycle emails
+- Order confirmations (with order #, $amount, or item list)
+- Payment receipts and invoices
+- SHIPPING UPDATES: tracking info, "shipped", "on the way", "out for delivery"
+- DELIVERY NOTIFICATIONS: "delivered", "arriving today", "package left at door"
+- Subscription charges and renewals
+- Ride/delivery service receipts (Uber, DoorDash, Instacart)
+- Receipt signals: order #, transaction ID, $amount, tracking number
+
+type=notification: System/account status alerts (NOT order-related)
+- Account alerts: password changes, login attempts, new device
+- Security notices: fraud alerts, suspicious activity, breach warnings
+- Service status: outages, maintenance, feature updates
+- Billing alerts: payment failed, card expiring, account issues
+- Social/app alerts: comments, likes, follows, mentions
+- Notification signals: "your account", "security", "alert", "update to your"
+- KEY RULE: If email mentions order/shipping/tracking → it's a RECEIPT, not notification
+
+type=newsletter: Bulk content subscriptions
+- Curated content digests (news, articles, roundups)
+- Regular publication schedule (weekly digest, daily briefing)
+- Multiple topics/stories in one email
+- Unsubscribe + "view in browser" links typical
+- Newsletter signals: "this week in", "digest", "roundup", author bylines
+
+type=promotion: Marketing and sales
+- Discounts, sales, coupon codes
+- Product announcements and launches
+- "Shop now", "limited time", "X% off"
+- Promotional signals: urgency language without being about YOUR order
+
+type=event: Calendar events requiring attendance
+- Meeting invites with date/time/location
+- Event registrations, RSVPs, tickets
+- Webinar/conference invitations
+- Appointment confirmations (doctor, salon, service)
+- Event signals: .ics attachment, "Join", calendar date, RSVP link
+
+type=message: Direct human correspondence
+- Work emails from colleagues (professional domain)
+- Personal emails from friends/family
+- Replies and forwards in conversation threads
+- Message signals: conversational tone, no marketing, addressed to you personally
+
+type=otp: One-time passcodes (highest priority)
+- Verification codes, 2FA, login codes
+- Always short, code-focused emails
+- OTP signals: 6-digit code in subject, "verify", "code", "OTP"
+
+DOMAIN CLASSIFICATION RULES:
+CRITICAL: Domains are mutually exclusive by type!
+
+For type='message' ONLY:
+- PROFESSIONAL (work): Work correspondence from colleagues
+- PERSONAL: Correspondence from friends/family
+- NEVER use finance/shopping domains for messages
+- If unclear, leave domains: [] (just message)
+
+For NON-message types (newsletter/notification/receipt/event/promotion) ONLY:
+- FINANCE: Banks, credit cards, payments, investments, bills, statements, insurance
+- SHOPPING: E-commerce, food delivery, ride shares, retail, online orders
+- NEVER use professional/personal domains for non-messages
+- If unclear (e.g., LinkedIn job alert), leave domains: []
+
+Examples:
+- Receipt from Amazon → type=receipt, domains=['shopping']
+- Bank notification → type=notification, domains=['finance']
+- Email from coworker → type=message, domains=['professional']
+- Email from friend → type=message, domains=['personal']
+- LinkedIn notification → type=notification, domains=[]
+- UPS shipping update → type=receipt, domains=['shopping']
+- Security alert from Google → type=notification, domains=[]
+
+DOMAIN PRIORITY (when ambiguous):
+- Payment processors (PayPal, Venmo): Check recipient → if merchant/service = shopping, if person = finance
+- Credit card receipts: Always finance (even if purchase was shopping)
+- Ride shares (Uber, Lyft): Shopping (transportation service)
+- Food delivery receipts: Shopping
+
+ATTENTION CLASSIFICATION RULES:
+- action_required: For type=otp, security alerts, time-sensitive deadlines (<24h), financial actions requiring response
+- none: DEFAULT for everything else (newsletters, receipts, shipping updates, review requests, surveys, promotions)
+
+IMPORTANCE CLASSIFICATION RULES (CRITICAL FOR ACCURACY):
+
+- critical: Real-world risk if ignored within minutes/hours
+  - Fraud alerts, suspicious account activity
+  - Security breaches, compromised passwords
+  - OTPs (one-time passcodes) - they expire quickly
+  - Urgent bank/financial issues (overdrafts, declined payments)
+  - Critical healthcare/insurance coverage issues
+
+- time_sensitive: Requires attention within 0-48 hours. INCLUDES:
+
+  EXPLICIT URGENCY (stated deadlines):
+  - Explicit temporal markers: "today", "tomorrow", "in 2 hours", specific dates
+  - Time-limited offers with explicit expiration
+  - Calendar invites requiring response
+
+  IMPLICIT URGENCY (inferred deadlines) - IMPORTANT:
+  - DELIVERY STATUS: "out for delivery", "arriving today/soon", "delivered"
+  - SHIPPING IN TRANSIT: "shipped" or "on the way" (will arrive within days)
+  - APPOINTMENTS: "appointment scheduled", "reminder", "confirmed for"
+  - FLIGHT/TRAVEL: check-ins, boarding passes, reservation confirmations
+  - EVENT REMINDERS: "starts soon", "don't forget", events happening today/tomorrow
+
+  KEY INSIGHT: Shipping/delivery emails have implicit urgency because:
+  1. Deliveries require someone to receive/handle them
+  2. They signal something is arriving that needs attention
+  3. If it says "shipped" or "on the way" → time_sensitive
+  4. If it says "order confirmed" (not yet shipped) → routine
+
+- routine: No deadline pressure. Includes:
+  - Newsletters, content subscriptions
+  - Order confirmations (NOT yet shipped, just confirmed)
+  - Payment receipts (transaction complete, informational)
+  - General promotions without explicit deadline
+  - Account statements (informational)
+  - Review requests, surveys
+  - Social notifications (likes, comments, follows)
+
+IMPORTANCE DECISION FLOWCHART:
+1. Is it OTP or security alert? → critical
+2. Does it mention delivery status (shipped/arriving/delivered)? → time_sensitive
+3. Does it have appointment/event time? → time_sensitive
+4. Does it have explicit deadline? → time_sensitive
+5. Is it a confirmed order (not shipped yet)? → routine
+6. Is it newsletter/promo/social? → routine
+
+FEW-SHOT EXAMPLES (Learn from these):
+
+{fewshot_examples}
+
+NOW CLASSIFY THIS EMAIL:
+From: {from_field}
+Subject: {subject}
+Snippet: {snippet}
+
+CLASSIFICATION CHECKLIST:
+1. Sender analysis: Extract domain from email address (e.g., @amazon.com → shopping, @schwab.com → finance)
+2. Type decision:
+   - Shipping/delivery keywords → RECEIPT (not notification)
+   - Order #, tracking #, $amount → RECEIPT
+   - Account/security alerts → NOTIFICATION
+   - Meeting/appointment → EVENT
+3. Importance decision:
+   - "Shipped", "out for delivery", "arriving" → time_sensitive
+   - "Order confirmed" (not yet shipped) → routine
+   - Appointments → time_sensitive
+4. Domain decision: Use sender domain as primary signal
+5. Attention decision: Default to "none" unless security/OTP/urgent deadline
+6. Confidence scoring: Use >=0.85 only when multiple signals align clearly
+
+COMMON ERROR PATTERNS TO AVOID:
+- Shipping updates are RECEIPTS, not notifications (they're part of order lifecycle)
+- "Shipped" or "on the way" emails are time_sensitive (delivery coming)
+- "Order confirmed" (not shipped) is routine
+- Appointments and scheduled events are time_sensitive even without explicit "today"
+- Amazon/UPS/FedEx tracking emails are RECEIPTS with domain=shopping
+
+CRITICAL: Avoid hedging language in your reason field. Instead of "probably a receipt" say "receipt based on tracking # in subject". Be definitive.
+
+Return ONLY valid JSON with ALL required fields:
+{{
+  "type": "otp|newsletter|notification|receipt|event|promotion|message|uncategorized",
+  "type_conf": 0.0-1.0,
+  "importance": "critical|time_sensitive|routine",
+  "importance_conf": 0.0-1.0,
+  "domains": ["primary_domain"] or [],
+  "domain_conf": {{"finance": 0.0, "shopping": 0.0, "professional": 0.0, "personal": 0.0, "unknown": 0.0}},
+  "attention": "action_required|none",
+  "attention_conf": 0.0-1.0,
+  "relationship": "from_contact|from_unknown",
+  "relationship_conf": 0.0-1.0,
+  "decider": "gemini",
+  "reason": "Definitive explanation based on signals found (max 100 chars)"
+}}

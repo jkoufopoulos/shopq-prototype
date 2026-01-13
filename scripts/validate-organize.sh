@@ -1,0 +1,35 @@
+#!/bin/bash
+# Validation script for email organization
+# Checks that all emails are labeled and archived properly
+
+echo "📋 MailQ Organization Validation"
+echo "================================"
+echo ""
+
+# Instructions
+echo "✅ INSTRUCTIONS:"
+echo "1. Reload the Chrome extension (chrome://extensions, click reload)"
+echo "2. Open Gmail inbox"
+echo "3. Open DevTools Console (F12)"
+echo "4. Run: triggerAutoOrganizeNow()"
+echo "5. Wait for completion message"
+echo "6. Check the results below:"
+echo ""
+echo "Expected Results:"
+echo "  ✓ Console shows '✅ Labels applied successfully' for each email"
+echo "  ✓ Console shows '🔧 [DEBUG] Modifying thread XXX' with addLabelIds"
+echo "  ✓ Inbox becomes empty (all emails archived)"
+echo "  ✓ All emails show MailQ-* labels when you check 'All Mail'"
+echo ""
+echo "To verify manually:"
+echo "  1. Check inbox count (should be 0)"
+echo "  2. Go to 'All Mail'"
+echo "  3. Filter by: label:MailQ-*"
+echo "  4. Verify all recently organized emails have labels"
+echo ""
+echo "Common Issues:"
+echo "  ❌ 'No labels for email' → Classification failed"
+echo "  ❌ 'Failed to fetch thread' → Gmail API error"
+echo "  ❌ Emails still in inbox → Archive not working"
+echo "  ❌ No MailQ labels visible → Label application failed"
+echo ""

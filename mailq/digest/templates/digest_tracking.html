@@ -1,0 +1,87 @@
+<!--
+Embedded tracking script for digest emails
+
+This script tracks user interactions with digest emails and sends
+feedback to the backend for learning.
+
+Embed this in the digest email HTML to enable automatic learning.
+-->
+
+<script>
+// Digest session info (injected by backend)
+const DIGEST_SESSION_ID = '{{session_id}}';
+const MAILQ_API_URL = '{{api_url}}';  // e.g., http://localhost:8000
+
+// Track email opens
+const emailThreads = {
+    {{#featured}}
+    '{{thread_id}}': {
+        messageId: '{{message_id}}',
+        importance: '{{importance}}',
+        section: 'featured',
+        from: '{{from_email}}',
+        subject: '{{subject}}'
+    },
+    {{/featured}}
+    {{#orphaned}}
+    '{{thread_id}}': {
+        messageId: '{{message_id}}',
+        importance: '{{importance}}',
+        section: 'orphaned',
+        from: '{{from_email}}',
+        subject: '{{subject}}'
+    },
+    {{/orphaned}}
+};
+
+// Track when digest was opened
+const digestOpenedAt = new Date();
+
+// Track clicks on email links
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('a[data-thread-id]');
+    if (!link) return;
+
+    const threadId = link.getAttribute('data-thread-id');
+    const emailData = emailThreads[threadId];
+
+    if (!emailData) return;
+
+    // Calculate time from digest open to click
+    const timeInInbox = Math.floor((new Date() - digestOpenedAt) / 1000);
+
+    // Send feedback
+    await sendDigestFeedback({
+        session_id: DIGEST_SESSION_ID,
+        thread_id: threadId,
+        message_id: emailData.messageId,
+        predicted_importance: emailData.importance,
+        predicted_section: emailData.section,
+        action: 'opened',
+        vote: emailData.section === 'featured' ? 'upvote' : 'downvote',  // Opened noise = should be featured
+        vote_strength: emailData.section === 'featured' ? 1.0 : 1.5,
+        time_in_inbox: timeInInbox,
+        from_email: emailData.from,
+        subject: emailData.subject
+    });
+});
+
+async function sendDigestFeedback(data) {
+    try {
+        const response = await fetch(`${MAILQ_API_URL}/api/feedback/digest`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            console.log('✅ Digest feedback sent:', data.action);
+        }
+    } catch (err) {
+        // Fail silently (don't break email experience)
+        console.warn('⚠️ Failed to send digest feedback:', err);
+    }
+}
+</script>

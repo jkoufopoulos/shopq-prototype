@@ -1,0 +1,102 @@
+# MailQ Type Mapper Rules
+# Version: 1.0
+# Last Updated: 2025-11-10
+#
+# Purpose: Global deterministic type classification rules
+# Scope: High-precision patterns that apply to ALL users (not user-specific)
+# Philosophy: Conservative coverage, high precision (≥95%)
+#
+# Note: These are shared intelligence patterns (e.g., calendar invites are always events)
+# User-specific learning happens via RulesEngine (separate system)
+
+version: "1.0"
+last_updated: "2025-11-10"
+
+# =============================================================================
+# Type: event
+# =============================================================================
+# Calendar invitations, reservations, bookings
+# Precision target: ≥98% (very high confidence)
+# Coverage: ~10-15% of emails (calendar invites only)
+
+event:
+  # Sender domain patterns (exact or wildcard)
+  # These are calendar systems that ONLY send event invitations
+  sender_domains:
+    # Google Calendar
+    - "calendar-notification@google.com"
+    - "noreply@calendar.google.com"
+    - "calendar@google.com"
+
+    # Outlook/Office 365 Calendar
+    - "calendar@outlook.com"
+    - "noreply@calendar.outlook.com"
+
+    # Yahoo Calendar
+    - "calendar@yahoo.com"
+    - "no-reply@calendar.yahoo.com"
+
+    # Apple Calendar
+    - "noreply@email.apple.com"  # Only when combined with other signals
+
+    # Event platforms
+    - "events@eventbrite.com"
+    - "noreply@eventbrite.com"
+
+  # Subject regex patterns (case-insensitive)
+  # These patterns are highly specific to calendar invitations
+  subject_patterns:
+    # Google Calendar patterns
+    - "Notification: .* @ (Mon|Tue|Wed|Thu|Fri|Sat|Sun)"
+    - "Notification: .* @ \\w{3} \\w{3} \\d{1,2}"  # "Notification: X @ Wed Nov 13"
+    - "Updated invitation:"
+    - "Invitation:.*has invited you"
+    - "^Accepted:.*"
+    - "^Declined:.*"
+    - "^Canceled:.*"
+    - "Event reminder:"
+
+    # Note: Generic patterns like "Save the date:" and "You're invited to" removed
+    # These require context (marketing vs real invitation) - handled by LLM
+
+  # Body/snippet phrases (exact substring match, case-insensitive)
+  # These phrases appear in calendar invitation emails
+  body_phrases:
+    # Meeting links
+    - "Join with Google Meet"
+    - "Join Zoom Meeting"
+    - "Microsoft Teams meeting"
+    - "Join on your computer or mobile app"
+
+    # Calendar-specific phrases
+    - "Add to Calendar"
+    - "View Event"
+    - "RSVP:"
+    - "Organizer:"
+    - "When:"
+    - "Where:"
+
+    # iCal indicators
+    - "BEGIN:VCALENDAR"
+    - ".ics attachment"
+
+  # Attachment indicators
+  # Presence of these file types strongly indicates calendar event
+  attachment_extensions:
+    - ".ics"
+    - ".vcs"
+
+  # Confidence score for matched rules
+  # High confidence because calendar invites are unambiguous
+  confidence: 0.98
+
+# =============================================================================
+# Future: receipt, notification, newsletter types
+# =============================================================================
+# Intentionally left empty for MVP
+# Will add after validating event rules on gds-1.0
+#
+# Candidates for Phase 2:
+# - receipt: Amazon receipts, PayPal transactions
+# - notification: Shipping updates, password resets
+# - newsletter: Substack, Medium, marketing emails
