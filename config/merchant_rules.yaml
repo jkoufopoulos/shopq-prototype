@@ -1,0 +1,94 @@
+# Global Merchant Return Rules
+# MVP: Static defaults, no per-user customization
+#
+# anchor: "delivery" (preferred) or "order" (fallback if no delivery date)
+# return_by = anchor_date + days
+#
+# To add a merchant: use the email sender domain (e.g., amazon.com, not www.amazon.com)
+
+version: "1.0"
+last_updated: "2026-01-12"
+
+merchants:
+  # Major retailers
+  amazon.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.amazon.com/gp/orc/returns"
+    notes: "Most items. Electronics may be 15 days."
+
+  target.com:
+    days: 90
+    anchor: delivery
+    return_url: "https://www.target.com/returns"
+
+  walmart.com:
+    days: 90
+    anchor: delivery
+    return_url: "https://www.walmart.com/returns"
+
+  costco.com:
+    days: 90
+    anchor: delivery
+    return_url: "https://www.costco.com/returns-replacements.html"
+    notes: "Most items. Electronics 90 days. No limit on Costco satisfaction guarantee items."
+
+  bestbuy.com:
+    days: 15
+    anchor: delivery
+    return_url: "https://www.bestbuy.com/returns"
+    notes: "Standard. TotalTech members get 60 days."
+
+  # Fashion / Apparel
+  zappos.com:
+    days: 365
+    anchor: delivery
+    return_url: "https://www.zappos.com/c/return-policy"
+    notes: "Free returns for a full year."
+
+  nordstrom.com:
+    days: 45
+    anchor: delivery
+    return_url: "https://www.nordstrom.com/c/return-policy"
+    notes: "No strict deadline but 45 days recommended."
+
+  gap.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.gap.com/customerService/info.do?cid=81264"
+
+  oldnavy.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://oldnavy.gap.com/customerService/info.do?cid=81264"
+
+  hm.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www2.hm.com/en_us/customer-service/returns.html"
+
+  # Electronics
+  apple.com:
+    days: 14
+    anchor: delivery
+    return_url: "https://www.apple.com/shop/help/returns_refund"
+    notes: "Standard return window. Holiday season may extend."
+
+  # Home / Furniture
+  ikea.com:
+    days: 365
+    anchor: delivery
+    return_url: "https://www.ikea.com/us/en/customer-service/returns-claims/"
+    notes: "365 days with receipt."
+
+  wayfair.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.wayfair.com/help/article/return_policy"
+
+  # Default for unknown merchants
+  _default:
+    days: 30
+    anchor: delivery
+    confidence: unknown
+    notes: "Generic fallback. User should verify with merchant."

@@ -1,0 +1,188 @@
+prd:
+  name: "MailQ Return Watch (MVP)"
+  version: "0.2"
+  owner: "Justin"
+  last_updated: "2026-01-12"
+  type: "portfolio_project"
+
+  product_statement: >
+    A lightweight Gmail companion for heavy shoppers that (1) alerts you before
+    return windows expire, (2) provides a single place to track potential returns,
+    and (3) shows all key return info in one screen so you can complete the return
+    yourself when ready.
+
+  target_user:
+    primary_persona: "Heavy shopper"
+    description: "Buys frequently online; returns a meaningful share; hates searching through email."
+
+  in_scope_user_stories:
+    - id: US1
+      story: "As a shopper I want to be alerted when my return window is expiring."
+    - id: US2
+      story: "As a shopper I want a place to track all potential upcoming returns in a single place so I don't have to remember or sort through emails."
+    - id: US3
+      story: "As a shopper I want to easily see all key information for that return in a single place so it's easy to actually make the return when I'm ready."
+
+  out_of_scope:
+    - "Completing the return for the user (courier drop-off, pickup scheduling, logistics ops)"
+    - "Agentic actions beyond surfacing info/links"
+    - "Per-user merchant rule customization (MVP uses global defaults)"
+
+  core_ux:
+    screens:
+      - id: S1
+        name: "Returns List (Hub)"
+        purpose: "Single place to track returns; highlights expiring items."
+        sections:
+          - name: "Expiring Soon"
+            rule: "return_by_date within N days AND status in [active, expiring_soon]"
+          - name: "All Active Returns"
+            rule: "status == active"
+        card_fields:
+          required:
+            - merchant
+            - item_summary
+            - status_badge        # expiring_soon | active | expired | returned | dismissed
+            - confidence_badge    # exact | estimated | unknown
+          optional:
+            - return_by_date
+        actions:
+          primary:
+            - "open_return_details"
+          secondary:
+            - "mark_returned"
+            - "dismiss"
+        optional_features:
+          - "search_by_merchant_or_keyword"
+
+      - id: S2
+        name: "Return Details (Return Kit)"
+        purpose: "All key information in one place to complete the return yourself."
+        fields:
+          required:
+            - merchant
+            - item_summary
+            - return_by_display    # date or 'Unknown'
+            - confidence_badge     # exact | estimated | unknown
+            - source_email_links   # open in Gmail for provenance
+          optional:
+            - order_number
+            - return_portal_link
+            - shipping_tracking_link
+            - notes
+        actions:
+          primary:
+            - "open_return_portal_link_if_present_else_open_source_email"
+          secondary:
+            - "copy_order_number_if_present"
+            - "mark_returned"
+            - "dismiss"
+
+    alerts:
+      name: "Expiring Return Window Alerts"
+      default_threshold_days: 7
+      behavior:
+        - trigger: "card enters expiring_soon for first time"
+          send: true
+        - trigger: "1 day remaining"
+          send: "optional_toggle"
+      constraints:
+        - "Do not alert if confidence == unknown"
+        - "Do not alert for dismissed/returned cards"
+
+  data_model:
+    return_card:
+      fields:
+        required:
+          - id
+          - user_id
+          - merchant
+          - item_summary
+          - status                 # active | expiring_soon | expired | returned | dismissed
+          - confidence             # exact | estimated | unknown
+          - source_email_ids       # list
+        optional:
+          - order_number
+          - amount
+          - order_date
+          - delivery_date
+          - return_by_date
+          - return_portal_link
+          - shipping_tracking_link
+          - evidence_snippet_ref   # pointer or small snippet (avoid full body storage)
+          - notes
+      status_rules:
+        - "expired if return_by_date < now AND status not in [returned, dismissed]"
+        - "expiring_soon if return_by_date within threshold AND status == active"
+        - "active if return_by_date exists and not within threshold and not past"
+        - "active even if return_by_date is null (unknown), but keep in All Active Returns"
+
+    merchant_rules:
+      type: "static_config"
+      location: "config/merchant_rules.yaml"
+      purpose: "Global defaults to estimate return_by_date when not explicit in email."
+      note: "MVP uses global defaults only. Per-user customization is out of scope."
+      fields:
+        - merchant_domain
+        - return_window_days
+        - anchor_preference      # delivery | order (default: delivery if available else order)
+
+  return_by_logic:
+    priority_order:
+      - id: P1
+        name: "Exact"
+        rule: "If explicit return-by date is present in any source email text."
+        confidence: "exact"
+      - id: P2
+        name: "Estimated"
+        rule: "If merchant in global merchant_rules, return_by_date = anchor_date + return_window_days."
+        confidence: "estimated"
+      - id: P3
+        name: "Unknown"
+        rule: "If neither explicit date nor merchant_rule match."
+        confidence: "unknown"
+    trust_rule: "Never display an estimated date without labeling it as Estimated."
+
+  mvp_acceptance_criteria:
+    alerts:
+      - "If return_by_date exists and is within N days, card appears in Expiring Soon."
+      - "User gets alerted when a card first enters Expiring Soon (exact or estimated only)."
+      - "Unknown dates never trigger alerts."
+    hub:
+      - "Returns List shows Expiring Soon and All Active Returns."
+      - "User can mark returned or dismiss a card and it no longer shows in active lists."
+    return_details:
+      - "Return Details always shows provenance via source email link(s)."
+      - "If return_portal_link exists, it's accessible; else user can open the source email."
+      - "If order_number exists, it is copyable."
+
+  metrics:
+    - id: M1
+      name: "Coverage"
+      definition: "% of purchase-related emails that become Return Cards"
+    - id: M2
+      name: "Relevance"
+      definition: "% of Return Cards opened"
+    - id: M3
+      name: "Outcome proxy"
+      definition: "#/% of cards marked Returned before Expired"
+    - id: M4
+      name: "Trust proxy"
+      definition: "# of user edits/complaints about incorrect return-by dates (Exact should be near zero)"
+
+  risks_and_mitigations:
+    - risk: "Return-by dates often not explicit"
+      mitigation: "Use Unknown/Estimated labels; ship global merchant defaults; avoid false certainty."
+    - risk: "Too many cards for heavy shoppers"
+      mitigation: "Make dismiss/returned 1-tap; prioritize Expiring Soon; optional search."
+    - risk: "Global defaults wrong for some users"
+      mitigation: "Label as Estimated; iterate defaults based on user feedback; add per-user overrides post-MVP if needed."
+
+  implementation_notes:
+    constraints:
+      - "Keep scope strict: tracking + alerts + return kit only."
+      - "Avoid building logistics, pickups, courier, or refunds."
+      - "MVP: global merchant rules only (no per-user config UI)."
+    privacy:
+      - "Store minimal structured fields; avoid storing full email bodies by default."
+      - "Always keep link(s) back to source emails for evidence."
