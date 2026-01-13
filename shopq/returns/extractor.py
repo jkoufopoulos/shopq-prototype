@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -250,7 +250,7 @@ class ReturnableReceiptExtractor:
         received_at: datetime | None,
     ) -> ReturnCard:
         """Build ReturnCard from extracted fields."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         return ReturnCard(
             id=str(uuid.uuid4()),
