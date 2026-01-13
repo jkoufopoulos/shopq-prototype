@@ -36,6 +36,7 @@ from shopq.api.routes.feedback import router as feedback_router  # noqa: E402
 from shopq.api.routes.feedback import set_feedback_manager  # noqa: E402
 from shopq.api.routes.health import router as health_router
 from shopq.api.routes.linker import router as linker_router  # noqa: E402
+from shopq.api.routes.returns import router as returns_router  # noqa: E402
 from shopq.api.routes.rules import router as rules_router
 from shopq.api.routes.test import router as test_router  # noqa: E402
 from shopq.api.routes.tracking import router as tracking_router  # noqa: E402
@@ -225,6 +226,7 @@ app.include_router(health_router)
 app.include_router(confidence_router)
 app.include_router(rules_router)
 app.include_router(categories_router)
+app.include_router(returns_router)
 # OLD digest_router removed - using SimpleDigest via /api/summary endpoint
 
 

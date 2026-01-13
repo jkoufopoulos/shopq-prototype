@@ -1,0 +1,366 @@
+"""
+Returns API endpoints for Return Watch feature.
+
+Provides CRUD operations for return cards and status management.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
+
+from shopq.observability.logging import get_logger
+from shopq.returns import (
+    ReturnCard,
+    ReturnCardCreate,
+    ReturnCardRepository,
+    ReturnCardUpdate,
+    ReturnConfidence,
+    ReturnStatus,
+)
+
+router = APIRouter(prefix="/api/returns", tags=["returns"])
+logger = get_logger(__name__)
+
+
+# ============================================================================
+# Request/Response Models
+# ============================================================================
+
+
+class ReturnCardResponse(BaseModel):
+    """API response for a single return card."""
+
+    id: str
+    user_id: str
+    merchant: str
+    merchant_domain: str
+    item_summary: str
+    status: str
+    confidence: str
+    source_email_ids: list[str]
+    order_number: str | None
+    amount: float | None
+    currency: str
+    order_date: str | None
+    delivery_date: str | None
+    return_by_date: str | None
+    return_portal_link: str | None
+    shipping_tracking_link: str | None
+    evidence_snippet: str | None
+    notes: str | None
+    days_remaining: int | None
+    created_at: str
+    updated_at: str
+
+    @classmethod
+    def from_card(cls, card: ReturnCard) -> "ReturnCardResponse":
+        """Convert ReturnCard to API response."""
+        return cls(
+            id=card.id,
+            user_id=card.user_id,
+            merchant=card.merchant,
+            merchant_domain=card.merchant_domain,
+            item_summary=card.item_summary,
+            status=card.status if isinstance(card.status, str) else card.status.value,
+            confidence=card.confidence if isinstance(card.confidence, str) else card.confidence.value,
+            source_email_ids=card.source_email_ids,
+            order_number=card.order_number,
+            amount=card.amount,
+            currency=card.currency,
+            order_date=card.order_date.isoformat() if card.order_date else None,
+            delivery_date=card.delivery_date.isoformat() if card.delivery_date else None,
+            return_by_date=card.return_by_date.isoformat() if card.return_by_date else None,
+            return_portal_link=card.return_portal_link,
+            shipping_tracking_link=card.shipping_tracking_link,
+            evidence_snippet=card.evidence_snippet,
+            notes=card.notes,
+            days_remaining=card.days_until_expiry(),
+            created_at=card.created_at.isoformat(),
+            updated_at=card.updated_at.isoformat(),
+        )
+
+
+class ReturnCardListResponse(BaseModel):
+    """API response for listing return cards."""
+
+    cards: list[ReturnCardResponse]
+    total: int
+    expiring_soon_count: int
+
+
+class CreateReturnCardRequest(BaseModel):
+    """Request to create a new return card."""
+
+    user_id: str
+    merchant: str
+    merchant_domain: str = ""
+    item_summary: str
+    confidence: str = "unknown"
+    source_email_ids: list[str] = Field(default_factory=list)
+    order_number: str | None = None
+    amount: float | None = None
+    currency: str = "USD"
+    order_date: str | None = None
+    delivery_date: str | None = None
+    return_by_date: str | None = None
+    return_portal_link: str | None = None
+    shipping_tracking_link: str | None = None
+    evidence_snippet: str | None = None
+
+
+class UpdateStatusRequest(BaseModel):
+    """Request to update a card's status."""
+
+    status: str  # returned | dismissed
+
+
+class UpdateCardRequest(BaseModel):
+    """Request to update card fields."""
+
+    status: str | None = None
+    notes: str | None = None
+    return_by_date: str | None = None
+    return_portal_link: str | None = None
+
+
+class StatusCountsResponse(BaseModel):
+    """Response with card counts by status."""
+
+    active: int = 0
+    expiring_soon: int = 0
+    expired: int = 0
+    returned: int = 0
+    dismissed: int = 0
+    total: int = 0
+
+
+# ============================================================================
+# Endpoints
+# ============================================================================
+
+
+@router.get("", response_model=ReturnCardListResponse)
+async def list_returns(
+    user_id: str = Query(..., description="User ID"),
+    status: str | None = Query(None, description="Comma-separated statuses: active,expiring_soon,expired,returned,dismissed"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> ReturnCardListResponse:
+    """
+    List return cards for a user.
+
+    Filters by status if provided. Returns cards ordered by return_by_date (soonest first).
+    """
+    try:
+        # Refresh statuses first (update expired/expiring_soon based on current date)
+        ReturnCardRepository.refresh_statuses(user_id)
+
+        # Parse status filter
+        status_filter: list[ReturnStatus] | None = None
+        if status:
+            status_filter = [ReturnStatus(s.strip()) for s in status.split(",")]
+
+        cards = ReturnCardRepository.list_by_user(
+            user_id=user_id,
+            status=status_filter,
+            limit=limit,
+            offset=offset,
+        )
+
+        # Get expiring soon count
+        expiring = ReturnCardRepository.list_expiring_soon(user_id)
+
+        return ReturnCardListResponse(
+            cards=[ReturnCardResponse.from_card(c) for c in cards],
+            total=len(cards),
+            expiring_soon_count=len(expiring),
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to list returns: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to list returns")
+
+
+@router.get("/expiring", response_model=list[ReturnCardResponse])
+async def list_expiring_returns(
+    user_id: str = Query(..., description="User ID"),
+    threshold_days: int = Query(7, ge=1, le=30, description="Days to look ahead"),
+) -> list[ReturnCardResponse]:
+    """
+    Get returns expiring within threshold days.
+
+    Returns cards with return_by_date within threshold, ordered by urgency.
+    """
+    try:
+        # Refresh statuses first
+        ReturnCardRepository.refresh_statuses(user_id, threshold_days)
+
+        cards = ReturnCardRepository.list_expiring_soon(user_id, threshold_days)
+        return [ReturnCardResponse.from_card(c) for c in cards]
+
+    except Exception as e:
+        logger.error("Failed to list expiring returns: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to list expiring returns")
+
+
+@router.get("/counts", response_model=StatusCountsResponse)
+async def get_status_counts(
+    user_id: str = Query(..., description="User ID"),
+) -> StatusCountsResponse:
+    """
+    Get count of cards by status.
+
+    Useful for dashboard summary and badge counts.
+    """
+    try:
+        # Refresh statuses first
+        ReturnCardRepository.refresh_statuses(user_id)
+
+        counts = ReturnCardRepository.count_by_status(user_id)
+
+        return StatusCountsResponse(
+            active=counts.get("active", 0),
+            expiring_soon=counts.get("expiring_soon", 0),
+            expired=counts.get("expired", 0),
+            returned=counts.get("returned", 0),
+            dismissed=counts.get("dismissed", 0),
+            total=sum(counts.values()),
+        )
+
+    except Exception as e:
+        logger.error("Failed to get status counts: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to get status counts")
+
+
+@router.get("/{card_id}", response_model=ReturnCardResponse)
+async def get_return(card_id: str) -> ReturnCardResponse:
+    """
+    Get a single return card by ID.
+    """
+    card = ReturnCardRepository.get_by_id(card_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="Return card not found")
+
+    return ReturnCardResponse.from_card(card)
+
+
+@router.post("", response_model=ReturnCardResponse, status_code=201)
+async def create_return(request: CreateReturnCardRequest) -> ReturnCardResponse:
+    """
+    Create a new return card.
+
+    Called by the extractor when processing emails.
+    """
+    try:
+        # Parse dates if provided
+        order_date = datetime.fromisoformat(request.order_date) if request.order_date else None
+        delivery_date = datetime.fromisoformat(request.delivery_date) if request.delivery_date else None
+        return_by_date = datetime.fromisoformat(request.return_by_date) if request.return_by_date else None
+
+        card_create = ReturnCardCreate(
+            user_id=request.user_id,
+            merchant=request.merchant,
+            merchant_domain=request.merchant_domain,
+            item_summary=request.item_summary,
+            confidence=ReturnConfidence(request.confidence),
+            source_email_ids=request.source_email_ids,
+            order_number=request.order_number,
+            amount=request.amount,
+            currency=request.currency,
+            order_date=order_date,
+            delivery_date=delivery_date,
+            return_by_date=return_by_date,
+            return_portal_link=request.return_portal_link,
+            shipping_tracking_link=request.shipping_tracking_link,
+            evidence_snippet=request.evidence_snippet,
+        )
+
+        card = ReturnCardRepository.create(card_create)
+        logger.info("Created return card %s for merchant %s", card.id, card.merchant)
+
+        return ReturnCardResponse.from_card(card)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to create return card: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to create return card")
+
+
+@router.put("/{card_id}/status", response_model=ReturnCardResponse)
+async def update_return_status(card_id: str, request: UpdateStatusRequest) -> ReturnCardResponse:
+    """
+    Update a card's status (mark returned or dismissed).
+
+    This is the primary user action - marking items as returned or dismissing them.
+    """
+    try:
+        new_status = ReturnStatus(request.status)
+
+        # Only allow user-initiated status changes
+        if new_status not in (ReturnStatus.RETURNED, ReturnStatus.DISMISSED):
+            raise HTTPException(
+                status_code=400,
+                detail="Status must be 'returned' or 'dismissed'",
+            )
+
+        card = ReturnCardRepository.update_status(card_id, new_status)
+        if not card:
+            raise HTTPException(status_code=404, detail="Return card not found")
+
+        logger.info("Updated card %s status to %s", card_id, new_status.value)
+        return ReturnCardResponse.from_card(card)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to update return status: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to update status")
+
+
+@router.patch("/{card_id}", response_model=ReturnCardResponse)
+async def update_return(card_id: str, request: UpdateCardRequest) -> ReturnCardResponse:
+    """
+    Update a card's fields (notes, return_by_date, etc.)
+    """
+    try:
+        updates = ReturnCardUpdate(
+            status=ReturnStatus(request.status) if request.status else None,
+            notes=request.notes,
+            return_by_date=datetime.fromisoformat(request.return_by_date) if request.return_by_date else None,
+            return_portal_link=request.return_portal_link,
+        )
+
+        card = ReturnCardRepository.update(card_id, updates)
+        if not card:
+            raise HTTPException(status_code=404, detail="Return card not found")
+
+        return ReturnCardResponse.from_card(card)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to update return card: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to update card")
+
+
+@router.delete("/{card_id}", status_code=204)
+async def delete_return(card_id: str) -> None:
+    """
+    Delete a return card.
+
+    Use sparingly - prefer marking as dismissed instead.
+    """
+    deleted = ReturnCardRepository.delete(card_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Return card not found")

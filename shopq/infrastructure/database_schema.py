@@ -141,6 +141,42 @@ def init_database(db_path: Path) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_user_credentials_expiry
         ON user_credentials(token_expiry);
+
+        -- Return Cards for Return Watch feature
+        CREATE TABLE IF NOT EXISTS return_cards (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            version TEXT DEFAULT 'v1',
+            merchant TEXT NOT NULL,
+            merchant_domain TEXT DEFAULT '',
+            item_summary TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active',
+            confidence TEXT NOT NULL DEFAULT 'unknown',
+            source_email_ids TEXT DEFAULT '[]',
+            order_number TEXT,
+            amount REAL,
+            currency TEXT DEFAULT 'USD',
+            order_date TEXT,
+            delivery_date TEXT,
+            return_by_date TEXT,
+            return_portal_link TEXT,
+            shipping_tracking_link TEXT,
+            evidence_snippet TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            alerted_at TEXT
+        );
+
+        -- Indexes for return_cards queries
+        CREATE INDEX IF NOT EXISTS idx_return_cards_user_status
+        ON return_cards(user_id, status);
+
+        CREATE INDEX IF NOT EXISTS idx_return_cards_user_return_by
+        ON return_cards(user_id, return_by_date);
+
+        CREATE INDEX IF NOT EXISTS idx_return_cards_merchant_domain
+        ON return_cards(merchant_domain);
     """)
 
     conn.commit()
@@ -168,6 +204,7 @@ def validate_schema(conn: sqlite3.Connection) -> bool:
         "categories": ["id", "name", "description"],
         "feedback": ["id", "email_id", "predicted_labels"],
         "learned_patterns": ["id", "pattern_type", "pattern_value"],
+        "return_cards": ["id", "user_id", "merchant", "item_summary", "status", "confidence"],
     }
 
     cursor = conn.cursor()
