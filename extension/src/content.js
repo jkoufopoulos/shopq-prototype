@@ -610,7 +610,7 @@ function renderDigestContent(panel, result) {
     contentEl.innerHTML = `
       <div class="mailq-digest-empty">
         <div class="icon">📭</div>
-        <p>${result.message}</p>
+        <p>${sanitizeHtml(result.message)}</p>
         <button class="mailq-refresh-btn" id="mailq-organize-btn">Organize Inbox</button>
       </div>
     `;
@@ -651,7 +651,7 @@ function renderDigestContent(panel, result) {
     contentEl.innerHTML = `
       <div class="mailq-digest-error">
         <p>Failed to load digest</p>
-        <p style="font-size: 12px; margin-top: 8px;">${result.message}</p>
+        <p style="font-size: 12px; margin-top: 8px;">${sanitizeHtml(result.message)}</p>
         <button class="mailq-refresh-btn" id="mailq-retry-btn">Retry</button>
       </div>
     `;
@@ -664,15 +664,15 @@ function renderDigestContent(panel, result) {
 
   // Check if we got HTML content or structured data
   if (data.html) {
-    // If API returns HTML, render it directly
+    // If API returns HTML, render it directly (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="mailq-digest-narrative">${data.html}</div>
+      <div class="mailq-digest-narrative">${sanitizeHtml(data.html)}</div>
       <button class="mailq-refresh-btn" id="mailq-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else if (data.narrative) {
-    // If API returns narrative text
+    // If API returns narrative text (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="mailq-digest-narrative">${data.narrative}</div>
+      <div class="mailq-digest-narrative">${sanitizeHtml(data.narrative)}</div>
       <button class="mailq-refresh-btn" id="mailq-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else {
@@ -767,7 +767,7 @@ function createDigestPanelContent() {
       content.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
           <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-          <p style="margin-bottom: 16px;">${result.message}</p>
+          <p style="margin-bottom: 16px;">${sanitizeHtml(result.message)}</p>
           <button id="mailq-organize-btn" style="
             padding: 8px 16px;
             background: #1a73e8;
@@ -815,7 +815,7 @@ function createDigestPanelContent() {
       } else {
         content.innerHTML = `
           <div style="text-align: center; padding: 40px 20px;">
-            <p style="color: #c5221f; margin-bottom: 16px;">Error: ${result.message}</p>
+            <p style="color: #c5221f; margin-bottom: 16px;">Error: ${sanitizeHtml(result.message)}</p>
             <button id="mailq-retry-btn" style="
               padding: 8px 16px;
               background: #1a73e8;
@@ -1288,21 +1288,21 @@ async function loadDigestIntoPanel(panelEl) {
     contentHtml = `
       <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
         <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-        <p>${result.message}</p>
+        <p>${sanitizeHtml(result.message)}</p>
       </div>
     `;
   } else if (result.error) {
     contentHtml = `
       <div style="text-align: center; padding: 40px 20px;">
-        <p style="color: #c5221f;">${result.message}</p>
+        <p style="color: #c5221f;">${sanitizeHtml(result.message)}</p>
       </div>
     `;
   } else if (result.data?.html) {
     console.log('ShopQ: Digest HTML received, length:', result.data.html?.length);
-    contentHtml = `<div style="line-height: 1.6;">${result.data.html}</div>`;
+    contentHtml = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.html)}</div>`;
   } else if (result.data?.narrative) {
     console.log('ShopQ: Digest narrative received, length:', result.data.narrative?.length);
-    contentHtml = `<div style="line-height: 1.6;">${result.data.narrative}</div>`;
+    contentHtml = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.narrative)}</div>`;
   } else {
     contentHtml = `<p style="text-align: center; color: #5f6368;">No digest available.</p>`;
   }
@@ -1487,13 +1487,13 @@ function toggleDigestDrawer() {
       content.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
           <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-          <p>${result.message}</p>
+          <p>${sanitizeHtml(result.message)}</p>
         </div>
       `;
     } else if (result.error) {
       content.innerHTML = `
         <div style="text-align: center; padding: 40px 20px;">
-          <p style="color: #c5221f;">${result.message}</p>
+          <p style="color: #c5221f;">${sanitizeHtml(result.message)}</p>
         </div>
       `;
     } else if (result.data?.html) {

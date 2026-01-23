@@ -10,10 +10,17 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from shopq.api.middleware.user_auth import AuthenticatedUser, get_current_user
 from shopq.observability.logging import get_logger
+from shopq.utils.error_sanitizer import get_safe_error_detail, sanitize_error_message
+from shopq.utils.validators import (
+    ValidationError as InputValidationError,
+    validate_email_id,
+    validate_merchant_domain,
+    validate_order_number,
+)
 from shopq.returns import (
     ReturnCard,
     ReturnCardCreate,
@@ -113,6 +120,25 @@ class CreateReturnCardRequest(BaseModel):
     shipping_tracking_link: str | None = None
     evidence_snippet: str | None = None
 
+    # SEC-012: Input validation
+    @field_validator("merchant_domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if not v:
+            return ""
+        validated = validate_merchant_domain(v)
+        return validated or ""
+
+    @field_validator("order_number")
+    @classmethod
+    def validate_order(cls, v: str | None) -> str | None:
+        return validate_order_number(v)
+
+    @field_validator("source_email_ids")
+    @classmethod
+    def validate_email_ids(cls, v: list[str]) -> list[str]:
+        return [validate_email_id(eid) for eid in v if validate_email_id(eid)]
+
 
 class UpdateStatusRequest(BaseModel):
     """Request to update a card's status."""
@@ -187,7 +213,8 @@ async def list_returns(
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # SEC-011: Sanitize error messages
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
     except Exception as e:
         logger.error("Failed to list returns: %s", e)
         raise HTTPException(status_code=500, detail="Failed to list returns")
@@ -311,7 +338,8 @@ async def create_return(
         return ReturnCardResponse.from_card(card)
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # SEC-011: Sanitize error messages
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
     except Exception as e:
         logger.error("Failed to create return card: %s", e)
         raise HTTPException(status_code=500, detail="Failed to create return card")
@@ -352,7 +380,8 @@ async def update_return_status(
         return ReturnCardResponse.from_card(card)
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # SEC-011: Sanitize error messages
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
     except HTTPException:
         raise
     except Exception as e:
@@ -393,7 +422,8 @@ async def update_return(
         return ReturnCardResponse.from_card(card)
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # SEC-011: Sanitize error messages
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
     except HTTPException:
         raise
     except Exception as e:
@@ -454,6 +484,15 @@ class ProcessEmailRequest(BaseModel):
     from_address: str
     subject: str
     body: str
+
+    # SEC-012: Input validation
+    @field_validator("email_id")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        validated = validate_email_id(v)
+        if not validated:
+            raise ValueError("Invalid email_id")
+        return validated
 
 
 class ProcessEmailResponse(BaseModel):
@@ -604,5 +643,6 @@ async def process_email(
         )
 
     except Exception as e:
+        # SEC-011: Don't expose raw error messages - log full error, return generic message
         logger.error("Failed to process email %s: %s", request.email_id, e)
-        raise HTTPException(status_code=500, detail=f"Failed to process email: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process email")
