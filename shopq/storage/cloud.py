@@ -21,8 +21,8 @@ from google.cloud import storage
 logger = logging.getLogger(__name__)
 
 # GCS configuration
-BUCKET_NAME = os.getenv("SHOPQ_TRACKING_BUCKET", "mailq-tracking")
-PROJECT_ID = os.getenv("GCP_PROJECT", "mailq-467118")
+BUCKET_NAME = os.getenv("SHOPQ_TRACKING_BUCKET", "shopq-tracking")
+PROJECT_ID = os.getenv("GCP_PROJECT", "shopq-467118")
 
 # GCS paths
 SESSIONS_PREFIX = "sessions/"

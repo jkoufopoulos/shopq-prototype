@@ -193,6 +193,47 @@ class ReturnCardRepository:
         return [ReturnCard.from_db_row(dict(row)) for row in rows]
 
     @staticmethod
+    def count_by_user(
+        user_id: str,
+        status: list[ReturnStatus] | None = None,
+    ) -> int:
+        """
+        Count return cards for a user, optionally filtered by status.
+
+        CODE-006: Enables proper pagination with true total counts.
+
+        Args:
+            user_id: User's identifier
+            status: Optional list of statuses to filter by
+
+        Returns:
+            Total count of matching cards
+        """
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            if status:
+                status_values = [s.value if isinstance(s, ReturnStatus) else s for s in status]
+                placeholders = ",".join("?" * len(status_values))
+                cursor.execute(
+                    f"""
+                    SELECT COUNT(*) FROM return_cards
+                    WHERE user_id = ? AND status IN ({placeholders})
+                    """,
+                    (user_id, *status_values),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) FROM return_cards
+                    WHERE user_id = ?
+                    """,
+                    (user_id,),
+                )
+
+            return cursor.fetchone()[0]
+
+    @staticmethod
     def list_expiring_soon(user_id: str, threshold_days: int = 7) -> list[ReturnCard]:
         """
         Get cards expiring within threshold days.

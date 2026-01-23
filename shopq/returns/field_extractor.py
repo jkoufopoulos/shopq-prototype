@@ -21,10 +21,12 @@ from pydantic import BaseModel
 from pydantic import Field as PydanticField
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from shopq.infrastructure.settings import GEMINI_MODEL, GEMINI_LOCATION, GOOGLE_CLOUD_PROJECT
+from shopq.infrastructure.settings import GEMINI_MODEL
+from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.models import ReturnConfidence
+from shopq.utils.redaction import redact_pii, redact_subject
 
 logger = get_logger(__name__)
 
@@ -163,26 +165,14 @@ Respond with ONLY the JSON."""
             merchant_rules: Dict from merchant_rules.yaml with return windows
         """
         self.merchant_rules = merchant_rules or {}
-        self._model = None
+        # CODE-011: Model is now obtained from shared singleton
 
     def _get_model(self):
-        """Lazy-load Gemini model."""
-        if self._model is None:
-            try:
-                import vertexai
-                from vertexai.generative_models import GenerativeModel
+        """Get shared Gemini model instance.
 
-                if GOOGLE_CLOUD_PROJECT:
-                    vertexai.init(project=GOOGLE_CLOUD_PROJECT, location=GEMINI_LOCATION)
-
-                self._model = GenerativeModel(GEMINI_MODEL)
-                logger.info("Initialized Gemini model %s for field extraction", GEMINI_MODEL)
-
-            except Exception as e:
-                logger.error("Failed to initialize Gemini model: %s", e)
-                raise
-
-        return self._model
+        CODE-011: Uses shared singleton instead of per-instance model.
+        """
+        return get_gemini_model()
 
     @retry(
         stop=stop_after_attempt(LLM_MAX_RETRIES),
@@ -277,7 +267,9 @@ Respond with ONLY the JSON."""
         )
 
         # Build evidence snippet - prefer return policy quote, fallback to body preview
-        evidence = return_policy_quote if return_policy_quote else (body[:200] if body else None)
+        # CODE-008: Redact PII from evidence before storage
+        raw_evidence = return_policy_quote if return_policy_quote else (body[:200] if body else None)
+        evidence = redact_pii(raw_evidence, max_length=200) if raw_evidence else None
 
         # Build result
         result = ExtractedFields(
@@ -342,17 +334,14 @@ Respond with ONLY the JSON."""
         body_truncated = body[:4000] if body else ""
 
         # LOG: What we're sending to LLM (for validation)
+        # SEC-016: Redact PII from logging
         logger.info(
             "LLM extraction input: subject=%s, body_length=%d, truncated_length=%d",
-            subject[:50],
+            redact_subject(subject),
             len(body) if body else 0,
             len(body_truncated),
         )
-        if body_truncated:
-            logger.debug(
-                "LLM input body tail (last 300 chars): %s",
-                body_truncated[-300:] if len(body_truncated) > 300 else body_truncated,
-            )
+        # NOTE: Body content not logged to prevent PII exposure
 
         prompt = self.EXTRACTION_PROMPT.format(
             subject=self._sanitize(subject, 200),
@@ -507,10 +496,41 @@ Respond with ONLY the JSON."""
         return None
 
     def _sanitize(self, text: str, max_length: int) -> str:
-        """Sanitize input for LLM prompt."""
+        """Sanitize input for LLM prompt.
+
+        CODE-007: Enhanced sanitization with expanded patterns for role impersonation
+        and control character removal.
+        """
         if not text:
             return ""
 
-        text = re.sub(r"(?i)(ignore|disregard).*(instruction|prompt)", "[REDACTED]", text)
+        # Remove control characters (except newlines and tabs)
+        text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+
+        # Remove common injection patterns - instruction override attempts
+        text = re.sub(r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)", "[REDACTED]", text)
+        text = re.sub(r"(?i)do\s+not\s+follow.*", "[REDACTED]", text)
+        text = re.sub(r"(?i)instead\s+(of|do|output).*", "[REDACTED]", text)
+
+        # Remove role impersonation attempts
+        text = re.sub(r"(?i)(system|assistant|user|human|ai|claude|gpt)\s*:", "", text)
+        text = re.sub(r"(?i)<\s*(system|assistant|user|human)\s*>", "", text)
+        text = re.sub(r"(?i)\[\s*(system|assistant|user|human)\s*\]", "", text)
+        text = re.sub(r"(?i)you\s+are\s+(now|a|an)\s+", "", text)
+        text = re.sub(r"(?i)act\s+as\s+(a|an|if)\s+", "", text)
+        text = re.sub(r"(?i)pretend\s+(to\s+be|you)", "", text)
+        text = re.sub(r"(?i)roleplay\s+as", "", text)
+
+        # Remove XML/markdown injection attempts
+        text = re.sub(r"```.*?```", "[CODE]", text, flags=re.DOTALL)
+        text = re.sub(r"<script.*?>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+        # Escape template markers
         text = text.replace("{", "{{").replace("}", "}}")
+
+        # Log if redaction occurred (for monitoring injection attempts)
+        if "[REDACTED]" in text:
+            counter("returns.extractor.injection_attempt")
+            logger.warning("Prompt injection pattern detected and sanitized in extractor")
+
         return text[:max_length]

@@ -29,6 +29,7 @@ from shopq.returns.returnability_classifier import (
     ReturnabilityClassifier,
     ReturnabilityResult,
 )
+from shopq.utils.redaction import redact_subject
 
 logger = get_logger(__name__)
 
@@ -173,7 +174,8 @@ class ReturnableReceiptExtractor:
             - Increments telemetry counters
         """
         counter("returns.extraction.started")
-        logger.info("EXTRACTION START: subject='%s' from='%s'", subject[:60], from_address)
+        # SEC-016: Redact PII from logging
+        logger.info("EXTRACTION START: subject='%s' from='%s'", redact_subject(subject), from_address)
 
         # =========================================================
         # Stage 1: Domain Filter (FREE)

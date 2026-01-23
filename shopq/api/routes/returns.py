@@ -203,12 +203,15 @@ async def list_returns(
             offset=offset,
         )
 
+        # CODE-006: Get true total count for pagination (not just len of current page)
+        total_count = ReturnCardRepository.count_by_user(user_id, status_filter)
+
         # Get expiring soon count
         expiring = ReturnCardRepository.list_expiring_soon(user_id)
 
         return ReturnCardListResponse(
             cards=[ReturnCardResponse.from_card(c) for c in cards],
-            total=len(cards),
+            total=total_count,
             expiring_soon_count=len(expiring),
         )
 

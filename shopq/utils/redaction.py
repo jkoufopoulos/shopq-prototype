@@ -67,6 +67,56 @@ def redact_subject(subject: str | None, max_length: int = 30) -> str:
     return f"{visible} (h:{digest})"
 
 
+def redact_pii(text: str | None, max_length: int = 500) -> str:
+    """
+    Redact personally identifiable information from text.
+
+    CODE-008: Used to sanitize evidence snippets before storage.
+
+    Redacts:
+    - Email addresses
+    - Phone numbers (various formats)
+    - Credit card numbers
+    - SSN patterns
+    - Street addresses (partial)
+    - Names after common patterns like "Dear", "Hi", "Hello"
+
+    Args:
+        text: Text that may contain PII
+        max_length: Maximum length of returned text
+
+    Returns:
+        Text with PII replaced by [REDACTED] placeholders
+    """
+    if not text:
+        return ""
+
+    # Email addresses
+    text = re.sub(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "[EMAIL]", text)
+
+    # Phone numbers (various formats)
+    text = re.sub(r"\+?1?[-.\s]?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}", "[PHONE]", text)
+    text = re.sub(r"\b\d{3}[-.\s]?\d{4}\b", "[PHONE]", text)  # 7-digit
+
+    # Credit card numbers (13-19 digits, with optional separators)
+    text = re.sub(r"\b(?:\d{4}[-\s]?){3,4}\d{1,4}\b", "[CARD]", text)
+
+    # SSN patterns
+    text = re.sub(r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", "[SSN]", text)
+
+    # Street addresses (house number + street name pattern)
+    text = re.sub(r"\b\d{1,5}\s+[A-Za-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Blvd|Boulevard|Court|Ct)\b", "[ADDRESS]", text, flags=re.IGNORECASE)
+
+    # Zip codes (US)
+    text = re.sub(r"\b\d{5}(?:-\d{4})?\b", "[ZIP]", text)
+
+    # Names after greeting patterns
+    text = re.sub(r"(?i)(dear|hi|hello|hey)\s+([A-Z][a-z]+)", r"\1 [NAME]", text)
+
+    # Truncate
+    return text[:max_length]
+
+
 def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
     """
     Sanitize user-provided text before including in LLM prompts.

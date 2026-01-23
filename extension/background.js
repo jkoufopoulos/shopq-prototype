@@ -60,6 +60,64 @@ console.log(`🛒 ShopQ Return Watch: Background service worker loaded v${CONFIG
 initializeRefreshSystem();
 
 /**
+ * SEC-017: Message rate limiting to prevent DoS attacks via message flooding.
+ * Tracks message counts per sender (by tab ID or extension URL).
+ */
+const MESSAGE_RATE_LIMIT = {
+  maxMessages: 100,      // Max messages per window
+  windowMs: 1000,        // Window size in milliseconds (1 second)
+  counters: new Map(),   // Map<senderId, { count: number, windowStart: number }>
+  cleanupInterval: null, // Interval for cleanup
+};
+
+/**
+ * SEC-017: Check if sender is within rate limit.
+ * @param {chrome.runtime.MessageSender} sender
+ * @returns {{ allowed: boolean, remaining: number }}
+ */
+function checkMessageRateLimit(sender) {
+  const now = Date.now();
+  const senderId = sender.tab?.id ?? sender.url ?? 'unknown';
+
+  let entry = MESSAGE_RATE_LIMIT.counters.get(senderId);
+
+  // Start new window if none exists or window expired
+  if (!entry || (now - entry.windowStart) >= MESSAGE_RATE_LIMIT.windowMs) {
+    entry = { count: 0, windowStart: now };
+    MESSAGE_RATE_LIMIT.counters.set(senderId, entry);
+  }
+
+  // Check if within limit
+  if (entry.count >= MESSAGE_RATE_LIMIT.maxMessages) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  // Increment and allow
+  entry.count++;
+  return {
+    allowed: true,
+    remaining: MESSAGE_RATE_LIMIT.maxMessages - entry.count,
+  };
+}
+
+/**
+ * SEC-017: Clean up old rate limit entries periodically.
+ */
+function cleanupRateLimitCounters() {
+  const now = Date.now();
+  const expiredThreshold = now - (MESSAGE_RATE_LIMIT.windowMs * 2);
+
+  for (const [senderId, entry] of MESSAGE_RATE_LIMIT.counters) {
+    if (entry.windowStart < expiredThreshold) {
+      MESSAGE_RATE_LIMIT.counters.delete(senderId);
+    }
+  }
+}
+
+// Run cleanup every 10 seconds
+MESSAGE_RATE_LIMIT.cleanupInterval = setInterval(cleanupRateLimitCounters, 10000);
+
+/**
  * SEC-008: Validate message sender is from a trusted source.
  * Trusted sources:
  * - Content scripts running on Gmail (sender.tab.url starts with https://mail.google.com/)
@@ -104,6 +162,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (!isTrustedSender(sender)) {
         console.warn('🚫 ShopQ: Blocked message from untrusted sender:', sender);
         sendResponse({ success: false, error: 'Unauthorized sender' });
+        return;
+      }
+
+      // SEC-017: Check rate limit before processing
+      const rateCheck = checkMessageRateLimit(sender);
+      if (!rateCheck.allowed) {
+        console.warn('🚫 ShopQ: Rate limit exceeded for sender:', sender.tab?.id ?? sender.url);
+        sendResponse({ success: false, error: 'Rate limit exceeded. Please slow down.' });
         return;
       }
 

@@ -41,9 +41,10 @@ class MerchantDomainFilter:
     3. Uses keyword heuristics for unknown domains
     """
 
+    # CODE-009: Default blocklist - copied to instance variable in __init__
     # Known non-returnable services - block immediately
     # These never need LLM classification
-    BLOCKLIST: set[str] = {
+    _DEFAULT_BLOCKLIST: frozenset[str] = frozenset({
         # Ride-sharing & transportation
         "uber.com",
         "lyft.com",
@@ -125,7 +126,7 @@ class MerchantDomainFilter:
         "hallmark.com",
         "americangreetings.com",
         "bluemountain.com",
-    }
+    })
 
     # Keywords that suggest PURCHASE CONFIRMATION (not shipping updates)
     # Per R1: Must have order ID, purchase amount + confirmation, or explicit confirmation language
@@ -293,13 +294,16 @@ class MerchantDomainFilter:
                 Path(__file__).parent.parent.parent / "config" / "merchant_rules.yaml"
             )
 
+        # CODE-009: Copy class blocklist to instance to prevent cross-worker state issues
+        self.blocklist: set[str] = set(self._DEFAULT_BLOCKLIST)
+
         self.merchant_rules = self._load_merchant_rules(merchant_rules_path)
         self.allowlist = self._build_allowlist()
 
         logger.info(
             "MerchantDomainFilter initialized: %d allowlist, %d blocklist",
             len(self.allowlist),
-            len(self.BLOCKLIST),
+            len(self.blocklist),
         )
 
     def _load_merchant_rules(self, path: Path) -> dict:
@@ -344,7 +348,7 @@ class MerchantDomainFilter:
                 )
 
         # Check blocklist first (fast reject)
-        if domain in self.BLOCKLIST:
+        if domain in self.blocklist:
             return FilterResult(
                 is_candidate=False,
                 reason="blocklist",
@@ -498,9 +502,10 @@ class MerchantDomainFilter:
         """
         Dynamically add a domain to blocklist.
 
+        CODE-009: Now modifies instance variable instead of class variable.
         Useful for runtime updates based on user feedback.
         """
-        self.BLOCKLIST.add(domain.lower())
+        self.blocklist.add(domain.lower())
         logger.info("Added %s to blocklist", domain)
 
     def add_to_allowlist(self, domain: str) -> None:

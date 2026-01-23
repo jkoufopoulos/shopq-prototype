@@ -6,7 +6,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the mailq package (backend API)
+# Copy the shopq package (backend API)
 COPY shopq/ ./shopq/
 
 # Copy config for runtime policy

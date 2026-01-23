@@ -10,7 +10,7 @@ cinit:
 
 # Auto-detect Python directories (add more here if needed)
 PY_DIRS := $(strip \
-  $(if $(wildcard mailq),mailq,) \
+  $(if $(wildcard shopq),shopq,) \
   $(if $(wildcard backend),backend,) \
   $(if $(wildcard shared),shared,) \
 )
@@ -39,7 +39,7 @@ lint:
 	$(call maybe_run, [ -f "$(EXT_PKG)" ] && (pnpm --prefix $(EXT_DIR) lint || npm --prefix $(EXT_DIR) run lint) || true,extension:lint)
 
 typecheck:
-	@mypy mailq
+	@mypy shopq
 
 test:
 	# Python tests (pytest via uv)

@@ -33,6 +33,7 @@ from threading import Lock
 from typing import Any, TypeVar
 
 from shopq.observability.logging import get_logger
+from shopq.observability.telemetry import counter
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -158,12 +159,30 @@ class DatabaseConnectionPool:
             - Opens database connection to shopq.db
             - Executes PRAGMA statements (journal_mode, synchronous, foreign_keys)
             - Modifies connection row_factory
+
+        Raises:
+            RuntimeError: If database corruption is detected (CODE-010)
         """
         conn = sqlite3.connect(
             str(self.db_path),
             timeout=30.0,
             check_same_thread=False,  # Allow use across threads
         )
+
+        # CODE-010: Quick integrity check on new connections
+        # quick_check is faster than integrity_check but catches most corruption
+        try:
+            result = conn.execute("PRAGMA quick_check(1)").fetchone()
+            if result[0] != "ok":
+                conn.close()
+                logger.critical("Database corruption detected: %s", result[0])
+                counter("database.corruption_detected")
+                raise RuntimeError(f"Database corruption detected: {result[0]}")
+        except sqlite3.DatabaseError as e:
+            conn.close()
+            logger.critical("Database corruption or error during integrity check: %s", e)
+            counter("database.corruption_detected")
+            raise RuntimeError(f"Database corruption detected: {e}") from e
 
         # Enable Write-Ahead Logging (much faster for concurrent access)
         conn.execute("PRAGMA journal_mode=WAL")
