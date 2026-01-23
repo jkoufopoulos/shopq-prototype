@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pydantic import BaseModel, Field
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from shopq.infrastructure.settings import GEMINI_MODEL, GEMINI_LOCATION, GOOGLE_CLOUD_PROJECT
 from shopq.observability.logging import get_logger
@@ -26,6 +27,10 @@ logger = get_logger(__name__)
 
 # Feature flag: control LLM usage
 USE_LLM = os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
+# CODE-003/CODE-004: LLM call configuration
+LLM_TIMEOUT_SECONDS = 30  # Maximum time to wait for LLM response
+LLM_MAX_RETRIES = 3  # Number of retry attempts for transient failures
 
 
 class ReceiptType(str, Enum):
@@ -176,6 +181,39 @@ Respond with ONLY the JSON, no other text."""
 
         return self._model
 
+    @retry(
+        stop=stop_after_attempt(LLM_MAX_RETRIES),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type((TimeoutError, ConnectionError, OSError)),
+        reraise=True,
+    )
+    def _call_llm_with_retry(self, prompt: str) -> str:
+        """Call LLM with retry logic and timeout.
+
+        CODE-003: Retries up to 3 times with exponential backoff for transient failures.
+        CODE-004: 30-second timeout to prevent hanging requests.
+        """
+        from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
+
+        model = self._get_model()
+
+        # Vertex AI supports timeout via generation_config or request options
+        # Using request_options for timeout control
+        try:
+            response = model.generate_content(
+                prompt,
+                request_options={"timeout": LLM_TIMEOUT_SECONDS},
+            )
+            return response.text
+        except DeadlineExceeded as e:
+            counter("returns.classifier.timeout")
+            logger.warning("LLM call timed out after %ds", LLM_TIMEOUT_SECONDS)
+            raise TimeoutError(f"LLM call timed out: {e}") from e
+        except ServiceUnavailable as e:
+            counter("returns.classifier.service_unavailable")
+            logger.warning("LLM service unavailable, will retry: %s", e)
+            raise ConnectionError(f"LLM service unavailable: {e}") from e
+
     def classify(
         self,
         from_address: str,
@@ -215,17 +253,16 @@ Respond with ONLY the JSON, no other text."""
         prompt = self._build_prompt(from_address, subject, snippet)
 
         try:
-            # Call LLM
-            model = self._get_model()
+            # Call LLM with retry and timeout (CODE-003, CODE-004)
             logger.info(
                 "LLM CLASSIFIER: Calling %s for subject='%s'",
                 GEMINI_MODEL,
                 subject[:50]
             )
-            response = model.generate_content(prompt)
+            response_text = self._call_llm_with_retry(prompt)
 
             # Parse response
-            result = self._parse_response(response.text)
+            result = self._parse_response(response_text)
 
             counter("returns.classifier.success")
             logger.info(

@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import json
 import os
-import random
+import ipaddress
+import secrets
 import time
 from collections import defaultdict
 from collections.abc import Callable
@@ -61,12 +62,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Cloud Run sets this header - only trust X-Forwarded-For when present
         self._trusted_proxy_header = "X-Cloud-Trace-Context"
 
+    def _is_valid_ip(self, ip_str: str) -> bool:
+        """Validate that a string is a valid IPv4 or IPv6 address.
+
+        SEC-010: Prevents rate limit bypass via malformed X-Forwarded-For headers.
+        """
+        try:
+            ipaddress.ip_address(ip_str)
+            return True
+        except ValueError:
+            return False
+
     def _get_client_ip(self, request: Request) -> str:
         """Extract client IP with spoofing protection.
 
         Security: Only trusts X-Forwarded-For when request comes from Cloud Run
         (indicated by X-Cloud-Trace-Context header). Direct connections use
         the socket IP to prevent IP spoofing attacks.
+
+        SEC-010: Validates IP format to prevent bypass via malformed headers.
         """
         # In production (Cloud Run), trust X-Forwarded-For only if Cloud Trace header present
         is_from_trusted_proxy = self._trusted_proxy_header in request.headers
@@ -75,16 +89,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             # Cloud Run adds the real client IP as first entry in X-Forwarded-For
             forwarded = request.headers.get("X-Forwarded-For")
             if forwarded:
-                return forwarded.split(",")[0].strip()
+                ip = forwarded.split(",")[0].strip()
+                # SEC-010: Validate IP format before trusting
+                if self._is_valid_ip(ip):
+                    return ip
+                # Fall through to socket IP if invalid
 
         # Development mode: allow X-Forwarded-For for testing behind local proxies
         if os.getenv("SHOPQ_ENV", "development") == "development":
             forwarded = request.headers.get("X-Forwarded-For")
             if forwarded:
-                return forwarded.split(",")[0].strip()
+                ip = forwarded.split(",")[0].strip()
+                if self._is_valid_ip(ip):
+                    return ip
 
             real_ip = request.headers.get("X-Real-IP")
-            if real_ip:
+            if real_ip and self._is_valid_ip(real_ip):
                 return real_ip
 
         # Default: use direct connection IP (cannot be spoofed)
@@ -156,7 +176,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Periodically cleanup old IPs (1% chance per request to avoid overhead)
         # This prevents memory leak as new IPs are seen over time
-        if random.randint(1, 100) == 1:
+        # SEC-018: Use cryptographically secure random to prevent predictable cleanup timing
+        if secrets.randbelow(100) == 0:
             self._cleanup_old_buckets()
 
         client_ip = self._get_client_ip(request)
