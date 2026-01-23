@@ -25,4 +25,4 @@ ENV SHOPQ_USE_LLM=true
 EXPOSE 8080
 
 # Run the API
-CMD ["uvicorn", "shopq.api:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "shopq.api.app:app", "--host", "0.0.0.0", "--port", "8080"]

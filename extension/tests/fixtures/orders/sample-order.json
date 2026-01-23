@@ -1,0 +1,30 @@
+{
+  "order_key": "order_abc12345",
+  "user_id": "test_user",
+  "merchant_domain": "amazon.com",
+  "merchant_display_name": "Amazon",
+  "order_id": "123-4567890-1234567",
+  "tracking_number": "1Z999AA10123456784",
+  "purchase_date": "2024-01-10",
+  "ship_date": "2024-01-12",
+  "delivery_date": "2024-01-15",
+  "return_window_days": 30,
+  "explicit_return_by_date": null,
+  "return_by_date": "2024-02-14",
+  "deadline_confidence": "estimated",
+  "item_summary": "Sony WH-1000XM5 Headphones",
+  "amount": 348.00,
+  "currency": "USD",
+  "evidence_message_id": null,
+  "evidence_quote": null,
+  "return_portal_link": null,
+  "order_status": "active",
+  "source_email_ids": ["msg_001", "msg_002", "msg_003"],
+  "created_at": "2024-01-10T15:30:00.000Z",
+  "updated_at": "2024-01-15T18:00:00.000Z",
+  "_testMetadata": {
+    "urgencyLevel": "normal",
+    "daysRemaining": 30,
+    "shouldShowInReturnWatch": true
+  }
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __version__ = "1.0.0"
 
+
 # Lazy imports for returns module
 def __getattr__(name: str):
     """
@@ -11,6 +12,7 @@ def __getattr__(name: str):
     """
     if name in ("ReturnCard", "ReturnCardCreate", "ReturnCardUpdate", "ReturnCardRepository"):
         from shopq.returns import models, repository
+
         if name == "ReturnCard":
             return models.ReturnCard
         if name == "ReturnCardCreate":
@@ -22,6 +24,7 @@ def __getattr__(name: str):
 
     if name in ("ReturnConfidence", "ReturnStatus"):
         from shopq.returns import models
+
         if name == "ReturnConfidence":
             return models.ReturnConfidence
         if name == "ReturnStatus":
@@ -29,6 +32,7 @@ def __getattr__(name: str):
 
     if name == "ReturnableReceiptExtractor":
         from shopq.returns.extractor import ReturnableReceiptExtractor
+
         return ReturnableReceiptExtractor
 
     msg = f"module {__name__!r} has no attribute {name!r}"

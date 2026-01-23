@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -45,7 +45,7 @@ class ExtractionResult:
     stage_reached: str = "none"  # "filter" | "classifier" | "extractor" | "complete"
 
     @classmethod
-    def rejected_at_filter(cls, filter_result: FilterResult) -> "ExtractionResult":
+    def rejected_at_filter(cls, filter_result: FilterResult) -> ExtractionResult:
         return cls(
             success=False,
             filter_result=filter_result,
@@ -58,7 +58,7 @@ class ExtractionResult:
         cls,
         filter_result: FilterResult,
         returnability: ReturnabilityResult,
-    ) -> "ExtractionResult":
+    ) -> ExtractionResult:
         return cls(
             success=False,
             filter_result=filter_result,
@@ -74,7 +74,7 @@ class ExtractionResult:
         filter_result: FilterResult,
         returnability: ReturnabilityResult,
         fields: ExtractedFields,
-    ) -> "ExtractionResult":
+    ) -> ExtractionResult:
         return cls(
             success=True,
             card=card,
@@ -162,6 +162,7 @@ class ReturnableReceiptExtractor:
             - Increments telemetry counters
         """
         counter("returns.extraction.started")
+        logger.info("EXTRACTION START: subject='%s' from='%s'", subject[:60], from_address)
 
         # =========================================================
         # Stage 1: Domain Filter (FREE)
@@ -169,11 +170,16 @@ class ReturnableReceiptExtractor:
         filter_result = self.domain_filter.filter(
             from_address=from_address,
             subject=subject,
-            snippet=body[:500] if body else "",
+            snippet=body[:2000] if body else "",
         )
 
         if not filter_result.is_candidate:
             counter("returns.extraction.rejected_filter")
+            logger.info(
+                "STAGE 1 REJECTED: domain=%s reason=%s",
+                filter_result.domain,
+                filter_result.reason
+            )
             log_event(
                 "returns.extraction.rejected",
                 stage="filter",
@@ -183,6 +189,7 @@ class ReturnableReceiptExtractor:
             return ExtractionResult.rejected_at_filter(filter_result)
 
         counter("returns.extraction.passed_filter")
+        logger.info("STAGE 1 PASSED: domain=%s -> proceeding to LLM classifier", filter_result.domain)
 
         # =========================================================
         # Stage 2: Returnability Classifier (~$0.0001)
@@ -190,11 +197,16 @@ class ReturnableReceiptExtractor:
         returnability = self.returnability_classifier.classify(
             from_address=from_address,
             subject=subject,
-            snippet=body[:500] if body else "",
+            snippet=body[:2000] if body else "",
         )
 
         if not returnability.is_returnable:
             counter("returns.extraction.rejected_classifier")
+            logger.info(
+                "STAGE 2 REJECTED BY LLM: type=%s reason=%s",
+                returnability.receipt_type.value,
+                returnability.reason
+            )
             log_event(
                 "returns.extraction.rejected",
                 stage="classifier",
@@ -204,6 +216,7 @@ class ReturnableReceiptExtractor:
             return ExtractionResult.rejected_at_classifier(filter_result, returnability)
 
         counter("returns.extraction.passed_classifier")
+        logger.info("STAGE 2 PASSED BY LLM: type=%s -> proceeding to extraction", returnability.receipt_type.value)
 
         # =========================================================
         # Stage 3: Field Extraction (~$0.0002)
@@ -250,7 +263,7 @@ class ReturnableReceiptExtractor:
         received_at: datetime | None,
     ) -> ReturnCard:
         """Build ReturnCard from extracted fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         return ReturnCard(
             id=str(uuid.uuid4()),

@@ -120,35 +120,140 @@ class MerchantDomainFilter:
         "chipotle.com",
         "opentable.com",
         "resy.com",
+        # E-cards & greetings (not purchases)
+        "jibjab.com",
+        "hallmark.com",
+        "americangreetings.com",
+        "bluemountain.com",
     }
 
-    # Keywords that suggest a shopping receipt (for unknown domains)
-    SHOPPING_KEYWORDS: set[str] = {
+    # Keywords that suggest PURCHASE CONFIRMATION (not shipping updates)
+    # Per R1: Must have order ID, purchase amount + confirmation, or explicit confirmation language
+    # Note: These are phrases that appear primarily in ORDER CONFIRMATIONS, not updates
+    PURCHASE_CONFIRMATION_KEYWORDS: set[str] = {
+        # Strong confirmation phrases
         "order confirm",
         "order confirmation",
-        "your order",
-        "order #",
-        "order number",
-        "shipment",
-        "shipped",
-        "tracking",
-        "delivery",
-        "delivered",
-        "out for delivery",
-        "package",
+        "order confirmed",
+        "thanks for your order",
+        "thank you for your order",
+        "thank you for your purchase",
+        "thanks for your purchase",
+        "payment received",
+        "payment confirmed",
+        "purchase confirmation",
+        "purchase confirmed",
+        # Order identifiers (with specific patterns)
+        "confirmation #",
+        "confirmation number",
         "receipt",
         "invoice",
-        "purchase",
-        "item",
-        "quantity",
+        # Financial indicators
         "subtotal",
-        "total",
-        "shipping address",
-        "ship to",
+        "order total",
+        # Order patterns
+        "you ordered",
+        "your order of",
+        "order of",  # e.g., "Amazon.com order of Product Name"
     }
 
-    # Anti-keywords that suggest non-shopping receipt
-    NON_SHOPPING_KEYWORDS: set[str] = {
+    # Keywords that indicate DELIVERY (these are GOOD signals - means there's a purchase to track)
+    # These should PASS to the LLM, not be rejected
+    DELIVERY_KEYWORDS: set[str] = {
+        "shipped",
+        "has shipped",
+        "is shipping",
+        "out for delivery",
+        "has been delivered",
+        "was delivered",
+        "delivery update",
+        "on its way",
+        "in transit",
+        "en route",
+        "arriving",
+        "your package",
+        "delivered",
+    }
+
+    # Subject patterns that indicate NON-RETURNABLE purchases (block even from allowlisted domains)
+    # Groceries, food, and perishables are consumed - NEVER returnable
+    # NOTE: These must be specific enough to avoid false positives (e.g., "shipt" matches "shipped")
+    GROCERY_PERISHABLE_PATTERNS: set[str] = {
+        # Grocery services - use full names to avoid substring matches
+        "whole foods",
+        "whole foods market",
+        "amazon fresh",
+        "instacart order",
+        "your grocery",
+        "grocery order",
+        "grocery delivery",
+        "fresh delivery",
+        "walmart grocery",
+        "target grocery",
+        "shipt order",  # Specific to avoid matching "shipped"
+        "shipt delivery",
+        # Food delivery
+        "food delivery",
+        "doordash order",
+        "grubhub order",
+        "uber eats",
+        "postmates order",
+        "seamless order",
+        "caviar order",
+        # Meal kits
+        "meal kit",
+        "hello fresh",
+        "hellofresh",
+        "blue apron",
+        "freshly",
+        "factor meals",
+        "factor_",
+        "home chef",
+        "homechef",
+        "sunbasket",
+        "green chef",
+        # Perishables
+        "flowers",
+        "flower delivery",
+        "bouquet",
+        "1-800-flowers",
+        "ftd",
+        "proflowers",
+        "fresh produce",
+        "perishable",
+    }
+
+    # Keywords for NON-PURCHASE emails (should be EXCLUDED)
+    NON_PURCHASE_KEYWORDS: set[str] = {
+        # Order updates (not confirmations)
+        "update to your order",
+        "an update to",
+        "order update",
+        "update on your order",
+        "changes to your order",
+        "order has been received",  # Ambiguous - seller received vs. delivered
+        "order placed",  # Just placed, not confirmed
+        # Shipping/delivery notifications
+        "rate your experience",
+        "rate your order",
+        "how was your",
+        "leave a review",
+        "write a review",
+        "feedback",
+        # Return reminders (not purchases)
+        "return your items",
+        "return deadline",
+        "time to return",
+        "return window",
+        "don't forget to return",
+        # Marketing
+        "sale ends",
+        "shop now",
+        "buy now",
+        "limited time",
+        "% off",
+        "discount code",
+        # Subscriptions & services
         "subscription",
         "monthly plan",
         "recurring",
@@ -167,6 +272,12 @@ class MerchantDomainFilter:
         "ebook",
         "license",
         "activation",
+        # E-cards & non-products
+        "special delivery from",  # JibJab-style e-cards
+        "sent you",
+        "e-card",
+        "ecard",
+        "greeting",
     }
 
     def __init__(self, merchant_rules_path: Path | None = None):
@@ -220,6 +331,17 @@ class MerchantDomainFilter:
             False if definitely not returnable.
         """
         domain = self._extract_domain(from_address)
+        text_lower = f"{subject} {snippet}".lower()
+
+        # Check grocery/perishable patterns first (never returnable, even from allowlisted domains)
+        for pattern in self.GROCERY_PERISHABLE_PATTERNS:
+            if pattern in text_lower:
+                return FilterResult(
+                    is_candidate=False,
+                    reason=f"grocery_food:{pattern}",
+                    domain=domain,
+                    match_type="blocklist",
+                )
 
         # Check blocklist first (fast reject)
         if domain in self.BLOCKLIST:
@@ -242,6 +364,16 @@ class MerchantDomainFilter:
         # Unknown domain - use keyword heuristics
         return self._check_heuristics(domain, subject, snippet)
 
+    # Shipping service domains where the subdomain indicates the merchant
+    # e.g., bananarepublic.narvar.com -> bananarepublic.com
+    SHIPPING_SERVICE_DOMAINS: set[str] = {
+        "narvar.com",
+        "narvar.io",
+        "returnly.com",
+        "loop.com",
+        "happyreturns.com",
+    }
+
     def _extract_domain(self, from_address: str) -> str:
         """
         Extract domain from email address.
@@ -250,6 +382,7 @@ class MerchantDomainFilter:
         - "noreply@amazon.com" → "amazon.com"
         - "Amazon <noreply@amazon.com>" → "amazon.com"
         - "ship-confirm@amazon.com" → "amazon.com"
+        - "bananarepublic@bananarepublic.narvar.com" → "bananarepublic.com" (shipping service)
         """
         # Extract email from "Name <email>" format
         match = re.search(r"<([^>]+)>", from_address)
@@ -262,9 +395,21 @@ class MerchantDomainFilter:
         else:
             domain = from_address.lower().strip()
 
-        # Handle subdomains - keep only last two parts
-        # e.g., "ship.amazon.com" → "amazon.com"
+        # Handle subdomains
         parts = domain.split(".")
+
+        # Check for shipping service domains (narvar, returnly, etc.)
+        # e.g., "bananarepublic.narvar.com" -> extract "bananarepublic" and make "bananarepublic.com"
+        if len(parts) >= 3:
+            base_domain = ".".join(parts[-2:])
+            if base_domain in self.SHIPPING_SERVICE_DOMAINS:
+                # Use subdomain as merchant (e.g., bananarepublic.narvar.com -> bananarepublic.com)
+                merchant_subdomain = parts[0]
+                if merchant_subdomain and len(merchant_subdomain) > 2:
+                    return f"{merchant_subdomain}.com"
+
+        # Standard subdomain handling - keep only last two parts
+        # e.g., "ship.amazon.com" → "amazon.com"
         if len(parts) > 2:
             # Keep last two parts unless it's a known TLD pattern
             # e.g., "co.uk", "com.au"
@@ -275,51 +420,56 @@ class MerchantDomainFilter:
 
         return domain
 
-    def _check_heuristics(
-        self, domain: str, subject: str, snippet: str
-    ) -> FilterResult:
+    def _check_heuristics(self, domain: str, subject: str, snippet: str) -> FilterResult:
         """
         Use keyword heuristics for unknown domains.
 
-        Checks for shopping-related keywords vs non-shopping keywords.
+        Philosophy: Be PERMISSIVE. Delivery signals are GOOD (means there's a purchase).
+        Let the LLM decide what's returnable vs perishable.
         """
         text = f"{subject} {snippet}".lower()
 
-        # Count shopping vs non-shopping keyword matches
-        shopping_score = sum(1 for kw in self.SHOPPING_KEYWORDS if kw in text)
-        non_shopping_score = sum(1 for kw in self.NON_SHOPPING_KEYWORDS if kw in text)
+        # Count keyword matches
+        purchase_score = sum(1 for kw in self.PURCHASE_CONFIRMATION_KEYWORDS if kw in text)
+        delivery_score = sum(1 for kw in self.DELIVERY_KEYWORDS if kw in text)
+        non_purchase_score = sum(1 for kw in self.NON_PURCHASE_KEYWORDS if kw in text)
 
-        # Decision logic
-        if shopping_score >= 2 and shopping_score > non_shopping_score:
+        # NEW LOGIC: Be permissive - delivery/shipping signals are GOOD
+        # Let the LLM decide what's returnable
+
+        # Rule 1: Delivery/shipping signals → PASS (this means there's a purchase!)
+        if delivery_score >= 1:
             return FilterResult(
                 is_candidate=True,
-                reason=f"shopping_keywords({shopping_score})",
+                reason=f"delivery_signal({delivery_score})",
                 domain=domain,
                 match_type="heuristic",
             )
 
-        if non_shopping_score >= 2:
+        # Rule 2: Purchase confirmation → PASS
+        if purchase_score >= 1:
+            return FilterResult(
+                is_candidate=True,
+                reason=f"purchase_signal({purchase_score})",
+                domain=domain,
+                match_type="heuristic",
+            )
+
+        # Rule 3: Only reject if CLEARLY non-purchase (marketing, feedback, etc.)
+        # AND no positive signals
+        if non_purchase_score >= 2 and purchase_score == 0 and delivery_score == 0:
             return FilterResult(
                 is_candidate=False,
-                reason=f"non_shopping_keywords({non_shopping_score})",
+                reason=f"marketing_only({non_purchase_score})",
                 domain=domain,
                 match_type="heuristic",
             )
 
-        # Borderline case: single shopping keyword match
-        if shopping_score >= 1:
-            return FilterResult(
-                is_candidate=True,
-                reason=f"weak_shopping_signal({shopping_score})",
-                domain=domain,
-                match_type="heuristic",
-            )
-
-        # No signal - default to pass (let LLM decide)
-        # This is conservative: we'd rather have LLM reject than miss a purchase
+        # Rule 4: Unknown - default to PASS (let LLM decide)
+        # Better to let LLM filter than miss a purchase
         return FilterResult(
             is_candidate=True,
-            reason="unknown_domain_no_signal",
+            reason="unknown_let_llm_decide",
             domain=domain,
             match_type="unknown",
         )

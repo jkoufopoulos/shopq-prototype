@@ -14,12 +14,13 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any
 
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel
+from pydantic import Field as PydanticField
 
+from shopq.infrastructure.settings import GEMINI_MODEL, GEMINI_LOCATION, GOOGLE_CLOUD_PROJECT
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.models import ReturnConfidence
@@ -69,8 +70,18 @@ class LLMExtractionSchema(BaseModel):
     amount: float | None = PydanticField(default=None, description="Total purchase amount")
     currency: str = PydanticField(default="USD", description="Currency code")
     order_date: str | None = PydanticField(default=None, description="Order date (YYYY-MM-DD)")
-    delivery_date: str | None = PydanticField(default=None, description="Delivery/shipped date (YYYY-MM-DD)")
-    explicit_return_by: str | None = PydanticField(default=None, description="Explicit return-by date if mentioned (YYYY-MM-DD)")
+    delivery_date: str | None = PydanticField(
+        default=None, description="Delivery/shipped date (YYYY-MM-DD)"
+    )
+    explicit_return_by: str | None = PydanticField(
+        default=None, description="Explicit return-by date if mentioned (YYYY-MM-DD)"
+    )
+    return_window_days: int | None = PydanticField(
+        default=None, description="Return window in days if mentioned (e.g., 30 for '30 days')"
+    )
+    return_policy_quote: str | None = PydanticField(
+        default=None, description="Verbatim quote from email mentioning return policy/deadline"
+    )
 
 
 class ReturnFieldExtractor:
@@ -105,7 +116,7 @@ From: {from_address}
 Body:
 {body}
 
-Extract:
+Extract these fields:
 1. merchant_name: The retailer/store name (e.g., "Amazon", "Target", "Nike")
 2. item_summary: Brief description of items (e.g., "Wireless headphones, Phone case")
 3. order_number: Order/confirmation number if present
@@ -113,11 +124,15 @@ Extract:
 5. currency: Currency code (default USD)
 6. order_date: When order was placed (YYYY-MM-DD format)
 7. delivery_date: Expected or actual delivery date (YYYY-MM-DD format)
-8. explicit_return_by: ONLY if the email explicitly states a return deadline (YYYY-MM-DD format)
+8. explicit_return_by: ONLY if email explicitly states a return deadline date (YYYY-MM-DD format)
+9. return_window_days: Number of days for returns if mentioned (e.g., 30 for "30-day returns")
+10. return_policy_quote: VERBATIM quote from email mentioning return policy (copy exact text)
 
-For dates, use YYYY-MM-DD format. If a date is unclear, omit it.
-For explicit_return_by, ONLY include if the email says something like "return by [date]" or "30 days to return".
-Do NOT guess return dates.
+IMPORTANT for return fields:
+- If the email mentions a return policy, copy the EXACT text into return_policy_quote
+- Only fill explicit_return_by if a specific date appears in the quote
+- Only fill return_window_days if a specific number of days appears in the quote
+- Do NOT guess. If no return info exists, leave these fields null.
 
 Output JSON:
 {{
@@ -128,7 +143,9 @@ Output JSON:
   "currency": "USD",
   "order_date": "2024-01-15" or null,
   "delivery_date": "2024-01-20" or null,
-  "explicit_return_by": "2024-02-20" or null
+  "explicit_return_by": "2024-02-20" or null,
+  "return_window_days": 30 or null,
+  "return_policy_quote": "exact text from email about returns" or null
 }}
 
 Respond with ONLY the JSON."""
@@ -150,12 +167,11 @@ Respond with ONLY the JSON."""
                 import vertexai
                 from vertexai.generative_models import GenerativeModel
 
-                project = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT")
-                if project:
-                    vertexai.init(project=project, location="us-central1")
+                if GOOGLE_CLOUD_PROJECT:
+                    vertexai.init(project=GOOGLE_CLOUD_PROJECT, location=GEMINI_LOCATION)
 
-                self._model = GenerativeModel("gemini-2.0-flash-exp")
-                logger.info("Initialized Gemini model for field extraction")
+                self._model = GenerativeModel(GEMINI_MODEL)
+                logger.info("Initialized Gemini model %s for field extraction", GEMINI_MODEL)
 
             except Exception as e:
                 logger.error("Failed to initialize Gemini model: %s", e)
@@ -211,13 +227,21 @@ Respond with ONLY the JSON."""
         delivery_date = self._parse_date(llm_fields.get("delivery_date"))
         explicit_return_by = self._parse_date(llm_fields.get("explicit_return_by"))
 
+        # Get return policy info from LLM
+        return_window_days = llm_fields.get("return_window_days")
+        return_policy_quote = llm_fields.get("return_policy_quote")
+
         # Compute return_by_date using priority logic
         return_by_date, return_confidence = self._compute_return_by_date(
             explicit_return_by=explicit_return_by,
             order_date=order_date,
             delivery_date=delivery_date,
             merchant_domain=merchant_domain,
+            return_window_days=return_window_days,
         )
+
+        # Build evidence snippet - prefer return policy quote, fallback to body preview
+        evidence = return_policy_quote if return_policy_quote else (body[:200] if body else None)
 
         # Build result
         result = ExtractedFields(
@@ -234,7 +258,7 @@ Respond with ONLY the JSON."""
             currency=llm_fields.get("currency", "USD"),
             return_portal_link=rules_fields.get("return_portal_link"),
             tracking_link=rules_fields.get("tracking_link"),
-            evidence_snippet=body[:200] if body else None,
+            evidence_snippet=evidence,
             extraction_method="hybrid" if llm_fields else "rules",
         )
 
@@ -278,20 +302,45 @@ Respond with ONLY the JSON."""
 
     def _extract_with_llm(self, from_address: str, subject: str, body: str) -> dict:
         """Extract fields using LLM."""
-        # Truncate body for prompt
-        body_truncated = body[:2000] if body else ""
+        # Truncate body for prompt - use 4000 chars to capture return policies at bottom
+        body_truncated = body[:4000] if body else ""
+
+        # LOG: What we're sending to LLM (for validation)
+        logger.info(
+            "LLM extraction input: subject=%s, body_length=%d, truncated_length=%d",
+            subject[:50],
+            len(body) if body else 0,
+            len(body_truncated),
+        )
+        if body_truncated:
+            logger.debug(
+                "LLM input body tail (last 300 chars): %s",
+                body_truncated[-300:] if len(body_truncated) > 300 else body_truncated,
+            )
 
         prompt = self.EXTRACTION_PROMPT.format(
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
-            body=self._sanitize(body_truncated, 2000),
+            body=self._sanitize(body_truncated, 4000),
         )
 
         model = self._get_model()
         response = model.generate_content(prompt)
 
         # Parse JSON response
-        return self._parse_llm_response(response.text)
+        result = self._parse_llm_response(response.text)
+
+        # LOG: What LLM returned (for validation)
+        logger.info(
+            "LLM extraction output: return_window_days=%s, has_quote=%s, explicit_return_by=%s",
+            result.get("return_window_days"),
+            bool(result.get("return_policy_quote")),
+            result.get("explicit_return_by"),
+        )
+        if result.get("return_policy_quote"):
+            logger.debug("LLM extracted quote: %s", result.get("return_policy_quote")[:200])
+
+        return result
 
     def _parse_llm_response(self, response_text: str) -> dict:
         """Parse LLM JSON response."""
@@ -318,20 +367,29 @@ Respond with ONLY the JSON."""
         order_date: datetime | None,
         delivery_date: datetime | None,
         merchant_domain: str,
+        return_window_days: int | None = None,
     ) -> tuple[datetime | None, ReturnConfidence]:
         """
         Compute return_by_date using PRD priority logic.
 
         Priority:
-        1. EXACT: Explicit return-by date in email
-        2. ESTIMATED: Anchor date + merchant rule window
-        3. UNKNOWN: No date info
+        1. EXACT: Explicit return-by date found in email
+        2. ESTIMATED (email): Return window days from email + anchor date
+        3. ESTIMATED (merchant): Merchant rule window + anchor date
+        4. UNKNOWN: No date info
         """
-        # P1: Explicit return-by date
+        # P1: Explicit return-by date from email
         if explicit_return_by:
             return explicit_return_by, ReturnConfidence.EXACT
 
-        # P2: Use merchant rules
+        # P2: Return window from email (with quote evidence)
+        if return_window_days and return_window_days > 0:
+            anchor = delivery_date or order_date
+            if anchor:
+                return_by = anchor + timedelta(days=return_window_days)
+                return return_by, ReturnConfidence.ESTIMATED
+
+        # P3: Use merchant rules as fallback
         merchants = self.merchant_rules.get("merchants", {})
         rule = merchants.get(merchant_domain) or merchants.get("_default")
 
@@ -348,7 +406,7 @@ Respond with ONLY the JSON."""
                 return_by = anchor + timedelta(days=days)
                 return return_by, ReturnConfidence.ESTIMATED
 
-        # P3: Unknown
+        # P4: Unknown
         return None, ReturnConfidence.UNKNOWN
 
     def _guess_merchant(self, from_address: str, subject: str) -> str:
@@ -358,7 +416,9 @@ Respond with ONLY the JSON."""
         if match:
             name = match.group(1).strip()
             # Clean up common suffixes
-            name = re.sub(r"\s*(Customer Service|Support|Orders?|Shipping).*$", "", name, flags=re.IGNORECASE)
+            name = re.sub(
+                r"\s*(Customer Service|Support|Orders?|Shipping).*$", "", name, flags=re.IGNORECASE
+            )
             if name and len(name) > 2:
                 return name
 

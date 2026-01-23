@@ -73,3 +73,59 @@ async function revokeToken(token) {
     });
   });
 }
+
+/**
+ * Get the current user's info from Google
+ * @param {string} token - OAuth token
+ * @returns {Promise<{id: string, email: string, name: string, picture: string}>}
+ */
+async function getUserInfo(token) {
+  const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get user info: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get and cache the current user's ID
+ * Uses Google's unique user ID for consistent identification
+ * @returns {Promise<string>} User ID
+ */
+async function getAuthenticatedUserId() {
+  // Check cache first
+  const cached = await chrome.storage.local.get('authenticatedUserId');
+  if (cached.authenticatedUserId) {
+    return cached.authenticatedUserId;
+  }
+
+  // Get token and fetch user info
+  const token = await getAuthToken();
+  const userInfo = await getUserInfo(token);
+
+  // Cache the user ID
+  await chrome.storage.local.set({
+    authenticatedUserId: userInfo.id,
+    userEmail: userInfo.email,
+    userName: userInfo.name,
+  });
+
+  console.log('✅ User authenticated:', userInfo.email);
+  return userInfo.id;
+}
+
+/**
+ * Clear cached user info (for logout)
+ */
+async function clearUserCache() {
+  await chrome.storage.local.remove(['authenticatedUserId', 'userEmail', 'userName']);
+}
+
+// Functions are available globally when loaded via importScripts in service worker
+// For ES module contexts (content scripts), these are also exported below

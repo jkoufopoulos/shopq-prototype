@@ -168,6 +168,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         )
         self.hour_buckets[client_ip] = self._clean_old_requests(self.hour_buckets[client_ip], 3600)
 
+        # CORS headers for rate limit responses (bypass CORS middleware)
+        origin = request.headers.get("origin", "")
+        cors_headers = {}
+        if origin in [
+            "https://mail.google.com",
+            "chrome-extension://aagmmkcefeaaffcnfgdfhnfokhnajhbb",
+        ]:
+            cors_headers = {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+            }
+
         # Check minute limit
         minute_requests = len(self.minute_buckets[client_ip])
         if minute_requests >= self.requests_per_minute:
@@ -186,7 +198,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     ),
                     "retry_after": 60,
                 },
-                headers={"Retry-After": "60"},
+                headers={"Retry-After": "60", **cors_headers},
             )
 
         # Check hour limit
@@ -206,7 +218,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     ),
                     "retry_after": 3600,
                 },
-                headers={"Retry-After": "3600"},
+                headers={"Retry-After": "3600", **cors_headers},
             )
 
         # Email-based rate limiting for /api/organize endpoint

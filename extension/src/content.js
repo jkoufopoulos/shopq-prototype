@@ -15,8 +15,37 @@
 
 import * as InboxSDK from '@inboxsdk/core';
 import Kefir from 'kefir';
+import DOMPurify from 'dompurify';
 
+// Prevent multiple initializations - use a global flag
+if (window.__SHOPQ_INITIALIZED__) {
+  console.log('ShopQ: Already initialized, skipping duplicate');
+} else {
+  window.__SHOPQ_INITIALIZED__ = true;
+  initShopQ();
+}
+
+function initShopQ() {
 console.log('ShopQ: Content script loaded (bundled)');
+
+// =============================================================================
+// HTML SANITIZATION (XSS Protection)
+// =============================================================================
+
+/**
+ * Sanitize HTML content to prevent XSS attacks.
+ * Use this for any HTML content from external sources (API responses, etc.)
+ * @param {string} html - Raw HTML string
+ * @returns {string} Sanitized HTML safe for innerHTML
+ */
+function sanitizeHtml(html) {
+  if (!html) return '';
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', 'td', 'th', 'thead', 'tbody'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+    ALLOW_DATA_ATTR: false,
+  });
+}
 
 // =============================================================================
 // CLEANUP: Remove any stale ShopQ elements/styles from previous loads
@@ -404,10 +433,12 @@ async function initializeVisualLayer() {
 }
 
 // =============================================================================
-// TEST HOOKS
+// TEST HOOKS (for E2E testing only - uses '*' for same-window communication)
 // =============================================================================
 
 // Listen for postMessage from page context (for E2E tests)
+// Note: These hooks use '*' intentionally since they communicate within the same window
+// for test purposes. The event.source check ensures only same-window messages are processed.
 window.addEventListener('message', async (event) => {
   if (event.source !== window) return;
 
@@ -802,9 +833,9 @@ function createDigestPanelContent() {
         });
       }
     } else if (result.data?.html) {
-      content.innerHTML = `<div style="line-height: 1.6;">${result.data.html}</div>`;
+      content.innerHTML = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.html)}</div>`;
     } else if (result.data?.narrative) {
-      content.innerHTML = `<div style="line-height: 1.6;">${result.data.narrative}</div>`;
+      content.innerHTML = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.narrative)}</div>`;
     } else {
       content.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
@@ -827,6 +858,9 @@ function createDigestPanelContent() {
  */
 async function initializeDigestSidebar(sdk) {
   console.log('ShopQ: Setting up Return Watch sidebar with IFRAME ISOLATION...');
+
+  // SEC-007: Use explicit origin for postMessage instead of '*'
+  const EXTENSION_ORIGIN = chrome.runtime.getURL('').slice(0, -1); // Remove trailing slash
 
   const panelEl = document.createElement('div');
   panelEl.id = 'shopq-returns-panel';
@@ -854,28 +888,113 @@ async function initializeDigestSidebar(sdk) {
 
   // Track iframe ready state
   let iframeReady = false;
-  let pendingReturns = null;
 
   // Listen for messages from iframe
   window.addEventListener('message', async (event) => {
+    // SEC-007: Validate message origin - only accept from our extension iframe
+    if (event.origin !== EXTENSION_ORIGIN) {
+      // Silently ignore messages from other origins
+      return;
+    }
+
     // Returns sidebar ready
     if (event.data?.type === 'SHOPQ_RETURNS_SIDEBAR_READY') {
       console.log('ShopQ: Returns sidebar iframe ready');
       iframeReady = true;
-      // Fetch and send returns data
-      await fetchAndSendReturns();
+      // Fetch and send returns data (v0.6.2)
+      await fetchReturnWatchOrders();
+      await fetchAllPurchases();
     }
 
-    // Fetch returns request from sidebar
-    if (event.data?.type === 'SHOPQ_FETCH_RETURNS') {
-      console.log('ShopQ: Fetching returns data...');
-      await fetchAndSendReturns();
+    // v0.6.2: Get Return Watch orders
+    if (event.data?.type === 'SHOPQ_GET_RETURN_WATCH') {
+      console.log('ShopQ: Fetching Return Watch orders...');
+      await fetchReturnWatchOrders();
     }
 
-    // Update return status request
-    if (event.data?.type === 'SHOPQ_UPDATE_RETURN_STATUS') {
-      console.log('ShopQ: Updating return status:', event.data.returnId, event.data.status);
-      await updateReturnStatus(event.data.returnId, event.data.status);
+    // v0.6.2: Get All Purchases
+    if (event.data?.type === 'SHOPQ_GET_ALL_PURCHASES') {
+      console.log('ShopQ: Fetching All Purchases...');
+      await fetchAllPurchases();
+    }
+
+    // v0.6.2: Update order status
+    if (event.data?.type === 'SHOPQ_UPDATE_ORDER_STATUS') {
+      console.log('ShopQ: Updating order status:', event.data.order_key, event.data.status);
+      await updateOrderStatus(event.data.order_key, event.data.status);
+    }
+
+    // v0.6.2: Enrich order (on-demand LLM)
+    if (event.data?.type === 'SHOPQ_ENRICH_ORDER') {
+      console.log('ShopQ: Enriching order:', event.data.order_key);
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: 'ENRICH_ORDER',
+          order_key: event.data.order_key
+        });
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_ENRICH_RESULT',
+            ...result
+          }, EXTENSION_ORIGIN);
+        }
+      } catch (err) {
+        console.error('ShopQ: Enrichment failed:', err);
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_ENRICH_RESULT',
+            state: 'error',
+            error: err.message
+          }, EXTENSION_ORIGIN);
+        }
+      }
+    }
+
+    // v0.6.2: Set merchant rule
+    if (event.data?.type === 'SHOPQ_SET_MERCHANT_RULE') {
+      console.log('ShopQ: Setting merchant rule:', event.data.merchant_domain, event.data.window_days);
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'SET_MERCHANT_RULE',
+          merchant_domain: event.data.merchant_domain,
+          window_days: event.data.window_days
+        });
+        // Recompute deadlines for this merchant
+        await chrome.runtime.sendMessage({
+          type: 'RECOMPUTE_MERCHANT_DEADLINES',
+          merchant_domain: event.data.merchant_domain
+        });
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_MERCHANT_RULE_SET',
+            merchant_domain: event.data.merchant_domain
+          }, EXTENSION_ORIGIN);
+        }
+        // Refresh data
+        await fetchReturnWatchOrders();
+        await fetchAllPurchases();
+      } catch (err) {
+        console.error('ShopQ: Set merchant rule failed:', err);
+      }
+    }
+
+    // v0.6.2: Get single order
+    if (event.data?.type === 'SHOPQ_GET_ORDER') {
+      console.log('ShopQ: Getting order:', event.data.order_key);
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: 'GET_ORDER',
+          order_key: event.data.order_key
+        });
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_ORDER_DATA',
+            order: result.order
+          }, EXTENSION_ORIGIN);
+        }
+      } catch (err) {
+        console.error('ShopQ: Get order failed:', err);
+      }
     }
 
     // Handle close button - close the sidebar panel
@@ -886,77 +1005,138 @@ async function initializeDigestSidebar(sdk) {
         shopqIcon.click();
       }
     }
+
+    // Handle rescan request from sidebar
+    if (event.data?.type === 'SHOPQ_RESCAN_EMAILS') {
+      console.log('ShopQ: Manual rescan requested...');
+      chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
+        .then(result => {
+          console.log('ShopQ: Rescan complete:', result);
+          // Notify iframe that scan is complete
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', result }, EXTENSION_ORIGIN);
+          }
+          // Refresh returns data (v0.6.2)
+          fetchReturnWatchOrders();
+          fetchAllPurchases();
+        })
+        .catch(err => {
+          console.error('ShopQ: Rescan failed:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', error: err.message }, EXTENSION_ORIGIN);
+          }
+        });
+    }
   });
 
-  // Fetch returns from API and send to iframe
-  async function fetchAndSendReturns() {
+  // v0.6.2: Fetch Return Watch orders from background
+  async function fetchReturnWatchOrders() {
     try {
-      const userId = await getUserId();
-      const response = await fetch(
-        `${API_BASE_URL}/api/returns?user_id=${encodeURIComponent(userId)}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('ShopQ: Fetched', data.cards?.length || 0, 'returns');
-
+      const result = await chrome.runtime.sendMessage({ type: 'GET_RETURN_WATCH_ORDERS' });
       if (iframeReady && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
-          type: 'SHOPQ_RETURNS_DATA',
-          returns: data.cards || [],
-        }, '*');
-      } else {
-        pendingReturns = data.cards || [];
+          type: 'SHOPQ_RETURN_WATCH_DATA',
+          expiringSoon: result.expiringSoon || [],
+          active: result.active || []
+        }, EXTENSION_ORIGIN);
       }
-    } catch (error) {
-      console.error('ShopQ: Failed to fetch returns:', error);
-      if (iframeReady && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({
-          type: 'SHOPQ_RETURNS_ERROR',
-          message: error.message,
-        }, '*');
-      }
+      // Update expiring indicator
+      updateExpiringIndicator([...result.expiringSoon || [], ...result.active || []]);
+    } catch (err) {
+      console.error('ShopQ: Failed to fetch Return Watch orders:', err);
     }
   }
 
-  // Update return status via API
-  async function updateReturnStatus(returnId, newStatus) {
+  // v0.6.2: Fetch All Purchases from background
+  async function fetchAllPurchases() {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/returns/${encodeURIComponent(returnId)}/status`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      const result = await chrome.runtime.sendMessage({ type: 'GET_ALL_PURCHASES' });
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_ALL_PURCHASES_DATA',
+          orders: result.orders || []
+        }, EXTENSION_ORIGIN);
       }
+    } catch (err) {
+      console.error('ShopQ: Failed to fetch All Purchases:', err);
+    }
+  }
 
-      console.log('ShopQ: Status updated successfully');
-
-      // Notify iframe of success
+  // v0.6.2: Update order status via background
+  async function updateOrderStatus(orderKey, newStatus) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'UPDATE_ORDER_STATUS',
+        order_key: orderKey,
+        status: newStatus
+      });
       if (iframeReady && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
           type: 'SHOPQ_STATUS_UPDATED',
-          returnId,
-          status: newStatus,
-        }, '*');
+          order_key: orderKey,
+          status: newStatus
+        }, EXTENSION_ORIGIN);
       }
+      // Refresh data
+      await fetchReturnWatchOrders();
+      await fetchAllPurchases();
+    } catch (err) {
+      console.error('ShopQ: Failed to update order status:', err);
+    }
+  }
 
-      // Refresh the list
-      await fetchAndSendReturns();
-    } catch (error) {
-      console.error('ShopQ: Failed to update status:', error);
+  /**
+   * Update the sidebar icon to show flashing red indicator when returns are expiring soon
+   * Expiring soon = within 7 days
+   * v0.6.2: Uses Order model with order_status and return_by_date
+   */
+  function updateExpiringIndicator(orders) {
+    const shopqIcon = document.querySelector('[data-tooltip="Return Watch"]');
+    if (!shopqIcon) {
+      console.log('ShopQ: Could not find sidebar icon for expiring indicator');
+      return;
+    }
+
+    // Calculate expiring soon count (within 7 days)
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const expiringCount = orders.filter(order => {
+      // v0.6.2: Use order_status and return_by_date
+      const status = order.order_status || order.status;
+      const returnDate = order.return_by_date || order.return_deadline;
+      if (status !== 'active' || !returnDate) return false;
+      const deadline = new Date(returnDate);
+      return deadline >= now && deadline <= sevenDaysFromNow;
+    }).length;
+
+    console.log('ShopQ: Expiring returns count:', expiringCount);
+
+    // Add or remove the flashing indicator
+    const existingDot = shopqIcon.querySelector('.shopq-expiring-dot');
+
+    if (expiringCount > 0) {
+      // Add flashing class to icon
+      shopqIcon.classList.add('shopq-has-expiring');
+      shopqIcon.style.position = 'relative';
+
+      // Add red dot if not already present
+      if (!existingDot) {
+        const dot = document.createElement('div');
+        dot.className = 'shopq-expiring-dot';
+        dot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
+        shopqIcon.appendChild(dot);
+        console.log('ShopQ: Added expiring returns indicator');
+      } else {
+        existingDot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
+      }
+    } else {
+      // Remove flashing class and dot
+      shopqIcon.classList.remove('shopq-has-expiring');
+      if (existingDot) {
+        existingDot.remove();
+        console.log('ShopQ: Removed expiring returns indicator');
+      }
     }
   }
 
@@ -973,10 +1153,19 @@ async function initializeDigestSidebar(sdk) {
   try {
     // Use InboxSDK's Global.addSidebarContentPanel API
     console.log('ShopQ: Calling sdk.Global.addSidebarContentPanel...');
+    // Use data URL for icon to avoid chrome-extension:// loading issues
+    const iconDataUrl = 'data:image/svg+xml,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+    `);
+
     const panelView = await sdk.Global.addSidebarContentPanel({
       el: panelEl,
       title: 'Return Watch',
-      iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+      iconUrl: iconDataUrl,
     });
 
     console.log('ShopQ: Return Watch sidebar registered successfully:', panelView);
@@ -989,7 +1178,8 @@ async function initializeDigestSidebar(sdk) {
     panelView.on('activate', () => {
       console.log('ShopQ: Return Watch panel activated');
       // Refresh returns data when panel opens
-      fetchAndSendReturns();
+      fetchReturnWatchOrders();
+      fetchAllPurchases();
     });
 
     panelView.on('deactivate', () => {
@@ -1028,12 +1218,24 @@ async function initializeDigestSidebar(sdk) {
       lastDigestRefreshTime = now;
 
       console.log('ShopQ: External returns refresh triggered');
-      fetchAndSendReturns();
+      fetchReturnWatchOrders();
+      fetchAllPurchases();
     };
 
     // Auto-open on first load
     panelView.open();
     console.log('ShopQ: Return Watch sidebar opened on initial load');
+
+    // Trigger background scan when Gmail opens
+    console.log('ShopQ: Triggering background purchase scan...');
+    chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
+      .then(result => {
+        console.log('ShopQ: Auto-scan complete:', result);
+        // Refresh sidebar with new data after scan completes
+        fetchReturnWatchOrders();
+        fetchAllPurchases();
+      })
+      .catch(err => console.log('ShopQ: Auto-scan error:', err));
 
   } catch (error) {
     console.error('ShopQ: Failed to add Return Watch sidebar panel:', error);
@@ -1288,9 +1490,9 @@ function toggleDigestDrawer() {
         </div>
       `;
     } else if (result.data?.html) {
-      content.innerHTML = `<div style="line-height: 1.6;">${result.data.html}</div>`;
+      content.innerHTML = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.html)}</div>`;
     } else if (result.data?.narrative) {
-      content.innerHTML = `<div style="line-height: 1.6;">${result.data.narrative}</div>`;
+      content.innerHTML = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.narrative)}</div>`;
     } else {
       content.innerHTML = `<p style="text-align: center; color: #5f6368;">No digest available.</p>`;
     }
@@ -1306,3 +1508,5 @@ if (document.readyState === 'loading') {
 } else {
   initializeVisualLayer();
 }
+
+} // End of initShopQ()

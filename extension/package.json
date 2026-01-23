@@ -12,6 +12,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@inboxsdk/core": "^2.2.11"
+    "@inboxsdk/core": "^2.2.11",
+    "dompurify": "^3.0.8"
   }
 }

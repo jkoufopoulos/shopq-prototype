@@ -5,25 +5,37 @@
 
 const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
 
-// Get user ID from storage
-async function getUserId() {
-  try {
-    const data = await chrome.storage.local.get('userId');
-    return data.userId || 'default_user';
-  } catch {
-    return 'default_user';
-  }
+// Get OAuth token for API authentication
+async function getAuthToken() {
+  return new Promise((resolve, reject) => {
+    chrome.identity.getAuthToken({ interactive: true }, (token) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(token);
+      }
+    });
+  });
+}
+
+// Get headers with authentication
+async function getAuthHeaders() {
+  const token = await getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
 }
 
 // Update return counts display
 async function updateReturnCounts() {
   try {
-    const userId = await getUserId();
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${API_BASE_URL}/api/returns/counts?user_id=${encodeURIComponent(userId)}`,
+      `${API_BASE_URL}/api/returns/counts`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       }
     );
 

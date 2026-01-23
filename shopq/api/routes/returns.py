@@ -9,9 +9,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
+from shopq.api.middleware.user_auth import AuthenticatedUser, get_current_user
 from shopq.observability.logging import get_logger
 from shopq.returns import (
     ReturnCard,
@@ -57,7 +58,7 @@ class ReturnCardResponse(BaseModel):
     updated_at: str
 
     @classmethod
-    def from_card(cls, card: ReturnCard) -> "ReturnCardResponse":
+    def from_card(cls, card: ReturnCard) -> ReturnCardResponse:
         """Convert ReturnCard to API response."""
         return cls(
             id=card.id,
@@ -66,7 +67,9 @@ class ReturnCardResponse(BaseModel):
             merchant_domain=card.merchant_domain,
             item_summary=card.item_summary,
             status=card.status if isinstance(card.status, str) else card.status.value,
-            confidence=card.confidence if isinstance(card.confidence, str) else card.confidence.value,
+            confidence=card.confidence
+            if isinstance(card.confidence, str)
+            else card.confidence.value,
             source_email_ids=card.source_email_ids,
             order_number=card.order_number,
             amount=card.amount,
@@ -95,7 +98,6 @@ class ReturnCardListResponse(BaseModel):
 class CreateReturnCardRequest(BaseModel):
     """Request to create a new return card."""
 
-    user_id: str
     merchant: str
     merchant_domain: str = ""
     item_summary: str
@@ -145,17 +147,21 @@ class StatusCountsResponse(BaseModel):
 
 @router.get("", response_model=ReturnCardListResponse)
 async def list_returns(
-    user_id: str = Query(..., description="User ID"),
-    status: str | None = Query(None, description="Comma-separated statuses: active,expiring_soon,expired,returned,dismissed"),
+    user: AuthenticatedUser = Depends(get_current_user),
+    status: str | None = Query(
+        None,
+        description="Comma-separated statuses: active,expiring_soon,expired,returned,dismissed",
+    ),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ) -> ReturnCardListResponse:
     """
-    List return cards for a user.
+    List return cards for the authenticated user.
 
     Filters by status if provided. Returns cards ordered by return_by_date (soonest first).
     """
     try:
+        user_id = user.id
         # Refresh statuses first (update expired/expiring_soon based on current date)
         ReturnCardRepository.refresh_statuses(user_id)
 
@@ -189,15 +195,16 @@ async def list_returns(
 
 @router.get("/expiring", response_model=list[ReturnCardResponse])
 async def list_expiring_returns(
-    user_id: str = Query(..., description="User ID"),
+    user: AuthenticatedUser = Depends(get_current_user),
     threshold_days: int = Query(7, ge=1, le=30, description="Days to look ahead"),
 ) -> list[ReturnCardResponse]:
     """
-    Get returns expiring within threshold days.
+    Get returns expiring within threshold days for the authenticated user.
 
     Returns cards with return_by_date within threshold, ordered by urgency.
     """
     try:
+        user_id = user.id
         # Refresh statuses first
         ReturnCardRepository.refresh_statuses(user_id, threshold_days)
 
@@ -211,14 +218,15 @@ async def list_expiring_returns(
 
 @router.get("/counts", response_model=StatusCountsResponse)
 async def get_status_counts(
-    user_id: str = Query(..., description="User ID"),
+    user: AuthenticatedUser = Depends(get_current_user),
 ) -> StatusCountsResponse:
     """
-    Get count of cards by status.
+    Get count of cards by status for the authenticated user.
 
     Useful for dashboard summary and badge counts.
     """
     try:
+        user_id = user.id
         # Refresh statuses first
         ReturnCardRepository.refresh_statuses(user_id)
 
@@ -239,32 +247,48 @@ async def get_status_counts(
 
 
 @router.get("/{card_id}", response_model=ReturnCardResponse)
-async def get_return(card_id: str) -> ReturnCardResponse:
+async def get_return(
+    card_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ReturnCardResponse:
     """
     Get a single return card by ID.
+
+    Only returns cards owned by the authenticated user.
     """
     card = ReturnCardRepository.get_by_id(card_id)
     if not card:
+        raise HTTPException(status_code=404, detail="Return card not found")
+
+    # Verify ownership
+    if card.user_id != user.id:
         raise HTTPException(status_code=404, detail="Return card not found")
 
     return ReturnCardResponse.from_card(card)
 
 
 @router.post("", response_model=ReturnCardResponse, status_code=201)
-async def create_return(request: CreateReturnCardRequest) -> ReturnCardResponse:
+async def create_return(
+    request: CreateReturnCardRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ReturnCardResponse:
     """
-    Create a new return card.
+    Create a new return card for the authenticated user.
 
     Called by the extractor when processing emails.
     """
     try:
         # Parse dates if provided
         order_date = datetime.fromisoformat(request.order_date) if request.order_date else None
-        delivery_date = datetime.fromisoformat(request.delivery_date) if request.delivery_date else None
-        return_by_date = datetime.fromisoformat(request.return_by_date) if request.return_by_date else None
+        delivery_date = (
+            datetime.fromisoformat(request.delivery_date) if request.delivery_date else None
+        )
+        return_by_date = (
+            datetime.fromisoformat(request.return_by_date) if request.return_by_date else None
+        )
 
         card_create = ReturnCardCreate(
-            user_id=request.user_id,
+            user_id=user.id,
             merchant=request.merchant,
             merchant_domain=request.merchant_domain,
             item_summary=request.item_summary,
@@ -294,13 +318,23 @@ async def create_return(request: CreateReturnCardRequest) -> ReturnCardResponse:
 
 
 @router.put("/{card_id}/status", response_model=ReturnCardResponse)
-async def update_return_status(card_id: str, request: UpdateStatusRequest) -> ReturnCardResponse:
+async def update_return_status(
+    card_id: str,
+    request: UpdateStatusRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ReturnCardResponse:
     """
     Update a card's status (mark returned or dismissed).
 
     This is the primary user action - marking items as returned or dismissing them.
+    Only the card owner can update status.
     """
     try:
+        # Verify ownership first
+        existing_card = ReturnCardRepository.get_by_id(card_id)
+        if not existing_card or existing_card.user_id != user.id:
+            raise HTTPException(status_code=404, detail="Return card not found")
+
         new_status = ReturnStatus(request.status)
 
         # Only allow user-initiated status changes
@@ -327,15 +361,28 @@ async def update_return_status(card_id: str, request: UpdateStatusRequest) -> Re
 
 
 @router.patch("/{card_id}", response_model=ReturnCardResponse)
-async def update_return(card_id: str, request: UpdateCardRequest) -> ReturnCardResponse:
+async def update_return(
+    card_id: str,
+    request: UpdateCardRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ReturnCardResponse:
     """
     Update a card's fields (notes, return_by_date, etc.)
+
+    Only the card owner can update fields.
     """
     try:
+        # Verify ownership first
+        existing_card = ReturnCardRepository.get_by_id(card_id)
+        if not existing_card or existing_card.user_id != user.id:
+            raise HTTPException(status_code=404, detail="Return card not found")
+
         updates = ReturnCardUpdate(
             status=ReturnStatus(request.status) if request.status else None,
             notes=request.notes,
-            return_by_date=datetime.fromisoformat(request.return_by_date) if request.return_by_date else None,
+            return_by_date=datetime.fromisoformat(request.return_by_date)
+            if request.return_by_date
+            else None,
             return_portal_link=request.return_portal_link,
         )
 
@@ -354,31 +401,42 @@ async def update_return(card_id: str, request: UpdateCardRequest) -> ReturnCardR
         raise HTTPException(status_code=500, detail="Failed to update card")
 
 
-@router.delete("/{card_id}", status_code=204)
-async def delete_return(card_id: str) -> None:
+@router.delete("/{card_id}")
+async def delete_return(
+    card_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> Response:
     """
     Delete a return card.
 
     Use sparingly - prefer marking as dismissed instead.
+    Only the card owner can delete.
     """
+    # Verify ownership first
+    existing_card = ReturnCardRepository.get_by_id(card_id)
+    if not existing_card or existing_card.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Return card not found")
+
     deleted = ReturnCardRepository.delete(card_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Return card not found")
+    return Response(status_code=204)
 
 
 @router.post("/refresh-statuses")
 async def refresh_statuses(
-    user_id: str = Query(..., description="User ID"),
+    user: AuthenticatedUser = Depends(get_current_user),
     threshold_days: int = Query(7, ge=1, le=30, description="Days threshold for expiring_soon"),
 ) -> dict[str, Any]:
     """
-    Refresh return card statuses based on current date.
+    Refresh return card statuses based on current date for the authenticated user.
 
     Updates:
     - active -> expiring_soon if within threshold_days
     - active/expiring_soon -> expired if past return_by_date
     """
     try:
+        user_id = user.id
         updated_count = ReturnCardRepository.refresh_statuses(user_id, threshold_days)
         return {
             "updated_count": updated_count,
@@ -392,7 +450,6 @@ async def refresh_statuses(
 class ProcessEmailRequest(BaseModel):
     """Request to process an email through the extraction pipeline."""
 
-    user_id: str
     email_id: str
     from_address: str
     subject: str
@@ -409,9 +466,12 @@ class ProcessEmailResponse(BaseModel):
 
 
 @router.post("/process", response_model=ProcessEmailResponse)
-async def process_email(request: ProcessEmailRequest) -> ProcessEmailResponse:
+async def process_email(
+    request: ProcessEmailRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ProcessEmailResponse:
     """
-    Process an email through the 3-stage extraction pipeline.
+    Process an email through the 3-stage extraction pipeline for the authenticated user.
 
     Stages:
     1. Domain Filter - Fast rule-based pre-filter (FREE)
@@ -423,9 +483,10 @@ async def process_email(request: ProcessEmailRequest) -> ProcessEmailResponse:
     from shopq.returns import ReturnableReceiptExtractor
 
     try:
+        user_id = user.id
         extractor = ReturnableReceiptExtractor()
         result = extractor.extract_from_email(
-            user_id=request.user_id,
+            user_id=user_id,
             email_id=request.email_id,
             from_address=request.from_address,
             subject=request.subject,
@@ -433,40 +494,108 @@ async def process_email(request: ProcessEmailRequest) -> ProcessEmailResponse:
         )
 
         if result.success and result.card:
-            # Save the card to the database
-            from shopq.returns import ReturnCardCreate
-
-            card_create = ReturnCardCreate(
-                user_id=result.card.user_id,
-                merchant=result.card.merchant,
-                merchant_domain=result.card.merchant_domain,
-                item_summary=result.card.item_summary,
-                confidence=result.card.confidence,
-                source_email_ids=result.card.source_email_ids,
-                order_number=result.card.order_number,
-                amount=result.card.amount,
-                currency=result.card.currency,
-                order_date=result.card.order_date,
-                delivery_date=result.card.delivery_date,
-                return_by_date=result.card.return_by_date,
-                return_portal_link=result.card.return_portal_link,
-                shipping_tracking_link=result.card.shipping_tracking_link,
-                evidence_snippet=result.card.evidence_snippet,
-            )
-
-            saved_card = ReturnCardRepository.create(card_create)
+            # Log extraction result for debugging dedup issues
             logger.info(
-                "Processed email %s -> created card %s for %s",
-                request.email_id,
-                saved_card.id,
-                saved_card.merchant,
+                "DEDUP CHECK: merchant=%s, order_number=%s, item_summary=%s",
+                result.card.merchant_domain,
+                result.card.order_number,
+                result.card.item_summary[:50] if result.card.item_summary else None,
             )
 
-            return ProcessEmailResponse(
-                success=True,
-                stage_reached=result.stage_reached,
-                card=ReturnCardResponse.from_card(saved_card),
-            )
+            # Check for existing card (deduplication)
+            # Strategy 1: Match by merchant_domain + order_number
+            existing_card = None
+            if result.card.order_number:
+                existing_card = ReturnCardRepository.find_by_order_key(
+                    user_id=user_id,
+                    merchant_domain=result.card.merchant_domain,
+                    order_number=result.card.order_number,
+                    tracking_number=None,
+                )
+                if existing_card:
+                    logger.info("DEDUP MATCH: Found by order_number %s", result.card.order_number)
+
+            # Strategy 2: Match by merchant_domain + item_summary (for when order_number missing)
+            if not existing_card and result.card.item_summary:
+                existing_card = ReturnCardRepository.find_by_item_summary(
+                    user_id=user_id,
+                    merchant_domain=result.card.merchant_domain,
+                    item_summary=result.card.item_summary,
+                )
+                if existing_card:
+                    logger.info("DEDUP MATCH: Found by item_summary similarity")
+
+            # Strategy 3: Check if this email was already processed
+            if not existing_card:
+                existing_card = ReturnCardRepository.find_by_email_id(user_id, request.email_id)
+                if existing_card:
+                    logger.info("DEDUP MATCH: Found by email_id")
+
+            if not existing_card:
+                logger.info(
+                    "DEDUP NO MATCH: Creating new card for %s - %s",
+                    result.card.merchant_domain,
+                    result.card.item_summary[:40] if result.card.item_summary else "unknown",
+                )
+
+            if existing_card:
+                # Merge email into existing card with new data
+                # This updates the card if the new email has better info
+                # (e.g., delivery date from shipping email, return policy from confirmation)
+                new_data = {
+                    "delivery_date": result.card.delivery_date,
+                    "return_by_date": result.card.return_by_date,
+                    "item_summary": result.card.item_summary,
+                    "evidence_snippet": result.card.evidence_snippet,
+                    "return_portal_link": result.card.return_portal_link,
+                    "shipping_tracking_link": result.card.shipping_tracking_link,
+                }
+                saved_card = ReturnCardRepository.merge_email_into_card(
+                    existing_card.id, request.email_id, new_data
+                )
+                if saved_card:
+                    logger.info(
+                        "Processed email %s -> merged into existing card %s for %s",
+                        request.email_id,
+                        saved_card.id,
+                        saved_card.merchant,
+                    )
+            else:
+                # Create new card
+                from shopq.returns import ReturnCardCreate
+
+                card_create = ReturnCardCreate(
+                    user_id=result.card.user_id,
+                    merchant=result.card.merchant,
+                    merchant_domain=result.card.merchant_domain,
+                    item_summary=result.card.item_summary,
+                    confidence=result.card.confidence,
+                    source_email_ids=result.card.source_email_ids,
+                    order_number=result.card.order_number,
+                    amount=result.card.amount,
+                    currency=result.card.currency,
+                    order_date=result.card.order_date,
+                    delivery_date=result.card.delivery_date,
+                    return_by_date=result.card.return_by_date,
+                    return_portal_link=result.card.return_portal_link,
+                    shipping_tracking_link=result.card.shipping_tracking_link,
+                    evidence_snippet=result.card.evidence_snippet,
+                )
+
+                saved_card = ReturnCardRepository.create(card_create)
+                logger.info(
+                    "Processed email %s -> created new card %s for %s",
+                    request.email_id,
+                    saved_card.id,
+                    saved_card.merchant,
+                )
+
+            if saved_card:
+                return ProcessEmailResponse(
+                    success=True,
+                    stage_reached=result.stage_reached,
+                    card=ReturnCardResponse.from_card(saved_card),
+                )
 
         return ProcessEmailResponse(
             success=False,

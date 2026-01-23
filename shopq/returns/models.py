@@ -7,29 +7,34 @@ and associated metadata extracted from emails.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
+def utc_now() -> datetime:
+    """Return current UTC time as a timezone-aware datetime."""
+    return datetime.now(UTC)
+
+
 class ReturnStatus(str, Enum):
     """Status of a return card in the tracking lifecycle."""
 
-    ACTIVE = "active"              # Return window open, not expiring soon
+    ACTIVE = "active"  # Return window open, not expiring soon
     EXPIRING_SOON = "expiring_soon"  # Within threshold (default 7 days)
-    EXPIRED = "expired"            # Past return-by date
-    RETURNED = "returned"          # User marked as returned
-    DISMISSED = "dismissed"        # User dismissed (doesn't want to track)
+    EXPIRED = "expired"  # Past return-by date
+    RETURNED = "returned"  # User marked as returned
+    DISMISSED = "dismissed"  # User dismissed (doesn't want to track)
 
 
 class ReturnConfidence(str, Enum):
     """Confidence level for return-by date."""
 
-    EXACT = "exact"        # Explicit return-by date found in email
+    EXACT = "exact"  # Explicit return-by date found in email
     ESTIMATED = "estimated"  # Calculated from merchant rules + anchor date
-    UNKNOWN = "unknown"    # No date info available
+    UNKNOWN = "unknown"  # No date info available
 
 
 class ReturnCard(BaseModel):
@@ -62,14 +67,18 @@ class ReturnCard(BaseModel):
     order_date: datetime | None = Field(default=None)
     delivery_date: datetime | None = Field(default=None)
     return_by_date: datetime | None = Field(default=None)
-    return_portal_link: str | None = Field(default=None, description="URL to merchant return portal")
+    return_portal_link: str | None = Field(
+        default=None, description="URL to merchant return portal"
+    )
     shipping_tracking_link: str | None = Field(default=None)
-    evidence_snippet: str | None = Field(default=None, description="Key text from email (for provenance)")
+    evidence_snippet: str | None = Field(
+        default=None, description="Key text from email (for provenance)"
+    )
     notes: str | None = Field(default=None, description="User notes")
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     # Alert tracking
     alerted_at: datetime | None = Field(default=None, description="When user was first alerted")
@@ -89,7 +98,7 @@ class ReturnCard(BaseModel):
         return v.strip()
 
     @model_validator(mode="after")
-    def validate_version(self) -> "ReturnCard":
+    def validate_version(self) -> ReturnCard:
         if self.version != "v1":
             raise ValueError("ReturnCard version must be 'v1'")
         return self
@@ -113,7 +122,11 @@ class ReturnCard(BaseModel):
         """Calculate days remaining until return window closes."""
         if self.return_by_date is None:
             return None
-        delta = self.return_by_date - datetime.utcnow()
+        # Ensure comparison is timezone-aware
+        return_date = self.return_by_date
+        if return_date.tzinfo is None:
+            return_date = return_date.replace(tzinfo=UTC)
+        delta = return_date - utc_now()
         return max(0, delta.days)
 
     def compute_status(self, threshold_days: int = 7) -> ReturnStatus:
@@ -142,14 +155,14 @@ class ReturnCard(BaseModel):
 
         if days <= 0:
             return ReturnStatus.EXPIRED
-        elif days <= threshold_days:
+        if days <= threshold_days:
             return ReturnStatus.EXPIRING_SOON
-        else:
-            return ReturnStatus.ACTIVE
+        return ReturnStatus.ACTIVE
 
     def to_db_dict(self) -> dict[str, Any]:
         """Convert to dict for database storage."""
         import json
+
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -158,7 +171,9 @@ class ReturnCard(BaseModel):
             "merchant_domain": self.merchant_domain,
             "item_summary": self.item_summary,
             "status": self.status if isinstance(self.status, str) else self.status.value,
-            "confidence": self.confidence if isinstance(self.confidence, str) else self.confidence.value,
+            "confidence": self.confidence
+            if isinstance(self.confidence, str)
+            else self.confidence.value,
             "source_email_ids": json.dumps(self.source_email_ids),
             "order_number": self.order_number,
             "amount": self.amount,
@@ -176,7 +191,7 @@ class ReturnCard(BaseModel):
         }
 
     @classmethod
-    def from_db_row(cls, row: dict[str, Any]) -> "ReturnCard":
+    def from_db_row(cls, row: dict[str, Any]) -> ReturnCard:
         """Create ReturnCard from database row."""
         import json
 
@@ -205,8 +220,8 @@ class ReturnCard(BaseModel):
             shipping_tracking_link=row.get("shipping_tracking_link"),
             evidence_snippet=row.get("evidence_snippet"),
             notes=row.get("notes"),
-            created_at=parse_dt(row.get("created_at")) or datetime.utcnow(),
-            updated_at=parse_dt(row.get("updated_at")) or datetime.utcnow(),
+            created_at=parse_dt(row.get("created_at")) or utc_now(),
+            updated_at=parse_dt(row.get("updated_at")) or utc_now(),
             alerted_at=parse_dt(row.get("alerted_at")),
         )
 

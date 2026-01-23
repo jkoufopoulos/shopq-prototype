@@ -1,0 +1,22 @@
+{
+  "id": "msg_uber_001",
+  "threadId": "thread_uber_001",
+  "internalDate": "1705503600000",
+  "payload": {
+    "headers": [
+      { "name": "From", "value": "Uber Receipts <receipts@uber.com>" },
+      { "name": "Subject", "value": "Your Uber trip receipt" },
+      { "name": "Date", "value": "Wed, 17 Jan 2024 10:00:00 -0500" }
+    ],
+    "mimeType": "text/plain",
+    "body": {
+      "data": "VGhhbmtzIGZvciByaWRpbmcgd2l0aCBVYmVyISBUb3RhbDogJDI1LjUw"
+    }
+  },
+  "snippet": "Thanks for riding with Uber! Total: $25.50",
+  "_testMetadata": {
+    "shouldBeBlocked": true,
+    "blockReason": "rideshare",
+    "expectedMerchantDomain": "uber.com"
+  }
+}

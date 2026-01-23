@@ -9,19 +9,19 @@ Tests the full flow:
 Run with: SHOPQ_USE_LLM=false pytest tests/integration/test_extraction_pipeline.py -v
 """
 
-import pytest
 from datetime import datetime
 
-from shopq.returns.filters import MerchantDomainFilter, FilterResult
+import pytest
+
+from shopq.returns.extractor import ExtractionResult, ReturnableReceiptExtractor
+from shopq.returns.field_extractor import ReturnFieldExtractor
+from shopq.returns.filters import FilterResult, MerchantDomainFilter
+from shopq.returns.models import ReturnConfidence
 from shopq.returns.returnability_classifier import (
+    ReceiptType,
     ReturnabilityClassifier,
     ReturnabilityResult,
-    ReceiptType,
 )
-from shopq.returns.field_extractor import ReturnFieldExtractor, ExtractedFields
-from shopq.returns.extractor import ReturnableReceiptExtractor, ExtractionResult
-from shopq.returns.models import ReturnConfidence
-
 
 # =============================================================================
 # Stage 1: Domain Filter Tests
@@ -170,7 +170,9 @@ class TestReturnFieldExtractor:
     @pytest.fixture
     def extractor(self):
         # Use empty merchant rules for testing
-        return ReturnFieldExtractor(merchant_rules={"merchants": {"_default": {"days": 30, "anchor": "delivery"}}})
+        return ReturnFieldExtractor(
+            merchant_rules={"merchants": {"_default": {"days": 30, "anchor": "delivery"}}}
+        )
 
     def test_extract_order_number_amazon_format(self, extractor):
         """Test Amazon order number extraction."""

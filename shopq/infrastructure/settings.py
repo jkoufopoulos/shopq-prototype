@@ -25,7 +25,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # Google Cloud / Gemini
 GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "mailq-467118")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")  # ← MATCHES .env
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-001")  # Vertex AI model
 GEMINI_LOCATION = os.getenv("GEMINI_LOCATION", "us-central1")
 GEMINI_MAX_TOKENS = int(os.getenv("GEMINI_MAX_TOKENS", "1024"))
 GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "0.1"))

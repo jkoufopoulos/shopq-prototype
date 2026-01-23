@@ -62,6 +62,46 @@ merchants:
     anchor: delivery
     return_url: "https://oldnavy.gap.com/customerService/info.do?cid=81264"
 
+  bananarepublic.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://bananarepublic.gap.com/customerService/info.do?cid=81264"
+
+  madewell.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.madewell.com/help/returns.html"
+
+  jcrew.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.jcrew.com/help/returns.html"
+
+  athleta.com:
+    days: 60
+    anchor: delivery
+    return_url: "https://athleta.gap.com/customerService/info.do?cid=81264"
+
+  uniqlo.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.uniqlo.com/us/en/help/returns-and-exchanges.html"
+
+  zara.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.zara.com/us/en/help/returns"
+
+  nike.com:
+    days: 60
+    anchor: delivery
+    return_url: "https://www.nike.com/help/a/returns-policy"
+
+  adidas.com:
+    days: 30
+    anchor: delivery
+    return_url: "https://www.adidas.com/us/help-topics-returns_refunds.html"
+
   hm.com:
     days: 30
     anchor: delivery

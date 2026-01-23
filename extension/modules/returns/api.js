@@ -1,35 +1,40 @@
 /**
  * ShopQ Returns API Client
  * Handles communication with the backend API for return card operations
+ *
+ * Note: This file is loaded via importScripts in the service worker.
+ * getAuthToken is available globally from auth.js which is loaded first.
  */
 
 const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
 
 /**
- * Get the current user ID from storage
+ * Get headers with authentication token
+ * @returns {Promise<Object>} Headers object with Authorization
  */
-async function getUserId() {
-  const data = await chrome.storage.local.get('userId');
-  return data.userId || 'default_user';
+async function getAuthHeaders() {
+  const token = await getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
 }
 
 /**
  * Fetch all returns for the current user
  */
-export async function fetchReturns(options = {}) {
-  const userId = await getUserId();
+async function fetchReturns(options = {}) {
   const { status } = options;
 
-  let url = `${API_BASE_URL}/api/returns?user_id=${encodeURIComponent(userId)}`;
+  let url = `${API_BASE_URL}/api/returns`;
   if (status) {
-    url += `&status=${encodeURIComponent(status)}`;
+    url += `?status=${encodeURIComponent(status)}`;
   }
 
+  const headers = await getAuthHeaders();
   const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -43,16 +48,14 @@ export async function fetchReturns(options = {}) {
 /**
  * Fetch returns that are expiring soon
  */
-export async function fetchExpiringReturns(withinDays = 7) {
-  const userId = await getUserId();
+async function fetchExpiringReturns(withinDays = 7) {
+  const headers = await getAuthHeaders();
 
   const response = await fetch(
-    `${API_BASE_URL}/api/returns/expiring?user_id=${encodeURIComponent(userId)}&within_days=${withinDays}`,
+    `${API_BASE_URL}/api/returns/expiring?threshold_days=${withinDays}`,
     {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     }
   );
 
@@ -67,16 +70,14 @@ export async function fetchExpiringReturns(withinDays = 7) {
 /**
  * Get return card counts by status
  */
-export async function getReturnCounts() {
-  const userId = await getUserId();
+async function getReturnCounts() {
+  const headers = await getAuthHeaders();
 
   const response = await fetch(
-    `${API_BASE_URL}/api/returns/counts?user_id=${encodeURIComponent(userId)}`,
+    `${API_BASE_URL}/api/returns/counts`,
     {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     }
   );
 
@@ -91,14 +92,14 @@ export async function getReturnCounts() {
 /**
  * Update the status of a return card
  */
-export async function updateReturnStatus(returnId, newStatus) {
+async function updateReturnStatus(returnId, newStatus) {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
     `${API_BASE_URL}/api/returns/${encodeURIComponent(returnId)}/status`,
     {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ status: newStatus }),
     }
   );
@@ -114,12 +115,12 @@ export async function updateReturnStatus(returnId, newStatus) {
 /**
  * Create a new return card
  */
-export async function createReturn(returnData) {
+async function createReturn(returnData) {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(`${API_BASE_URL}/api/returns`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(returnData),
   });
 
@@ -134,16 +135,13 @@ export async function createReturn(returnData) {
 /**
  * Process an email through the extraction pipeline
  */
-export async function processEmail(emailData) {
-  const userId = await getUserId();
+async function processEmail(emailData) {
+  const headers = await getAuthHeaders();
 
   const response = await fetch(`${API_BASE_URL}/api/returns/process`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
-      user_id: userId,
       email_id: emailData.id,
       from_address: emailData.from,
       subject: emailData.subject,
@@ -162,16 +160,14 @@ export async function processEmail(emailData) {
 /**
  * Refresh statuses (update expiring_soon based on current date)
  */
-export async function refreshStatuses() {
-  const userId = await getUserId();
+async function refreshStatuses() {
+  const headers = await getAuthHeaders();
 
   const response = await fetch(
-    `${API_BASE_URL}/api/returns/refresh-statuses?user_id=${encodeURIComponent(userId)}`,
+    `${API_BASE_URL}/api/returns/refresh-statuses`,
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     }
   );
 

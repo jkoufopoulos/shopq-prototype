@@ -1,0 +1,22 @@
+{
+  "id": "msg_target_001",
+  "threadId": "thread_target_001",
+  "internalDate": "1705417200000",
+  "payload": {
+    "headers": [
+      { "name": "From", "value": "Target <orders@target.com>" },
+      { "name": "Subject", "value": "Your Target order was delivered" },
+      { "name": "Date", "value": "Tue, 16 Jan 2024 10:00:00 -0500" }
+    ],
+    "mimeType": "text/plain",
+    "body": {
+      "data": "WW91ciBwYWNrYWdlIHdhcyBkZWxpdmVyZWQgdG9kYXkuIE9yZGVyICNUMTIzNDU2Nzg="
+    }
+  },
+  "snippet": "Your package was delivered today. Order #T12345678",
+  "_testMetadata": {
+    "expectedEmailType": "delivery",
+    "expectedOrderId": "T12345678",
+    "expectedMerchantDomain": "target.com"
+  }
+}

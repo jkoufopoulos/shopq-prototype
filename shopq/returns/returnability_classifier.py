@@ -15,10 +15,10 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field
 
+from shopq.infrastructure.settings import GEMINI_MODEL, GEMINI_LOCATION, GOOGLE_CLOUD_PROJECT
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 
@@ -51,7 +51,7 @@ class ReturnabilityResult:
     receipt_type: ReceiptType
 
     @classmethod
-    def not_returnable(cls, reason: str, receipt_type: ReceiptType) -> "ReturnabilityResult":
+    def not_returnable(cls, reason: str, receipt_type: ReceiptType) -> ReturnabilityResult:
         """Factory for non-returnable result."""
         return cls(
             is_returnable=False,
@@ -61,7 +61,7 @@ class ReturnabilityResult:
         )
 
     @classmethod
-    def returnable(cls, reason: str, confidence: float = 0.85) -> "ReturnabilityResult":
+    def returnable(cls, reason: str, confidence: float = 0.85) -> ReturnabilityResult:
         """Factory for returnable result."""
         return cls(
             is_returnable=True,
@@ -77,7 +77,9 @@ class ReturnabilitySchema(BaseModel):
     is_returnable: bool = Field(description="True if physical product that can be returned")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in classification")
     reason: str = Field(description="Brief explanation of classification")
-    receipt_type: str = Field(description="Type: product_order, service, subscription, digital, donation, ticket, bill, unknown")
+    receipt_type: str = Field(
+        description="Type: product_order, service, subscription, digital, donation, ticket, bill, unknown"
+    )
 
 
 class ReturnabilityClassifier:
@@ -102,10 +104,16 @@ Snippet: {snippet}
 
 ## NOT RETURNABLE:
 
+### IMPORTANT: Groceries and Perishables are NEVER returnable (receipt_type="service"):
+- ANY grocery order: Whole Foods, Amazon Fresh, Instacart, Walmart Grocery, Target groceries
+- ANY food delivery: DoorDash, Grubhub, Uber Eats, Postmates
+- ANY meal kits: HelloFresh, Blue Apron, Factor, Home Chef
+- ANY perishable items: flowers, plants, fresh food, prepared meals
+- These are CONSUMED or PERISHABLE - they cannot be returned like physical products
+
 ### Services (receipt_type="service"):
 - Rides: Uber, Lyft
-- Food delivery: DoorDash, Grubhub, Instacart (food is consumed)
-- Haircuts, cleaning, repairs
+- Haircuts, cleaning, repairs, professional services
 
 ### Subscriptions (receipt_type="subscription"):
 - Streaming: Netflix, Spotify, Hulu
@@ -156,12 +164,11 @@ Respond with ONLY the JSON, no other text."""
                 from vertexai.generative_models import GenerativeModel
 
                 # Initialize Vertex AI if needed
-                project = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT")
-                if project:
-                    vertexai.init(project=project, location="us-central1")
+                if GOOGLE_CLOUD_PROJECT:
+                    vertexai.init(project=GOOGLE_CLOUD_PROJECT, location=GEMINI_LOCATION)
 
-                self._model = GenerativeModel("gemini-2.0-flash-exp")
-                logger.info("Initialized Gemini model for returnability classification")
+                self._model = GenerativeModel(GEMINI_MODEL)
+                logger.info("Initialized Gemini model %s for returnability classification", GEMINI_MODEL)
 
             except Exception as e:
                 logger.error("Failed to initialize Gemini model: %s", e)
@@ -181,7 +188,7 @@ Respond with ONLY the JSON, no other text."""
         Args:
             from_address: Email sender
             subject: Email subject line
-            snippet: Email body preview (first ~500 chars)
+            snippet: Email body preview (first ~2000 chars)
 
         Returns:
             ReturnabilityResult with is_returnable and receipt_type
@@ -194,6 +201,10 @@ Respond with ONLY the JSON, no other text."""
         # Check feature flag
         if not USE_LLM:
             counter("returns.classifier.llm_disabled")
+            logger.warning(
+                "LLM DISABLED: SHOPQ_USE_LLM=%s - returning default returnable",
+                os.getenv("SHOPQ_USE_LLM", "not_set")
+            )
             # Conservative default: assume returnable if LLM disabled
             return ReturnabilityResult.returnable(
                 reason="llm_disabled_default",
@@ -206,30 +217,43 @@ Respond with ONLY the JSON, no other text."""
         try:
             # Call LLM
             model = self._get_model()
+            logger.info(
+                "LLM CLASSIFIER: Calling %s for subject='%s'",
+                GEMINI_MODEL,
+                subject[:50]
+            )
             response = model.generate_content(prompt)
 
             # Parse response
             result = self._parse_response(response.text)
 
             counter("returns.classifier.success")
+            logger.info(
+                "LLM CLASSIFIER RESULT: is_returnable=%s, type=%s, reason='%s'",
+                result.is_returnable,
+                result.receipt_type.value,
+                result.reason
+            )
             log_event(
                 "returns.classifier.result",
                 is_returnable=result.is_returnable,
                 receipt_type=result.receipt_type.value,
                 confidence=result.confidence,
+                model=GEMINI_MODEL,
             )
 
             return result
 
         except Exception as e:
             counter("returns.classifier.error")
-            logger.error("Returnability classification failed: %s", e)
-            log_event("returns.classifier.error", error=str(e))
+            logger.error("LLM CLASSIFIER ERROR: %s (model=%s)", e, GEMINI_MODEL)
+            log_event("returns.classifier.error", error=str(e), model=GEMINI_MODEL)
 
-            # Conservative fallback: assume returnable (let field extraction handle it)
-            return ReturnabilityResult.returnable(
-                reason=f"llm_error_fallback: {str(e)[:50]}",
-                confidence=0.3,
+            # REJECT on LLM failure - don't let unclassified emails through
+            # This prevents garbage from polluting the list when LLM is broken
+            return ReturnabilityResult.not_returnable(
+                reason=f"llm_error_reject: {str(e)[:50]}",
+                receipt_type=ReceiptType.UNKNOWN,
             )
 
     def _build_prompt(self, from_address: str, subject: str, snippet: str) -> str:
@@ -237,7 +261,7 @@ Respond with ONLY the JSON, no other text."""
         # Sanitize inputs to prevent prompt injection
         subject = self._sanitize(subject, max_length=200)
         from_address = self._sanitize(from_address, max_length=100)
-        snippet = self._sanitize(snippet, max_length=500)
+        snippet = self._sanitize(snippet, max_length=2000)
 
         return self.PROMPT_TEMPLATE.format(
             subject=subject,
@@ -292,7 +316,7 @@ Respond with ONLY the JSON, no other text."""
 
             # Fallback: try to extract boolean from text
             text_lower = response_text.lower()
-            if "not returnable" in text_lower or "is_returnable\": false" in text_lower:
+            if "not returnable" in text_lower or 'is_returnable": false' in text_lower:
                 return ReturnabilityResult.not_returnable(
                     reason="parsed_from_text",
                     receipt_type=ReceiptType.UNKNOWN,

@@ -63,6 +63,7 @@ SHOPQ_EXTENSION_ID = os.getenv("SHOPQ_EXTENSION_ID", "")
 ALLOWED_ORIGINS = [
     "https://mail.google.com",
     "https://shopq-api-488078904670.us-central1.run.app",
+    "chrome-extension://aagmmkcefeaaffcnfgdfhnfokhnajhbb",  # ShopQ Return Watch extension
 ]
 
 # Add Chrome extension origin if ID is configured

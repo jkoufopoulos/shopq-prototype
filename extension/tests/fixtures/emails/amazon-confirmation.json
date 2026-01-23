@@ -1,0 +1,23 @@
+{
+  "id": "msg_amazon_001",
+  "threadId": "thread_amazon_001",
+  "internalDate": "1705330800000",
+  "payload": {
+    "headers": [
+      { "name": "From", "value": "Amazon.com <ship-confirm@amazon.com>" },
+      { "name": "Subject", "value": "Your Amazon.com order #123-4567890-1234567 has shipped" },
+      { "name": "Date", "value": "Mon, 15 Jan 2024 10:00:00 -0500" }
+    ],
+    "mimeType": "text/plain",
+    "body": {
+      "data": "WW91ciBwYWNrYWdlIGlzIG9uIGl0cyB3YXkuIFRyYWNrIHlvdXIgcGFja2FnZTogMVo5OTlBQTEwMTIzNDU2Nzg0"
+    }
+  },
+  "snippet": "Your package is on its way. Track your package: 1Z999AA10123456784",
+  "_testMetadata": {
+    "expectedEmailType": "shipping",
+    "expectedOrderId": "123-4567890-1234567",
+    "expectedTracking": "1Z999AA10123456784",
+    "expectedMerchantDomain": "amazon.com"
+  }
+}

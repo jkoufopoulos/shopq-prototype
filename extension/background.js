@@ -32,196 +32,66 @@ importScripts(
   'modules/shared/config.js',
   'modules/shared/utils.js',
   'modules/gmail/auth.js',
+  'modules/storage/schema.js',
+  'modules/storage/store.js',
+  // Pipeline P1-P4: Core
+  'modules/pipeline/filter.js',
+  'modules/pipeline/linker.js',
+  'modules/pipeline/hints.js',
+  'modules/pipeline/classifier.js',
+  // Pipeline P5-P8: Resolution
+  'modules/pipeline/extractor.js',
+  'modules/pipeline/resolver.js',
+  'modules/pipeline/lifecycle.js',
+  // Sync: Scanner & Refresh
+  'modules/sync/scanner.js',
+  'modules/sync/refresh.js',
+  // Enrichment: On-demand LLM extraction
+  'modules/enrichment/evidence.js',
+  'modules/enrichment/policy.js',
+  // Diagnostics
+  'modules/diagnostics/logger.js',
   'modules/returns/api.js'
 );
 
 console.log(`🛒 ShopQ Return Watch: Background service worker loaded v${CONFIG.VERSION}`);
 
-/**
- * Scan recent emails for returnable purchases
- * Uses Gmail search to find potential purchase emails, then processes each
- * through the backend's extraction pipeline.
- */
-async function scanForPurchases() {
-  console.log('🛒 Starting purchase email scan...');
-
-  try {
-    const token = await getAuthToken();
-    if (!token) {
-      throw new Error('No auth token available');
-    }
-
-    // Get user ID from storage
-    const stored = await chrome.storage.local.get('userId');
-    const userId = stored.userId || 'default_user';
-
-    // Search for recent emails that might be purchases
-    const searchQueries = [
-      'subject:(order confirmation) newer_than:30d',
-      'subject:(your order) newer_than:30d',
-      'subject:(order shipped) newer_than:30d',
-      'subject:(delivery) newer_than:30d',
-      'from:(amazon) subject:(order) newer_than:30d',
-      'from:(target) subject:(order) newer_than:30d',
-      'from:(walmart) subject:(order) newer_than:30d',
-    ];
-
-    const processedIds = new Set();
-    let totalProcessed = 0;
-    let totalReturnable = 0;
-
-    for (const query of searchQueries) {
-      try {
-        // Search for messages matching query
-        const searchResponse = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=10`,
-          {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }
-        );
-
-        if (!searchResponse.ok) {
-          console.warn(`⚠️ Search failed for query "${query}":`, searchResponse.status);
-          continue;
-        }
-
-        const searchData = await searchResponse.json();
-        const messages = searchData.messages || [];
-
-        console.log(`📧 Found ${messages.length} messages for query: ${query.substring(0, 30)}...`);
-
-        // Process each message
-        for (const msg of messages) {
-          if (processedIds.has(msg.id)) {
-            continue; // Skip duplicates
-          }
-          processedIds.add(msg.id);
-
-          try {
-            // Get full message details
-            const msgResponse = await fetch(
-              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
-              {
-                headers: { 'Authorization': `Bearer ${token}` }
-              }
-            );
-
-            if (!msgResponse.ok) {
-              console.warn(`⚠️ Failed to fetch message ${msg.id}`);
-              continue;
-            }
-
-            const msgData = await msgResponse.json();
-
-            // Extract email details
-            const headers = msgData.payload?.headers || [];
-            const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
-
-            const from = getHeader('From');
-            const subject = getHeader('Subject');
-            const body = extractBodyText(msgData.payload);
-
-            // Send to backend extraction pipeline
-            const apiUrl = CONFIG.SHOPQ_API_URL || CONFIG.API_BASE_URL;
-            const processResponse = await fetch(`${apiUrl}/api/returns/process`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                user_id: userId,
-                email_id: msg.id,
-                from_address: from,
-                subject: subject,
-                body: body.substring(0, 5000), // Limit body size
-              })
-            });
-
-            if (processResponse.ok) {
-              const result = await processResponse.json();
-              totalProcessed++;
-
-              if (result.success) {
-                totalReturnable++;
-                console.log(`✅ Returnable purchase found: ${result.card?.merchant} - ${result.card?.item_summary}`);
-              } else {
-                console.log(`⏭️ Not returnable: ${subject.substring(0, 40)}... (${result.rejection_reason})`);
-              }
-            }
-
-          } catch (msgError) {
-            console.warn(`⚠️ Error processing message ${msg.id}:`, msgError.message);
-          }
-        }
-
-      } catch (queryError) {
-        console.warn(`⚠️ Error with query "${query}":`, queryError.message);
-      }
-    }
-
-    console.log(`📊 Scan complete: ${totalProcessed} emails processed, ${totalReturnable} returnable purchases found`);
-
-    return {
-      success: true,
-      processedCount: totalProcessed,
-      returnableCount: totalReturnable,
-    };
-
-  } catch (error) {
-    console.error('❌ Scan for purchases failed:', error);
-    throw error;
-  }
-}
+// Initialize refresh system (sets up tab listeners and periodic alarm)
+initializeRefreshSystem();
 
 /**
- * Extract plain text body from Gmail message payload
+ * SEC-008: Validate message sender is from a trusted source.
+ * Trusted sources:
+ * - Content scripts running on Gmail (sender.tab.url starts with https://mail.google.com/)
+ * - Extension popup or sidebar pages (sender.url starts with chrome-extension://<our-id>)
+ * - InboxSDK pageWorld injection (sender.tab exists, used during initialization)
+ *
+ * @param {chrome.runtime.MessageSender} sender
+ * @returns {boolean}
  */
-function extractBodyText(payload) {
-  if (!payload) return '';
+function isTrustedSender(sender) {
+  const extensionOrigin = `chrome-extension://${chrome.runtime.id}`;
 
-  // Check for plain text part
-  if (payload.mimeType === 'text/plain' && payload.body?.data) {
-    return decodeBase64(payload.body.data);
+  // Allow messages from extension pages (popup, sidebar)
+  if (sender.url && sender.url.startsWith(extensionOrigin)) {
+    return true;
   }
 
-  // Check for HTML part (will strip tags)
-  if (payload.mimeType === 'text/html' && payload.body?.data) {
-    const html = decodeBase64(payload.body.data);
-    return stripHtmlTags(html);
-  }
-
-  // Handle multipart messages
-  if (payload.parts) {
-    for (const part of payload.parts) {
-      const text = extractBodyText(part);
-      if (text) return text;
+  // Allow messages from content scripts on Gmail
+  if (sender.tab && sender.tab.url) {
+    if (sender.tab.url.startsWith('https://mail.google.com/')) {
+      return true;
     }
   }
 
-  return '';
-}
-
-/**
- * Decode base64url encoded string
- */
-function decodeBase64(data) {
-  try {
-    // Gmail uses URL-safe base64
-    const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
-    return decodeURIComponent(escape(atob(base64)));
-  } catch {
-    return '';
+  // Allow InboxSDK pageWorld injection message (has sender.tab but no url check needed)
+  // This is the initial injection message that happens once per page load
+  if (sender.tab && sender.frameId !== undefined) {
+    // Content script context - allow if it's from a tab
+    return true;
   }
-}
 
-/**
- * Strip HTML tags from text
- */
-function stripHtmlTags(html) {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return false;
 }
 
 /**
@@ -230,10 +100,17 @@ function stripHtmlTags(html) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     try {
+      // SEC-008: Validate sender before processing any message
+      if (!isTrustedSender(sender)) {
+        console.warn('🚫 ShopQ: Blocked message from untrusted sender:', sender);
+        sendResponse({ success: false, error: 'Unauthorized sender' });
+        return;
+      }
+
       if (message.type === 'SCAN_FOR_PURCHASES') {
-        console.log('🛒 Scanning for purchase emails...');
+        console.log('🛒 Manual refresh triggered...');
         try {
-          const result = await scanForPurchases();
+          const result = await onManualRefresh();
           console.log('📊 Scan result:', JSON.stringify(result));
           sendResponse(result);
         } catch (error) {
@@ -241,12 +118,59 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: false, error: error.message });
         }
       }
+      else if (message.type === 'GET_REFRESH_STATE') {
+        const state = getRefreshState();
+        sendResponse({ success: true, state });
+      }
+      else if (message.type === 'GET_RETURN_WATCH_ORDERS') {
+        const { expiringSoon, active } = await getReturnWatchOrders();
+        sendResponse({ success: true, expiringSoon, active });
+      }
+      else if (message.type === 'GET_ALL_PURCHASES') {
+        const orders = await getAllPurchasesForDisplay();
+        sendResponse({ success: true, orders });
+      }
+      else if (message.type === 'RECOMPUTE_ORDER_DEADLINE') {
+        const order = await recomputeOrderDeadline(message.order_key);
+        sendResponse({ success: true, order });
+      }
+      else if (message.type === 'RECOMPUTE_MERCHANT_DEADLINES') {
+        const count = await recomputeMerchantDeadlines(message.merchant_domain);
+        sendResponse({ success: true, updated_count: count });
+      }
+      // On-demand enrichment
+      else if (message.type === 'ENRICH_ORDER') {
+        const result = await enrichOrder(message.order_key);
+        sendResponse({ success: true, ...result });
+      }
+      else if (message.type === 'NEEDS_ENRICHMENT') {
+        const order = await getOrder(message.order_key);
+        const needs = order ? needsEnrichment(order) : false;
+        sendResponse({ success: true, needs_enrichment: needs });
+      }
+      // Diagnostics
+      else if (message.type === 'RUN_DIAGNOSTICS') {
+        const result = await runDiagnostics();
+        sendResponse(result);
+      }
+      else if (message.type === 'GET_DIAGNOSTIC_SUMMARY') {
+        const summary = await getDiagnosticSummary();
+        sendResponse({ success: true, summary });
+      }
       else if (message.type === 'CHECK_AUTH') {
         try {
           const token = await getAuthToken();
           sendResponse({ success: true, hasToken: !!token });
         } catch (error) {
           sendResponse({ success: false, error: error.message });
+        }
+      }
+      else if (message.type === 'GET_AUTH_TOKEN') {
+        try {
+          const token = await getAuthToken();
+          sendResponse({ token });
+        } catch (error) {
+          sendResponse({ error: error.message });
         }
       }
       else if (message.type === 'SHOW_NOTIFICATION') {
@@ -257,6 +181,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           message: message.message,
           priority: 2
         });
+        sendResponse({ success: true });
+      }
+      // Storage operations for sidebar
+      else if (message.type === 'GET_ALL_ORDERS') {
+        const orders = await getAllOrders();
+        sendResponse({ success: true, orders });
+      }
+      else if (message.type === 'GET_ORDERS_WITH_DEADLINES') {
+        const orders = await getOrdersWithDeadlines();
+        sendResponse({ success: true, orders });
+      }
+      else if (message.type === 'GET_ORDER') {
+        const order = await getOrder(message.order_key);
+        sendResponse({ success: true, order });
+      }
+      else if (message.type === 'UPDATE_ORDER_STATUS') {
+        const order = await updateOrderStatus(message.order_key, message.status);
+        sendResponse({ success: true, order });
+      }
+      else if (message.type === 'GET_STORAGE_STATS') {
+        const stats = await getStorageStats();
+        sendResponse({ success: true, stats });
+      }
+      // Merchant rules operations
+      else if (message.type === 'GET_MERCHANT_RULE') {
+        const rule = await getMerchantRule(message.merchant_domain);
+        sendResponse({ success: true, window_days: rule });
+      }
+      else if (message.type === 'SET_MERCHANT_RULE') {
+        await setMerchantRule(message.merchant_domain, message.window_days);
+        sendResponse({ success: true });
+      }
+      else if (message.type === 'GET_ALL_MERCHANT_RULES') {
+        const rules = await getAllMerchantRules();
+        sendResponse({ success: true, rules });
+      }
+      else if (message.type === 'DELETE_MERCHANT_RULE') {
+        await deleteMerchantRule(message.merchant_domain);
         sendResponse({ success: true });
       }
     } catch (error) {
@@ -271,29 +233,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Handle extension install/update
  */
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
+  // Initialize storage schema on install or update
+  await initializeStorage();
+
   if (details.reason === 'install') {
     console.log('🎉 ShopQ Return Watch installed');
     // Set default user ID
     chrome.storage.local.set({ userId: 'default_user' });
+    // Initial scan will be triggered by refresh system when Gmail is opened
   } else if (details.reason === 'update') {
     console.log(`📦 ShopQ Return Watch updated to v${CONFIG.VERSION}`);
   }
 });
 
-/**
- * Re-inject content script on navigation (for SPA Gmail)
- */
-chrome.webNavigation.onCompleted.addListener(async (details) => {
-  if (details.url?.includes('mail.google.com')) {
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: details.tabId },
-        files: ['dist/content.bundle.js']
-      });
-      console.log(`✅ Content script injected into Gmail tab ${details.tabId}`);
-    } catch (error) {
-      // Ignore errors (content script may already be loaded)
-    }
-  }
-});
+// REMOVED: webNavigation re-injection - manifest.json content_scripts handles this
+// The previous listener was causing duplicate script injections on every Gmail navigation
