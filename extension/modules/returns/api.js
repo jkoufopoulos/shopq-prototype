@@ -9,6 +9,22 @@
 const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
 
 /**
+ * SEC-014: Validate that response came from expected API origin
+ * Prevents MITM attacks where responses could be intercepted and modified
+ * @param {Response} response - Fetch response object
+ * @throws {Error} If response origin doesn't match expected API
+ */
+function validateResponseOrigin(response) {
+  const responseUrl = new URL(response.url);
+  const expectedUrl = new URL(API_BASE_URL);
+
+  if (responseUrl.origin !== expectedUrl.origin) {
+    console.error(`SEC-014: Response origin mismatch. Expected ${expectedUrl.origin}, got ${responseUrl.origin}`);
+    throw new Error('Response origin validation failed - possible security issue');
+  }
+}
+
+/**
  * Get headers with authentication token
  * @returns {Promise<Object>} Headers object with Authorization
  */
@@ -37,6 +53,8 @@ async function fetchReturns(options = {}) {
     headers,
   });
 
+  validateResponseOrigin(response);
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Failed to fetch returns: ${response.status} ${errorText}`);
@@ -59,6 +77,8 @@ async function fetchExpiringReturns(withinDays = 7) {
     }
   );
 
+  validateResponseOrigin(response);
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Failed to fetch expiring returns: ${response.status} ${errorText}`);
@@ -80,6 +100,8 @@ async function getReturnCounts() {
       headers,
     }
   );
+
+  validateResponseOrigin(response);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -104,6 +126,8 @@ async function updateReturnStatus(returnId, newStatus) {
     }
   );
 
+  validateResponseOrigin(response);
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Failed to update return status: ${response.status} ${errorText}`);
@@ -123,6 +147,8 @@ async function createReturn(returnData) {
     headers,
     body: JSON.stringify(returnData),
   });
+
+  validateResponseOrigin(response);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -149,6 +175,8 @@ async function processEmail(emailData) {
     }),
   });
 
+  validateResponseOrigin(response);
+
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Failed to process email: ${response.status} ${errorText}`);
@@ -170,6 +198,8 @@ async function refreshStatuses() {
       headers,
     }
   );
+
+  validateResponseOrigin(response);
 
   if (!response.ok) {
     const errorText = await response.text();

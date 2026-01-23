@@ -19,6 +19,7 @@ from typing import Any
 
 import yaml
 
+from shopq.infrastructure.llm_budget import check_budget, record_llm_call
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.field_extractor import ExtractedFields, ReturnFieldExtractor
@@ -50,6 +51,16 @@ class ExtractionResult:
             success=False,
             filter_result=filter_result,
             rejection_reason=f"filter:{filter_result.reason}",
+            stage_reached="filter",
+        )
+
+    @classmethod
+    def rejected_budget_exceeded(cls, filter_result: FilterResult, reason: str) -> ExtractionResult:
+        """SCALE-001: Rejection when LLM budget is exceeded."""
+        return cls(
+            success=False,
+            filter_result=filter_result,
+            rejection_reason=f"budget:{reason}",
             stage_reached="filter",
         )
 
@@ -192,6 +203,26 @@ class ReturnableReceiptExtractor:
         logger.info("STAGE 1 PASSED: domain=%s -> proceeding to LLM classifier", filter_result.domain)
 
         # =========================================================
+        # SCALE-001: Budget Check before LLM calls
+        # =========================================================
+        budget_status = check_budget(user_id)
+        if not budget_status.is_allowed:
+            counter("returns.extraction.rejected_budget")
+            logger.warning(
+                "BUDGET EXCEEDED: user=%s reason=%s",
+                user_id,
+                budget_status.reason
+            )
+            log_event(
+                "returns.extraction.rejected",
+                stage="budget",
+                reason=budget_status.reason,
+                user_calls=budget_status.user_calls_today,
+                global_calls=budget_status.global_calls_today,
+            )
+            return ExtractionResult.rejected_budget_exceeded(filter_result, budget_status.reason)
+
+        # =========================================================
         # Stage 2: Returnability Classifier (~$0.0001)
         # =========================================================
         returnability = self.returnability_classifier.classify(
@@ -199,6 +230,9 @@ class ReturnableReceiptExtractor:
             subject=subject,
             snippet=body[:2000] if body else "",
         )
+
+        # SCALE-001: Record classifier LLM call
+        record_llm_call(user_id, "classifier")
 
         if not returnability.is_returnable:
             counter("returns.extraction.rejected_classifier")
@@ -227,6 +261,9 @@ class ReturnableReceiptExtractor:
             body=body,
             merchant_domain=filter_result.domain,
         )
+
+        # SCALE-001: Record extractor LLM call
+        record_llm_call(user_id, "extractor")
 
         counter("returns.extraction.passed_extractor")
 

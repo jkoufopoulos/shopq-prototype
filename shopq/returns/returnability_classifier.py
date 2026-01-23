@@ -165,15 +165,20 @@ Respond with ONLY the JSON, no other text."""
         """Lazy-load Gemini model."""
         if self._model is None:
             try:
+                # Use Vertex AI with Application Default Credentials
                 import vertexai
                 from vertexai.generative_models import GenerativeModel
 
-                # Initialize Vertex AI if needed
-                if GOOGLE_CLOUD_PROJECT:
-                    vertexai.init(project=GOOGLE_CLOUD_PROJECT, location=GEMINI_LOCATION)
+                project = GOOGLE_CLOUD_PROJECT or os.getenv("GOOGLE_CLOUD_PROJECT")
+                location = GEMINI_LOCATION or "us-central1"
 
-                self._model = GenerativeModel(GEMINI_MODEL)
-                logger.info("Initialized Gemini model %s for returnability classification", GEMINI_MODEL)
+                if project:
+                    vertexai.init(project=project, location=location)
+                    self._model = GenerativeModel("gemini-1.5-flash")
+                    self._use_genai = False
+                    logger.info("Initialized Gemini via Vertex AI (project=%s)", project)
+                else:
+                    raise ValueError("GOOGLE_CLOUD_PROJECT not set")
 
             except Exception as e:
                 logger.error("Failed to initialize Gemini model: %s", e)
@@ -193,26 +198,14 @@ Respond with ONLY the JSON, no other text."""
         CODE-003: Retries up to 3 times with exponential backoff for transient failures.
         CODE-004: 30-second timeout to prevent hanging requests.
         """
-        from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
-
         model = self._get_model()
 
-        # Vertex AI supports timeout via generation_config or request options
-        # Using request_options for timeout control
         try:
-            response = model.generate_content(
-                prompt,
-                request_options={"timeout": LLM_TIMEOUT_SECONDS},
-            )
+            response = model.generate_content(prompt)
             return response.text
-        except DeadlineExceeded as e:
-            counter("returns.classifier.timeout")
-            logger.warning("LLM call timed out after %ds", LLM_TIMEOUT_SECONDS)
-            raise TimeoutError(f"LLM call timed out: {e}") from e
-        except ServiceUnavailable as e:
-            counter("returns.classifier.service_unavailable")
-            logger.warning("LLM service unavailable, will retry: %s", e)
-            raise ConnectionError(f"LLM service unavailable: {e}") from e
+        except Exception as e:
+            logger.error("LLM call failed: %s", e)
+            raise
 
     def classify(
         self,

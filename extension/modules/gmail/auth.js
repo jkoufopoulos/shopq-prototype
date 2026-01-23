@@ -2,6 +2,61 @@
  * Gmail OAuth Authentication Module
  */
 
+// EXT-001: Token validation interval (validate every 5 minutes)
+const TOKEN_VALIDATION_INTERVAL_MS = 5 * 60 * 1000;
+let lastTokenValidation = 0;
+let cachedValidToken = null;
+
+/**
+ * EXT-001: Validate token with Google's tokeninfo endpoint
+ * @param {string} token - OAuth token to validate
+ * @returns {Promise<boolean>} True if token is valid
+ */
+async function isTokenValid(token) {
+  if (!token) return false;
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(token)}`
+    );
+
+    if (!response.ok) {
+      console.log('EXT-001: Token validation failed, status:', response.status);
+      return false;
+    }
+
+    const tokenInfo = await response.json();
+
+    // Check if token has required scopes
+    const requiredScopes = [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ];
+
+    const tokenScopes = (tokenInfo.scope || '').split(' ');
+    const hasRequiredScopes = requiredScopes.every(scope =>
+      tokenScopes.some(s => s.includes(scope.split('/').pop()))
+    );
+
+    if (!hasRequiredScopes) {
+      console.log('EXT-001: Token missing required scopes');
+      return false;
+    }
+
+    // Check if token will expire soon (within 5 minutes)
+    const expiresIn = parseInt(tokenInfo.expires_in, 10);
+    if (expiresIn < 300) {
+      console.log('EXT-001: Token expiring soon, will refresh');
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('EXT-001: Token validation error:', error);
+    return false;
+  }
+}
+
 /**
  * Get Gmail OAuth token with automatic refresh
  * First attempts to use cached token, falls back to interactive auth if needed
@@ -12,9 +67,14 @@
 async function getAuthToken(options = {}) {
   const { forceRefresh = false } = options;
 
+  // EXT-001: Check if we need to validate the token
+  const now = Date.now();
+  const needsValidation = now - lastTokenValidation > TOKEN_VALIDATION_INTERVAL_MS;
+
   return new Promise((resolve, reject) => {
     // If forcing refresh, remove cached token first
     if (forceRefresh) {
+      cachedValidToken = null;
       chrome.identity.getAuthToken({ interactive: false }, (oldToken) => {
         if (oldToken) {
           chrome.identity.removeCachedAuthToken({ token: oldToken }, () => {
@@ -28,11 +88,27 @@ async function getAuthToken(options = {}) {
       });
     } else {
       // Try cached token first
-      chrome.identity.getAuthToken({ interactive: false }, (token) => {
+      chrome.identity.getAuthToken({ interactive: false }, async (token) => {
         if (chrome.runtime.lastError || !token) {
           // No cached token or error, get fresh token interactively
+          cachedValidToken = null;
           getFreshToken(resolve, reject);
         } else {
+          // EXT-001: Validate token periodically
+          if (needsValidation) {
+            const valid = await isTokenValid(token);
+            if (!valid) {
+              console.log('EXT-001: Cached token invalid, refreshing...');
+              cachedValidToken = null;
+              // Remove invalid token and get fresh one
+              chrome.identity.removeCachedAuthToken({ token }, () => {
+                getFreshToken(resolve, reject);
+              });
+              return;
+            }
+            lastTokenValidation = now;
+            cachedValidToken = token;
+          }
           console.log('✅ OAuth token obtained (cached)');
           resolve(token);
         }

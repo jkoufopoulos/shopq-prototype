@@ -21,6 +21,17 @@ from shopq.returns.models import (
 
 logger = get_logger(__name__)
 
+# CODE-002: Whitelist of columns allowed in dynamic UPDATE statements
+# This prevents SQL injection if column names ever come from user input
+ALLOWED_UPDATE_COLUMNS = frozenset({
+    "status",
+    "notes",
+    "return_by_date",
+    "return_portal_link",
+    "updated_at",
+    "alerted_at",
+})
+
 
 class ReturnCardRepository:
     """
@@ -283,6 +294,11 @@ class ReturnCardRepository:
 
         update_data["updated_at"] = utc_now().isoformat()
         update_data["id"] = card_id
+
+        # CODE-002: Validate column names against whitelist to prevent SQL injection
+        invalid_columns = set(update_data.keys()) - ALLOWED_UPDATE_COLUMNS - {"id"}
+        if invalid_columns:
+            raise ValueError(f"Invalid update columns: {invalid_columns}")
 
         set_clause = ", ".join(f"{k} = :{k}" for k in update_data if k != "id")
 

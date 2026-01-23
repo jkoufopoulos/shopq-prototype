@@ -15,9 +15,10 @@ import os
 import ipaddress
 import secrets
 import time
-from collections import defaultdict
 from collections.abc import Callable
 from typing import Any
+
+from cachetools import TTLCache
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -51,13 +52,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.emails_per_minute = emails_per_minute
         self.emails_per_hour = emails_per_hour
 
+        # EXT-002: Use TTLCache to prevent unbounded memory growth
+        # Max 10000 unique IPs tracked, with automatic expiry
+        _max_ips = 10000
+
         # Request tracking: {ip: [timestamp, ...]}
-        self.minute_buckets: dict[str, list[float]] = defaultdict(list)
-        self.hour_buckets: dict[str, list[float]] = defaultdict(list)
+        # TTLCache auto-evicts entries after ttl seconds
+        self.minute_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=_max_ips, ttl=120)
+        self.hour_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=_max_ips, ttl=7200)
 
         # Email count tracking: {ip: [(timestamp, email_count), ...]}
-        self.email_minute_buckets: dict[str, list[tuple[float, int]]] = defaultdict(list)
-        self.email_hour_buckets: dict[str, list[tuple[float, int]]] = defaultdict(list)
+        self.email_minute_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(maxsize=_max_ips, ttl=120)
+        self.email_hour_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(maxsize=_max_ips, ttl=7200)
 
         # Cloud Run sets this header - only trust X-Forwarded-For when present
         self._trusted_proxy_header = "X-Cloud-Trace-Context"
@@ -124,17 +130,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         now = time.time()
         max_idle_time = 7200  # 2 hours
 
-        # Find IPs with no recent requests
+        # EXT-002: With TTLCache, entries auto-expire, but we still do manual cleanup
+        # for entries that haven't been accessed recently
         ips_to_remove = []
         for ip in list(self.minute_buckets.keys()):
-            if not self.minute_buckets[ip] or now - max(self.minute_buckets[ip]) > max_idle_time:
+            bucket = self.minute_buckets.get(ip, [])
+            if not bucket or now - max(bucket) > max_idle_time:
                 ips_to_remove.append(ip)
 
         # Remove idle IPs
         for ip in ips_to_remove:
-            del self.minute_buckets[ip]
-            if ip in self.hour_buckets:
-                del self.hour_buckets[ip]
+            self.minute_buckets.pop(ip, None)
+            self.hour_buckets.pop(ip, None)
 
     def _clean_old_email_counts(
         self, bucket: list[tuple[float, int]], max_age_seconds: int
@@ -183,11 +190,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = self._get_client_ip(request)
         now = time.time()
 
-        # Clean old requests
+        # Clean old requests (TTLCache handles expiry, but we still clean within-window old entries)
         self.minute_buckets[client_ip] = self._clean_old_requests(
-            self.minute_buckets[client_ip], 60
+            self.minute_buckets.get(client_ip, []), 60
         )
-        self.hour_buckets[client_ip] = self._clean_old_requests(self.hour_buckets[client_ip], 3600)
+        self.hour_buckets[client_ip] = self._clean_old_requests(
+            self.hour_buckets.get(client_ip, []), 3600
+        )
 
         # CORS headers for rate limit responses (bypass CORS middleware)
         origin = request.headers.get("origin", "")
@@ -202,7 +211,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             }
 
         # Check minute limit
-        minute_requests = len(self.minute_buckets[client_ip])
+        minute_requests = len(self.minute_buckets.get(client_ip, []))
         if minute_requests >= self.requests_per_minute:
             log_event(
                 "api.rate_limit.request_exceeded",
@@ -223,7 +232,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         # Check hour limit
-        hour_requests = len(self.hour_buckets[client_ip])
+        hour_requests = len(self.hour_buckets.get(client_ip, []))
         if hour_requests >= self.requests_per_hour:
             log_event(
                 "api.rate_limit.request_exceeded",
@@ -260,14 +269,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if email_count > 0:
                 # Clean old email counts
                 self.email_minute_buckets[client_ip] = self._clean_old_email_counts(
-                    self.email_minute_buckets[client_ip], 60
+                    self.email_minute_buckets.get(client_ip, []), 60
                 )
                 self.email_hour_buckets[client_ip] = self._clean_old_email_counts(
-                    self.email_hour_buckets[client_ip], 3600
+                    self.email_hour_buckets.get(client_ip, []), 3600
                 )
 
                 # Check email minute limit
-                minute_emails = self._get_email_count(self.email_minute_buckets[client_ip])
+                minute_emails = self._get_email_count(self.email_minute_buckets.get(client_ip, []))
                 if minute_emails + email_count > self.emails_per_minute:
                     log_event(
                         "api.rate_limit.email_exceeded",
@@ -291,7 +300,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     )
 
                 # Check email hour limit
-                hour_emails = self._get_email_count(self.email_hour_buckets[client_ip])
+                hour_emails = self._get_email_count(self.email_hour_buckets.get(client_ip, []))
                 if hour_emails + email_count > self.emails_per_hour:
                     log_event(
                         "api.rate_limit.email_exceeded",
@@ -314,14 +323,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         headers={"Retry-After": "3600"},
                     )
 
-        # Record this request
-        self.minute_buckets[client_ip].append(now)
-        self.hour_buckets[client_ip].append(now)
+        # Record this request (initialize bucket if needed for TTLCache)
+        minute_bucket = self.minute_buckets.get(client_ip, [])
+        minute_bucket.append(now)
+        self.minute_buckets[client_ip] = minute_bucket
+
+        hour_bucket = self.hour_buckets.get(client_ip, [])
+        hour_bucket.append(now)
+        self.hour_buckets[client_ip] = hour_bucket
 
         # Record email count for /api/organize
         if email_count > 0:
-            self.email_minute_buckets[client_ip].append((now, email_count))
-            self.email_hour_buckets[client_ip].append((now, email_count))
+            email_min_bucket = self.email_minute_buckets.get(client_ip, [])
+            email_min_bucket.append((now, email_count))
+            self.email_minute_buckets[client_ip] = email_min_bucket
+
+            email_hour_bucket = self.email_hour_buckets.get(client_ip, [])
+            email_hour_bucket.append((now, email_count))
+            self.email_hour_buckets[client_ip] = email_hour_bucket
 
         # Process request
         response = await call_next(request)
@@ -338,8 +357,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Add email rate limit headers for /api/organize
         if request.url.path == "/api/organize" and request.method == "POST":
-            minute_emails = self._get_email_count(self.email_minute_buckets[client_ip])
-            hour_emails = self._get_email_count(self.email_hour_buckets[client_ip])
+            minute_emails = self._get_email_count(self.email_minute_buckets.get(client_ip, []))
+            hour_emails = self._get_email_count(self.email_hour_buckets.get(client_ip, []))
             response.headers["X-RateLimit-Emails-Minute"] = str(self.emails_per_minute)
             response.headers["X-RateLimit-Emails-Remaining-Minute"] = str(
                 max(0, self.emails_per_minute - minute_emails)
