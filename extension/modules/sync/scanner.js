@@ -393,9 +393,8 @@ async function scanPurchases(options = {}) {
     throw new Error('No auth token available');
   }
 
-  // Get user ID (or default)
-  const storageData = await chrome.storage.local.get(['userId']);
-  const user_id = storageData.userId || 'default_user';
+  // SEC-002: Get authenticated user ID (never use default_user)
+  const user_id = await getAuthenticatedUserId();
 
   // Get last scan state for incremental
   const lastScan = await getLastScanState();

@@ -12,6 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from shopq.api.middleware.csrf import CSRFMiddleware
 from shopq.api.middleware.rate_limit import RateLimitMiddleware
 from shopq.api.middleware.security_headers import SecurityHeadersMiddleware
 from shopq.api.routes.health import router as health_router
@@ -89,6 +90,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
+
+# SEC-006: CSRF protection - validate Origin header on state-changing requests
+app.add_middleware(CSRFMiddleware, allowed_origins=ALLOWED_ORIGINS)
 
 # Rate limiting - prevent abuse
 app.add_middleware(

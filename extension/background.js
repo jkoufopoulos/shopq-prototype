@@ -107,7 +107,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
 
-      if (message.type === 'SCAN_FOR_PURCHASES') {
+      // SEC-002: Get authenticated user ID
+      if (message.type === 'GET_AUTHENTICATED_USER_ID') {
+        try {
+          const userId = await getAuthenticatedUserId();
+          sendResponse({ success: true, userId });
+        } catch (error) {
+          console.error('❌ Failed to get user ID:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      }
+      else if (message.type === 'SCAN_FOR_PURCHASES') {
         console.log('🛒 Manual refresh triggered...');
         try {
           const result = await onManualRefresh();
@@ -239,8 +249,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === 'install') {
     console.log('🎉 ShopQ Return Watch installed');
-    // Set default user ID
-    chrome.storage.local.set({ userId: 'default_user' });
+    // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
+    // Don't set default_user - proper user isolation requires real Google user ID
     // Initial scan will be triggered by refresh system when Gmail is opened
   } else if (details.reason === 'update') {
     console.log(`📦 ShopQ Return Watch updated to v${CONFIG.VERSION}`);

@@ -1140,13 +1140,20 @@ async function initializeDigestSidebar(sdk) {
     }
   }
 
-  // Get user ID from storage
+  // SEC-002: Get authenticated user ID from background script
+  // Never fall back to 'default_user' - proper user isolation requires real Google user ID
   async function getUserId() {
     try {
-      const data = await chrome.storage.local.get('userId');
-      return data.userId || 'default_user';
-    } catch {
-      return 'default_user';
+      const response = await chrome.runtime.sendMessage({ type: 'GET_AUTHENTICATED_USER_ID' });
+      if (response?.userId) {
+        return response.userId;
+      }
+      // If no user ID yet, user needs to authenticate
+      console.warn('ShopQ: No authenticated user ID - user may need to sign in');
+      return null;
+    } catch (err) {
+      console.error('ShopQ: Failed to get user ID:', err);
+      return null;
     }
   }
 
