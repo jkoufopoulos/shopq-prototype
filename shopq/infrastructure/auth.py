@@ -102,7 +102,7 @@ def validate_google_oauth_token(token: str) -> str | None:
         token_info = response.json()
 
         # Verify token has required Gmail scope
-        required_scope = "https://www.googleapis.com/auth/gmail.modify"
+        required_scope = "https://www.googleapis.com/auth/gmail.readonly"
         scopes = token_info.get("scope", "")
 
         if required_scope not in scopes:

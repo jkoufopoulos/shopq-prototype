@@ -29,11 +29,9 @@ from shopq.storage.user_credentials_repository import UserCredentialsRepository
 
 logger = get_logger(__name__)
 
-# Gmail API scopes
+# Gmail API scopes - read-only for Return Watch
 GMAIL_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",  # Read emails
-    "https://www.googleapis.com/auth/gmail.modify",  # Modify labels
-    "https://www.googleapis.com/auth/gmail.send",  # Send emails (for digest)
 ]
 
 
