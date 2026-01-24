@@ -198,7 +198,7 @@ System never crashes on classification failure:
 ## External Services
 
 **Google Cloud Vertex AI**:
-- Project: `mailq-467118`
+- Project: `shopq-467118`
 - Model: `gemini-1.5-flash`
 - Location: `us-central1`
 - Configure via `.env` → `GOOGLE_CLOUD_PROJECT`, `GEMINI_MODEL`
@@ -219,7 +219,7 @@ System never crashes on classification failure:
 Required `.env` variables:
 ```bash
 GOOGLE_API_KEY=AIzaSy...         # Vertex AI key
-GOOGLE_CLOUD_PROJECT=mailq-467118
+GOOGLE_CLOUD_PROJECT=shopq-467118
 GEMINI_MODEL=gemini-1.5-flash
 GEMINI_LOCATION=us-central1
 

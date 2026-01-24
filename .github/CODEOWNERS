@@ -1,9 +1,8 @@
-# Default ownership for MailQ repository
+# Default ownership for ShopQ repository
 * @justinkoufopoulos
-mailq/ @justinkoufopoulos
+shopq/ @justinkoufopoulos
 extension/ @justinkoufopoulos
 scripts/ @justinkoufopoulos
 docs/ @justinkoufopoulos
-/claude.md @justin
-/MAILQ_REFERENCE.md @justin
-/config/mailq_policy.yaml @justin
+/claude.md @justinkoufopoulos
+/config/merchant_rules.yaml @justinkoufopoulos

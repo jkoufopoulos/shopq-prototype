@@ -76,7 +76,7 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   // Explicitly exclude each ShopQ label to avoid Gmail API caching issues
   // Note: We use explicit label names instead of wildcards because wildcards don't work reliably
   // This ensures we get ONLY emails that don't have ShopQ labels (Gmail search is source of truth)
-  const mailqLabels = [
+  const shopqLabels = [
     'ShopQ/Receipts',
     'ShopQ/Shopping',
     'ShopQ/Messages',
@@ -91,7 +91,7 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
     'ShopQ/Personal'
   ];
 
-  const excludeLabels = mailqLabels.map(l => `-label:${l}`).join(' ');
+  const excludeLabels = shopqLabels.map(l => `-label:${l}`).join(' ');
   const query = `in:inbox ${excludeLabels}`;
   const encodedQuery = encodeURIComponent(query);
 

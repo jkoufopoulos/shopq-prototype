@@ -54,14 +54,14 @@ function sanitizeHtml(html) {
 (function cleanupStaleElements() {
   // Remove old drawer/iframe elements only
   // IMPORTANT: Do NOT reset html/body styles - this interferes with Gmail's dark mode
-  document.getElementById('mailq-digest-iframe')?.remove();
-  document.getElementById('mailq-nav-button')?.remove();
-  document.getElementById('mailq-refresh-banner')?.remove();
-  document.getElementById('mailq-layout-styles')?.remove();
-  document.getElementById('mailq-sidebar-panel')?.remove();
+  document.getElementById('shopq-digest-iframe')?.remove();
+  document.getElementById('shopq-nav-button')?.remove();
+  document.getElementById('shopq-refresh-banner')?.remove();
+  document.getElementById('shopq-layout-styles')?.remove();
+  document.getElementById('shopq-sidebar-panel')?.remove();
 
   // Remove any ShopQ-specific classes only
-  document.documentElement.classList.remove('mailq-drawer-open');
+  document.documentElement.classList.remove('shopq-drawer-open');
 
   console.log('ShopQ: Cleaned up stale elements');
 })();
@@ -214,14 +214,14 @@ function applyBadgesFromCache(threadId, labelData) {
     // Add red border
     const element = entry.threadRowView.getElement();
     if (element) {
-      element.classList.add('mailq-critical-row');
+      element.classList.add('shopq-critical-row');
     }
   } else {
     entry.criticalStream.clear();
     // Remove red border
     const element = entry.threadRowView.getElement();
     if (element) {
-      element.classList.remove('mailq-critical-row');
+      element.classList.remove('shopq-critical-row');
     }
   }
 }
@@ -313,11 +313,11 @@ function isExtensionContextValid() {
  */
 function showRefreshBanner() {
   // Remove any existing banner first
-  const existing = document.getElementById('mailq-refresh-banner');
+  const existing = document.getElementById('shopq-refresh-banner');
   if (existing) existing.remove();
 
   const banner = document.createElement('div');
-  banner.id = 'mailq-refresh-banner';
+  banner.id = 'shopq-refresh-banner';
   banner.innerHTML = `
     <div style="
       position: fixed;
@@ -604,22 +604,22 @@ async function fetchDigest() {
  * Render digest content into the panel
  */
 function renderDigestContent(panel, result) {
-  const contentEl = panel.querySelector('.mailq-digest-content');
+  const contentEl = panel.querySelector('.shopq-digest-content');
 
   if (result.empty) {
     contentEl.innerHTML = `
-      <div class="mailq-digest-empty">
+      <div class="shopq-digest-empty">
         <div class="icon">📭</div>
         <p>${sanitizeHtml(result.message)}</p>
-        <button class="mailq-refresh-btn" id="mailq-organize-btn">Organize Inbox</button>
+        <button class="shopq-refresh-btn" id="shopq-organize-btn">Organize Inbox</button>
       </div>
     `;
     // Add click handler for organize button
-    contentEl.querySelector('#mailq-organize-btn')?.addEventListener('click', async () => {
+    contentEl.querySelector('#shopq-organize-btn')?.addEventListener('click', async () => {
       try {
         await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
         contentEl.innerHTML = `
-          <div class="mailq-digest-loading">
+          <div class="shopq-digest-loading">
             <div class="spinner"></div>
             <span>Organizing inbox...</span>
           </div>
@@ -635,27 +635,27 @@ function renderDigestContent(panel, result) {
     // Special handling for extension context invalidated
     if (result.needsRefresh) {
       contentEl.innerHTML = `
-        <div class="mailq-digest-error" style="text-align: center;">
+        <div class="shopq-digest-error" style="text-align: center;">
           <div style="font-size: 32px; margin-bottom: 12px;">🔄</div>
           <p style="font-weight: 500;">Extension Updated</p>
           <p style="font-size: 13px; margin-top: 8px; color: #5f6368;">Please refresh Gmail to reconnect.</p>
-          <button class="mailq-refresh-btn" id="mailq-refresh-page-btn" style="margin-top: 16px;">Refresh Gmail</button>
+          <button class="shopq-refresh-btn" id="shopq-refresh-page-btn" style="margin-top: 16px;">Refresh Gmail</button>
         </div>
       `;
-      contentEl.querySelector('#mailq-refresh-page-btn')?.addEventListener('click', () => {
+      contentEl.querySelector('#shopq-refresh-page-btn')?.addEventListener('click', () => {
         window.location.reload();
       });
       return;
     }
 
     contentEl.innerHTML = `
-      <div class="mailq-digest-error">
+      <div class="shopq-digest-error">
         <p>Failed to load digest</p>
         <p style="font-size: 12px; margin-top: 8px;">${sanitizeHtml(result.message)}</p>
-        <button class="mailq-refresh-btn" id="mailq-retry-btn">Retry</button>
+        <button class="shopq-refresh-btn" id="shopq-retry-btn">Retry</button>
       </div>
     `;
-    contentEl.querySelector('#mailq-retry-btn')?.addEventListener('click', () => refreshDigest(panel));
+    contentEl.querySelector('#shopq-retry-btn')?.addEventListener('click', () => refreshDigest(panel));
     return;
   }
 
@@ -666,37 +666,37 @@ function renderDigestContent(panel, result) {
   if (data.html) {
     // If API returns HTML, render it directly (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="mailq-digest-narrative">${sanitizeHtml(data.html)}</div>
-      <button class="mailq-refresh-btn" id="mailq-refresh-btn" style="margin-top: 20px;">Refresh</button>
+      <div class="shopq-digest-narrative">${sanitizeHtml(data.html)}</div>
+      <button class="shopq-refresh-btn" id="shopq-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else if (data.narrative) {
     // If API returns narrative text (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="mailq-digest-narrative">${sanitizeHtml(data.narrative)}</div>
-      <button class="mailq-refresh-btn" id="mailq-refresh-btn" style="margin-top: 20px;">Refresh</button>
+      <div class="shopq-digest-narrative">${sanitizeHtml(data.narrative)}</div>
+      <button class="shopq-refresh-btn" id="shopq-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else {
     // Fallback: no digest content available
     contentEl.innerHTML = `
-      <div class="mailq-digest-empty">
+      <div class="shopq-digest-empty">
         <div class="icon">📊</div>
         <p>No digest available yet.</p>
         <p style="font-size: 12px; margin-top: 8px;">Classify some emails first, then refresh.</p>
-        <button class="mailq-refresh-btn" id="mailq-refresh-btn">Refresh</button>
+        <button class="shopq-refresh-btn" id="shopq-refresh-btn">Refresh</button>
       </div>
     `;
   }
 
-  contentEl.querySelector('#mailq-refresh-btn')?.addEventListener('click', () => refreshDigest(panel));
+  contentEl.querySelector('#shopq-refresh-btn')?.addEventListener('click', () => refreshDigest(panel));
 }
 
 /**
  * Refresh the digest
  */
 async function refreshDigest(panel) {
-  const contentEl = panel.querySelector('.mailq-digest-content');
+  const contentEl = panel.querySelector('.shopq-digest-content');
   contentEl.innerHTML = `
-    <div class="mailq-digest-loading">
+    <div class="shopq-digest-loading">
       <div class="spinner"></div>
       <span>Loading digest...</span>
     </div>
@@ -714,7 +714,7 @@ let digestSidebarPanel = null;
  */
 function createDigestPanelContent() {
   const container = document.createElement('div');
-  container.id = 'mailq-digest-panel';
+  container.id = 'shopq-digest-panel';
   container.style.cssText = `
     height: 100%;
     display: flex;
@@ -728,7 +728,7 @@ function createDigestPanelContent() {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-    " id="mailq-digest-content">
+    " id="shopq-digest-content">
       <div style="
         display: flex;
         flex-direction: column;
@@ -743,24 +743,24 @@ function createDigestPanelContent() {
           border: 3px solid #e0e0e0;
           border-top-color: #1a73e8;
           border-radius: 50%;
-          animation: mailq-spin 1s linear infinite;
+          animation: shopq-spin 1s linear infinite;
           margin-bottom: 12px;
         "></div>
         <span>Loading digest...</span>
       </div>
     </div>
     <style>
-      @keyframes mailq-spin {
+      @keyframes shopq-spin {
         to { transform: rotate(360deg); }
       }
-      #mailq-digest-panel a { color: #1a73e8; text-decoration: none; }
-      #mailq-digest-panel a:hover { text-decoration: underline; }
+      #shopq-digest-panel a { color: #1a73e8; text-decoration: none; }
+      #shopq-digest-panel a:hover { text-decoration: underline; }
     </style>
   `;
 
   // Load digest content
   fetchDigest().then(result => {
-    const content = container.querySelector('#mailq-digest-content');
+    const content = container.querySelector('#shopq-digest-content');
     if (!content) return;
 
     if (result.empty) {
@@ -768,7 +768,7 @@ function createDigestPanelContent() {
         <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
           <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
           <p style="margin-bottom: 16px;">${sanitizeHtml(result.message)}</p>
-          <button id="mailq-organize-btn" style="
+          <button id="shopq-organize-btn" style="
             padding: 8px 16px;
             background: #1a73e8;
             color: white;
@@ -779,7 +779,7 @@ function createDigestPanelContent() {
           ">Organize Inbox</button>
         </div>
       `;
-      content.querySelector('#mailq-organize-btn')?.addEventListener('click', async () => {
+      content.querySelector('#shopq-organize-btn')?.addEventListener('click', async () => {
         try {
           await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
           content.innerHTML = `
@@ -799,7 +799,7 @@ function createDigestPanelContent() {
             <div style="font-size: 48px; margin-bottom: 16px;">🔄</div>
             <p style="font-weight: 500; color: #202124; margin-bottom: 8px;">Extension Updated</p>
             <p style="font-size: 13px; color: #5f6368; margin-bottom: 16px;">Please refresh Gmail to reconnect.</p>
-            <button id="mailq-refresh-btn" style="
+            <button id="shopq-refresh-btn" style="
               padding: 8px 16px;
               background: #1a73e8;
               color: white;
@@ -809,14 +809,14 @@ function createDigestPanelContent() {
             ">Refresh Gmail</button>
           </div>
         `;
-        content.querySelector('#mailq-refresh-btn')?.addEventListener('click', () => {
+        content.querySelector('#shopq-refresh-btn')?.addEventListener('click', () => {
           window.location.reload();
         });
       } else {
         content.innerHTML = `
           <div style="text-align: center; padding: 40px 20px;">
             <p style="color: #c5221f; margin-bottom: 16px;">Error: ${sanitizeHtml(result.message)}</p>
-            <button id="mailq-retry-btn" style="
+            <button id="shopq-retry-btn" style="
               padding: 8px 16px;
               background: #1a73e8;
               color: white;
@@ -826,7 +826,7 @@ function createDigestPanelContent() {
             ">Retry</button>
           </div>
         `;
-        content.querySelector('#mailq-retry-btn')?.addEventListener('click', () => {
+        content.querySelector('#shopq-retry-btn')?.addEventListener('click', () => {
           // Refresh the panel
           const newContent = createDigestPanelContent();
           container.replaceWith(newContent);
@@ -1250,7 +1250,7 @@ async function initializeDigestSidebar(sdk) {
     injectShopQButton();
 
     const observer = new MutationObserver(() => {
-      if (!document.getElementById('mailq-nav-button')) {
+      if (!document.getElementById('shopq-nav-button')) {
         injectShopQButton();
       }
     });
@@ -1323,7 +1323,7 @@ async function loadDigestIntoPanel(panelEl) {
  */
 function injectShopQButton() {
   // Skip if already exists
-  if (document.getElementById('mailq-nav-button')) {
+  if (document.getElementById('shopq-nav-button')) {
     return;
   }
 
@@ -1340,10 +1340,10 @@ function injectShopQButton() {
 
   // Create ShopQ button matching Gmail's style
   const button = document.createElement('div');
-  button.id = 'mailq-nav-button';
+  button.id = 'shopq-nav-button';
   button.innerHTML = `
     <style>
-      #mailq-nav-button {
+      #shopq-nav-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1354,9 +1354,9 @@ function injectShopQButton() {
         margin: 0 4px;
         transition: background 0.2s;
       }
-      #mailq-nav-button:hover { background: rgba(255,255,255,0.1); }
-      #mailq-nav-button img { width: 24px; height: 24px; }
-      #mailq-nav-button.active { background: rgba(138, 180, 248, 0.2); }
+      #shopq-nav-button:hover { background: rgba(255,255,255,0.1); }
+      #shopq-nav-button img { width: 24px; height: 24px; }
+      #shopq-nav-button.active { background: rgba(138, 180, 248, 0.2); }
     </style>
     <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="ShopQ Digest" title="ShopQ Digest">
   `;
@@ -1381,7 +1381,7 @@ function injectShopQButton() {
  * Toggle the digest drawer open/closed
  */
 function toggleDigestDrawer() {
-  const existing = document.getElementById('mailq-digest-iframe');
+  const existing = document.getElementById('shopq-digest-iframe');
   if (existing) {
     existing.remove();
     return;
@@ -1389,7 +1389,7 @@ function toggleDigestDrawer() {
 
   // Create drawer as iframe for isolation
   const iframe = document.createElement('iframe');
-  iframe.id = 'mailq-digest-iframe';
+  iframe.id = 'shopq-digest-iframe';
   iframe.style.cssText = `
     position: fixed !important;
     top: 0 !important;
@@ -1475,7 +1475,7 @@ function toggleDigestDrawer() {
   // Close button
   doc.getElementById('close-btn').addEventListener('click', () => {
     iframe.remove();
-    document.getElementById('mailq-nav-button')?.classList.remove('active');
+    document.getElementById('shopq-nav-button')?.classList.remove('active');
   });
 
   // Load digest content
