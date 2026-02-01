@@ -154,6 +154,7 @@ def init_database(db_path: Path) -> None:
             confidence TEXT NOT NULL DEFAULT 'unknown',
             source_email_ids TEXT DEFAULT '[]',
             order_number TEXT,
+            tracking_number TEXT,
             amount REAL,
             currency TEXT DEFAULT 'USD',
             order_date TEXT,
@@ -177,6 +178,24 @@ def init_database(db_path: Path) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_return_cards_merchant_domain
         ON return_cards(merchant_domain);
+
+        -- LLM usage tracking for budget limits (SCALE-001)
+        CREATE TABLE IF NOT EXISTS llm_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            call_type TEXT NOT NULL,
+            call_date DATE NOT NULL,
+            call_count INTEGER DEFAULT 1,
+            estimated_cost REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, call_type, call_date)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_date
+        ON llm_usage(call_date);
+
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_user_date
+        ON llm_usage(user_id, call_date);
     """)
 
     conn.commit()
