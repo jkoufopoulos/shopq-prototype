@@ -7,7 +7,7 @@
  */
 
 /**
- * @typedef {'active' | 'returned' | 'dismissed'} OrderStatus
+ * @typedef {'active' | 'returned' | 'dismissed' | 'cancelled'} OrderStatus
  */
 
 /**
@@ -15,7 +15,7 @@
  */
 
 /**
- * @typedef {'confirmation' | 'shipping' | 'delivery' | 'other'} EmailType
+ * @typedef {'confirmation' | 'shipping' | 'delivery' | 'cancellation' | 'other'} EmailType
  */
 
 /**
@@ -119,6 +119,7 @@ const ORDER_STATUS = {
   ACTIVE: 'active',
   RETURNED: 'returned',
   DISMISSED: 'dismissed',
+  CANCELLED: 'cancelled',
 };
 
 // Deadline confidence levels
@@ -133,6 +134,7 @@ const EMAIL_TYPE = {
   CONFIRMATION: 'confirmation',
   SHIPPING: 'shipping',
   DELIVERY: 'delivery',
+  CANCELLATION: 'cancellation',
   OTHER: 'other',
 };
 

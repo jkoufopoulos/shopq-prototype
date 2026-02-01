@@ -226,6 +226,33 @@ async function updateOrderStatus(order_key, status) {
 }
 
 /**
+ * Cancel an order by its merchant order number (order_id).
+ * Looks up the order via the order_id index and marks it as CANCELLED.
+ *
+ * @param {string} order_id - Merchant order number (e.g., Amazon order number)
+ * @returns {Promise<Order|null>} The cancelled order, or null if not found
+ */
+async function cancelOrderByOrderId(order_id) {
+  if (!order_id) return null;
+
+  const order = await findOrderByOrderId(order_id);
+  if (!order) {
+    console.log(STORE_LOG_PREFIX, 'Cancel: no order found for order_id:', order_id);
+    return null;
+  }
+
+  if (order.order_status === ORDER_STATUS.CANCELLED) {
+    console.log(STORE_LOG_PREFIX, 'Cancel: already cancelled:', order_id);
+    return order;
+  }
+
+  order.order_status = ORDER_STATUS.CANCELLED;
+  await upsertOrder(order);
+  console.log(STORE_LOG_PREFIX, 'Cancelled order:', order_id, 'key:', order.order_key);
+  return order;
+}
+
+/**
  * Merge two Orders into one (for escalation).
  * Merges source Order into target Order, deletes source.
  *
@@ -579,6 +606,26 @@ async function clearAllStorage() {
   await chrome.storage.local.clear();
   console.log(STORE_LOG_PREFIX, 'Cleared all storage');
   await initializeStorage();
+}
+
+/**
+ * Reset pipeline data while preserving user settings (merchant rules, label cache).
+ * Called on extension reload to ensure pipeline improvements take effect immediately.
+ *
+ * @returns {Promise<void>}
+ */
+async function resetPipelineData() {
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.ORDERS_BY_KEY]: {},
+    [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: {},
+    [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
+    [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.TEMPLATE_CACHE]: {},
+    [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
+    [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
+  });
+  console.log(STORE_LOG_PREFIX, 'Reset pipeline data (preserved merchant rules)');
 }
 
 /**

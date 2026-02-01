@@ -56,6 +56,10 @@ importScripts(
 
 console.log(`🛒 ShopQ Return Watch: Background service worker loaded v${CONFIG.VERSION}`);
 
+// Promise that resolves once onInstalled processing (including pipeline reset) is complete.
+// Scans await this to avoid reading stale data during extension reload.
+let pipelineResetComplete = Promise.resolve();
+
 // Initialize refresh system (sets up tab listeners and periodic alarm)
 initializeRefreshSystem();
 
@@ -206,6 +210,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const orders = await getAllPurchasesForDisplay();
         sendResponse({ success: true, orders });
       }
+      else if (message.type === 'GET_VISIBLE_ORDERS') {
+        const orders = await getVisibleOrders();
+        sendResponse({ success: true, orders });
+      }
       else if (message.type === 'RECOMPUTE_ORDER_DEADLINE') {
         const order = await recomputeOrderDeadline(message.order_key);
         sendResponse({ success: true, order });
@@ -309,18 +317,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Handle extension install/update
  */
-chrome.runtime.onInstalled.addListener(async (details) => {
-  // Initialize storage schema on install or update
-  await initializeStorage();
+chrome.runtime.onInstalled.addListener((details) => {
+  pipelineResetComplete = (async () => {
+    // Initialize storage schema on install or update
+    await initializeStorage();
 
-  if (details.reason === 'install') {
-    console.log('🎉 ShopQ Return Watch installed');
-    // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
-    // Don't set default_user - proper user isolation requires real Google user ID
-    // Initial scan will be triggered by refresh system when Gmail is opened
-  } else if (details.reason === 'update') {
-    console.log(`📦 ShopQ Return Watch updated to v${CONFIG.VERSION}`);
-  }
+    if (details.reason === 'install') {
+      console.log('🎉 ShopQ Return Watch installed');
+      // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
+      // Don't set default_user - proper user isolation requires real Google user ID
+      // Initial scan will be triggered by refresh system when Gmail is opened
+    } else if (details.reason === 'update') {
+      console.log(`📦 ShopQ Return Watch updated to v${CONFIG.VERSION}`);
+      await resetPipelineData();
+      console.log('🔄 Pipeline data reset — will re-process on next scan');
+    }
+  })();
 });
 
 // REMOVED: webNavigation re-injection - manifest.json content_scripts handles this

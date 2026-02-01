@@ -2,19 +2,16 @@
  * ShopQ Return Watch Sidebar
  * Displays returnable purchases and their return windows
  *
- * v0.6.2 Integration:
- * - Uses GET_RETURN_WATCH_ORDERS for Return Watch section
- * - Uses GET_ALL_PURCHASES for All Purchases section
- * - Triggers ENRICH_ORDER on detail view open
- * - Supports SET_MERCHANT_RULE for unknown deadlines
+ * Uses GET_VISIBLE_ORDERS for a unified purchase list sorted by urgency.
+ * Triggers ENRICH_ORDER on detail view open.
+ * Supports SET_MERCHANT_RULE for unknown deadlines.
  */
 
 // =============================================================================
 // STATE
 // =============================================================================
 
-let returnWatchOrders = { expiringSoon: [], active: [] };
-let allPurchases = [];
+let visibleOrders = [];
 let currentDetailOrder = null;
 let isEnriching = false;
 
@@ -32,6 +29,36 @@ const refreshStatus = document.getElementById('refresh-status');
 // =============================================================================
 // UTILITIES
 // =============================================================================
+
+/**
+ * Escape HTML to prevent XSS attacks (SEC-001)
+ * @param {string} text - Untrusted text to escape
+ * @returns {string} HTML-safe string
+ */
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const div = document.createElement('div');
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+
+/**
+ * Sanitize a URL to prevent javascript: and other dangerous protocols (SEC-001)
+ * Only allows http:, https:, and mailto: protocols
+ * @param {string} url - Untrusted URL to sanitize
+ * @returns {string} Safe URL or empty string if dangerous
+ */
+function sanitizeUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim().toLowerCase();
+  // Only allow safe protocols
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('mailto:')) {
+    return url; // Return original (preserving case)
+  }
+  // Block javascript:, data:, vbscript:, etc.
+  console.warn('ShopQ: Blocked unsafe URL:', url.substring(0, 50));
+  return '';
+}
 
 /**
  * Format a date for display
@@ -76,13 +103,10 @@ function formatAmount(amount, currency = 'USD') {
 // =============================================================================
 
 /**
- * Render the returns list view
+ * Render the returns list view — single flat list sorted by urgency
  */
 function renderListView() {
-  const hasReturnWatch = returnWatchOrders.expiringSoon.length > 0 || returnWatchOrders.active.length > 0;
-  const hasAllPurchases = allPurchases.length > 0;
-
-  if (!hasReturnWatch && !hasAllPurchases) {
+  if (visibleOrders.length === 0) {
     listView.innerHTML = `
       <div class="empty-state">
         <div class="icon">📦</div>
@@ -93,48 +117,14 @@ function renderListView() {
     return;
   }
 
-  let html = '';
-
-  // Return Watch: Expiring Soon section
-  if (returnWatchOrders.expiringSoon.length > 0) {
-    html += `
-      <div class="section">
-        <div class="section-header urgent">Expiring Soon (${returnWatchOrders.expiringSoon.length})</div>
-        ${returnWatchOrders.expiringSoon.map(o => renderOrderCard(o, true)).join('')}
-      </div>
-    `;
-  }
-
-  // Return Watch: Active section
-  if (returnWatchOrders.active.length > 0) {
-    html += `
-      <div class="section">
-        <div class="section-header">Return Watch (${returnWatchOrders.active.length})</div>
-        ${returnWatchOrders.active.map(o => renderOrderCard(o, false)).join('')}
-      </div>
-    `;
-  }
-
-  // All Purchases section
-  if (hasAllPurchases) {
-    html += `
-      <div class="section">
-        <div class="section-header">All Purchases (${allPurchases.length})</div>
-        ${allPurchases.map(o => renderOrderCard(o, false)).join('')}
-      </div>
-    `;
-  }
-
+  const html = visibleOrders.map(o => renderOrderCard(o)).join('');
   listView.innerHTML = html;
 
   // Add click handlers to cards
   listView.querySelectorAll('.return-card').forEach(card => {
     card.addEventListener('click', () => {
       const orderKey = card.dataset.id;
-      // Find in both lists
-      let order = returnWatchOrders.expiringSoon.find(o => o.order_key === orderKey) ||
-                  returnWatchOrders.active.find(o => o.order_key === orderKey) ||
-                  allPurchases.find(o => o.order_key === orderKey);
+      const order = visibleOrders.find(o => o.order_key === orderKey);
       if (order) {
         showDetailView(order);
       }
@@ -143,9 +133,9 @@ function renderListView() {
 }
 
 /**
- * Render a single order card (v0.6.2 Order model)
+ * Render a single order card — urgency always derived from days remaining
  */
-function renderOrderCard(order, isUrgent) {
+function renderOrderCard(order) {
   const daysUntil = getDaysUntil(order.return_by_date);
   const isExpiring = daysUntil !== null && daysUntil <= 7 && daysUntil >= 0;
   const isCritical = daysUntil !== null && daysUntil <= 3 && daysUntil >= 0;
@@ -163,17 +153,13 @@ function renderOrderCard(order, isUrgent) {
       dateText = 'Due today!';
       dateClass = 'urgent';
       urgentBadge = '<span class="urgent-badge critical"><span class="dot"></span>Today!</span>';
-    } else if (daysUntil === 1) {
-      dateText = 'Due tomorrow';
-      dateClass = isUrgent ? 'urgent' : '';
-      urgentBadge = '<span class="urgent-badge critical"><span class="dot"></span>1 day</span>';
     } else if (daysUntil <= 3) {
-      dateText = `${daysUntil} days left`;
+      dateText = `${daysUntil} day${daysUntil === 1 ? '' : 's'} left`;
       dateClass = 'urgent';
-      urgentBadge = `<span class="urgent-badge critical"><span class="dot"></span>${daysUntil} days</span>`;
+      urgentBadge = `<span class="urgent-badge critical"><span class="dot"></span>${daysUntil} day${daysUntil === 1 ? '' : 's'}</span>`;
     } else if (daysUntil <= 7) {
       dateText = `${daysUntil} days left`;
-      dateClass = isUrgent ? 'urgent' : '';
+      dateClass = '';
       urgentBadge = `<span class="urgent-badge warning"><span class="dot"></span>${daysUntil} days</span>`;
     } else {
       dateText = `Due ${formatDate(order.return_by_date)}`;
@@ -186,7 +172,7 @@ function renderOrderCard(order, isUrgent) {
   const cardClass = isCritical ? 'critical' : (isExpiring ? 'expiring' : '');
 
   return `
-    <div class="return-card ${cardClass}" data-id="${order.order_key}">
+    <div class="return-card ${cardClass}" data-id="${escapeHtml(order.order_key)}">
       <div class="card-header">
         <span class="merchant">${escapeHtml(order.merchant_display_name)}</span>
         ${urgentBadge}
@@ -209,7 +195,8 @@ function getStatusBadge(status) {
     'expiring_soon': '<span class="status-badge expiring_soon">Expiring</span>',
     'expired': '<span class="status-badge expired">Expired</span>',
     'returned': '<span class="status-badge active">Returned</span>',
-    'dismissed': '<span class="status-badge">Dismissed</span>'
+    'dismissed': '<span class="status-badge">Dismissed</span>',
+    'cancelled': '<span class="status-badge">Cancelled</span>'
   };
   return badges[status] || '';
 }
@@ -367,11 +354,11 @@ function renderDetailView(order, needsEnrichment) {
     </div>
     ` : ''}
 
-    ${order.return_portal_link ? `
+    ${order.return_portal_link && sanitizeUrl(order.return_portal_link) ? `
     <div class="detail-section">
       <div class="detail-label">Return Portal</div>
       <div class="detail-value">
-        <a href="${escapeHtml(order.return_portal_link)}" target="_top">Start Return</a>
+        <a href="${sanitizeUrl(order.return_portal_link)}" target="_top">Start Return</a>
       </div>
     </div>
     ` : ''}
@@ -386,25 +373,17 @@ function renderDetailView(order, needsEnrichment) {
     ${order.order_status === 'active' ? `
     <div class="detail-actions">
       <button class="action-btn primary" id="mark-returned-btn">Mark Returned</button>
-      <button class="action-btn secondary" id="dismiss-btn">Dismiss</button>
     </div>
     ` : ''}
   `;
 
   // Add action handlers
   const markReturnedBtn = document.getElementById('mark-returned-btn');
-  const dismissBtn = document.getElementById('dismiss-btn');
   const setRuleBtn = document.getElementById('set-rule-btn');
 
   if (markReturnedBtn) {
     markReturnedBtn.addEventListener('click', () => {
       updateOrderStatus(order.order_key, 'returned');
-    });
-  }
-
-  if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
-      updateOrderStatus(order.order_key, 'dismissed');
     });
   }
 
@@ -439,31 +418,19 @@ function showListView() {
   backBtn.classList.add('hidden');
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
 
 // =============================================================================
 // API CALLS
 // =============================================================================
 
 /**
- * Fetch returns from the API
+ * Fetch visible orders from content script
  */
 async function fetchReturns() {
   try {
-    // Request Return Watch orders (deadline-known)
-    window.parent.postMessage({ type: 'SHOPQ_GET_RETURN_WATCH' }, '*');
-    // Request all purchases
-    window.parent.postMessage({ type: 'SHOPQ_GET_ALL_PURCHASES' }, '*');
+    window.parent.postMessage({ type: 'SHOPQ_GET_ORDERS' }, '*');
   } catch (error) {
-    console.error('ShopQ Returns: Failed to request returns:', error);
+    console.error('ShopQ Returns: Failed to request orders:', error);
     renderError('Failed to load returns');
   }
 }
@@ -536,18 +503,9 @@ function renderError(message) {
 // =============================================================================
 
 window.addEventListener('message', (event) => {
-  // Handle Return Watch orders (v0.6.2)
-  if (event.data?.type === 'SHOPQ_RETURN_WATCH_DATA') {
-    returnWatchOrders = {
-      expiringSoon: event.data.expiringSoon || [],
-      active: event.data.active || []
-    };
-    renderListView();
-  }
-
-  // Handle All Purchases (v0.6.2)
-  if (event.data?.type === 'SHOPQ_ALL_PURCHASES_DATA') {
-    allPurchases = event.data.orders || [];
+  // Handle unified visible orders
+  if (event.data?.type === 'SHOPQ_ORDERS_DATA') {
+    visibleOrders = event.data.orders || [];
     renderListView();
   }
 

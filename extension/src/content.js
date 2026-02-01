@@ -901,21 +901,14 @@ async function initializeDigestSidebar(sdk) {
     if (event.data?.type === 'SHOPQ_RETURNS_SIDEBAR_READY') {
       console.log('ShopQ: Returns sidebar iframe ready');
       iframeReady = true;
-      // Fetch and send returns data (v0.6.2)
-      await fetchReturnWatchOrders();
-      await fetchAllPurchases();
+      // Fetch and send visible orders
+      await fetchVisibleOrders();
     }
 
-    // v0.6.2: Get Return Watch orders
-    if (event.data?.type === 'SHOPQ_GET_RETURN_WATCH') {
-      console.log('ShopQ: Fetching Return Watch orders...');
-      await fetchReturnWatchOrders();
-    }
-
-    // v0.6.2: Get All Purchases
-    if (event.data?.type === 'SHOPQ_GET_ALL_PURCHASES') {
-      console.log('ShopQ: Fetching All Purchases...');
-      await fetchAllPurchases();
+    // Unified order fetch request from sidebar
+    if (event.data?.type === 'SHOPQ_GET_ORDERS') {
+      console.log('ShopQ: Fetching visible orders...');
+      await fetchVisibleOrders();
     }
 
     // v0.6.2: Update order status
@@ -971,8 +964,7 @@ async function initializeDigestSidebar(sdk) {
           }, EXTENSION_ORIGIN);
         }
         // Refresh data
-        await fetchReturnWatchOrders();
-        await fetchAllPurchases();
+        await fetchVisibleOrders();
       } catch (err) {
         console.error('ShopQ: Set merchant rule failed:', err);
       }
@@ -1016,9 +1008,8 @@ async function initializeDigestSidebar(sdk) {
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', result }, EXTENSION_ORIGIN);
           }
-          // Refresh returns data (v0.6.2)
-          fetchReturnWatchOrders();
-          fetchAllPurchases();
+          // Refresh visible orders
+          fetchVisibleOrders();
         })
         .catch(err => {
           console.error('ShopQ: Rescan failed:', err);
@@ -1029,36 +1020,21 @@ async function initializeDigestSidebar(sdk) {
     }
   });
 
-  // v0.6.2: Fetch Return Watch orders from background
-  async function fetchReturnWatchOrders() {
+  // Fetch visible orders from background (unified list)
+  async function fetchVisibleOrders() {
     try {
-      const result = await chrome.runtime.sendMessage({ type: 'GET_RETURN_WATCH_ORDERS' });
+      const result = await chrome.runtime.sendMessage({ type: 'GET_VISIBLE_ORDERS' });
+      const orders = result.orders || [];
       if (iframeReady && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
-          type: 'SHOPQ_RETURN_WATCH_DATA',
-          expiringSoon: result.expiringSoon || [],
-          active: result.active || []
+          type: 'SHOPQ_ORDERS_DATA',
+          orders
         }, EXTENSION_ORIGIN);
       }
       // Update expiring indicator
-      updateExpiringIndicator([...result.expiringSoon || [], ...result.active || []]);
+      updateExpiringIndicator(orders);
     } catch (err) {
-      console.error('ShopQ: Failed to fetch Return Watch orders:', err);
-    }
-  }
-
-  // v0.6.2: Fetch All Purchases from background
-  async function fetchAllPurchases() {
-    try {
-      const result = await chrome.runtime.sendMessage({ type: 'GET_ALL_PURCHASES' });
-      if (iframeReady && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({
-          type: 'SHOPQ_ALL_PURCHASES_DATA',
-          orders: result.orders || []
-        }, EXTENSION_ORIGIN);
-      }
-    } catch (err) {
-      console.error('ShopQ: Failed to fetch All Purchases:', err);
+      console.error('ShopQ: Failed to fetch visible orders:', err);
     }
   }
 
@@ -1078,8 +1054,7 @@ async function initializeDigestSidebar(sdk) {
         }, EXTENSION_ORIGIN);
       }
       // Refresh data
-      await fetchReturnWatchOrders();
-      await fetchAllPurchases();
+      await fetchVisibleOrders();
     } catch (err) {
       console.error('ShopQ: Failed to update order status:', err);
     }
@@ -1184,9 +1159,8 @@ async function initializeDigestSidebar(sdk) {
     // Listen for panel visibility changes
     panelView.on('activate', () => {
       console.log('ShopQ: Return Watch panel activated');
-      // Refresh returns data when panel opens
-      fetchReturnWatchOrders();
-      fetchAllPurchases();
+      // Refresh visible orders when panel opens
+      fetchVisibleOrders();
     });
 
     panelView.on('deactivate', () => {
@@ -1225,8 +1199,7 @@ async function initializeDigestSidebar(sdk) {
       lastDigestRefreshTime = now;
 
       console.log('ShopQ: External returns refresh triggered');
-      fetchReturnWatchOrders();
-      fetchAllPurchases();
+      fetchVisibleOrders();
     };
 
     // Auto-open on first load
@@ -1239,8 +1212,7 @@ async function initializeDigestSidebar(sdk) {
       .then(result => {
         console.log('ShopQ: Auto-scan complete:', result);
         // Refresh sidebar with new data after scan completes
-        fetchReturnWatchOrders();
-        fetchAllPurchases();
+        fetchVisibleOrders();
       })
       .catch(err => console.log('ShopQ: Auto-scan error:', err));
 

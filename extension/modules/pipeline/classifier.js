@@ -17,6 +17,26 @@ const CLASSIFIER_LOG_PREFIX = '[ReturnWatch:Classifier]';
 // ============================================================
 
 /**
+ * Keywords indicating a cancellation/refund email.
+ * Checked first (highest priority) — cancellation supersedes all other types.
+ */
+const CANCELLATION_SUBJECT_KEYWORDS = [
+  'cancelled',
+  'cancellation',
+  'advance refund issued',
+  'refund issued',
+];
+
+const CANCELLATION_BODY_KEYWORDS = [
+  'your order was cancelled',
+  'has been cancelled',
+  'item cancelled successfully',
+  'being returned to us by the carrier',
+  'we\'ve issued your refund',
+  'we have issued your refund',
+];
+
+/**
  * Keywords indicating a delivery email.
  * These are checked first (highest priority).
  */
@@ -177,7 +197,12 @@ function extractAmount(text) {
 function classifyEmailType(subject, snippet) {
   const text = `${subject || ''} ${snippet || ''}`;
 
-  // Check in priority order
+  // Check in priority order (cancellation first — supersedes all)
+  if (containsKeyword(subject || '', CANCELLATION_SUBJECT_KEYWORDS) ||
+      containsKeyword(text, CANCELLATION_BODY_KEYWORDS)) {
+    return EMAIL_TYPE.CANCELLATION;
+  }
+
   if (containsKeyword(text, DELIVERY_KEYWORDS)) {
     return EMAIL_TYPE.DELIVERY;
   }

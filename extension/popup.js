@@ -3,54 +3,32 @@
  * Handles popup UI interactions for Return Watch feature
  */
 
-const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
-
-// Get OAuth token for API authentication
-async function getAuthToken() {
-  return new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(token);
-      }
-    });
-  });
-}
-
-// Get headers with authentication
-async function getAuthHeaders() {
-  const token = await getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-  };
-}
-
-// Update return counts display
+// Update return counts display using local storage via background script
 async function updateReturnCounts() {
   try {
-    const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${API_BASE_URL}/api/returns/counts`,
-      {
-        method: 'GET',
-        headers,
-      }
-    );
+    const result = await chrome.runtime.sendMessage({ type: 'GET_VISIBLE_ORDERS' });
+    const orders = result.orders || [];
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    // Derive expiring count: orders with return_by_date within 7 days
+    const now = new Date();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    let expiringCount = 0;
+
+    for (const order of orders) {
+      if (!order.return_by_date) continue;
+      const deadline = new Date(order.return_by_date);
+      const diff = deadline - now;
+      if (diff >= 0 && diff <= sevenDaysMs) {
+        expiringCount++;
+      }
     }
 
-    const data = await response.json();
-
-    document.getElementById('expiringCount').textContent = data.expiring_soon || 0;
-    document.getElementById('activeCount').textContent = data.active || 0;
+    document.getElementById('expiringCount').textContent = expiringCount;
+    document.getElementById('activeCount').textContent = orders.length;
 
     // Highlight if there are expiring items
     const expiringEl = document.getElementById('expiringCount');
-    if (data.expiring_soon > 0) {
+    if (expiringCount > 0) {
       expiringEl.classList.add('urgent');
     } else {
       expiringEl.classList.remove('urgent');

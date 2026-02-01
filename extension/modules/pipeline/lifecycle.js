@@ -447,3 +447,75 @@ async function getAllPurchasesForDisplay() {
 
   return activeOrders;
 }
+
+// ============================================================
+// UNIFIED VISIBLE ORDERS
+// ============================================================
+
+/**
+ * Check if an order is stale (expired AND 90+ days since purchase).
+ * Stale orders are hidden from the unified list.
+ *
+ * @param {Order} order
+ * @returns {boolean}
+ */
+function isStaleOrder(order) {
+  if (!order.return_by_date) return false;
+
+  const today = getToday();
+
+  // Must be expired (return_by_date in the past)
+  if (order.return_by_date >= today) return false;
+
+  // Must be 90+ days since purchase_date
+  if (!order.purchase_date) return false;
+  const daysSincePurchase = daysBetween(order.purchase_date, today);
+  return daysSincePurchase >= 90;
+}
+
+/**
+ * Get all visible orders for the unified purchase list.
+ *
+ * Visibility rules:
+ * - Show: All orders with order_status === 'active'
+ * - Hide: returned, cancelled, dismissed
+ * - Hide stale: expired AND 90+ days since purchase_date
+ *
+ * Sort order:
+ * 1. Orders with return_by_date — deadline ASC (soonest first)
+ * 2. Orders without return_by_date — purchase_date DESC (newest first)
+ *
+ * @returns {Promise<Order[]>}
+ */
+async function getVisibleOrders() {
+  const allOrders = await getAllOrders();
+
+  // Filter: active only, exclude stale
+  const visible = allOrders.filter(o =>
+    o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o)
+  );
+
+  // Split into has-deadline and no-deadline groups
+  const withDeadline = [];
+  const withoutDeadline = [];
+
+  for (const order of visible) {
+    if (order.return_by_date) {
+      withDeadline.push(order);
+    } else {
+      withoutDeadline.push(order);
+    }
+  }
+
+  // Sort with-deadline by return_by_date ASC (soonest first)
+  withDeadline.sort((a, b) => a.return_by_date.localeCompare(b.return_by_date));
+
+  // Sort without-deadline by purchase_date DESC (newest first)
+  withoutDeadline.sort((a, b) => {
+    if (!a.purchase_date) return 1;
+    if (!b.purchase_date) return -1;
+    return b.purchase_date.localeCompare(a.purchase_date);
+  });
+
+  return [...withDeadline, ...withoutDeadline];
+}

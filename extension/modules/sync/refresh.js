@@ -114,6 +114,11 @@ function isLastScanStale() {
  * @returns {Promise<ScanResult|null>}
  */
 async function triggerScan(window_days, trigger) {
+  // Wait for any pending pipeline reset (e.g., extension reload clears stale data)
+  if (typeof pipelineResetComplete !== 'undefined') {
+    await pipelineResetComplete;
+  }
+
   if (refreshState.scanInProgress) {
     console.log(REFRESH_LOG_PREFIX, 'SCAN_SKIPPED', 'already in progress');
     return null;
