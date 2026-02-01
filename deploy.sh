@@ -2,7 +2,7 @@
 
 set -e
 
-PROJECT_ID="shopq-467118"
+PROJECT_ID="mailq-467118"
 REGION="us-central1"
 SERVICE_NAME="shopq-api"
 
