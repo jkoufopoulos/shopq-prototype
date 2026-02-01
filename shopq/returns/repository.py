@@ -62,7 +62,11 @@ class ReturnCardRepository:
         # Compute initial status based on return_by_date
         initial_status = ReturnStatus.ACTIVE
         if card.return_by_date:
-            days_remaining = (card.return_by_date - now).days
+            rbd = card.return_by_date
+            if rbd.tzinfo is None:
+                from datetime import UTC
+                rbd = rbd.replace(tzinfo=UTC)
+            days_remaining = (rbd - now).days
             if days_remaining <= 0:
                 initial_status = ReturnStatus.EXPIRED
             elif days_remaining <= 7:
