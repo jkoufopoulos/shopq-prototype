@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
-Fetch emails from Gmail for the last N days and export to JSON for labeling.
+Fetch emails from Gmail for the last N days and export for labeling.
 
 This script:
 1. Authenticates with Gmail (prompts OAuth if needed)
 2. Fetches all emails from the last N days (default: 30)
-3. Exports to data/labeling/emails_to_label.json
+3. Exports to JSON or JSONL format
 
 Usage:
+    # For the new golden dataset labeler (recommended):
+    python scripts/labeling/fetch_emails.py --format jsonl -o emails.jsonl
+
+    # Legacy JSON format:
     python scripts/labeling/fetch_emails.py [--days 30] [--max-results 500]
+
+Output formats:
+    --format jsonl  One email per line, fields: email_id, from, subject, snippet, internal_date_ms, thread_id
+    --format json   Legacy format with nested structure (deprecated)
 """
 
 from __future__ import annotations
@@ -208,16 +216,35 @@ def extract_email_data(raw_message: dict) -> dict | None:
         return None
 
 
+def to_jsonl_format(email_data: dict, raw_message: dict) -> dict:
+    """Convert email data to JSONL format for golden_dataset_labeler."""
+    return {
+        "email_id": email_data["message_id"],
+        "thread_id": email_data.get("thread_id", ""),
+        "from": email_data.get("from_address", ""),
+        "subject": email_data.get("subject", ""),
+        "snippet": email_data.get("snippet", ""),
+        "internal_date_ms": int(raw_message.get("internalDate", 0)),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Fetch Gmail emails for labeling")
     parser.add_argument("--days", type=int, default=30, help="Number of days to fetch (default: 30)")
     parser.add_argument("--max-results", type=int, default=0, help="Maximum emails to fetch (0 = no limit)")
-    parser.add_argument("--output", type=str, default=None, help="Output JSON file path")
+    parser.add_argument("-o", "--output", type=str, default=None, help="Output file path")
+    parser.add_argument("--format", choices=["json", "jsonl"], default="json",
+                        help="Output format: jsonl (for golden_dataset_labeler) or json (legacy)")
     parser.add_argument("--all-emails", action="store_true", help="Fetch all emails, not just Purchases category")
     args = parser.parse_args()
 
-    # Set default output path
-    output_path = args.output or str(project_root / "data" / "labeling" / "emails_to_label.json")
+    # Set default output path based on format
+    if args.output:
+        output_path = args.output
+    elif args.format == "jsonl":
+        output_path = str(project_root / "data" / "labeling" / "emails.jsonl")
+    else:
+        output_path = str(project_root / "data" / "labeling" / "emails_to_label.json")
 
     purchases_only = not args.all_emails
 
@@ -227,6 +254,7 @@ def main():
     print(f"Fetching emails from last {args.days} days")
     print(f"Max results: {args.max_results if args.max_results > 0 else 'unlimited'}")
     print(f"Filter: {'Purchases category only' if purchases_only else 'All emails'}")
+    print(f"Format: {args.format}")
     print(f"Output: {output_path}")
     print()
 
@@ -243,6 +271,7 @@ def main():
     # Fetch full details for each message
     print(f"\nFetching full details for {len(messages)} messages...")
     emails = []
+    raw_messages = []
 
     for i, msg in enumerate(messages):
         if (i + 1) % 50 == 0:
@@ -253,27 +282,40 @@ def main():
             data = extract_email_data(raw)
             if data:
                 emails.append(data)
+                raw_messages.append(raw)
 
     print(f"\nSuccessfully processed {len(emails)} emails")
 
-    # Add labeling metadata
-    output_data = {
-        "metadata": {
-            "fetched_at": datetime.now(UTC).isoformat(),
-            "days_fetched": args.days,
-            "total_emails": len(emails),
-            "labeling_status": "pending",
-        },
-        "emails": emails,
-    }
-
-    # Save to JSON
+    # Save in requested format
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, indent=2, ensure_ascii=False)
 
-    print(f"\nSaved to: {output_path}")
-    print(f"\nNext step: Run 'python scripts/labeling/label_emails.py' to label these emails")
+    if args.format == "jsonl":
+        # JSONL format for golden_dataset_labeler
+        with open(output_path, "w", encoding="utf-8") as f:
+            for email_data, raw in zip(emails, raw_messages):
+                jsonl_record = to_jsonl_format(email_data, raw)
+                f.write(json.dumps(jsonl_record, ensure_ascii=False) + "\n")
+
+        print(f"\nSaved to: {output_path}")
+        print(f"\nNext step: Run 'python scripts/golden_dataset_labeler.py {output_path}'")
+    else:
+        # Legacy JSON format
+        output_data = {
+            "metadata": {
+                "fetched_at": datetime.now(UTC).isoformat(),
+                "days_fetched": args.days,
+                "total_emails": len(emails),
+                "labeling_status": "pending",
+            },
+            "emails": emails,
+        }
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+
+        print(f"\nSaved to: {output_path}")
+        print(f"\n⚠️  Note: The label_emails.py script is deprecated.")
+        print(f"Consider using --format jsonl with scripts/golden_dataset_labeler.py instead.")
 
 
 if __name__ == "__main__":
