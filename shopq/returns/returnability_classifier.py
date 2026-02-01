@@ -116,7 +116,24 @@ Snippet: {snippet}
 - ANY food delivery: DoorDash, Grubhub, Uber Eats, Postmates
 - ANY meal kits: HelloFresh, Blue Apron, Factor, Home Chef
 - ANY perishable items: flowers, plants, fresh food, prepared meals
+- Protein shakes, protein bars, supplements, vitamins from ANY retailer (including Amazon)
+- Consumable health/nutrition products are PERISHABLE even if shipped
 - These are CONSUMED or PERISHABLE - they cannot be returned like physical products
+
+### IMPORTANT: Cancelled orders are NOT returnable (receipt_type="service"):
+- If email says "cancelled", "cancellation", or "item cancelled" — there is NO product to return
+- Pre-orders that were cancelled before shipping
+- Refund confirmations for cancelled items
+
+### Return processing emails are NOT new purchases (receipt_type="service"):
+- "Your return is approved", "return has been processed"
+- Emails from return services (Happy Returns, Returnly, Loop)
+- Refund confirmations — these are OUTGOING, not incoming products
+
+### Warranty and protection plans are services (receipt_type="service"):
+- Extended warranties (Asurion, Allstate, SquareTrade)
+- Protection plans, care plans, insurance add-ons
+- These are SERVICE CONTRACTS, not physical products
 
 ### Services (receipt_type="service"):
 - Rides: Uber, Lyft

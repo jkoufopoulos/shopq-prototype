@@ -100,10 +100,18 @@ class ReturnFieldExtractor:
 
     # Regex patterns for common fields
     ORDER_NUMBER_PATTERNS = [
-        r"order\s*#?\s*:?\s*([A-Z0-9-]{5,25})",
-        r"confirmation\s*#?\s*:?\s*([A-Z0-9-]{5,25})",
-        r"order\s+number\s*:?\s*([A-Z0-9-]{5,25})",
-        r"#([0-9]{3}-[0-9]{7}-[0-9]{7})",  # Amazon format
+        # Amazon-specific format (most specific, check first)
+        r"#([0-9]{3}-[0-9]{7}-[0-9]{7})",
+        # "ORDER NUMBER [#51596895]" or "Order Number: ABC123"
+        r"(?:order|confirmation)\s+number\s*:?\s*\[?#?\s*([A-Z0-9][-A-Z0-9]{3,24})",
+        # "Order #ABC123" or "Order #: ABC123" (requires # delimiter)
+        r"order\s*#\s*:?\s*([A-Z0-9][-A-Z0-9]{3,24})",
+        # "Confirmation #ABC123" or "Confirmation: ABC123"
+        r"confirmation\s*[#:]\s*([A-Z0-9][-A-Z0-9]{3,24})",
+        # "Trans: 67082" or "Transaction #67082"
+        r"trans(?:action)?\s*[#:]\s*([A-Z0-9][-A-Z0-9]{3,24})",
+        # "Updated Shipping Address for 1P8QCX0" — order number after "for"
+        r"(?:for|regarding|re:?)\s+#?\s*([A-Z0-9][-A-Z0-9]{4,24})\s*$",
     ]
 
     TRACKING_LINK_PATTERNS = [
@@ -117,6 +125,8 @@ class ReturnFieldExtractor:
 
     # LLM prompt for field extraction
     EXTRACTION_PROMPT = """Extract purchase details from this email.
+
+Today's date: {today}
 
 Subject: {subject}
 From: {from_address}
@@ -148,9 +158,9 @@ Output JSON:
   "order_number": "..." or null,
   "amount": 123.45 or null,
   "currency": "USD",
-  "order_date": "2024-01-15" or null,
-  "delivery_date": "2024-01-20" or null,
-  "explicit_return_by": "2024-02-20" or null,
+  "order_date": "YYYY-MM-DD" or null,
+  "delivery_date": "YYYY-MM-DD" or null,
+  "explicit_return_by": "YYYY-MM-DD" or null,
   "return_window_days": 30 or null,
   "return_policy_quote": "exact text from email about returns" or null
 }}
@@ -191,10 +201,7 @@ Respond with ONLY the JSON."""
         model = self._get_model()
 
         try:
-            response = model.generate_content(
-                prompt,
-                request_options={"timeout": LLM_TIMEOUT_SECONDS},
-            )
+            response = model.generate_content(prompt)
             return response.text
         except DeadlineExceeded as e:
             counter("returns.extractor.timeout")
@@ -205,12 +212,49 @@ Respond with ONLY the JSON."""
             logger.warning("LLM service unavailable, will retry: %s", e)
             raise ConnectionError(f"LLM service unavailable: {e}") from e
 
+    # Common garbage values the LLM or regex may extract as order numbers
+    _GARBAGE_ORDER_WORDS = frozenset({
+        "confirmation", "tracking", "order", "number", "receipt",
+        "invoice", "shipping", "delivery", "purchase", "unknown",
+        "none", "n/a", "null",
+    })
+
+    @staticmethod
+    def _validate_order_number(order_num: str | None) -> str | None:
+        """Validate and clean an extracted order number.
+
+        Rejects:
+        - None / empty
+        - Common words (CONFIRMATION, TRACKING, etc.)
+        - Strings with no digits
+        - Too short (<3 chars) or too long (>40 chars)
+        - Leading/trailing dashes
+        """
+        if not order_num:
+            return None
+
+        cleaned = order_num.strip().strip("-").strip()
+
+        if not cleaned or len(cleaned) < 3 or len(cleaned) > 40:
+            return None
+
+        # Reject if it's a common word
+        if cleaned.lower() in ReturnFieldExtractor._GARBAGE_ORDER_WORDS:
+            return None
+
+        # Reject if no digits at all
+        if not any(c.isdigit() for c in cleaned):
+            return None
+
+        return cleaned
+
     def extract(
         self,
         from_address: str,
         subject: str,
         body: str,
         merchant_domain: str,
+        received_at: datetime | None = None,
     ) -> ExtractedFields:
         """
         Extract all fields from a purchase email.
@@ -220,6 +264,7 @@ Respond with ONLY the JSON."""
             subject: Email subject
             body: Email body text
             merchant_domain: Sender domain (for merchant rule lookup)
+            received_at: When the email was received (fallback anchor date)
 
         Returns:
             ExtractedFields with all available data
@@ -264,6 +309,7 @@ Respond with ONLY the JSON."""
             delivery_date=delivery_date,
             merchant_domain=merchant_domain,
             return_window_days=return_window_days,
+            received_at=received_at,
         )
 
         # Build evidence snippet - prefer return policy quote, fallback to body preview
@@ -281,7 +327,10 @@ Respond with ONLY the JSON."""
             explicit_return_by=explicit_return_by,
             return_by_date=return_by_date,
             return_confidence=return_confidence,
-            order_number=rules_fields.get("order_number") or llm_fields.get("order_number"),
+            order_number=(
+                self._validate_order_number(rules_fields.get("order_number"))
+                or self._validate_order_number(llm_fields.get("order_number"))
+            ),
             amount=llm_fields.get("amount"),
             currency=llm_fields.get("currency", "USD"),
             return_portal_link=rules_fields.get("return_portal_link"),
@@ -344,6 +393,7 @@ Respond with ONLY the JSON."""
         # NOTE: Body content not logged to prevent PII exposure
 
         prompt = self.EXTRACTION_PROMPT.format(
+            today=datetime.now().strftime("%Y-%m-%d"),
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
             body=self._sanitize(body_truncated, 4000),
@@ -386,6 +436,27 @@ Respond with ONLY the JSON."""
             logger.warning("Failed to parse LLM extraction response: %s", e)
             return {}
 
+    @staticmethod
+    def _validate_date_against_email(
+        date: datetime | None, received_at: datetime | None
+    ) -> datetime | None:
+        """Reject LLM-extracted dates that are implausibly far from the email date."""
+        if date is None or received_at is None:
+            return date
+        # Normalize both to naive for comparison (avoid tz-aware vs tz-naive error)
+        d = date.replace(tzinfo=None) if date.tzinfo else date
+        r = received_at.replace(tzinfo=None) if received_at.tzinfo else received_at
+        delta_days = abs((d - r).days)
+        if delta_days > 180:
+            logger.warning(
+                "Rejecting extracted date %s: %d days from email received %s",
+                date.isoformat(),
+                delta_days,
+                received_at.isoformat(),
+            )
+            return None
+        return date
+
     def _compute_return_by_date(
         self,
         explicit_return_by: datetime | None,
@@ -393,6 +464,7 @@ Respond with ONLY the JSON."""
         delivery_date: datetime | None,
         merchant_domain: str,
         return_window_days: int | None = None,
+        received_at: datetime | None = None,
     ) -> tuple[datetime | None, ReturnConfidence]:
         """
         Compute return_by_date using PRD priority logic.
@@ -402,14 +474,22 @@ Respond with ONLY the JSON."""
         2. ESTIMATED (email): Return window days from email + anchor date
         3. ESTIMATED (merchant): Merchant rule window + anchor date
         4. UNKNOWN: No date info
+
+        ``received_at`` is used as a last-resort anchor when both
+        ``order_date`` and ``delivery_date`` are None.
         """
+        # Validate LLM-extracted dates against email received date
+        order_date = self._validate_date_against_email(order_date, received_at)
+        delivery_date = self._validate_date_against_email(delivery_date, received_at)
+        explicit_return_by = self._validate_date_against_email(explicit_return_by, received_at)
+
         # P1: Explicit return-by date from email
         if explicit_return_by:
             return explicit_return_by, ReturnConfidence.EXACT
 
         # P2: Return window from email (with quote evidence)
         if return_window_days and return_window_days > 0:
-            anchor = delivery_date or order_date
+            anchor = delivery_date or order_date or received_at
             if anchor:
                 return_by = anchor + timedelta(days=return_window_days)
                 return return_by, ReturnConfidence.ESTIMATED
@@ -422,10 +502,10 @@ Respond with ONLY the JSON."""
             days = rule.get("days", 30)
             anchor_type = rule.get("anchor", "delivery")
 
-            # Get anchor date
+            # Get anchor date, falling back to received_at
             anchor = delivery_date if anchor_type == "delivery" else order_date
             if anchor is None:
-                anchor = order_date  # Fallback to order date
+                anchor = order_date or received_at
 
             if anchor:
                 return_by = anchor + timedelta(days=days)
