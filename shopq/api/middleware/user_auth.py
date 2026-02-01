@@ -95,8 +95,17 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
 
         token_info = token_response.json()
 
-        # Verify the token was issued for our app (if we have client ID configured)
+        # SEC-005: Verify the token was issued for our app (MANDATORY in production)
         expected_client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+        is_production = os.getenv("SHOPQ_ENV", "development") == "production"
+
+        if not expected_client_id and is_production:
+            logger.error("GOOGLE_OAUTH_CLIENT_ID not configured in production!")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Server misconfiguration: OAuth client ID not set",
+            )
+
         if expected_client_id:
             # The audience must match exactly - substring match is insecure (SEC-005)
             aud = token_info.get("aud", "")
@@ -107,6 +116,9 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
                     detail="Token not issued for this application",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
+        else:
+            # Development mode without client ID configured - log warning
+            logger.warning("GOOGLE_OAUTH_CLIENT_ID not set - skipping audience validation (dev mode only)")
 
         # Get user info
         try:

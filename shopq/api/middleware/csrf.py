@@ -21,6 +21,13 @@ from shopq.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
+# SEC-007: Whitelist specific extension IDs to prevent malicious extensions
+# Set SHOPQ_EXTENSION_IDS as comma-separated list of allowed extension IDs
+# In development, unpacked extensions have dynamic IDs, so we allow configuration
+ALLOWED_EXTENSION_IDS = set(
+    filter(None, os.getenv("SHOPQ_EXTENSION_IDS", "").split(","))
+)
+
 # Methods that modify state and require CSRF protection
 STATE_CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -75,9 +82,31 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         referer = request.headers.get("referer")
 
         # Chrome extensions set Origin to chrome-extension://[id]
-        # Accept any chrome-extension origin (the auth token validates the user)
+        # SEC-007: Only accept whitelisted extension IDs (or all in dev mode if none configured)
         if origin and origin.startswith("chrome-extension://"):
-            return await call_next(request)
+            ext_id = origin.replace("chrome-extension://", "").split("/")[0]
+
+            # If no extension IDs configured, allow all in development only
+            if not ALLOWED_EXTENSION_IDS:
+                if os.getenv("SHOPQ_ENV", "development") == "development":
+                    logger.debug("Allowing extension %s (dev mode, no whitelist)", ext_id)
+                    return await call_next(request)
+                else:
+                    logger.warning("Rejected extension %s (no whitelist configured in production)", ext_id)
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Extension not authorized (configure SHOPQ_EXTENSION_IDS)",
+                    )
+
+            # Check against whitelist
+            if ext_id in ALLOWED_EXTENSION_IDS:
+                return await call_next(request)
+            else:
+                logger.warning("Rejected unknown extension ID: %s", ext_id)
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Extension not authorized",
+                )
 
         # Validate Origin against allowed list
         if origin and origin in self.allowed_origins:
@@ -92,7 +121,13 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 referer_origin = f"{parsed.scheme}://{parsed.netloc}"
 
                 if referer_origin.startswith("chrome-extension://"):
-                    return await call_next(request)
+                    # SEC-007: Apply same whitelist check for referer
+                    ext_id = referer_origin.replace("chrome-extension://", "").split("/")[0]
+                    if not ALLOWED_EXTENSION_IDS and os.getenv("SHOPQ_ENV", "development") == "development":
+                        return await call_next(request)
+                    if ext_id in ALLOWED_EXTENSION_IDS:
+                        return await call_next(request)
+                    # Fall through to rejection if not in whitelist
 
                 if referer_origin in self.allowed_origins:
                     return await call_next(request)

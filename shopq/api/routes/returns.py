@@ -545,12 +545,15 @@ async def process_email(
             )
 
             # Check for existing card (deduplication)
+            # Normalize domain for consistent matching
+            normalized_domain = (result.card.merchant_domain or "").lower()
+
             # Strategy 1: Match by merchant_domain + order_number
             existing_card = None
             if result.card.order_number:
                 existing_card = ReturnCardRepository.find_by_order_key(
                     user_id=user_id,
-                    merchant_domain=result.card.merchant_domain,
+                    merchant_domain=normalized_domain,
                     order_number=result.card.order_number,
                     tracking_number=None,
                 )
@@ -561,7 +564,7 @@ async def process_email(
             if not existing_card and result.card.item_summary:
                 existing_card = ReturnCardRepository.find_by_item_summary(
                     user_id=user_id,
-                    merchant_domain=result.card.merchant_domain,
+                    merchant_domain=normalized_domain,
                     item_summary=result.card.item_summary,
                 )
                 if existing_card:
@@ -609,7 +612,7 @@ async def process_email(
                 card_create = ReturnCardCreate(
                     user_id=result.card.user_id,
                     merchant=result.card.merchant,
-                    merchant_domain=result.card.merchant_domain,
+                    merchant_domain=normalized_domain,
                     item_summary=result.card.item_summary,
                     confidence=result.card.confidence,
                     source_email_ids=result.card.source_email_ids,

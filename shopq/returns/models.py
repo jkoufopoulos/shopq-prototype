@@ -62,6 +62,7 @@ class ReturnCard(BaseModel):
 
     # Optional fields
     order_number: str | None = Field(default=None)
+    tracking_number: str | None = Field(default=None, description="Shipping tracking number")
     amount: float | None = Field(default=None, description="Purchase amount")
     currency: str = Field(default="USD")
     order_date: datetime | None = Field(default=None)
@@ -176,6 +177,7 @@ class ReturnCard(BaseModel):
             else self.confidence.value,
             "source_email_ids": json.dumps(self.source_email_ids),
             "order_number": self.order_number,
+            "tracking_number": self.tracking_number,
             "amount": self.amount,
             "currency": self.currency,
             "order_date": self.order_date.isoformat() if self.order_date else None,
@@ -211,6 +213,7 @@ class ReturnCard(BaseModel):
             confidence=ReturnConfidence(row["confidence"]),
             source_email_ids=json.loads(row["source_email_ids"]) if row["source_email_ids"] else [],
             order_number=row.get("order_number"),
+            tracking_number=row.get("tracking_number"),
             amount=row.get("amount"),
             currency=row.get("currency", "USD"),
             order_date=parse_dt(row.get("order_date")),
@@ -240,6 +243,7 @@ class ReturnCardCreate(BaseModel):
 
     # Optional
     order_number: str | None = None
+    tracking_number: str | None = None
     amount: float | None = None
     currency: str = "USD"
     order_date: datetime | None = None
