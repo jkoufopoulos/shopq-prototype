@@ -507,6 +507,55 @@ class ProcessEmailResponse(BaseModel):
     card: ReturnCardResponse | None = None
 
 
+# ============================================================================
+# Batch Processing Models
+# ============================================================================
+
+
+class ProcessBatchEmail(BaseModel):
+    """A single email in a batch processing request."""
+
+    email_id: str
+    from_address: str
+    subject: str
+    body: str
+    body_html: str | None = None
+    received_at: str | None = None  # ISO format
+
+    @field_validator("email_id")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        validated = validate_email_id(v)
+        if not validated:
+            raise ValueError("Invalid email_id")
+        return validated
+
+
+class ProcessBatchRequest(BaseModel):
+    """Request to process a batch of emails through the extraction pipeline."""
+
+    emails: list[ProcessBatchEmail] = Field(..., max_length=500)
+
+
+class ProcessBatchStats(BaseModel):
+    """Statistics from batch processing."""
+
+    total: int
+    rejected_filter: int
+    rejected_classifier: int
+    rejected_empty: int
+    cards_created: int
+    cards_merged: int
+
+
+class ProcessBatchResponse(BaseModel):
+    """Response from batch email processing."""
+
+    success: bool
+    cards: list[ReturnCardResponse]
+    stats: ProcessBatchStats
+
+
 @router.post("/process", response_model=ProcessEmailResponse)
 async def process_email(
     request: ProcessEmailRequest,
@@ -652,3 +701,153 @@ async def process_email(
         # SEC-011: Don't expose raw error messages - log full error, return generic message
         logger.error("Failed to process email %s: %s", request.email_id, e)
         raise HTTPException(status_code=500, detail="Failed to process email")
+
+
+@router.post("/process-batch", response_model=ProcessBatchResponse)
+async def process_email_batch(
+    request: ProcessBatchRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> ProcessBatchResponse:
+    """
+    Process a batch of emails through the 3-stage extraction pipeline.
+
+    Runs all emails through filter → classifier → extractor, then deduplicates
+    across the batch and suppresses cancelled orders. This is the preferred
+    endpoint for scanning — it produces better results than processing emails
+    one at a time because cross-email dedup and cancellation detection require
+    seeing the full batch.
+
+    Max 500 emails per batch.
+    """
+    from shopq.returns import ReturnableReceiptExtractor
+
+    try:
+        user_id = user.id
+
+        # Convert request emails to the dict format process_email_batch() expects
+        emails = [
+            {
+                "id": email.email_id,
+                "from": email.from_address,
+                "subject": email.subject,
+                "body": email.body,
+                "body_html": email.body_html,
+                "received_at": email.received_at,
+            }
+            for email in request.emails
+        ]
+
+        logger.info("Processing batch of %d emails for user %s", len(emails), user_id)
+
+        extractor = ReturnableReceiptExtractor()
+        results = extractor.process_email_batch(user_id, emails)
+
+        # Upsert each successful result into DB (same dedup logic as single endpoint)
+        stats = ProcessBatchStats(
+            total=len(request.emails),
+            rejected_filter=0,
+            rejected_classifier=0,
+            rejected_empty=0,
+            cards_created=0,
+            cards_merged=0,
+        )
+
+        saved_cards: list[ReturnCard] = []
+
+        for result in results:
+            if not result.success or not result.card:
+                # Count rejection reasons
+                reason = result.rejection_reason or ""
+                if result.stage_reached == "filter":
+                    stats.rejected_filter += 1
+                elif result.stage_reached == "classifier":
+                    stats.rejected_classifier += 1
+                elif reason.startswith("error:") or result.stage_reached == "error":
+                    stats.rejected_empty += 1
+                else:
+                    stats.rejected_empty += 1
+                continue
+
+            # Dedup against DB: check for existing card
+            card = result.card
+            normalized_domain = (card.merchant_domain or "").lower()
+
+            existing_card = None
+            if card.order_number:
+                existing_card = ReturnCardRepository.find_by_order_key(
+                    user_id=user_id,
+                    merchant_domain=normalized_domain,
+                    order_number=card.order_number,
+                    tracking_number=None,
+                )
+
+            if not existing_card and card.item_summary:
+                existing_card = ReturnCardRepository.find_by_item_summary(
+                    user_id=user_id,
+                    merchant_domain=normalized_domain,
+                    item_summary=card.item_summary,
+                )
+
+            if not existing_card and card.source_email_ids:
+                for eid in card.source_email_ids:
+                    existing_card = ReturnCardRepository.find_by_email_id(user_id, eid)
+                    if existing_card:
+                        break
+
+            if existing_card:
+                new_data = {
+                    "delivery_date": card.delivery_date,
+                    "return_by_date": card.return_by_date,
+                    "item_summary": card.item_summary,
+                    "evidence_snippet": card.evidence_snippet,
+                    "return_portal_link": card.return_portal_link,
+                    "shipping_tracking_link": card.shipping_tracking_link,
+                }
+                email_id = card.source_email_ids[0] if card.source_email_ids else ""
+                saved = ReturnCardRepository.merge_email_into_card(
+                    existing_card.id, email_id, new_data
+                )
+                if saved:
+                    saved_cards.append(saved)
+                    stats.cards_merged += 1
+            else:
+                from shopq.returns import ReturnCardCreate
+
+                card_create = ReturnCardCreate(
+                    user_id=user_id,
+                    merchant=card.merchant,
+                    merchant_domain=normalized_domain,
+                    item_summary=card.item_summary,
+                    confidence=card.confidence,
+                    source_email_ids=card.source_email_ids,
+                    order_number=card.order_number,
+                    amount=card.amount,
+                    currency=card.currency,
+                    order_date=card.order_date,
+                    delivery_date=card.delivery_date,
+                    return_by_date=card.return_by_date,
+                    return_portal_link=card.return_portal_link,
+                    shipping_tracking_link=card.shipping_tracking_link,
+                    evidence_snippet=card.evidence_snippet,
+                )
+                saved = ReturnCardRepository.create(card_create)
+                saved_cards.append(saved)
+                stats.cards_created += 1
+
+        logger.info(
+            "Batch complete: %d emails -> %d cards (%d created, %d merged)",
+            len(request.emails),
+            len(saved_cards),
+            stats.cards_created,
+            stats.cards_merged,
+        )
+
+        return ProcessBatchResponse(
+            success=True,
+            cards=[ReturnCardResponse.from_card(c) for c in saved_cards],
+            stats=stats,
+        )
+
+    except Exception as e:
+        logger.error("Failed to process email batch: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to process email batch")

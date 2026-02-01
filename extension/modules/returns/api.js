@@ -186,6 +186,32 @@ async function processEmail(emailData) {
 }
 
 /**
+ * Process a batch of emails through the extraction pipeline.
+ * Sends all emails in one request for cross-email dedup and cancellation suppression.
+ *
+ * @param {Array<{email_id: string, from_address: string, subject: string, body: string, body_html?: string, received_at?: string}>} emails
+ * @returns {Promise<{success: boolean, cards: Array, stats: Object}>}
+ */
+async function processEmailBatch(emails) {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/api/returns/process-batch`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ emails }),
+  });
+
+  validateResponseOrigin(response);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to process email batch: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Refresh statuses (update expiring_soon based on current date)
  */
 async function refreshStatuses() {

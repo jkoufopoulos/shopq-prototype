@@ -287,6 +287,34 @@ function extractBodyFromPayload(payload) {
   return '';
 }
 
+/**
+ * Extract raw HTML body from message payload.
+ * Returns the HTML string without stripping tags, for backend processing.
+ *
+ * @param {Object} payload - Message payload
+ * @returns {string|null} HTML body or null if not found
+ */
+function extractHtmlBodyFromPayload(payload) {
+  if (!payload) return null;
+
+  if (payload.mimeType === 'text/html' && payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      if (part.mimeType === 'text/html' && part.body?.data) {
+        return decodeBase64Url(part.body.data);
+      }
+      // Recurse into nested multipart
+      const html = extractHtmlBodyFromPayload(part);
+      if (html) return html;
+    }
+  }
+
+  return null;
+}
+
 // ============================================================
 // PIPELINE INTEGRATION (via backend API)
 // ============================================================
@@ -421,7 +449,13 @@ async function processEmailThroughPipeline({ user_id, message, token }) {
 // ============================================================
 
 /**
- * Scan Gmail for purchase emails and process them.
+ * Scan Gmail for purchase emails and process them as a batch.
+ *
+ * Flow:
+ * 1. Collect — Loop through messages, apply local filter, fetch body for those that pass
+ * 2. Batch send — Send all collected emails to POST /api/returns/process-batch
+ * 3. Store — Clear stale orders, upsert each returned card into local storage
+ * 4. Post-scan — Local cancellation detection as safety net
  *
  * @param {Object} options
  * @param {number} [options.window_days=14] - How many days back to scan
@@ -453,8 +487,6 @@ async function scanPurchases(options = {}) {
   const lastScan = await getLastScanState();
 
   // Build date constraint for query
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - window_days);
   const dateQuery = `newer_than:${window_days}d`;
 
   // Collect all message IDs to process
@@ -477,7 +509,6 @@ async function scanPurchases(options = {}) {
 
   console.log(SCANNER_LOG_PREFIX, 'TOTAL_UNIQUE', allMessageIds.size, 'messages');
 
-  // Process each message
   const stats = {
     total: allMessageIds.size,
     processed: 0,
@@ -488,7 +519,8 @@ async function scanPurchases(options = {}) {
     errors: 0,
   };
 
-  // Collect metadata for post-scan cancellation detection
+  // ---- Phase 1: Collect emails that pass local filter ----
+  const emailsForBackend = [];
   const emailMetas = [];
 
   for (const messageId of allMessageIds) {
@@ -496,12 +528,15 @@ async function scanPurchases(options = {}) {
       // Get message metadata
       const message = await getMessageMetadata(token, messageId);
 
-      // Collect subject and snippet for cancellation detection
-      emailMetas.push({
-        id: messageId,
-        subject: getHeader(message, 'Subject'),
-        snippet: message.snippet || '',
-      });
+      const subject = getHeader(message, 'Subject');
+      const from_address = getHeader(message, 'From');
+      const snippet = message.snippet || '';
+      const receivedAt = message.internalDate
+        ? new Date(parseInt(message.internalDate)).toISOString()
+        : null;
+
+      // Collect for local cancellation detection (safety net)
+      emailMetas.push({ id: messageId, subject, snippet });
 
       // Check incremental: skip if older than last scan
       if (incremental && lastScan.internal_date_ms) {
@@ -512,34 +547,54 @@ async function scanPurchases(options = {}) {
         }
       }
 
-      // Process through pipeline
-      const result = await processEmailThroughPipeline({
-        user_id,
-        message,
-        token,
-      });
-
-      if (result.processed) {
-        stats.processed++;
-
-        switch (result.action) {
-          case 'blocked':
-            stats.blocked++;
-            break;
-          case 'backend_created':
-            stats.orders_created++;
-            break;
-          case 'backend_rejected':
-          case 'body_fetch_failed':
-          case 'empty_body':
-            // Processed but no order created
-            break;
-        }
-      } else {
+      // Check if already processed
+      if (await isEmailProcessed(messageId)) {
         stats.skipped++;
+        continue;
       }
 
-      // Rate limiting
+      // Local domain filter (free, avoids unnecessary body fetches)
+      const filterResult = filterEmail(from_address, subject, snippet);
+      if (filterResult.blocked) {
+        console.log(SCANNER_LOG_PREFIX, 'FILTER_BLOCKED', messageId, filterResult.reason);
+        await markEmailProcessed(messageId);
+        stats.blocked++;
+        stats.processed++;
+        continue;
+      }
+
+      // Fetch full email body
+      let body = '';
+      let body_html = null;
+      try {
+        const fullMessage = await getFullMessage(token, messageId);
+        body = extractBodyFromPayload(fullMessage.payload);
+        // Also extract HTML body for better extraction
+        body_html = extractHtmlBodyFromPayload(fullMessage.payload);
+      } catch (error) {
+        console.warn(SCANNER_LOG_PREFIX, 'Failed to fetch body:', messageId, error.message);
+        await markEmailProcessed(messageId);
+        stats.processed++;
+        continue;
+      }
+
+      if (!body) {
+        console.log(SCANNER_LOG_PREFIX, 'SKIP_EMPTY_BODY', messageId);
+        await markEmailProcessed(messageId);
+        stats.processed++;
+        continue;
+      }
+
+      emailsForBackend.push({
+        email_id: messageId,
+        from_address,
+        subject,
+        body,
+        body_html,
+        received_at: receivedAt,
+      });
+
+      // Rate limiting between Gmail API calls
       await new Promise(resolve => setTimeout(resolve, API_REQUEST_DELAY));
 
     } catch (error) {
@@ -548,7 +603,80 @@ async function scanPurchases(options = {}) {
     }
   }
 
-  // Post-scan: cross-email cancellation suppression (free, deterministic)
+  console.log(SCANNER_LOG_PREFIX, 'COLLECT_COMPLETE',
+    emailsForBackend.length, 'emails ready for batch processing');
+
+  // ---- Phase 2: Batch send to backend ----
+  let batchCards = [];
+
+  if (emailsForBackend.length > 0) {
+    try {
+      console.log(SCANNER_LOG_PREFIX, 'BATCH_SEND', emailsForBackend.length, 'emails');
+      const batchResponse = await processEmailBatch(emailsForBackend);
+
+      if (batchResponse.success) {
+        batchCards = batchResponse.cards || [];
+        stats.orders_created = batchResponse.stats.cards_created;
+
+        console.log(SCANNER_LOG_PREFIX, 'BATCH_RESULT',
+          'cards:', batchCards.length,
+          'created:', batchResponse.stats.cards_created,
+          'merged:', batchResponse.stats.cards_merged,
+          'rejected_filter:', batchResponse.stats.rejected_filter,
+          'rejected_classifier:', batchResponse.stats.rejected_classifier);
+      } else {
+        console.error(SCANNER_LOG_PREFIX, 'BATCH_FAILED', 'success=false');
+        stats.errors += emailsForBackend.length;
+      }
+
+      // Mark all batch emails as processed
+      for (const email of emailsForBackend) {
+        await markEmailProcessed(email.email_id);
+      }
+      stats.processed += emailsForBackend.length;
+
+    } catch (error) {
+      console.error(SCANNER_LOG_PREFIX, 'BATCH_API_ERROR', error.message);
+      // Don't mark as processed so they can be retried on next scan
+      stats.errors += emailsForBackend.length;
+    }
+  }
+
+  // ---- Phase 3: Store results ----
+  if (batchCards.length > 0) {
+    try {
+      // Preserve user-initiated status changes (returned/dismissed) before clearing
+      const existingOrders = await getAllOrders();
+      const userStatusMap = new Map();
+      for (const o of existingOrders) {
+        if (o.order_status === 'returned' || o.order_status === 'dismissed') {
+          userStatusMap.set(o.order_key, o.order_status);
+        }
+      }
+
+      // Clear existing orders — the batch response is the complete deduplicated set
+      await clearOrders();
+
+      for (const card of batchCards) {
+        const order = convertReturnCardToOrder(card, user_id);
+
+        // Restore user-initiated status if previously set
+        const preservedStatus = userStatusMap.get(order.order_key);
+        if (preservedStatus) {
+          order.order_status = preservedStatus;
+        }
+
+        await upsertOrder(order);
+      }
+
+      console.log(SCANNER_LOG_PREFIX, 'STORED', batchCards.length, 'orders');
+    } catch (error) {
+      console.error(SCANNER_LOG_PREFIX, 'STORAGE_ERROR', 'Failed to store batch results:', error.message);
+      stats.errors += batchCards.length;
+    }
+  }
+
+  // ---- Phase 4: Post-scan local cancellation detection (safety net) ----
   const cancelledOrders = detectCancelledOrders(emailMetas);
   if (cancelledOrders.size > 0) {
     console.log(SCANNER_LOG_PREFIX, 'CANCELLATION_SWEEP',

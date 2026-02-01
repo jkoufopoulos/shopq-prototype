@@ -190,6 +190,21 @@ async function upsertOrder(order) {
 }
 
 /**
+ * Clear all orders and their indices.
+ * Used before batch upsert to remove stale data from previous scans.
+ *
+ * @returns {Promise<void>}
+ */
+async function clearOrders() {
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.ORDERS_BY_KEY]: {},
+    [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: {},
+    [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
+  });
+  console.log(STORE_LOG_PREFIX, 'Cleared all orders and indices');
+}
+
+/**
  * Link an email to an existing Order.
  * Adds email_id to source_email_ids if not already present.
  *
