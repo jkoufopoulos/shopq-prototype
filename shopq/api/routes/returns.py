@@ -732,7 +732,9 @@ async def process_email_batch(
                 "subject": email.subject,
                 "body": email.body,
                 "body_html": email.body_html,
-                "received_at": email.received_at,
+                "received_at": datetime.fromisoformat(email.received_at)
+                if email.received_at
+                else None,
             }
             for email in request.emails
         ]
