@@ -34,15 +34,88 @@ const MAX_MESSAGES_PER_QUERY = 100;
 
 /**
  * Search queries for finding purchase emails.
- * Uses Gmail's built-in Purchases category plus targeted searches.
+ * Uses Gmail's built-in Purchases category plus a targeted
+ * cancellation/refund query for cross-email suppression.
  */
 const PURCHASE_SEARCH_QUERIES = [
-  // Primary: Gmail's ML-classified Purchases category
+  // Gmail's ML-classified Purchases category (privacy-preserving)
   'category:purchases',
-
-  // Backup: Shipping/delivery signals
-  'subject:(shipped OR delivered OR "your order" OR "order confirmation")',
+  // Cancellation/refund emails (often in Updates, not Purchases)
+  'subject:(cancelled OR cancellation OR "refund issued")',
 ];
+
+// ============================================================
+// CANCELLATION DETECTION
+// ============================================================
+
+/**
+ * Amazon order number pattern: 3-7-7 digits.
+ */
+const AMAZON_ORDER_RE = /\b\d{3}-\d{7}-\d{7}\b/g;
+
+/**
+ * Detect cancelled order numbers from collected email metadata.
+ *
+ * Scans subjects and snippets for cancellation/refund signals,
+ * then extracts Amazon order numbers from matching emails.
+ * This is free (no API calls) and deterministic.
+ *
+ * @param {Array<{id: string, subject: string, snippet: string}>} emailMetas
+ * @returns {Set<string>} Set of cancelled order number strings
+ */
+function detectCancelledOrders(emailMetas) {
+  const cancelled = new Set();
+
+  for (const meta of emailMetas) {
+    const subject = (meta.subject || '').toLowerCase();
+    const snippet = (meta.snippet || '').toLowerCase();
+    const combined = `${subject} ${snippet}`;
+
+    // Check subject for cancellation signals
+    let isCancellation = CANCELLATION_SUBJECT_KEYWORDS.some(kw => subject.includes(kw));
+
+    // Check snippet for body-level cancellation signals
+    if (!isCancellation) {
+      isCancellation = CANCELLATION_BODY_KEYWORDS.some(kw => combined.includes(kw));
+    }
+
+    if (!isCancellation) continue;
+
+    // Extract order numbers from original (non-lowered) text
+    const rawText = `${meta.subject || ''} ${meta.snippet || ''}`;
+    const matches = rawText.match(AMAZON_ORDER_RE);
+
+    if (matches) {
+      for (const orderNum of matches) {
+        cancelled.add(orderNum);
+      }
+      console.log(SCANNER_LOG_PREFIX, 'CANCELLATION_DETECTED', meta.id, 'orders:', matches);
+    }
+  }
+
+  return cancelled;
+}
+
+/**
+ * Suppress orders in IndexedDB that match cancelled order numbers.
+ *
+ * @param {Set<string>} cancelledOrderNumbers - Order numbers to cancel
+ * @returns {Promise<number>} Number of orders suppressed
+ */
+async function suppressCancelledOrders(cancelledOrderNumbers) {
+  let suppressed = 0;
+
+  for (const orderNum of cancelledOrderNumbers) {
+    const result = await cancelOrderByOrderId(orderNum);
+    if (result) {
+      suppressed++;
+      console.log(SCANNER_LOG_PREFIX, 'SUPPRESSED_ORDER', orderNum,
+        'merchant:', result.merchant_display_name);
+    }
+  }
+
+  return suppressed;
+}
 
 // ============================================================
 // GMAIL API HELPERS
@@ -78,22 +151,39 @@ async function gmailRequest(endpoint, token, options = {}) {
 
 /**
  * Search for messages matching a query.
+ * Paginates through all results up to maxResults.
  *
  * @param {string} token - OAuth token
  * @param {string} query - Gmail search query
- * @param {number} [maxResults=100] - Maximum results
+ * @param {number} [maxResults=500] - Maximum total results across all pages
  * @returns {Promise<Array<{id: string, threadId: string}>>}
  */
-async function searchMessages(token, query, maxResults = MAX_MESSAGES_PER_QUERY) {
+async function searchMessages(token, query, maxResults = 500) {
+  const allMessages = [];
+  let pageToken = null;
+
   try {
-    const data = await gmailRequest(
-      `/messages?q=${encodeURIComponent(query)}&maxResults=${maxResults}`,
-      token
-    );
-    return data.messages || [];
+    do {
+      const pageSize = Math.min(MAX_MESSAGES_PER_QUERY, maxResults - allMessages.length);
+      let endpoint = `/messages?q=${encodeURIComponent(query)}&maxResults=${pageSize}`;
+      if (pageToken) {
+        endpoint += `&pageToken=${pageToken}`;
+      }
+
+      const data = await gmailRequest(endpoint, token);
+      const messages = data.messages || [];
+      allMessages.push(...messages);
+      pageToken = data.nextPageToken || null;
+
+      if (pageToken) {
+        await new Promise(resolve => setTimeout(resolve, API_REQUEST_DELAY));
+      }
+    } while (pageToken && allMessages.length < maxResults);
+
+    return allMessages;
   } catch (error) {
     console.warn(SCANNER_LOG_PREFIX, 'Search failed:', query, error.message);
-    return [];
+    return allMessages; // Return whatever we collected before the error
   }
 }
 
@@ -198,30 +288,57 @@ function extractBodyFromPayload(payload) {
 }
 
 // ============================================================
-// PIPELINE INTEGRATION
+// PIPELINE INTEGRATION (via backend API)
 // ============================================================
 
 /**
- * Process a single email through the full pipeline.
+ * Convert a backend ReturnCardResponse to the extension's Order model.
  *
- * Pipeline stages:
- * P1: Filter (blocklist)
- * P2: Primary key linking
- * P3: Thread hinting
- * P4: Classification
- * P5: Extraction
- * P6-P7: Resolution & merge
- * P8: Lifecycle & deadline
+ * @param {Object} card - ReturnCardResponse from POST /api/returns/process
+ * @param {string} user_id - Authenticated user ID
+ * @returns {Order}
+ */
+function convertReturnCardToOrder(card, user_id) {
+  const now = new Date().toISOString();
+  return {
+    order_key: card.id,
+    user_id,
+    merchant_domain: card.merchant_domain || '',
+    merchant_display_name: card.merchant || '',
+    order_id: card.order_number || undefined,
+    purchase_date: card.order_date || now,
+    delivery_date: card.delivery_date || undefined,
+    return_by_date: card.return_by_date || undefined,
+    deadline_confidence: card.confidence || 'unknown',
+    item_summary: card.item_summary || '',
+    amount: card.amount || undefined,
+    currency: card.currency || 'USD',
+    evidence_quote: card.evidence_snippet || undefined,
+    return_portal_link: card.return_portal_link || undefined,
+    order_status: card.status === 'returned' ? 'returned'
+      : card.status === 'dismissed' ? 'dismissed'
+      : 'active',
+    source_email_ids: card.source_email_ids || [],
+    created_at: card.created_at || now,
+    updated_at: card.updated_at || now,
+  };
+}
+
+/**
+ * Process a single email through the backend LLM pipeline.
+ *
+ * Sends the email to POST /api/returns/process which runs the
+ * validated 3-stage pipeline (filter → classifier → extractor).
+ * Converts the resulting ReturnCard to a local Order for storage.
  *
  * @param {Object} params
  * @param {string} params.user_id
- * @param {Object} params.message - Gmail message object
- * @param {string} params.token - OAuth token for fetching body if needed
+ * @param {Object} params.message - Gmail message metadata object
+ * @param {string} params.token - OAuth token for fetching body
  * @returns {Promise<{processed: boolean, order: Order|null, action: string}>}
  */
 async function processEmailThroughPipeline({ user_id, message, token }) {
   const email_id = message.id;
-  const thread_id = message.threadId;
 
   // Check if already processed
   if (await isEmailProcessed(email_id)) {
@@ -233,134 +350,70 @@ async function processEmailThroughPipeline({ user_id, message, token }) {
   const from_address = getHeader(message, 'From');
   const subject = getHeader(message, 'Subject');
   const snippet = message.snippet || '';
-  const internalDate = message.internalDate;
-  const received_at = internalDate
-    ? new Date(parseInt(internalDate)).toISOString()
-    : new Date().toISOString();
 
   console.log(SCANNER_LOG_PREFIX, 'PROCESSING', email_id, subject.substring(0, 50));
 
-  // P1: Early Filter
+  // P1: Local domain filter (free, avoids unnecessary API calls)
   const filterResult = filterEmail(from_address, subject, snippet);
   if (filterResult.blocked) {
     console.log(SCANNER_LOG_PREFIX, 'FILTER_BLOCKED', email_id, filterResult.reason);
-
-    // Record as blocked email
-    const emailRecord = createEmailRecord({
-      email_id,
-      thread_id,
-      received_at,
-      merchant_domain: filterResult.merchant_domain,
-      email_type: EMAIL_TYPE.OTHER,
-      blocked: true,
-      extracted: null,
-    });
-    await storeOrderEmail(emailRecord);
     await markEmailProcessed(email_id);
-
     return { processed: true, order: null, action: 'blocked' };
   }
 
-  const merchant_domain = filterResult.merchant_domain;
-  const merchant_display_name = extractMerchantDisplayName(from_address);
-
-  // P2: Primary Key Linking (from subject/snippet first)
-  const linkResult = await attemptPrimaryKeyLink(subject, snippet);
-
-  // P4: Classification
-  const { email_type, purchase_confirmed } = classifyEmail(
-    subject,
-    snippet,
-    linkResult.keys.order_id !== null
-  );
-
-  // Determine if we need the full body
-  // We need body if:
-  // - No primary key found yet
-  // - It's a confirmation/shipping/delivery email (may have return policy info)
-  const needsBody = !linkResult.linked ||
-    email_type === EMAIL_TYPE.CONFIRMATION ||
-    email_type === EMAIL_TYPE.SHIPPING ||
-    email_type === EMAIL_TYPE.DELIVERY;
-
+  // Fetch full email body (backend pipeline needs it)
   let body = '';
-  if (needsBody) {
-    try {
-      const fullMessage = await getFullMessage(token, email_id);
-      body = extractBodyFromPayload(fullMessage.payload);
-    } catch (error) {
-      console.warn(SCANNER_LOG_PREFIX, 'Failed to fetch body:', email_id, error.message);
-    }
+  try {
+    const fullMessage = await getFullMessage(token, email_id);
+    body = extractBodyFromPayload(fullMessage.payload);
+  } catch (error) {
+    console.warn(SCANNER_LOG_PREFIX, 'Failed to fetch body:', email_id, error.message);
+    await markEmailProcessed(email_id);
+    return { processed: true, order: null, action: 'body_fetch_failed' };
   }
 
-  // P5: Extraction (with body if available)
-  const extracted = extractFields(subject, snippet, body);
-
-  // If we didn't find primary key in subject/snippet, check body
-  let linked_order = linkResult.order;
-  let linked_by = linkResult.linked_by;
-
-  if (!linkResult.linked && (extracted.order_id || extracted.tracking_number)) {
-    const bodyLinkResult = await linkByPrimaryKey(extracted.order_id, extracted.tracking_number);
-    linked_order = bodyLinkResult.order;
-    linked_by = bodyLinkResult.linked_by;
+  if (!body) {
+    console.log(SCANNER_LOG_PREFIX, 'SKIP_EMPTY_BODY', email_id);
+    await markEmailProcessed(email_id);
+    return { processed: true, order: null, action: 'empty_body' };
   }
 
-  // P3: Thread Hinting (only if no primary key match)
-  if (!linked_order && thread_id) {
-    const hintResult = await attemptThreadHint(email_id, thread_id, merchant_domain);
-    if (hintResult.hinted) {
-      console.log(SCANNER_LOG_PREFIX, 'HINT_ATTACH', email_id, '->', hintResult.order.order_key);
-      // Hint-attached emails don't create or update orders further
-      // Just record the email and return
-      const emailRecord = createEmailRecord({
-        email_id,
-        thread_id,
-        received_at,
-        merchant_domain,
-        email_type,
-        blocked: false,
-        extracted,
-      });
-      await storeOrderEmail(emailRecord);
-      await markEmailProcessed(email_id);
-
-      return { processed: true, order: hintResult.order, action: 'hint_attach' };
-    }
+  // Send to backend LLM pipeline
+  console.log(SCANNER_LOG_PREFIX, 'BACKEND_PROCESS', email_id);
+  let response;
+  try {
+    response = await processEmail({
+      id: email_id,
+      from: from_address,
+      subject,
+      body,
+    });
+  } catch (error) {
+    console.error(SCANNER_LOG_PREFIX, 'BACKEND_API_ERROR', email_id, error.message);
+    // Don't mark as processed so it can be retried on next scan
+    return { processed: false, order: null, action: 'backend_api_error' };
   }
 
-  // P6-P7: Resolution
-  const resolveResult = await resolveEmail({
-    user_id,
-    email_id,
-    thread_id,
-    received_at,
-    merchant_domain,
-    merchant_display_name,
-    extracted,
-    email_type,
-    purchase_confirmed,
-    linked_order,
-    linked_by,
-  });
+  await markEmailProcessed(email_id);
 
-  // P8: Lifecycle (if order was created/updated)
-  if (resolveResult.order) {
-    const finalOrder = await applyEventAndComputeDeadline(resolveResult.order);
-    await upsertOrder(finalOrder);
-
-    console.log(SCANNER_LOG_PREFIX, 'PIPELINE_COMPLETE', email_id,
-      'action:', resolveResult.action,
-      'order:', finalOrder.order_key,
-      'deadline:', finalOrder.return_by_date || 'unknown');
-
-    return { processed: true, order: finalOrder, action: resolveResult.action };
+  // Backend rejected the email (not a returnable purchase)
+  if (!response.success || !response.card) {
+    console.log(SCANNER_LOG_PREFIX, 'BACKEND_REJECTED', email_id,
+      'stage:', response.stage_reached,
+      'reason:', response.rejection_reason);
+    return { processed: true, order: null, action: 'backend_rejected' };
   }
+
+  // Convert backend ReturnCard to local Order and store
+  const order = convertReturnCardToOrder(response.card, user_id);
+  await upsertOrder(order);
 
   console.log(SCANNER_LOG_PREFIX, 'PIPELINE_COMPLETE', email_id,
-    'action:', resolveResult.action, '(no order)');
+    'order:', order.order_key,
+    'merchant:', order.merchant_display_name,
+    'deadline:', order.return_by_date || 'unknown');
 
-  return { processed: true, order: null, action: resolveResult.action };
+  return { processed: true, order, action: 'backend_created' };
 }
 
 // ============================================================
@@ -431,15 +484,24 @@ async function scanPurchases(options = {}) {
     skipped: 0,
     blocked: 0,
     orders_created: 0,
-    orders_updated: 0,
-    hints_attached: 0,
+    orders_cancelled: 0,
     errors: 0,
   };
+
+  // Collect metadata for post-scan cancellation detection
+  const emailMetas = [];
 
   for (const messageId of allMessageIds) {
     try {
       // Get message metadata
       const message = await getMessageMetadata(token, messageId);
+
+      // Collect subject and snippet for cancellation detection
+      emailMetas.push({
+        id: messageId,
+        subject: getHeader(message, 'Subject'),
+        snippet: message.snippet || '',
+      });
 
       // Check incremental: skip if older than last scan
       if (incremental && lastScan.internal_date_ms) {
@@ -464,16 +526,13 @@ async function scanPurchases(options = {}) {
           case 'blocked':
             stats.blocked++;
             break;
-          case 'create_full':
-          case 'create_partial':
+          case 'backend_created':
             stats.orders_created++;
             break;
-          case 'primary_merge':
-          case 'merge_escalation':
-            stats.orders_updated++;
-            break;
-          case 'hint_attach':
-            stats.hints_attached++;
+          case 'backend_rejected':
+          case 'body_fetch_failed':
+          case 'empty_body':
+            // Processed but no order created
             break;
         }
       } else {
@@ -487,6 +546,14 @@ async function scanPurchases(options = {}) {
       console.error(SCANNER_LOG_PREFIX, 'ERROR', messageId, error.message);
       stats.errors++;
     }
+  }
+
+  // Post-scan: cross-email cancellation suppression (free, deterministic)
+  const cancelledOrders = detectCancelledOrders(emailMetas);
+  if (cancelledOrders.size > 0) {
+    console.log(SCANNER_LOG_PREFIX, 'CANCELLATION_SWEEP',
+      cancelledOrders.size, 'cancelled order numbers found');
+    stats.orders_cancelled = await suppressCancelledOrders(cancelledOrders);
   }
 
   // Update scan state
@@ -517,7 +584,6 @@ async function scanPurchases(options = {}) {
  * @property {number} stats.skipped
  * @property {number} stats.blocked
  * @property {number} stats.orders_created
- * @property {number} stats.orders_updated
- * @property {number} stats.hints_attached
+ * @property {number} stats.orders_cancelled
  * @property {number} stats.errors
  */
