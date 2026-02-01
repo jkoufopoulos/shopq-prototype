@@ -60,5 +60,4 @@ def _regex_html_to_text(html: str) -> str:
     text = re.sub(r"&amp;", "&", text)
     text = re.sub(r"&lt;", "<", text)
     text = re.sub(r"&gt;", ">", text)
-    text = re.sub(r"&#\d+;", "", text)
-    return text
+    return re.sub(r"&#\d+;", "", text)

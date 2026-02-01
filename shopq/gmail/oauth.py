@@ -398,7 +398,7 @@ class GmailOAuthService:
 
             if credentials:
                 # Revoke the token
-                credentials.revoke(Request())
+                credentials.revoke(Request())  # type: ignore[attr-defined]
                 logger.info("Revoked OAuth token for user: %s", user_id)
 
         except Exception as e:

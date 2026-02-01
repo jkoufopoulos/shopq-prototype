@@ -105,7 +105,12 @@ def redact_pii(text: str | None, max_length: int = 500) -> str:
     text = re.sub(r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", "[SSN]", text)
 
     # Street addresses (house number + street name pattern)
-    text = re.sub(r"\b\d{1,5}\s+[A-Za-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Blvd|Boulevard|Court|Ct)\b", "[ADDRESS]", text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"\b\d{1,5}\s+[A-Za-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Way|Blvd|Boulevard|Court|Ct)\b",
+        "[ADDRESS]",
+        text,
+        flags=re.IGNORECASE,
+    )
 
     # Zip codes (US)
     text = re.sub(r"\b\d{5}(?:-\d{4})?\b", "[ZIP]", text)

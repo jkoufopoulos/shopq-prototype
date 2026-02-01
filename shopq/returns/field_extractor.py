@@ -19,9 +19,8 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from shopq.infrastructure.settings import GEMINI_MODEL
 from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
@@ -431,8 +430,9 @@ Respond with ONLY the JSON."""
             bool(result.get("return_policy_quote")),
             result.get("explicit_return_by"),
         )
-        if result.get("return_policy_quote"):
-            logger.debug("LLM extracted quote: %s", result.get("return_policy_quote")[:200])
+        quote = result.get("return_policy_quote")
+        if quote:
+            logger.debug("LLM extracted quote: %s", quote[:200])
 
         return result
 
@@ -538,7 +538,7 @@ Respond with ONLY the JSON."""
         # P4: Unknown
         return None, ReturnConfidence.UNKNOWN
 
-    def _guess_merchant(self, from_address: str, subject: str) -> str:
+    def _guess_merchant(self, from_address: str, subject: str) -> str:  # noqa: ARG002
         """Guess merchant name from email metadata."""
         # Extract from "Name <email>" format
         match = re.search(r"^([^<]+)", from_address)

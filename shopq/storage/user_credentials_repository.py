@@ -284,7 +284,7 @@ class UserCredentialsRepository(BaseRepository):
             - Permanently removes encrypted OAuth tokens
             - Logs info message about credential deletion
         """
-        self.delete("user_id = ?", (user_id,))
+        self.execute(f"DELETE FROM {self.table_name} WHERE user_id = ?", (user_id,))
         logger.info("Deleted credentials for user: %s", user_id)
 
     def list_all_users(self) -> list[str]:

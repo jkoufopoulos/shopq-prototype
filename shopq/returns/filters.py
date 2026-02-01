@@ -44,91 +44,93 @@ class MerchantDomainFilter:
     # CODE-009: Default blocklist - copied to instance variable in __init__
     # Known non-returnable services - block immediately
     # These never need LLM classification
-    _DEFAULT_BLOCKLIST: frozenset[str] = frozenset({
-        # Ride-sharing & transportation
-        "uber.com",
-        "lyft.com",
-        "bird.co",
-        "lime.bike",
-        # Food delivery (consumables, not returnable)
-        "doordash.com",
-        "grubhub.com",
-        "postmates.com",
-        "ubereats.com",
-        "seamless.com",
-        "caviar.com",
-        "instacart.com",
-        # Streaming & subscriptions
-        "netflix.com",
-        "spotify.com",
-        "hulu.com",
-        "disneyplus.com",
-        "hbomax.com",
-        "peacocktv.com",
-        "paramount.com",
-        "apple.com",  # Note: apple.com for iTunes/App Store; physical orders use different sender
-        "music.apple.com",
-        "itunes.com",
-        # Digital games & software
-        "steampowered.com",
-        "epicgames.com",
-        "playstation.com",
-        "xbox.com",
-        "nintendo.com",
-        "gog.com",
-        "humblebundle.com",
-        # News & memberships
-        "nytimes.com",
-        "wsj.com",
-        "washingtonpost.com",
-        "patreon.com",
-        "substack.com",
-        "medium.com",
-        # Financial services
-        "venmo.com",
-        "paypal.com",
-        "cashapp.com",
-        "zelle.com",
-        "chase.com",
-        "bankofamerica.com",
-        "wellsfargo.com",
-        # Utilities & bills
-        "xfinity.com",
-        "spectrum.com",
-        "att.com",
-        "verizon.com",
-        "t-mobile.com",
-        # Donations & crowdfunding
-        "gofundme.com",
-        "kickstarter.com",
-        "indiegogo.com",
-        # Tickets & events (different refund process)
-        "ticketmaster.com",
-        "stubhub.com",
-        "eventbrite.com",
-        "seatgeek.com",
-        # Travel (different refund process)
-        "expedia.com",
-        "booking.com",
-        "airbnb.com",
-        "hotels.com",
-        "kayak.com",
-        "priceline.com",
-        # Restaurants & hospitality
-        "starbucks.com",
-        "dunkindonuts.com",
-        "mcdonalds.com",
-        "chipotle.com",
-        "opentable.com",
-        "resy.com",
-        # E-cards & greetings (not purchases)
-        "jibjab.com",
-        "hallmark.com",
-        "americangreetings.com",
-        "bluemountain.com",
-        # Return processing services (never send purchase confirmations)
-        "happyreturns.com",
-    })
+    _DEFAULT_BLOCKLIST: frozenset[str] = frozenset(
+        {
+            # Ride-sharing & transportation
+            "uber.com",
+            "lyft.com",
+            "bird.co",
+            "lime.bike",
+            # Food delivery (consumables, not returnable)
+            "doordash.com",
+            "grubhub.com",
+            "postmates.com",
+            "ubereats.com",
+            "seamless.com",
+            "caviar.com",
+            "instacart.com",
+            # Streaming & subscriptions
+            "netflix.com",
+            "spotify.com",
+            "hulu.com",
+            "disneyplus.com",
+            "hbomax.com",
+            "peacocktv.com",
+            "paramount.com",
+            "apple.com",  # iTunes/App Store; physical orders use different sender
+            "music.apple.com",
+            "itunes.com",
+            # Digital games & software
+            "steampowered.com",
+            "epicgames.com",
+            "playstation.com",
+            "xbox.com",
+            "nintendo.com",
+            "gog.com",
+            "humblebundle.com",
+            # News & memberships
+            "nytimes.com",
+            "wsj.com",
+            "washingtonpost.com",
+            "patreon.com",
+            "substack.com",
+            "medium.com",
+            # Financial services
+            "venmo.com",
+            "paypal.com",
+            "cashapp.com",
+            "zelle.com",
+            "chase.com",
+            "bankofamerica.com",
+            "wellsfargo.com",
+            # Utilities & bills
+            "xfinity.com",
+            "spectrum.com",
+            "att.com",
+            "verizon.com",
+            "t-mobile.com",
+            # Donations & crowdfunding
+            "gofundme.com",
+            "kickstarter.com",
+            "indiegogo.com",
+            # Tickets & events (different refund process)
+            "ticketmaster.com",
+            "stubhub.com",
+            "eventbrite.com",
+            "seatgeek.com",
+            # Travel (different refund process)
+            "expedia.com",
+            "booking.com",
+            "airbnb.com",
+            "hotels.com",
+            "kayak.com",
+            "priceline.com",
+            # Restaurants & hospitality
+            "starbucks.com",
+            "dunkindonuts.com",
+            "mcdonalds.com",
+            "chipotle.com",
+            "opentable.com",
+            "resy.com",
+            # E-cards & greetings (not purchases)
+            "jibjab.com",
+            "hallmark.com",
+            "americangreetings.com",
+            "bluemountain.com",
+            # Return processing services (never send purchase confirmations)
+            "happyreturns.com",
+        }
+    )
 
     # Keywords that suggest PURCHASE CONFIRMATION (not shipping updates)
     # Per R1: Must have order ID, purchase amount + confirmation, or explicit confirmation language
@@ -357,7 +359,7 @@ class MerchantDomainFilter:
         """Build allowlist from merchant_rules.yaml."""
         merchants = self.merchant_rules.get("merchants", {})
         # Exclude _default since it's not a real merchant
-        return {domain for domain in merchants.keys() if domain != "_default"}
+        return {domain for domain in merchants if domain != "_default"}
 
     def filter(self, from_address: str, subject: str, snippet: str = "") -> FilterResult:
         """
@@ -452,7 +454,7 @@ class MerchantDomainFilter:
         parts = domain.split(".")
 
         # Check for shipping service domains (narvar, returnly, etc.)
-        # e.g., "bananarepublic.narvar.com" -> extract "bananarepublic" and make "bananarepublic.com"
+        # e.g., "bananarepublic.narvar.com" -> "bananarepublic.com"
         if len(parts) >= 3:
             base_domain = ".".join(parts[-2:])
             if base_domain in self.SHIPPING_SERVICE_DOMAINS:

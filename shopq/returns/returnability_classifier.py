@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pydantic import BaseModel, Field
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from shopq.infrastructure.settings import GEMINI_MODEL
 from shopq.llm.gemini import get_gemini_model
@@ -85,7 +85,9 @@ class ReturnabilitySchema(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in classification")
     reason: str = Field(description="Brief explanation of classification")
     receipt_type: str = Field(
-        description="Type: product_order, service, subscription, digital, donation, ticket, bill, unknown"
+        description=(
+            "Type: product_order, service, subscription, digital, donation, ticket, bill, unknown"
+        )
     )
 
 
@@ -236,7 +238,7 @@ Respond with ONLY the JSON, no other text."""
             counter("returns.classifier.llm_disabled")
             logger.warning(
                 "LLM DISABLED: SHOPQ_USE_LLM=%s - returning default returnable",
-                os.getenv("SHOPQ_USE_LLM", "not_set")
+                os.getenv("SHOPQ_USE_LLM", "not_set"),
             )
             # Conservative default: assume returnable if LLM disabled
             return ReturnabilityResult.returnable(
@@ -251,9 +253,7 @@ Respond with ONLY the JSON, no other text."""
             # Call LLM with retry and timeout (CODE-003, CODE-004)
             # SEC-016: Redact PII from logging
             logger.info(
-                "LLM CLASSIFIER: Calling %s for subject='%s'",
-                GEMINI_MODEL,
-                redact_subject(subject)
+                "LLM CLASSIFIER: Calling %s for subject='%s'", GEMINI_MODEL, redact_subject(subject)
             )
             response_text = self._call_llm_with_retry(prompt)
 
@@ -265,7 +265,7 @@ Respond with ONLY the JSON, no other text."""
                 "LLM CLASSIFIER RESULT: is_returnable=%s, type=%s, reason='%s'",
                 result.is_returnable,
                 result.receipt_type.value,
-                result.reason
+                result.reason,
             )
             log_event(
                 "returns.classifier.result",
@@ -315,7 +315,11 @@ Respond with ONLY the JSON, no other text."""
         text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
 
         # Remove common injection patterns - instruction override attempts
-        text = re.sub(r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)", "[REDACTED]", text)
+        text = re.sub(
+            r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)",
+            "[REDACTED]",
+            text,
+        )
         text = re.sub(r"(?i)do\s+not\s+follow.*", "[REDACTED]", text)
         text = re.sub(r"(?i)instead\s+(of|do|output).*", "[REDACTED]", text)
 

@@ -10,16 +10,15 @@ Security features:
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
-import ipaddress
 import secrets
 import time
 from collections.abc import Callable
 from typing import Any
 
 from cachetools import TTLCache
-
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -62,8 +61,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.hour_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=_max_ips, ttl=7200)
 
         # Email count tracking: {ip: [(timestamp, email_count), ...]}
-        self.email_minute_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(maxsize=_max_ips, ttl=120)
-        self.email_hour_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(maxsize=_max_ips, ttl=7200)
+        self.email_minute_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(
+            maxsize=_max_ips, ttl=120
+        )
+        self.email_hour_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(
+            maxsize=_max_ips, ttl=7200
+        )
 
         # Cloud Run sets this header - only trust X-Forwarded-For when present
         self._trusted_proxy_header = "X-Cloud-Trace-Context"

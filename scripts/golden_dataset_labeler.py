@@ -28,8 +28,6 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-
 
 # === Constants ===
 
@@ -58,6 +56,7 @@ TRACKING_PATTERNS = [
 
 # === Auto-detection ===
 
+
 def detect_order_id(text: str) -> str | None:
     """Try to extract merchant order ID from text."""
     for pattern in ORDER_ID_PATTERNS:
@@ -78,9 +77,11 @@ def detect_tracking(text: str) -> str | None:
 
 # === Data Models ===
 
+
 @dataclass
 class Email:
     """An email to be labeled."""
+
     email_id: str
     thread_id: str = ""
     from_addr: str = ""
@@ -90,7 +91,7 @@ class Email:
 
     # Labels
     bucket: str = ""  # O-### | NOISE | BLOCKLIST
-    role: str = ""    # confirmation | shipping | delivery | other (only if O-###)
+    role: str = ""  # confirmation | shipping | delivery | other (only if O-###)
 
     @property
     def date_str(self) -> str:
@@ -119,18 +120,20 @@ class Email:
 @dataclass
 class Order:
     """An order entity with policy info."""
-    order_id: str                    # O-### (human-created cluster ID)
-    merchant_domain: str = ""        # e.g., "amazon.com"
-    merchant_order_id: str = ""      # The actual order number (e.g., "ILIA2983241")
-    tracking_number: str = ""        # Shipping tracking number
-    policy: str = "unknown"          # exact:YYYY-MM-DD | days:NN | unknown
-    anchor: str = "none"             # delivery | purchase | none
+
+    order_id: str  # O-### (human-created cluster ID)
+    merchant_domain: str = ""  # e.g., "amazon.com"
+    merchant_order_id: str = ""  # The actual order number (e.g., "ILIA2983241")
+    tracking_number: str = ""  # Shipping tracking number
+    policy: str = "unknown"  # exact:YYYY-MM-DD | days:NN | unknown
+    anchor: str = "none"  # delivery | purchase | none
     evidence_email_id: str = ""
 
 
 @dataclass
 class State:
     """Persisted labeling state."""
+
     emails: list[Email] = field(default_factory=list)
     orders: dict[str, Order] = field(default_factory=dict)
     cursor: int = 0
@@ -164,6 +167,7 @@ class State:
 
 # === Persistence ===
 
+
 def load_emails(path: Path) -> list[Email]:
     """Load emails from JSONL."""
     emails = []
@@ -173,14 +177,16 @@ def load_emails(path: Path) -> list[Email]:
             if not line:
                 continue
             data = json.loads(line)
-            emails.append(Email(
-                email_id=data.get("email_id", ""),
-                thread_id=data.get("thread_id", ""),
-                from_addr=data.get("from", ""),
-                subject=data.get("subject", ""),
-                snippet=data.get("snippet", ""),
-                internal_date_ms=data.get("internal_date_ms", 0),
-            ))
+            emails.append(
+                Email(
+                    email_id=data.get("email_id", ""),
+                    thread_id=data.get("thread_id", ""),
+                    from_addr=data.get("from", ""),
+                    subject=data.get("subject", ""),
+                    snippet=data.get("snippet", ""),
+                    internal_date_ms=data.get("internal_date_ms", 0),
+                )
+            )
     return emails
 
 
@@ -258,6 +264,7 @@ def save_state(state: State, state_path: Path) -> None:
 
 # === Validation ===
 
+
 def validate(state: State) -> list[str]:
     """Validate labels. Returns list of errors."""
     errors = []
@@ -281,13 +288,14 @@ def validate(state: State) -> list[str]:
 
 # === Export ===
 
+
 def export_csvs(state: State, output_dir: Path) -> bool:
     """Export to CSVs. Returns True if successful."""
     errors = validate(state)
     if errors:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("VALIDATION ERRORS - Cannot export")
-        print('='*60)
+        print("=" * 60)
         for err in errors[:20]:
             print(f"  {err}")
         if len(errors) > 20:
@@ -302,35 +310,50 @@ def export_csvs(state: State, output_dir: Path) -> bool:
         writer = csv.writer(f)
         writer.writerow(["email_id", "thread_id", "bucket", "role"])
         for email in state.emails:
-            writer.writerow([
-                email.email_id,
-                email.thread_id,
-                email.bucket,
-                email.role if email.bucket.startswith("O-") else "",
-            ])
+            writer.writerow(
+                [
+                    email.email_id,
+                    email.thread_id,
+                    email.bucket,
+                    email.role if email.bucket.startswith("O-") else "",
+                ]
+            )
     print(f"Wrote {emails_path}")
 
     # orders_golden.csv
     orders_path = output_dir / "orders_golden.csv"
     with open(orders_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["order_id", "merchant_domain", "merchant_order_id", "tracking_number", "policy", "anchor", "evidence_email_id"])
+        writer.writerow(
+            [
+                "order_id",
+                "merchant_domain",
+                "merchant_order_id",
+                "tracking_number",
+                "policy",
+                "anchor",
+                "evidence_email_id",
+            ]
+        )
         for order in state.order_list:
-            writer.writerow([
-                order.order_id,
-                order.merchant_domain,
-                order.merchant_order_id,
-                order.tracking_number,
-                order.policy,
-                order.anchor,
-                order.evidence_email_id,
-            ])
+            writer.writerow(
+                [
+                    order.order_id,
+                    order.merchant_domain,
+                    order.merchant_order_id,
+                    order.tracking_number,
+                    order.policy,
+                    order.anchor,
+                    order.evidence_email_id,
+                ]
+            )
     print(f"Wrote {orders_path}")
 
     return True
 
 
 # === CLI ===
+
 
 class Labeler:
     """Interactive labeling CLI."""
@@ -339,7 +362,9 @@ class Labeler:
         self.state = state
         self.state_path = state_path
         self.output_dir = output_dir
-        self.undo_stack: list[tuple[str, str, str, str]] = []  # (email_id, old_bucket, old_role, action)
+        self.undo_stack: list[
+            tuple[str, str, str, str]
+        ] = []  # (email_id, old_bucket, old_role, action)
 
     def save(self) -> None:
         save_state(self.state, self.state_path)
@@ -367,10 +392,10 @@ class Labeler:
         noise = sum(1 for e in self.state.emails if e.bucket == NOISE)
         blocklist = sum(1 for e in self.state.emails if e.bucket == BLOCKLIST)
 
-        print(f"\n{'='*60}")
-        print(f"Progress: {labeled}/{total} labeled ({100*labeled//total}%)")
+        print(f"\n{'=' * 60}")
+        print(f"Progress: {labeled}/{total} labeled ({100 * labeled // total}%)")
         print(f"Orders: {orders}  |  NOISE: {noise}  |  BLOCKLIST: {blocklist}")
-        print('='*60)
+        print("=" * 60)
 
     def show_email(self) -> None:
         email = self.state.current_email
@@ -382,7 +407,7 @@ class Labeler:
         total = len(self.state.emails)
 
         print(f"\n[{pos}/{total}] {email.email_id}")
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
         print(f"Date:    {email.date_str}")
         print(f"From:    {email.from_addr}")
         print(f"Domain:  {email.domain}")
@@ -391,14 +416,14 @@ class Labeler:
         if email.thread_id:
             thread_count = sum(1 for e in self.state.emails if e.thread_id == email.thread_id)
             print(f"Thread:  {email.thread_id[:20]}... ({thread_count} emails)")
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
 
         # Auto-detected candidates
         text = f"{email.subject} {email.snippet}"
         detected_order = detect_order_id(text)
         detected_tracking = detect_tracking(text)
         if detected_order or detected_tracking:
-            print(f"Detected: ", end="")
+            print("Detected: ", end="")
             parts = []
             if detected_order:
                 parts.append(f"order={detected_order}")
@@ -417,7 +442,7 @@ class Labeler:
             print("Label:   (unlabeled)")
 
         # Quick commands
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
         print("  o=new order  m O-###=assign  n=NOISE  x=BLOCKLIST")
         print("  r c|s|d|o=set role  t=thread  Enter=next  ?=help")
 
@@ -430,16 +455,16 @@ class Labeler:
         thread_emails = [e for e in self.state.emails if e.thread_id == email.thread_id]
         thread_emails.sort(key=lambda e: e.internal_date_ms)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Thread: {email.thread_id[:30]}... ({len(thread_emails)} emails)")
-        print('='*60)
+        print("=" * 60)
 
         for i, e in enumerate(thread_emails):
             marker = ">>>" if e.email_id == email.email_id else "   "
             label = e.bucket or "(unlabeled)"
             if e.role:
                 label += f"/{e.role}"
-            print(f"{marker} {i+1}. {e.date_str} | {label:20} | {e.subject[:40]}")
+            print(f"{marker} {i + 1}. {e.date_str} | {label:20} | {e.subject[:40]}")
 
     def bulk_assign_thread(self, bucket: str, role: str = "") -> int:
         """Assign all emails in current thread to bucket. Returns count."""
@@ -480,9 +505,9 @@ class Labeler:
 
     def show_help(self) -> None:
         print(f"""
-{'='*60}
+{"=" * 60}
 GOLDEN DATASET LABELER - HELP
-{'='*60}
+{"=" * 60}
 
 BUCKET ASSIGNMENT:
   o             Create new order O-### and assign this email
@@ -516,7 +541,7 @@ OTHER:
   ?             Show this help
   q             Quit (auto-saves)
 
-{'='*60}
+{"=" * 60}
 """)
 
     def run_email_mode(self) -> str | None:
@@ -745,9 +770,9 @@ OTHER:
         order_emails = [e for e in self.state.emails if e.bucket == order.order_id]
         order_emails.sort(key=lambda e: e.internal_date_ms)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"[{pos}/{total}] {order.order_id}  |  {order.merchant_domain or '(no domain)'}")
-        print('='*60)
+        print("=" * 60)
 
         print(f"\nOrder#:   {order.merchant_order_id or '(not set)'}")
         print(f"Tracking: {order.tracking_number or '(not set)'}")
@@ -758,9 +783,9 @@ OTHER:
         print(f"\nEmails ({len(order_emails)}):")
         for i, e in enumerate(order_emails):
             evidence = " [evidence]" if e.email_id == order.evidence_email_id else ""
-            print(f"  {i+1}. [{e.role:12}] {e.date_str} | {e.subject[:40]}{evidence}")
+            print(f"  {i + 1}. [{e.role:12}] {e.date_str} | {e.subject[:40]}{evidence}")
 
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
         print("  id <text>   Set merchant order number")
         print("  tr <text>   Set tracking number")
         print("  policy exact:YYYY-MM-DD | days:NN | unknown")
@@ -773,9 +798,9 @@ OTHER:
             print("\nNo orders to label. Create orders in email mode first.")
             return "emails"
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("ORDER POLICY MODE")
-        print("="*60)
+        print("=" * 60)
         self.show_order()
 
         while True:
@@ -865,7 +890,7 @@ OTHER:
                     print("Export complete!")
 
             elif action in ("?", "help"):
-                print(f"""
+                print("""
 ORDER COMMANDS:
   id <text>                 Set merchant order number (e.g., "ILIA2983241")
   tr <text>                 Set tracking number
@@ -909,19 +934,22 @@ ORDER COMMANDS:
 
 # === Main ===
 
+
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Golden Dataset Labeler")
     parser.add_argument("input_file", type=Path, help="Input JSONL file")
     parser.add_argument(
-        "--output-dir", "-o",
+        "--output-dir",
+        "-o",
         type=Path,
         default=Path("data/golden"),
         help="Output directory for CSVs",
     )
     parser.add_argument(
-        "--state-file", "-s",
+        "--state-file",
+        "-s",
         type=Path,
         default=None,
         help="State file path (default: <output_dir>/labels_state.json)",
@@ -934,9 +962,9 @@ def main():
 
     state_path = args.state_file or (args.output_dir / "labels_state.json")
 
-    print("="*60)
+    print("=" * 60)
     print("GOLDEN DATASET LABELER v0")
-    print("="*60)
+    print("=" * 60)
     print(f"Input:  {args.input_file}")
     print(f"Output: {args.output_dir}")
     print(f"State:  {state_path}")

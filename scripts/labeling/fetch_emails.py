@@ -15,7 +15,7 @@ Usage:
     python scripts/labeling/fetch_emails.py [--days 30] [--max-results 500]
 
 Output formats:
-    --format jsonl  One email per line, fields: email_id, from, subject, snippet, internal_date_ms, thread_id
+    --format jsonl  One email per line (email_id, from, subject, snippet, etc.)
     --format json   Legacy format with nested structure (deprecated)
 """
 
@@ -25,7 +25,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Add project root to path
@@ -34,10 +34,10 @@ sys.path.insert(0, str(project_root))
 
 # Load environment variables
 from dotenv import load_dotenv
+
 load_dotenv(project_root / ".env")
 
-from shopq.gmail.oauth import GmailOAuthService, GMAIL_SCOPES
-from shopq.gmail.parser import parse_message, GmailParsingError
+from shopq.gmail.oauth import GMAIL_SCOPES, GmailOAuthService
 
 
 def authenticate_gmail(user_id: str = "labeling_user") -> any:
@@ -94,10 +94,9 @@ def fetch_emails_since(
     query = f"after:{since_date.strftime('%Y/%m/%d')}"
 
     # Use Gmail's Purchases category to filter
-    label_ids = None
     if purchases_only:
         query += " category:purchases"
-        print(f"Filtering to Gmail's Purchases category only")
+        print("Filtering to Gmail's Purchases category only")
 
     print(f"Fetching emails since {since_date.strftime('%Y-%m-%d')}...")
     print(f"Query: {query}")
@@ -116,11 +115,10 @@ def fetch_emails_since(
         else:
             batch_size = 100
 
-        request = service.users().messages().list(
-            userId="me",
-            q=query,
-            maxResults=batch_size,
-            pageToken=page_token
+        request = (
+            service.users()
+            .messages()
+            .list(userId="me", q=query, maxResults=batch_size, pageToken=page_token)
         )
         response = request.execute()
 
@@ -142,11 +140,7 @@ def fetch_emails_since(
 def get_message_details(service, message_id: str) -> dict | None:
     """Fetch full message details."""
     try:
-        return service.users().messages().get(
-            userId="me",
-            id=message_id,
-            format="full"
-        ).execute()
+        return service.users().messages().get(userId="me", id=message_id, format="full").execute()
     except Exception as e:
         print(f"  Error fetching message {message_id}: {e}")
         return None
@@ -176,8 +170,11 @@ def extract_email_data(raw_message: dict) -> dict | None:
 
             if data:
                 import base64
+
                 try:
-                    decoded = base64.urlsafe_b64decode(data + "===").decode("utf-8", errors="replace")
+                    decoded = base64.urlsafe_b64decode(data + "===").decode(
+                        "utf-8", errors="replace"
+                    )
                     if mime_type == "text/plain" and not body_text:
                         body_text = decoded
                     elif mime_type == "text/html" and not body_html:
@@ -230,12 +227,22 @@ def to_jsonl_format(email_data: dict, raw_message: dict) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch Gmail emails for labeling")
-    parser.add_argument("--days", type=int, default=30, help="Number of days to fetch (default: 30)")
-    parser.add_argument("--max-results", type=int, default=0, help="Maximum emails to fetch (0 = no limit)")
+    parser.add_argument(
+        "--days", type=int, default=30, help="Number of days to fetch (default: 30)"
+    )
+    parser.add_argument(
+        "--max-results", type=int, default=0, help="Maximum emails to fetch (0 = no limit)"
+    )
     parser.add_argument("-o", "--output", type=str, default=None, help="Output file path")
-    parser.add_argument("--format", choices=["json", "jsonl"], default="json",
-                        help="Output format: jsonl (for golden_dataset_labeler) or json (legacy)")
-    parser.add_argument("--all-emails", action="store_true", help="Fetch all emails, not just Purchases category")
+    parser.add_argument(
+        "--format",
+        choices=["json", "jsonl"],
+        default="json",
+        help="Output format: jsonl (for golden_dataset_labeler) or json (legacy)",
+    )
+    parser.add_argument(
+        "--all-emails", action="store_true", help="Fetch all emails, not just Purchases category"
+    )
     args = parser.parse_args()
 
     # Set default output path based on format
@@ -262,7 +269,9 @@ def main():
     service = authenticate_gmail()
 
     # Fetch message list
-    messages = fetch_emails_since(service, args.days, args.max_results, purchases_only=purchases_only)
+    messages = fetch_emails_since(
+        service, args.days, args.max_results, purchases_only=purchases_only
+    )
 
     if not messages:
         print("No messages found!")
@@ -292,7 +301,7 @@ def main():
     if args.format == "jsonl":
         # JSONL format for golden_dataset_labeler
         with open(output_path, "w", encoding="utf-8") as f:
-            for email_data, raw in zip(emails, raw_messages):
+            for email_data, raw in zip(emails, raw_messages, strict=False):
                 jsonl_record = to_jsonl_format(email_data, raw)
                 f.write(json.dumps(jsonl_record, ensure_ascii=False) + "\n")
 
@@ -314,8 +323,8 @@ def main():
             json.dump(output_data, f, indent=2, ensure_ascii=False)
 
         print(f"\nSaved to: {output_path}")
-        print(f"\n⚠️  Note: The label_emails.py script is deprecated.")
-        print(f"Consider using --format jsonl with scripts/golden_dataset_labeler.py instead.")
+        print("\n⚠️  Note: The label_emails.py script is deprecated.")
+        print("Consider using --format jsonl with scripts/golden_dataset_labeler.py instead.")
 
 
 if __name__ == "__main__":

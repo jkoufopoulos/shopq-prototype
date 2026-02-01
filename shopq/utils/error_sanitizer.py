@@ -73,12 +73,14 @@ def sanitize_error_message(
             logger.warning("Sanitized sensitive error pattern: %s", pattern)
             return GENERIC_MESSAGES.get(status_code, "An error occurred.")
 
-    # For 400 errors, allow some context about invalid fields
-    if status_code == 400 and allow_field_names:
-        # Allow simple validation messages like "Invalid status value"
-        # but not detailed internal errors
-        if len(message) < 100 and not any(c in message for c in ["{", "}", "[", "]", "\n"]):
-            return message
+    # For 400 errors, allow simple validation messages (not detailed internal errors)
+    if (
+        status_code == 400
+        and allow_field_names
+        and len(message) < 100
+        and not any(c in message for c in ["{", "}", "[", "]", "\n"])
+    ):
+        return message
 
     # For other errors, use generic message
     return GENERIC_MESSAGES.get(status_code, "An error occurred.")

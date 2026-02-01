@@ -12,7 +12,7 @@ ensuring requests come from expected origins.
 from __future__ import annotations
 
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -24,9 +24,7 @@ logger = get_logger(__name__)
 # SEC-007: Whitelist specific extension IDs to prevent malicious extensions
 # Set SHOPQ_EXTENSION_IDS as comma-separated list of allowed extension IDs
 # In development, unpacked extensions have dynamic IDs, so we allow configuration
-ALLOWED_EXTENSION_IDS = set(
-    filter(None, os.getenv("SHOPQ_EXTENSION_IDS", "").split(","))
-)
+ALLOWED_EXTENSION_IDS = set(filter(None, os.getenv("SHOPQ_EXTENSION_IDS", "").split(",")))
 
 # Methods that modify state and require CSRF protection
 STATE_CHANGING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -53,20 +51,26 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         self.allowed_origins = set(allowed_origins or [])
 
         # Add default allowed origins
-        self.allowed_origins.update([
-            "https://mail.google.com",
-        ])
+        self.allowed_origins.update(
+            [
+                "https://mail.google.com",
+            ]
+        )
 
         # In development, allow localhost
         if os.getenv("SHOPQ_ENV", "development") == "development":
-            self.allowed_origins.update([
-                "http://localhost:3000",
-                "http://localhost:8000",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:8000",
-            ])
+            self.allowed_origins.update(
+                [
+                    "http://localhost:3000",
+                    "http://localhost:8000",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:8000",
+                ]
+            )
 
-        logger.info("CSRF middleware initialized with %d allowed origins", len(self.allowed_origins))
+        logger.info(
+            "CSRF middleware initialized with %d allowed origins", len(self.allowed_origins)
+        )
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip CSRF check for safe methods
@@ -91,22 +95,22 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 if os.getenv("SHOPQ_ENV", "development") == "development":
                     logger.debug("Allowing extension %s (dev mode, no whitelist)", ext_id)
                     return await call_next(request)
-                else:
-                    logger.warning("Rejected extension %s (no whitelist configured in production)", ext_id)
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Extension not authorized (configure SHOPQ_EXTENSION_IDS)",
-                    )
+                logger.warning(
+                    "Rejected extension %s (no whitelist configured in production)", ext_id
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Extension not authorized (configure SHOPQ_EXTENSION_IDS)",
+                )
 
             # Check against whitelist
             if ext_id in ALLOWED_EXTENSION_IDS:
                 return await call_next(request)
-            else:
-                logger.warning("Rejected unknown extension ID: %s", ext_id)
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Extension not authorized",
-                )
+            logger.warning("Rejected unknown extension ID: %s", ext_id)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Extension not authorized",
+            )
 
         # Validate Origin against allowed list
         if origin and origin in self.allowed_origins:
@@ -117,13 +121,17 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             # Extract origin from referer
             try:
                 from urllib.parse import urlparse
+
                 parsed = urlparse(referer)
                 referer_origin = f"{parsed.scheme}://{parsed.netloc}"
 
                 if referer_origin.startswith("chrome-extension://"):
                     # SEC-007: Apply same whitelist check for referer
                     ext_id = referer_origin.replace("chrome-extension://", "").split("/")[0]
-                    if not ALLOWED_EXTENSION_IDS and os.getenv("SHOPQ_ENV", "development") == "development":
+                    if (
+                        not ALLOWED_EXTENSION_IDS
+                        and os.getenv("SHOPQ_ENV", "development") == "development"
+                    ):
                         return await call_next(request)
                     if ext_id in ALLOWED_EXTENSION_IDS:
                         return await call_next(request)

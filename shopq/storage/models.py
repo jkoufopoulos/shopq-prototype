@@ -216,22 +216,13 @@ class ClassifiedEmail(RedactedModel):
 
     @property
     def gmail_labels(self) -> list[str]:
-        """Compute Gmail labels from classification.
-
-        Labels are computed based on type and importance dimensions.
-        """
-        from shopq.classification.mapper import map_to_gmail_labels
-
-        mapping = map_to_gmail_labels(self._to_mapping_dict())
-        return mapping["labels"]
+        """Compute Gmail labels from classification."""
+        raise NotImplementedError("classification.mapper module not yet implemented")
 
     @property
     def gmail_labels_conf(self) -> dict[str, float]:
         """Confidence for each Gmail label."""
-        from shopq.classification.mapper import map_to_gmail_labels
-
-        mapping = map_to_gmail_labels(self._to_mapping_dict())
-        return mapping["labels_conf"]
+        raise NotImplementedError("classification.mapper module not yet implemented")
 
 
 class DigestItem(RedactedModel):

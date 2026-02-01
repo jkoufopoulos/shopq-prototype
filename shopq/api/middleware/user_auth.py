@@ -110,7 +110,9 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
             # The audience must match exactly - substring match is insecure (SEC-005)
             aud = token_info.get("aud", "")
             if aud != expected_client_id:
-                logger.warning("Token audience mismatch: expected=%s, got=%s", expected_client_id, aud)
+                logger.warning(
+                    "Token audience mismatch: expected=%s, got=%s", expected_client_id, aud
+                )
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token not issued for this application",
@@ -118,7 +120,9 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
                 )
         else:
             # Development mode without client ID configured - log warning
-            logger.warning("GOOGLE_OAUTH_CLIENT_ID not set - skipping audience validation (dev mode only)")
+            logger.warning(
+                "GOOGLE_OAUTH_CLIENT_ID not set - skipping audience validation (dev mode only)"
+            )
 
         # Get user info
         try:

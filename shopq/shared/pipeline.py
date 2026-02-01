@@ -9,7 +9,7 @@ from shopq.gmail.client import fetch_messages_with_retry, parse_messages
 from shopq.gmail.parser import parse_message_strict
 from shopq.infrastructure.idempotency import email_key, is_duplicate, reset_seen
 from shopq.observability.telemetry import counter, log_event, time_block
-from shopq.storage.checkpoint import checkpoint_digest
+from shopq.storage.checkpoint import checkpoint_digest  # type: ignore[import-not-found]
 from shopq.storage.models import ClassifiedEmail, Digest, ParsedEmail
 
 ClassifierFn = Callable[[Iterable[ParsedEmail]], list[ClassifiedEmail]]

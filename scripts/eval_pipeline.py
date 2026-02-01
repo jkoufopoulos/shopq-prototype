@@ -9,8 +9,8 @@ Usage:
     uv run python scripts/eval_pipeline.py
 
 Inputs:
-    data/labeling/emails_full.json                              - Fetched emails (151 emails, 60 days)
-    data/labeling/60-days-gds-11-30-2025--1-31-2026 - Sheet1.csv - Golden dataset orders
+    data/labeling/emails_full.json  - Fetched emails (151 emails, 60 days)
+    data/labeling/60-days-gds-11-30-2025--1-31-2026 - Sheet1.csv  - Golden orders
 
 Output:
     Prints comparison report to stdout.
@@ -18,20 +18,21 @@ Output:
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import json
 import sys
-from datetime import datetime, UTC
+from datetime import datetime
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
+
 load_dotenv(project_root / ".env")
 
 from shopq.returns.extractor import ReturnableReceiptExtractor
-from shopq.utils.html import html_to_text
 
 
 def load_emails(path: Path) -> list[dict]:
@@ -45,10 +46,8 @@ def load_emails(path: Path) -> list[dict]:
     for e in data["emails"]:
         received_at = None
         if e.get("received_at"):
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 received_at = datetime.fromisoformat(e["received_at"])
-            except (ValueError, TypeError):
-                pass
 
         body = e.get("body_text", "")
         body_html = e.get("body_html", "")
@@ -56,14 +55,16 @@ def load_emails(path: Path) -> list[dict]:
         if not body:
             empty_body_count += 1
 
-        emails.append({
-            "id": e["message_id"],
-            "from": e.get("from_address", ""),
-            "subject": e.get("subject", ""),
-            "body": body,
-            "body_html": body_html,
-            "received_at": received_at,
-        })
+        emails.append(
+            {
+                "id": e["message_id"],
+                "from": e.get("from_address", ""),
+                "subject": e.get("subject", ""),
+                "body": body,
+                "body_html": body_html,
+                "received_at": received_at,
+            }
+        )
 
     print(f"  Emails with empty body_text: {empty_body_count}/{len(emails)}")
     if html_fallback_count:
@@ -77,12 +78,16 @@ def load_golden_csv(path: Path) -> list[dict]:
     with open(path) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            orders.append({
-                "vendor": row.get("Vendor", "").strip(),
-                "order_name": row.get("Order Name", "").strip(),
-                "order_number": row.get("Order Number", "").strip(),
-                "delivery_date": row.get("Date delivered (relevant for computing return window)", "").strip(),
-            })
+            orders.append(
+                {
+                    "vendor": row.get("Vendor", "").strip(),
+                    "order_name": row.get("Order Name", "").strip(),
+                    "order_number": row.get("Order Number", "").strip(),
+                    "delivery_date": row.get(
+                        "Date delivered (relevant for computing return window)", ""
+                    ).strip(),
+                }
+            )
     return orders
 
 
@@ -173,7 +178,9 @@ def match_cards_to_golden(cards: list, golden_orders: list[dict]) -> dict:
 
 def main():
     emails_path = project_root / "data" / "labeling" / "emails_full.json"
-    golden_path = project_root / "data" / "labeling" / "60-days-gds-11-30-2025--1-31-2026 - Sheet1.csv"
+    golden_path = (
+        project_root / "data" / "labeling" / "60-days-gds-11-30-2025--1-31-2026 - Sheet1.csv"
+    )
 
     print("=" * 80)
     print("PIPELINE EVALUATION")
@@ -188,8 +195,12 @@ def main():
     # Disable budget limits for eval runs by patching check_budget everywhere
     import shopq.infrastructure.llm_budget as budget_mod
     import shopq.returns.extractor as extractor_mod
+
     _orig_check = budget_mod.check_budget
-    _unlocked = lambda user_id, **kw: _orig_check(user_id, user_limit=100000, global_limit=100000)
+
+    def _unlocked(user_id, **_kw):
+        return _orig_check(user_id, user_limit=100000, global_limit=100000)
+
     budget_mod.check_budget = _unlocked
     extractor_mod.check_budget = _unlocked
 
@@ -203,7 +214,9 @@ def main():
     completed = [r for r in results if r.success and r.card]
     rejected_filter = [r for r in results if r.stage_reached == "filter"]
     rejected_classifier = [r for r in results if r.stage_reached == "classifier"]
-    errors = [r for r in results if not r.success and r.stage_reached not in ("filter", "classifier")]
+    errors = [
+        r for r in results if not r.success and r.stage_reached not in ("filter", "classifier")
+    ]
 
     print()
     print("=" * 80)
@@ -222,10 +235,12 @@ def main():
     print("=" * 80)
     for r in completed:
         c = r.card
-        conf = c.confidence.value if hasattr(c.confidence, 'value') else str(c.confidence)
-        print(f"  {c.merchant:<25} | order#: {(c.order_number or 'none'):<25} | "
-              f"return_by: {str(c.return_by_date)[:10] if c.return_by_date else 'none':<12} | "
-              f"conf: {conf}")
+        conf = c.confidence.value if hasattr(c.confidence, "value") else str(c.confidence)
+        print(
+            f"  {c.merchant:<25} | order#: {(c.order_number or 'none'):<25} | "
+            f"return_by: {str(c.return_by_date)[:10] if c.return_by_date else 'none':<12} | "
+            f"conf: {conf}"
+        )
         print(f"    items: {(c.item_summary or '')[:70]}")
         print(f"    emails: {c.source_email_ids}")
         print()
@@ -256,8 +271,13 @@ def main():
         if matched_card:
             found += 1
             marker = "HIT"
-            match_type = "order#" if _order_num_matches(order["order_number"], matched_card.order_number or "") else "vendor"
-            detail = f"-> {matched_card.merchant} [{match_type}], return_by: {str(matched_card.return_by_date)[:10] if matched_card.return_by_date else 'none'}"
+            match_type = (
+                "order#"
+                if _order_num_matches(order["order_number"], matched_card.order_number or "")
+                else "vendor"
+            )
+            rbd = str(matched_card.return_by_date)[:10] if matched_card.return_by_date else "none"
+            detail = f"-> {matched_card.merchant} [{match_type}], return_by: {rbd}"
         else:
             marker = "MISS"
             detail = ""
@@ -265,7 +285,8 @@ def main():
         print(f"  [{marker:4}] {order['vendor']:<18} {order['order_number']:<25} {detail}")
 
     print()
-    print(f"Recall: {found}/{len(golden_orders)} golden orders found ({100*found//len(golden_orders)}%)")
+    pct = 100 * found // len(golden_orders)
+    print(f"Recall: {found}/{len(golden_orders)} golden orders found ({pct}%)")
     print()
 
     # PRECISION: For each pipeline card, check if it matches a golden order
@@ -279,18 +300,24 @@ def main():
         matched_order = precision_matches.get(ci)
         if matched_order:
             true_pos += 1
-            match_type = "order#" if _order_num_matches(matched_order["order_number"], card_order_num) else "vendor"
+            match_type = (
+                "order#"
+                if _order_num_matches(matched_order["order_number"], card_order_num)
+                else "vendor"
+            )
             marker = f"TP:{match_type}"
         else:
             false_pos += 1
             marker = "FP"
 
-        print(f"  [{marker:<10}] {(c.merchant or '?'):<25} order#: {card_order_num:<25} {(c.item_summary or '')[:40]}")
+        items = (c.item_summary or "")[:40]
+        print(f"  [{marker:<10}] {(c.merchant or '?'):<25} order#: {card_order_num:<25} {items}")
 
     print()
     total_cards = true_pos + false_pos
     if total_cards > 0:
-        print(f"Precision: {true_pos}/{total_cards} cards are real golden orders ({100*true_pos//total_cards}%)")
+        pct = 100 * true_pos // total_cards
+        print(f"Precision: {true_pos}/{total_cards} cards are real golden orders ({pct}%)")
     print()
 
     # Summary
@@ -299,9 +326,9 @@ def main():
     print("=" * 80)
     print(f"Golden orders:    {len(golden_orders)}")
     print(f"Pipeline cards:   {len(unique_cards)} (deduplicated)")
-    print(f"Recall:           {found}/{len(golden_orders)} ({100*found//len(golden_orders)}%)")
+    print(f"Recall:           {found}/{len(golden_orders)} ({100 * found // len(golden_orders)}%)")
     if total_cards > 0:
-        print(f"Precision:        {true_pos}/{total_cards} ({100*true_pos//total_cards}%)")
+        print(f"Precision:        {true_pos}/{total_cards} ({100 * true_pos // total_cards}%)")
     print()
 
     # Show what got filtered/rejected
@@ -309,7 +336,6 @@ def main():
     print("FILTER/CLASSIFIER REJECTIONS (sample)")
     print("=" * 80)
     for r in rejected_filter[:10]:
-        fr = r.filter_result
         email_id = r.card.source_email_ids[0] if r.card else "?"
         # Find original email
         orig = next((e for e in emails if e["id"] == email_id), None)

@@ -7,7 +7,7 @@ Provides health status endpoints for monitoring and observability:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter
@@ -26,7 +26,7 @@ async def health_check() -> dict[str, Any]:
         "status": "healthy",
         "service": "ShopQ API",
         "version": "2.0.0-mvp",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 

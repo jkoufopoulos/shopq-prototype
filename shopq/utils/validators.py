@@ -98,9 +98,7 @@ def validate_order_number(order_number: str | None) -> str | None:
 
     # Check length
     if len(order_number) > MAX_ORDER_NUMBER_LENGTH:
-        raise ValidationError(
-            f"Order number exceeds maximum length of {MAX_ORDER_NUMBER_LENGTH}"
-        )
+        raise ValidationError(f"Order number exceeds maximum length of {MAX_ORDER_NUMBER_LENGTH}")
 
     # Check pattern
     if not ORDER_NUMBER_PATTERN.match(order_number):

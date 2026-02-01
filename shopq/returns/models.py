@@ -115,9 +115,7 @@ class ReturnCard(BaseModel):
             return False
         if self.status not in (ReturnStatus.ACTIVE, ReturnStatus.EXPIRING_SOON):
             return False
-        if self.alerted_at is not None:
-            return False  # Already alerted
-        return True
+        return self.alerted_at is None
 
     def days_until_expiry(self) -> int | None:
         """Calculate days remaining until return window closes."""

@@ -25,7 +25,7 @@ class GeminiInitializationError(RuntimeError):
 
 
 @lru_cache(maxsize=1)
-def get_gemini_model() -> "GenerativeModel":
+def get_gemini_model() -> GenerativeModel:
     """
     Get or create shared Gemini model instance.
 
