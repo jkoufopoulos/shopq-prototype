@@ -1206,15 +1206,15 @@ async function initializeDigestSidebar(sdk) {
     panelView.open();
     console.log('ShopQ: Return Watch sidebar opened on initial load');
 
-    // Trigger background scan when Gmail opens
-    console.log('ShopQ: Triggering background purchase scan...');
-    chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
-      .then(result => {
-        console.log('ShopQ: Auto-scan complete:', result);
-        // Refresh sidebar with new data after scan completes
-        fetchVisibleOrders();
-      })
-      .catch(err => console.log('ShopQ: Auto-scan error:', err));
+    // Auto-scan on Gmail load disabled for debugging. Use popup button or sidebar rescan.
+    // To re-enable, uncomment below:
+    // console.log('ShopQ: Triggering background purchase scan...');
+    // chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
+    //   .then(result => {
+    //     console.log('ShopQ: Auto-scan complete:', result);
+    //     fetchVisibleOrders();
+    //   })
+    //   .catch(err => console.log('ShopQ: Auto-scan error:', err));
 
   } catch (error) {
     console.error('ShopQ: Failed to add Return Watch sidebar panel:', error);

@@ -339,33 +339,33 @@ function handleTabRemoved(tabId) {
  * Sets up listeners and starts periodic alarm.
  */
 function initializeRefreshSystem() {
-  console.log(REFRESH_LOG_PREFIX, 'INITIALIZING');
+  console.log(REFRESH_LOG_PREFIX, 'INITIALIZING (manual-only mode)');
 
-  // Set up alarm listener
-  chrome.alarms.onAlarm.addListener(handleAlarm);
+  // Auto-scan disabled for debugging. Only manual scan (popup button / sidebar rescan) is active.
+  // To re-enable automatic scanning, uncomment the listeners and alarm below.
 
-  // Set up tab listeners
-  chrome.tabs.onActivated.addListener(handleTabActivated);
-  chrome.tabs.onUpdated.addListener(handleTabUpdated);
+  // // Set up alarm listener
+  // chrome.alarms.onAlarm.addListener(handleAlarm);
+
+  // // Set up tab listeners for auto-scan
+  // chrome.tabs.onActivated.addListener(handleTabActivated);
+  // chrome.tabs.onUpdated.addListener(handleTabUpdated);
+
+  // Tab removal listener still useful for state cleanup
   chrome.tabs.onRemoved.addListener(handleTabRemoved);
 
-  // Start periodic alarm
-  startPeriodicAlarm();
+  // // Start periodic alarm
+  // startPeriodicAlarm();
 
-  // Check if Gmail is already open
+  // Track Gmail tab state (useful for UI) but don't trigger scan
   chrome.tabs.query({ url: 'https://mail.google.com/*' }, (tabs) => {
     if (tabs.length > 0) {
       refreshState.gmailTabActive = true;
       refreshState.gmailTabId = tabs[0].id;
-
-      // Trigger initial load scan
-      onGmailLoad().catch(error => {
-        console.error(REFRESH_LOG_PREFIX, 'INITIAL_LOAD_ERROR', error.message);
-      });
     }
   });
 
-  console.log(REFRESH_LOG_PREFIX, 'INITIALIZED');
+  console.log(REFRESH_LOG_PREFIX, 'INITIALIZED (manual-only mode)');
 }
 
 /**
