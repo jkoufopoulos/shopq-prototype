@@ -478,6 +478,11 @@ Respond with ONLY the JSON."""
         ``received_at`` is used as a last-resort anchor when both
         ``order_date`` and ``delivery_date`` are None.
         """
+        # Normalize received_at to naive to avoid tz-aware vs tz-naive mismatches
+        # (LLM-parsed dates are typically naive; received_at from Gmail is tz-aware)
+        if received_at and received_at.tzinfo is not None:
+            received_at = received_at.replace(tzinfo=None)
+
         # Validate LLM-extracted dates against email received date
         order_date = self._validate_date_against_email(order_date, received_at)
         delivery_date = self._validate_date_against_email(delivery_date, received_at)
