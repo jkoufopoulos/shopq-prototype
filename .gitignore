@@ -78,6 +78,7 @@ label_schema.json
 # Keep eval ground truth data
 !data/evals/classification/gds-2.0.csv
 !data/evals/classification/importance_review_decisions.csv
+!data/labeling/60-days-gds-*.csv
 
 # ============================================
 # IDE & Editors
@@ -181,6 +182,10 @@ data/*.db
 data/*.sqlite
 data/*.csv
 !data/.gitkeep
+
+# Eval output (generated per run, not committed)
+data/eval/*.json
+!data/eval/.gitkeep
 
 # Backups
 backups/

@@ -204,8 +204,8 @@ def extract_email_data(raw_message: dict) -> dict | None:
             "date": get_header("Date"),
             "received_at": received_at.isoformat(),
             "snippet": snippet,
-            "body_text": body_text[:5000] if body_text else "",  # Truncate large bodies
-            "body_html": body_html[:10000] if body_html else "",
+            "body_text": body_text[:10000] if body_text else "",
+            "body_html": body_html[:100000] if body_html else "",
             "labels": raw_message.get("labelIds", []),
         }
     except Exception as e:

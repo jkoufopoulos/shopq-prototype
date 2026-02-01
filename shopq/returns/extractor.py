@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,7 @@ from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.field_extractor import ExtractedFields, ReturnFieldExtractor
 from shopq.returns.filters import FilterResult, MerchantDomainFilter
-from shopq.returns.models import ReturnCard
+from shopq.returns.models import ReturnCard, ReturnConfidence
 from shopq.returns.returnability_classifier import (
     ReturnabilityClassifier,
     ReturnabilityResult,
@@ -34,6 +34,22 @@ from shopq.utils.html import html_to_text
 from shopq.utils.redaction import redact_subject
 
 logger = get_logger(__name__)
+
+# Minimum useful characters in body_text before preferring HTML conversion.
+# Some merchants (e.g., Best Buy) send body_text that is just "View as a Web page"
+# links with no actual content — all real content is in the HTML.
+_MIN_USEFUL_BODY_CHARS = 100
+
+
+def _is_body_boilerplate(body: str) -> bool:
+    """Check if body text is empty or just boilerplate (URLs, separators)."""
+    if not body:
+        return True
+    stripped = re.sub(r"https?://\S+", "", body)
+    stripped = re.sub(r"[=\-]{3,}", "", stripped)
+    stripped = re.sub(r"\s+", " ", stripped).strip()
+    return len(stripped) < _MIN_USEFUL_BODY_CHARS
+
 
 # Common words to ignore when comparing item summaries for overlap
 _STOP_WORDS = frozenset(
@@ -279,8 +295,8 @@ class ReturnableReceiptExtractor:
             - Logs extraction events
             - Increments telemetry counters
         """
-        # Convert HTML body to text when plain-text body is empty
-        if not body and body_html:
+        # Convert HTML body to text when plain-text body is empty or boilerplate
+        if body_html and _is_body_boilerplate(body):
             body = html_to_text(body_html)
             logger.info("Converted HTML body to text (%d chars)", len(body))
 
@@ -762,14 +778,33 @@ class ReturnableReceiptExtractor:
                     target_key[1],
                 )
             else:
-                # Ambiguous: multiple no-order# cards for the same merchant —
-                # likely different orders, keep them separate
-                logger.info(
-                    "Dedup: skipped merging %d ambiguous no-order# cards for %s",
-                    len(candidates),
-                    target_key[0],
+                # Multiple no-order# cards for the same merchant.
+                # If all candidates share the same product (items overlap pairwise),
+                # they're likely the same order (e.g. shipped + out-for-delivery +
+                # delivered emails). Merge them into the group.
+                all_same_product = all(
+                    _items_overlap(
+                        candidates[0].card.item_summary,  # type: ignore[union-attr]
+                        c.card.item_summary,  # type: ignore[union-attr]
+                    )
+                    for c in candidates[1:]
                 )
-                still_ungrouped.extend(candidates)
+                if all_same_product:
+                    groups[target_key].extend(candidates)
+                    logger.info(
+                        "Dedup: merged %d same-product no-order# cards into %s/%s",
+                        len(candidates),
+                        target_key[0],
+                        target_key[1],
+                    )
+                else:
+                    # Truly ambiguous: different products, keep separate
+                    logger.info(
+                        "Dedup: skipped merging %d ambiguous no-order# cards for %s",
+                        len(candidates),
+                        target_key[0],
+                    )
+                    still_ungrouped.extend(candidates)
 
         # Merge each group into a single result
         deduped: list[ExtractionResult] = []
@@ -800,6 +835,7 @@ class ReturnableReceiptExtractor:
             card.source_email_ids = all_email_ids
 
             # Fill missing dates from siblings
+            had_delivery_date = card.delivery_date is not None
             for r in group[1:]:
                 assert r.card is not None  # guaranteed by filter above
                 sibling = r.card
@@ -810,6 +846,23 @@ class ReturnableReceiptExtractor:
                 if not card.return_by_date and sibling.return_by_date:
                     card.return_by_date = sibling.return_by_date
                     card.confidence = sibling.confidence
+
+            # If we gained a delivery_date from a sibling that the winner
+            # didn't have, recompute return_by_date using merchant rules
+            # so the date is anchored on actual delivery, not received_at.
+            if not had_delivery_date and card.delivery_date:
+                merchants = self.merchant_rules.get("merchants", {})
+                domain = (card.merchant_domain or "").lower()
+                rule = merchants.get(domain) or merchants.get("_default")
+                if rule:
+                    days = rule.get("days", 30)
+                    card.return_by_date = card.delivery_date + timedelta(days=days)
+                    card.confidence = ReturnConfidence.ESTIMATED
+                    logger.info(
+                        "Dedup: recomputed return_by from sibling delivery_date for %s/%s",
+                        key[0],
+                        key[1],
+                    )
 
             logger.info(
                 "Dedup: merged %d cards for %s/%s",

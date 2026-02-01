@@ -125,7 +125,7 @@ class ReturnFieldExtractor:
     # LLM prompt for field extraction
     EXTRACTION_PROMPT = """Extract purchase details from this email.
 
-Today's date: {today}
+Date this email was sent: {today}
 
 Subject: {subject}
 From: {from_address}
@@ -295,7 +295,7 @@ Respond with ONLY the JSON."""
         # LLM extraction for complex fields
         if USE_LLM:
             try:
-                llm_fields = self._extract_with_llm(from_address, subject, body)
+                llm_fields = self._extract_with_llm(from_address, subject, body, received_at)
                 counter("returns.extractor.llm_success")
             except Exception as e:
                 logger.warning("LLM extraction failed, using rules only: %s", e)
@@ -374,7 +374,7 @@ Respond with ONLY the JSON."""
 
         # Order number
         for pattern in self.ORDER_NUMBER_PATTERNS:
-            match = re.search(pattern, text, re.IGNORECASE)
+            match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
             if match:
                 result["order_number"] = match.group(1).upper()
                 break
@@ -395,7 +395,13 @@ Respond with ONLY the JSON."""
 
         return result
 
-    def _extract_with_llm(self, from_address: str, subject: str, body: str) -> dict:
+    def _extract_with_llm(
+        self,
+        from_address: str,
+        subject: str,
+        body: str,
+        received_at: datetime | None = None,
+    ) -> dict:
         """Extract fields using LLM."""
         # Truncate body for prompt - use 4000 chars to capture return policies at bottom
         body_truncated = body[:4000] if body else ""
@@ -410,8 +416,11 @@ Respond with ONLY the JSON."""
         )
         # NOTE: Body content not logged to prevent PII exposure
 
+        # Use the email's received date as "today" so the LLM correctly interprets
+        # relative dates like "Delivered today" or "Arriving tomorrow"
+        context_date = received_at or datetime.now()
         prompt = self.EXTRACTION_PROMPT.format(
-            today=datetime.now().strftime("%Y-%m-%d"),
+            today=context_date.strftime("%Y-%m-%d"),
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
             body=self._sanitize(body_truncated, 4000),
