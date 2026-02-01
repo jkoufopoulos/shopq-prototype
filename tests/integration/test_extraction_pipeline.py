@@ -531,9 +531,7 @@ class TestCancellationDetection:
             stage_reached="complete",
             rejection_reason=None,
         )
-        result = ExtractionResult.rejected_at_cancellation_check(
-            original, "112-1234567-8901234"
-        )
+        result = ExtractionResult.rejected_at_cancellation_check(original, "112-1234567-8901234")
         assert not result.success
         assert result.stage_reached == "cancellation_check"
         assert result.rejection_reason == "cancelled_order:112-1234567-8901234"
@@ -559,6 +557,144 @@ class TestCancellationDetection:
         ]
         cancelled = extractor._detect_cancelled_orders(emails)
         assert len(cancelled) == 0
+
+
+# =============================================================================
+# Deduplication Tests
+# =============================================================================
+
+
+class TestDeduplication:
+    """Test the _deduplicate_results logic."""
+
+    @pytest.fixture
+    def extractor(self):
+        return ReturnableReceiptExtractor()
+
+    def _make_result(self, merchant_domain, order_number, item_summary, email_id="msg_1"):
+        """Helper to create a successful ExtractionResult with a card."""
+        from shopq.returns.models import ReturnCard
+
+        card = ReturnCard(
+            id=f"card-{email_id}",
+            user_id="test_user",
+            merchant=merchant_domain.split(".")[0].title(),
+            merchant_domain=merchant_domain,
+            item_summary=item_summary,
+            order_number=order_number,
+            source_email_ids=[email_id],
+        )
+        return ExtractionResult(success=True, card=card, stage_reached="complete")
+
+    def test_pass3_does_not_merge_multiple_ungrouped_cards(self, extractor):
+        """Multiple no-order# cards from same merchant should NOT merge into one group.
+
+        Regression test for GitHub issue #4: cross-order merge bug.
+        """
+        # One Amazon card with an order number
+        r1 = self._make_result("amazon.com", "112-111-111", "Wireless Mouse", "msg_1")
+        # Two Amazon cards WITHOUT order numbers (different actual orders)
+        r2 = self._make_result("amazon.com", None, "Lint Roller", "msg_2")
+        r3 = self._make_result("amazon.com", None, "Peanut Trimmer", "msg_3")
+
+        results = extractor._deduplicate_results([r1, r2, r3])
+        successful = [r for r in results if r.success]
+
+        # Should have 3 separate cards — r2 and r3 must NOT merge into r1's group
+        assert len(successful) == 3
+
+        items = {r.card.item_summary for r in successful}
+        assert "Wireless Mouse" in items
+        assert "Lint Roller" in items
+        assert "Peanut Trimmer" in items
+
+    def test_pass3_merges_single_ungrouped_card(self, extractor):
+        """A single no-order# card should merge into the merchant's only group."""
+        r1 = self._make_result("amazon.com", "112-111-111", "Wireless Mouse", "msg_1")
+        r2 = self._make_result("amazon.com", None, "Wireless Mouse", "msg_2")
+
+        results = extractor._deduplicate_results([r1, r2])
+        successful = [r for r in results if r.success]
+
+        # Should merge into one card since only one ungrouped card
+        assert len(successful) == 1
+        assert "msg_1" in successful[0].card.source_email_ids
+        assert "msg_2" in successful[0].card.source_email_ids
+
+    def test_pass1_groups_by_merchant_and_order(self, extractor):
+        """Cards with same merchant+order should merge."""
+        r1 = self._make_result("amazon.com", "112-111-111", "Wireless Mouse", "msg_1")
+        r2 = self._make_result("amazon.com", "112-111-111", "Wireless Mouse", "msg_2")
+
+        results = extractor._deduplicate_results([r1, r2])
+        successful = [r for r in results if r.success]
+
+        assert len(successful) == 1
+        assert len(successful[0].card.source_email_ids) == 2
+
+    def test_pass2_merges_cross_domain_groups(self, extractor):
+        """Orders with same order# but different domains should merge."""
+        r1 = self._make_result("shopifyemail.com", "ILIA-12345", "Lipstick", "msg_1")
+        r2 = self._make_result("iliabeauty.com", "ILIA-12345", "Lipstick", "msg_2")
+
+        results = extractor._deduplicate_results([r1, r2])
+        successful = [r for r in results if r.success]
+
+        assert len(successful) == 1
+        assert len(successful[0].card.source_email_ids) == 2
+        assert "msg_1" in successful[0].card.source_email_ids
+        assert "msg_2" in successful[0].card.source_email_ids
+
+    def test_all_ungrouped_same_merchant_stay_separate(self, extractor):
+        """When ALL cards lack order numbers, they should remain separate."""
+        r1 = self._make_result("amazon.com", None, "Lint Roller", "msg_1")
+        r2 = self._make_result("amazon.com", None, "Peanut Trimmer", "msg_2")
+        r3 = self._make_result("amazon.com", None, "Phone Case", "msg_3")
+
+        results = extractor._deduplicate_results([r1, r2, r3])
+        successful = [r for r in results if r.success]
+
+        assert len(successful) == 3
+
+
+# =============================================================================
+# Empty Card Rejection Tests
+# =============================================================================
+
+
+class TestEmptyCardRejection:
+    """Test the generic phrase blocklist for empty card rejection."""
+
+    @pytest.fixture
+    def extractor(self):
+        return ReturnableReceiptExtractor()
+
+    def test_delivery_notification_rejected(self, extractor):
+        """Cards with delivery notification text should be rejected as empty."""
+        result = extractor.extract_from_email(
+            user_id="test_user",
+            email_id="msg_delivery",
+            from_address="noreply@bestbuy.com",
+            subject="Your package has been delivered",
+            body="Your Best Buy package has been delivered to your front door.",
+        )
+
+        # Should be rejected (no order number + generic delivery text)
+        assert not result.success
+        assert "empty_card" in (result.rejection_reason or "")
+
+    def test_shipped_notification_rejected(self, extractor):
+        """Cards with 'shipped' as item_summary should be rejected."""
+        result = extractor.extract_from_email(
+            user_id="test_user",
+            email_id="msg_shipped",
+            from_address="noreply@bestbuy.com",
+            subject="Your order has shipped",
+            body="Your order has shipped and is on its way!",
+        )
+
+        assert not result.success
+        assert "empty_card" in (result.rejection_reason or "")
 
 
 if __name__ == "__main__":

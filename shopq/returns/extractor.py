@@ -220,7 +220,9 @@ class ReturnableReceiptExtractor:
 
         counter("returns.extraction.started")
         # SEC-016: Redact PII from logging
-        logger.info("EXTRACTION START: subject='%s' from='%s'", redact_subject(subject), from_address)
+        logger.info(
+            "EXTRACTION START: subject='%s' from='%s'", redact_subject(subject), from_address
+        )
 
         # =========================================================
         # Stage 1: Domain Filter (FREE)
@@ -234,9 +236,7 @@ class ReturnableReceiptExtractor:
         if not filter_result.is_candidate:
             counter("returns.extraction.rejected_filter")
             logger.info(
-                "STAGE 1 REJECTED: domain=%s reason=%s",
-                filter_result.domain,
-                filter_result.reason
+                "STAGE 1 REJECTED: domain=%s reason=%s", filter_result.domain, filter_result.reason
             )
             log_event(
                 "returns.extraction.rejected",
@@ -247,7 +247,9 @@ class ReturnableReceiptExtractor:
             return ExtractionResult.rejected_at_filter(filter_result)
 
         counter("returns.extraction.passed_filter")
-        logger.info("STAGE 1 PASSED: domain=%s -> proceeding to LLM classifier", filter_result.domain)
+        logger.info(
+            "STAGE 1 PASSED: domain=%s -> proceeding to LLM classifier", filter_result.domain
+        )
 
         # =========================================================
         # SCALE-001: Budget Check before LLM calls
@@ -255,11 +257,7 @@ class ReturnableReceiptExtractor:
         budget_status = check_budget(user_id)
         if not budget_status.is_allowed:
             counter("returns.extraction.rejected_budget")
-            logger.warning(
-                "BUDGET EXCEEDED: user=%s reason=%s",
-                user_id,
-                budget_status.reason
-            )
+            logger.warning("BUDGET EXCEEDED: user=%s reason=%s", user_id, budget_status.reason)
             log_event(
                 "returns.extraction.rejected",
                 stage="budget",
@@ -286,7 +284,7 @@ class ReturnableReceiptExtractor:
             logger.info(
                 "STAGE 2 REJECTED BY LLM: type=%s reason=%s",
                 returnability.receipt_type.value,
-                returnability.reason
+                returnability.reason,
             )
             log_event(
                 "returns.extraction.rejected",
@@ -297,7 +295,10 @@ class ReturnableReceiptExtractor:
             return ExtractionResult.rejected_at_classifier(filter_result, returnability)
 
         counter("returns.extraction.passed_classifier")
-        logger.info("STAGE 2 PASSED BY LLM: type=%s -> proceeding to extraction", returnability.receipt_type.value)
+        logger.info(
+            "STAGE 2 PASSED BY LLM: type=%s -> proceeding to extraction",
+            returnability.receipt_type.value,
+        )
 
         # =========================================================
         # Stage 3: Field Extraction (~$0.0002)
@@ -327,13 +328,42 @@ class ReturnableReceiptExtractor:
 
         # Reject cards with no identifiable content (no item and no order number,
         # or item_summary is just a generic email phrase echoing the subject line)
-        _generic = frozenset({
-            "thanks for your order",
-            "thank you for your order",
-            "your order has been placed",
-            "order confirmation",
-            "your order",
-        })
+        _generic = frozenset(
+            {
+                # Order confirmation phrases
+                "thanks for your order",
+                "thank you for your order",
+                "your order has been placed",
+                "order confirmation",
+                "your order",
+                # Delivery notification phrases
+                "package has been delivered",
+                "your package has been delivered",
+                "your package was delivered",
+                "your delivery is complete",
+                "delivery notification",
+                "delivered",
+                # Shipping notification phrases
+                "your order has shipped",
+                "your order has been shipped",
+                "your package is on the way",
+                "out for delivery",
+                "shipped",
+                # Additional delivery/shipping variants
+                "in transit",
+                "on the way",
+                "order received",
+                # Post-prefix-stripped variants (fallback extractor strips
+                # "Your ", "Order ", "Shipping ", "Delivery " prefixes)
+                "has shipped",
+                "has been shipped",
+                "has been delivered",
+                "was delivered",
+                "has been placed",
+                "is on the way",
+                "confirmation",
+            }
+        )
         item_text = (card.item_summary or "").strip().rstrip(".!").lower()
         if not card.order_number and (not card.item_summary or item_text in _generic):
             counter("returns.extraction.rejected_empty_card")
@@ -569,9 +599,7 @@ class ReturnableReceiptExtractor:
             score += 1
         return score
 
-    def _deduplicate_results(
-        self, results: list[ExtractionResult]
-    ) -> list[ExtractionResult]:
+    def _deduplicate_results(self, results: list[ExtractionResult]) -> list[ExtractionResult]:
         """Deduplicate extraction results in three passes.
 
         Pass 1: Group by (merchant_domain, order_number) — same merchant, same order.
@@ -629,20 +657,38 @@ class ReturnableReceiptExtractor:
         for key in groups:
             domain_to_keys.setdefault(key[0], []).append(key)
 
+        # Collect merge candidates per group key first, then only merge
+        # when exactly one ungrouped card targets a group. This prevents
+        # cards from different orders (same merchant, missing order#)
+        # from being incorrectly merged into one group.
+        merge_candidates: dict[tuple[str, str], list[ExtractionResult]] = {}
         still_ungrouped: list[ExtractionResult] = []
         for r in ungrouped:
             card_domain = (r.card.merchant_domain or "").lower()
             matching_keys = domain_to_keys.get(card_domain, [])
             if len(matching_keys) == 1:
-                # Unambiguous: exactly one order from this merchant
-                groups[matching_keys[0]].append(r)
-                logger.info(
-                    "Dedup: merged no-order# card into %s/%s",
-                    matching_keys[0][0],
-                    matching_keys[0][1],
-                )
+                merge_candidates.setdefault(matching_keys[0], []).append(r)
             else:
                 still_ungrouped.append(r)
+
+        for target_key, candidates in merge_candidates.items():
+            if len(candidates) == 1:
+                # Unambiguous: exactly one no-order# card for this merchant group
+                groups[target_key].append(candidates[0])
+                logger.info(
+                    "Dedup: merged no-order# card into %s/%s",
+                    target_key[0],
+                    target_key[1],
+                )
+            else:
+                # Ambiguous: multiple no-order# cards for the same merchant —
+                # likely different orders, keep them separate
+                logger.info(
+                    "Dedup: skipped merging %d ambiguous no-order# cards for %s",
+                    len(candidates),
+                    target_key[0],
+                )
+                still_ungrouped.extend(candidates)
 
         # Merge each group into a single result
         deduped: list[ExtractionResult] = []

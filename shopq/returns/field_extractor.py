@@ -135,7 +135,12 @@ Body:
 
 Extract these fields:
 1. merchant_name: The retailer/store name (e.g., "Amazon", "Target", "Nike")
-2. item_summary: Brief description of items (e.g., "Wireless headphones, Phone case")
+2. item_summary: The ACTUAL PRODUCT NAMES purchased, comma-separated.
+   Example: "Wireless headphones, Phone case"
+   RULES: Extract specific product names from the email body.
+   Do NOT use generic phrases like "your package", "some of the items",
+   or "package has been delivered". Include ALL items if multiple are listed.
+   If no specific product name can be found, use null.
 3. order_number: Order/confirmation number if present
 4. amount: Total purchase amount (number only, no currency symbol)
 5. currency: Currency code (default USD)
@@ -213,11 +218,23 @@ Respond with ONLY the JSON."""
             raise ConnectionError(f"LLM service unavailable: {e}") from e
 
     # Common garbage values the LLM or regex may extract as order numbers
-    _GARBAGE_ORDER_WORDS = frozenset({
-        "confirmation", "tracking", "order", "number", "receipt",
-        "invoice", "shipping", "delivery", "purchase", "unknown",
-        "none", "n/a", "null",
-    })
+    _GARBAGE_ORDER_WORDS = frozenset(
+        {
+            "confirmation",
+            "tracking",
+            "order",
+            "number",
+            "receipt",
+            "invoice",
+            "shipping",
+            "delivery",
+            "purchase",
+            "unknown",
+            "none",
+            "n/a",
+            "null",
+        }
+    )
 
     @staticmethod
     def _validate_order_number(order_num: str | None) -> str | None:
@@ -314,7 +331,9 @@ Respond with ONLY the JSON."""
 
         # Build evidence snippet - prefer return policy quote, fallback to body preview
         # CODE-008: Redact PII from evidence before storage
-        raw_evidence = return_policy_quote if return_policy_quote else (body[:200] if body else None)
+        raw_evidence = (
+            return_policy_quote if return_policy_quote else (body[:200] if body else None)
+        )
         evidence = redact_pii(raw_evidence, max_length=200) if raw_evidence else None
 
         # Build result
@@ -593,7 +612,11 @@ Respond with ONLY the JSON."""
         text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
 
         # Remove common injection patterns - instruction override attempts
-        text = re.sub(r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)", "[REDACTED]", text)
+        text = re.sub(
+            r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)",
+            "[REDACTED]",
+            text,
+        )
         text = re.sub(r"(?i)do\s+not\s+follow.*", "[REDACTED]", text)
         text = re.sub(r"(?i)instead\s+(of|do|output).*", "[REDACTED]", text)
 
