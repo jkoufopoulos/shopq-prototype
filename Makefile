@@ -43,7 +43,7 @@ typecheck:
 
 test:
 	# Python tests (pytest via uv)
-	$(call maybe_run, test -n "$(PY_DIRS)" && uv run pytest -q,pytest)
+	$(call maybe_run, test -n "$(PY_DIRS)" && PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest -q,pytest)
 	# Extension tests
 	$(call maybe_run, [ -f "$(EXT_PKG)" ] && (pnpm --prefix $(EXT_DIR) test || npm --prefix $(EXT_DIR) test) || true,extension:test)
 
