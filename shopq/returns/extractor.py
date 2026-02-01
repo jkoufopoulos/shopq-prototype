@@ -35,6 +35,72 @@ from shopq.utils.redaction import redact_subject
 
 logger = get_logger(__name__)
 
+# Common words to ignore when comparing item summaries for overlap
+_STOP_WORDS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "for",
+        "of",
+        "in",
+        "to",
+        "with",
+        "by",
+        "on",
+        "at",
+        "from",
+        "is",
+        "it",
+        "its",
+        "your",
+        "my",
+        "this",
+        "that",
+        "x",
+        "oz",
+        "ct",
+        "pk",
+        "pack",
+        "count",
+        "size",
+        "color",
+        "qty",
+    }
+)
+
+# Minimum word length to consider meaningful
+_MIN_WORD_LEN = 3
+
+
+def _items_overlap(summary_a: str | None, summary_b: str | None) -> bool:
+    """Check if two item summaries share meaningful product-name words.
+
+    Tokenizes both summaries, strips stop words and short tokens, and checks
+    whether they share at least one significant word. Returns True if either
+    summary is empty/None (conservative: don't block merge when we can't tell).
+    """
+    if not summary_a or not summary_b:
+        return True  # can't tell — allow merge
+
+    tokens_a = {
+        w
+        for w in re.split(r"[\s,;/|&()\-]+", summary_a.lower())
+        if len(w) >= _MIN_WORD_LEN and w not in _STOP_WORDS
+    }
+    tokens_b = {
+        w
+        for w in re.split(r"[\s,;/|&()\-]+", summary_b.lower())
+        if len(w) >= _MIN_WORD_LEN and w not in _STOP_WORDS
+    }
+
+    if not tokens_a or not tokens_b:
+        return True  # can't tell — allow merge
+
+    return bool(tokens_a & tokens_b)
+
 
 @dataclass
 class ExtractionResult:
@@ -265,7 +331,9 @@ class ReturnableReceiptExtractor:
                 user_calls=budget_status.user_calls_today,
                 global_calls=budget_status.global_calls_today,
             )
-            return ExtractionResult.rejected_budget_exceeded(filter_result, budget_status.reason)
+            return ExtractionResult.rejected_budget_exceeded(
+                filter_result, budget_status.reason or ""
+            )
 
         # =========================================================
         # Stage 2: Returnability Classifier (~$0.0001)
@@ -400,7 +468,7 @@ class ReturnableReceiptExtractor:
         user_id: str,
         email_id: str,
         fields: ExtractedFields,
-        received_at: datetime | None,
+        received_at: datetime | None,  # noqa: ARG002
     ) -> ReturnCard:
         """Build ReturnCard from extracted fields."""
         now = datetime.now(UTC)
@@ -623,6 +691,7 @@ class ReturnableReceiptExtractor:
 
         for r in successful:
             card = r.card
+            assert card is not None  # guaranteed by filter above
             key_domain = (card.merchant_domain or "").lower()
             key_order = (card.order_number or "").strip()
 
@@ -664,10 +733,22 @@ class ReturnableReceiptExtractor:
         merge_candidates: dict[tuple[str, str], list[ExtractionResult]] = {}
         still_ungrouped: list[ExtractionResult] = []
         for r in ungrouped:
+            assert r.card is not None  # guaranteed by filter above
             card_domain = (r.card.merchant_domain or "").lower()
             matching_keys = domain_to_keys.get(card_domain, [])
             if len(matching_keys) == 1:
-                merge_candidates.setdefault(matching_keys[0], []).append(r)
+                # Only merge if items share meaningful words with any card
+                # in the group — prevents cards from unrelated orders being
+                # merged just because the merchant has one order with an order#.
+                group_items = groups[matching_keys[0]]
+                if any(
+                    _items_overlap(r.card.item_summary, gr.card.item_summary)
+                    for gr in group_items
+                    if gr.card is not None
+                ):
+                    merge_candidates.setdefault(matching_keys[0], []).append(r)
+                else:
+                    still_ungrouped.append(r)
             else:
                 still_ungrouped.append(r)
 
@@ -698,15 +779,20 @@ class ReturnableReceiptExtractor:
                 deduped.append(group[0])
                 continue
 
-            # Pick the richest card
-            group.sort(key=lambda r: self._card_richness(r.card), reverse=True)
+            # Pick the richest card (r.card is guaranteed non-None by filter above)
+            group.sort(
+                key=lambda r: self._card_richness(r.card),  # type: ignore[arg-type]
+                reverse=True,
+            )
             winner = group[0]
             card = winner.card
+            assert card is not None  # guaranteed by filter above
 
             # Merge source_email_ids from all siblings
             all_email_ids: list[str] = []
             seen: set[str] = set()
             for r in group:
+                assert r.card is not None  # guaranteed by filter above
                 for eid in r.card.source_email_ids:
                     if eid not in seen:
                         all_email_ids.append(eid)
@@ -715,6 +801,7 @@ class ReturnableReceiptExtractor:
 
             # Fill missing dates from siblings
             for r in group[1:]:
+                assert r.card is not None  # guaranteed by filter above
                 sibling = r.card
                 if not card.order_date and sibling.order_date:
                     card.order_date = sibling.order_date

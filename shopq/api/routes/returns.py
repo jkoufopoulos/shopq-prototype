@@ -14,13 +14,6 @@ from pydantic import BaseModel, Field, field_validator
 
 from shopq.api.middleware.user_auth import AuthenticatedUser, get_current_user
 from shopq.observability.logging import get_logger
-from shopq.utils.error_sanitizer import get_safe_error_detail, sanitize_error_message
-from shopq.utils.validators import (
-    ValidationError as InputValidationError,
-    validate_email_id,
-    validate_merchant_domain,
-    validate_order_number,
-)
 from shopq.returns import (
     ReturnCard,
     ReturnCardCreate,
@@ -28,6 +21,12 @@ from shopq.returns import (
     ReturnCardUpdate,
     ReturnConfidence,
     ReturnStatus,
+)
+from shopq.utils.error_sanitizer import sanitize_error_message
+from shopq.utils.validators import (
+    validate_email_id,
+    validate_merchant_domain,
+    validate_order_number,
 )
 
 router = APIRouter(prefix="/api/returns", tags=["returns"])
@@ -137,7 +136,7 @@ class CreateReturnCardRequest(BaseModel):
     @field_validator("source_email_ids")
     @classmethod
     def validate_email_ids(cls, v: list[str]) -> list[str]:
-        return [validate_email_id(eid) for eid in v if validate_email_id(eid)]
+        return [validated for eid in v if (validated := validate_email_id(eid)) is not None]
 
 
 class UpdateStatusRequest(BaseModel):
@@ -217,10 +216,10 @@ async def list_returns(
 
     except ValueError as e:
         # SEC-011: Sanitize error messages
-        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400)) from None
     except Exception as e:
         logger.error("Failed to list returns: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to list returns")
+        raise HTTPException(status_code=500, detail="Failed to list returns") from None
 
 
 @router.get("/expiring", response_model=list[ReturnCardResponse])
@@ -243,7 +242,7 @@ async def list_expiring_returns(
 
     except Exception as e:
         logger.error("Failed to list expiring returns: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to list expiring returns")
+        raise HTTPException(status_code=500, detail="Failed to list expiring returns") from None
 
 
 @router.get("/counts", response_model=StatusCountsResponse)
@@ -273,7 +272,7 @@ async def get_status_counts(
 
     except Exception as e:
         logger.error("Failed to get status counts: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to get status counts")
+        raise HTTPException(status_code=500, detail="Failed to get status counts") from None
 
 
 @router.get("/{card_id}", response_model=ReturnCardResponse)
@@ -342,10 +341,10 @@ async def create_return(
 
     except ValueError as e:
         # SEC-011: Sanitize error messages
-        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400)) from None
     except Exception as e:
         logger.error("Failed to create return card: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to create return card")
+        raise HTTPException(status_code=500, detail="Failed to create return card") from None
 
 
 @router.put("/{card_id}/status", response_model=ReturnCardResponse)
@@ -384,12 +383,12 @@ async def update_return_status(
 
     except ValueError as e:
         # SEC-011: Sanitize error messages
-        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400)) from None
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Failed to update return status: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to update status")
+        raise HTTPException(status_code=500, detail="Failed to update status") from None
 
 
 @router.patch("/{card_id}", response_model=ReturnCardResponse)
@@ -426,12 +425,12 @@ async def update_return(
 
     except ValueError as e:
         # SEC-011: Sanitize error messages
-        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400))
+        raise HTTPException(status_code=400, detail=sanitize_error_message(str(e), 400)) from None
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Failed to update return card: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to update card")
+        raise HTTPException(status_code=500, detail="Failed to update card") from None
 
 
 @router.delete("/{card_id}")
@@ -477,7 +476,7 @@ async def refresh_statuses(
         }
     except Exception as e:
         logger.error("Failed to refresh statuses: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to refresh statuses")
+        raise HTTPException(status_code=500, detail="Failed to refresh statuses") from None
 
 
 class ProcessEmailRequest(BaseModel):
@@ -611,13 +610,23 @@ async def process_email(
 
             # Strategy 2: Match by merchant_domain + item_summary (for when order_number missing)
             if not existing_card and result.card.item_summary:
-                existing_card = ReturnCardRepository.find_by_item_summary(
+                candidate = ReturnCardRepository.find_by_item_summary(
                     user_id=user_id,
                     merchant_domain=normalized_domain,
                     item_summary=result.card.item_summary,
                 )
-                if existing_card:
-                    logger.info("DEDUP MATCH: Found by item_summary similarity")
+                if candidate:
+                    # Don't merge if order numbers conflict
+                    new_order = result.card.order_number
+                    existing_order = candidate.order_number
+                    if new_order and existing_order and new_order != existing_order:
+                        logger.info(
+                            "DEDUP SKIP: order# conflict %s vs %s", new_order, existing_order
+                        )
+                        candidate = None
+                    else:
+                        logger.info("DEDUP MATCH: Found by item_summary similarity")
+                existing_card = candidate
 
             # Strategy 3: Check if this email was already processed
             if not existing_card:
@@ -700,7 +709,7 @@ async def process_email(
     except Exception as e:
         # SEC-011: Don't expose raw error messages - log full error, return generic message
         logger.error("Failed to process email %s: %s", request.email_id, e)
-        raise HTTPException(status_code=500, detail="Failed to process email")
+        raise HTTPException(status_code=500, detail="Failed to process email") from None
 
 
 @router.post("/process-batch", response_model=ProcessBatchResponse)
@@ -784,11 +793,21 @@ async def process_email_batch(
                 )
 
             if not existing_card and card.item_summary:
-                existing_card = ReturnCardRepository.find_by_item_summary(
+                candidate = ReturnCardRepository.find_by_item_summary(
                     user_id=user_id,
                     merchant_domain=normalized_domain,
                     item_summary=card.item_summary,
                 )
+                if candidate:
+                    # Don't merge if order numbers conflict
+                    new_order = card.order_number
+                    existing_order = candidate.order_number
+                    if new_order and existing_order and new_order != existing_order:
+                        logger.info(
+                            "DEDUP SKIP: order# conflict %s vs %s", new_order, existing_order
+                        )
+                        candidate = None
+                    existing_card = candidate
 
             if not existing_card and card.source_email_ids:
                 for eid in card.source_email_ids:
@@ -852,4 +871,4 @@ async def process_email_batch(
 
     except Exception as e:
         logger.error("Failed to process email batch: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to process email batch")
+        raise HTTPException(status_code=500, detail="Failed to process email batch") from None

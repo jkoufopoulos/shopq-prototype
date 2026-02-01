@@ -23,14 +23,16 @@ logger = get_logger(__name__)
 
 # CODE-002: Whitelist of columns allowed in dynamic UPDATE statements
 # This prevents SQL injection if column names ever come from user input
-ALLOWED_UPDATE_COLUMNS = frozenset({
-    "status",
-    "notes",
-    "return_by_date",
-    "return_portal_link",
-    "updated_at",
-    "alerted_at",
-})
+ALLOWED_UPDATE_COLUMNS = frozenset(
+    {
+        "status",
+        "notes",
+        "return_by_date",
+        "return_portal_link",
+        "updated_at",
+        "alerted_at",
+    }
+)
 
 
 class ReturnCardRepository:
@@ -65,6 +67,7 @@ class ReturnCardRepository:
             rbd = card.return_by_date
             if rbd.tzinfo is None:
                 from datetime import UTC
+
                 rbd = rbd.replace(tzinfo=UTC)
             days_remaining = (rbd - now).days
             if days_remaining <= 0:
@@ -538,14 +541,16 @@ class ReturnCardRepository:
             updates = {"updated_at": now_str}
 
             # Add email ID to source list
-            current_ids = json.loads(row_dict["source_email_ids"]) if row_dict["source_email_ids"] else []
+            current_ids = (
+                json.loads(row_dict["source_email_ids"]) if row_dict["source_email_ids"] else []
+            )
             if email_id not in current_ids:
                 current_ids.append(email_id)
                 updates["source_email_ids"] = json.dumps(current_ids)
 
             # Merge new data if provided
             if new_data:
-                # Delivery date: Use new if existing is None (order → shipped → delivered progression)
+                # Delivery date: Use new if existing is None (order→shipped→delivered)
                 if new_data.get("delivery_date") and not row_dict.get("delivery_date"):
                     new_delivery = new_data["delivery_date"]
                     if isinstance(new_delivery, datetime):
@@ -581,19 +586,23 @@ class ReturnCardRepository:
                 # Links: Fill in if missing
                 if new_data.get("return_portal_link") and not row_dict.get("return_portal_link"):
                     updates["return_portal_link"] = new_data["return_portal_link"]
-                if new_data.get("shipping_tracking_link") and not row_dict.get("shipping_tracking_link"):
+                if new_data.get("shipping_tracking_link") and not row_dict.get(
+                    "shipping_tracking_link"
+                ):
                     updates["shipping_tracking_link"] = new_data["shipping_tracking_link"]
 
             # Perform update
             if updates:
-                set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+                set_clause = ", ".join(f"{k} = ?" for k in updates)
                 values = list(updates.values()) + [card_id]
                 cursor.execute(
                     f"UPDATE return_cards SET {set_clause} WHERE id = ?",
                     values,
                 )
 
-        logger.info("Merged email %s into card %s (updated %d fields)", email_id, card_id, len(updates))
+        logger.info(
+            "Merged email %s into card %s (updated %d fields)", email_id, card_id, len(updates)
+        )
         return ReturnCardRepository.get_by_id(card_id)
 
     @staticmethod
@@ -606,7 +615,7 @@ class ReturnCardRepository:
         Find a card by merchant and item summary (fuzzy match for deduplication).
 
         Used when order_number isn't available (e.g., shipping/delivery emails).
-        Matches if the first 30 chars of item_summary are the same.
+        Matches if the first 50 chars of item_summary are the same.
 
         Args:
             user_id: User's identifier
@@ -619,8 +628,8 @@ class ReturnCardRepository:
         if not item_summary or len(item_summary) < 10:
             return None
 
-        # Use first 30 chars for matching (handles slight variations)
-        item_prefix = item_summary[:30]
+        # Use first 50 chars for matching (handles slight variations)
+        item_prefix = item_summary[:50]
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
