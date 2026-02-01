@@ -126,6 +126,8 @@ class MerchantDomainFilter:
         "hallmark.com",
         "americangreetings.com",
         "bluemountain.com",
+        # Return processing services (never send purchase confirmations)
+        "happyreturns.com",
     })
 
     # Keywords that suggest PURCHASE CONFIRMATION (not shipping updates)
@@ -222,7 +224,25 @@ class MerchantDomainFilter:
         "proflowers",
         "fresh produce",
         "perishable",
+        # Consumable health/nutrition products
+        "protein shake",
+        "protein bar",
+        "energy drink",
+        "vitamins",
+        "supplements",
+        "snack",
+        "snacks",
     }
+
+    # Survey/feedback solicitation keywords in subject lines
+    # These are never purchase confirmations — free rejection before LLM
+    _SURVEY_SUBJECT_KEYWORDS: list[str] = [
+        "share your thoughts",
+        "leave a review",
+        "write a review",
+        "rate your",
+        "how did we do",
+    ]
 
     # Keywords for NON-PURCHASE emails (should be EXCLUDED)
     NON_PURCHASE_KEYWORDS: set[str] = {
@@ -279,6 +299,24 @@ class MerchantDomainFilter:
         "e-card",
         "ecard",
         "greeting",
+        # Cancellation emails (no product to return)
+        "cancelled",
+        "item cancelled",
+        "cancellation",
+        "order cancelled",
+        "has been cancelled",
+        "successfully cancelled",
+        # Return confirmation emails (outgoing, not incoming products)
+        "return is approved",
+        "return approved",
+        "return has been processed",
+        "refund has been",
+        "refund processed",
+        "return confirmation",
+        # Warranty/protection plans (service contracts, not physical products)
+        "protection plan",
+        "warranty plan",
+        "extended warranty",
     }
 
     def __init__(self, merchant_rules_path: Path | None = None):
@@ -343,6 +381,17 @@ class MerchantDomainFilter:
                 return FilterResult(
                     is_candidate=False,
                     reason=f"grocery_food:{pattern}",
+                    domain=domain,
+                    match_type="blocklist",
+                )
+
+        # Check survey/feedback subject keywords (free rejection)
+        subject_lower = subject.lower()
+        for keyword in self._SURVEY_SUBJECT_KEYWORDS:
+            if keyword in subject_lower:
+                return FilterResult(
+                    is_candidate=False,
+                    reason=f"survey_feedback:{keyword}",
                     domain=domain,
                     match_type="blocklist",
                 )

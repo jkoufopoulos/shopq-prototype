@@ -11,6 +11,7 @@ Entry point: ReturnableReceiptExtractor.extract_from_email()
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -29,6 +30,7 @@ from shopq.returns.returnability_classifier import (
     ReturnabilityClassifier,
     ReturnabilityResult,
 )
+from shopq.utils.html import html_to_text
 from shopq.utils.redaction import redact_subject
 
 logger = get_logger(__name__)
@@ -80,6 +82,20 @@ class ExtractionResult:
         )
 
     @classmethod
+    def rejected_at_cancellation_check(
+        cls, original_result: ExtractionResult, order_number: str
+    ) -> ExtractionResult:
+        """Rejection when a separate cancellation/refund email was found for the order."""
+        return cls(
+            success=False,
+            filter_result=original_result.filter_result,
+            returnability_result=original_result.returnability_result,
+            extracted_fields=original_result.extracted_fields,
+            rejection_reason=f"cancelled_order:{order_number}",
+            stage_reached="cancellation_check",
+        )
+
+    @classmethod
     def completed(
         cls,
         card: ReturnCard,
@@ -105,9 +121,31 @@ class ReturnableReceiptExtractor:
     1. MerchantDomainFilter → Quick domain-based pre-filter (free)
     2. ReturnabilityClassifier → LLM decides if returnable (~$0.0001)
     3. ReturnFieldExtractor → Hybrid LLM + rules extraction (~$0.0002)
+    4. Cross-email cancellation check → Suppress orders cancelled in other emails (free)
 
     Total cost per email: ~$0.00005 (accounting for filter rejection rate)
     """
+
+    # Amazon order number pattern: 3-7-7 digits
+    _AMAZON_ORDER_RE = re.compile(r"\b\d{3}-\d{7}-\d{7}\b")
+
+    # Cancellation/refund signals in subject lines (case-insensitive matching)
+    _CANCELLATION_SUBJECT_KEYWORDS = [
+        "cancelled",
+        "cancellation",
+        "advance refund issued",
+        "refund issued",
+    ]
+
+    # Cancellation/refund signals in email body (case-insensitive matching)
+    _CANCELLATION_BODY_KEYWORDS = [
+        "your order was cancelled",
+        "has been cancelled",
+        "item cancelled successfully",
+        "being returned to us by the carrier",
+        "we've issued your refund",
+        "we have issued your refund",
+    ]
 
     def __init__(self, merchant_rules_path: Path | None = None):
         """
@@ -150,6 +188,7 @@ class ReturnableReceiptExtractor:
         subject: str,
         body: str,
         received_at: datetime | None = None,
+        body_html: str | None = None,
     ) -> ExtractionResult:
         """
         Extract return card from email if it's a returnable purchase.
@@ -163,6 +202,7 @@ class ReturnableReceiptExtractor:
             subject: Email subject
             body: Email body text
             received_at: When email was received
+            body_html: Raw HTML body (used as fallback when body is empty)
 
         Returns:
             ExtractionResult with success=True and card if returnable,
@@ -173,6 +213,11 @@ class ReturnableReceiptExtractor:
             - Logs extraction events
             - Increments telemetry counters
         """
+        # Convert HTML body to text when plain-text body is empty
+        if not body and body_html:
+            body = html_to_text(body_html)
+            logger.info("Converted HTML body to text (%d chars)", len(body))
+
         counter("returns.extraction.started")
         # SEC-016: Redact PII from logging
         logger.info("EXTRACTION START: subject='%s' from='%s'", redact_subject(subject), from_address)
@@ -262,6 +307,7 @@ class ReturnableReceiptExtractor:
             subject=subject,
             body=body,
             merchant_domain=filter_result.domain,
+            received_at=received_at,
         )
 
         # SCALE-001: Record extractor LLM call
@@ -278,6 +324,31 @@ class ReturnableReceiptExtractor:
             fields=fields,
             received_at=received_at,
         )
+
+        # Reject cards with no identifiable content (no item and no order number,
+        # or item_summary is just a generic email phrase echoing the subject line)
+        _generic = frozenset({
+            "thanks for your order",
+            "thank you for your order",
+            "your order has been placed",
+            "order confirmation",
+            "your order",
+        })
+        item_text = (card.item_summary or "").strip().rstrip(".!").lower()
+        if not card.order_number and (not card.item_summary or item_text in _generic):
+            counter("returns.extraction.rejected_empty_card")
+            logger.info(
+                "EMPTY CARD REJECTED: merchant=%s - no item_summary or order_number",
+                card.merchant,
+            )
+            return ExtractionResult(
+                success=False,
+                filter_result=filter_result,
+                returnability_result=returnability,
+                extracted_fields=fields,
+                rejection_reason="empty_card:no_item_or_order",
+                stage_reached="extractor",
+            )
 
         counter("returns.extraction.completed")
         log_event(
@@ -325,13 +396,99 @@ class ReturnableReceiptExtractor:
             updated_at=now,
         )
 
+    def _detect_cancelled_orders(self, emails: list[dict[str, Any]]) -> set[str]:
+        """Scan emails for cancellation/refund signals and extract cancelled order numbers.
+
+        This is a free, deterministic post-processing step that checks all emails
+        in a batch for cancellation keywords and extracts order numbers from matches.
+
+        Returns:
+            Set of order number strings found in cancellation emails.
+        """
+        cancelled: set[str] = set()
+
+        for email in emails:
+            subject = (email.get("subject") or "").lower()
+            body = (email.get("body") or "").lower()
+
+            is_cancellation = False
+
+            # Check subject for cancellation signals
+            for keyword in self._CANCELLATION_SUBJECT_KEYWORDS:
+                if keyword in subject:
+                    is_cancellation = True
+                    break
+
+            # Check body for cancellation signals (only if subject didn't match)
+            if not is_cancellation:
+                for keyword in self._CANCELLATION_BODY_KEYWORDS:
+                    if keyword in body:
+                        is_cancellation = True
+                        break
+
+            if not is_cancellation:
+                continue
+
+            # Extract order numbers from the cancellation email (use original case)
+            raw_subject = email.get("subject") or ""
+            raw_body = email.get("body") or ""
+            order_numbers = self._AMAZON_ORDER_RE.findall(raw_subject + " " + raw_body)
+
+            if order_numbers:
+                cancelled.update(order_numbers)
+                logger.info(
+                    "Cancellation detected: email_id=%s orders=%s",
+                    email.get("id", "unknown"),
+                    order_numbers,
+                )
+
+        return cancelled
+
+    def _suppress_cancelled_cards(
+        self,
+        results: list[ExtractionResult],
+        cancelled_orders: set[str],
+    ) -> list[ExtractionResult]:
+        """Suppress ReturnCards whose orders were cancelled in other emails.
+
+        Converts successful results with matching order numbers into rejections.
+
+        Args:
+            results: List of extraction results (post-dedup).
+            cancelled_orders: Set of order numbers found in cancellation emails.
+
+        Returns:
+            Modified results list with cancelled orders converted to rejections.
+        """
+        suppressed = []
+        for result in results:
+            if (
+                result.success
+                and result.card
+                and result.card.order_number
+                and result.card.order_number in cancelled_orders
+            ):
+                order_num = result.card.order_number
+                logger.info(
+                    "Suppressing card for cancelled order: order=%s merchant=%s",
+                    order_num,
+                    result.card.merchant,
+                )
+                counter("returns.extraction.suppressed_cancelled")
+                suppressed.append(
+                    ExtractionResult.rejected_at_cancellation_check(result, order_num)
+                )
+            else:
+                suppressed.append(result)
+        return suppressed
+
     def process_email_batch(
         self,
         user_id: str,
         emails: list[dict[str, Any]],
     ) -> list[ExtractionResult]:
         """
-        Process a batch of emails.
+        Process a batch of emails and deduplicate results.
 
         Args:
             user_id: User who owns these emails
@@ -340,10 +497,11 @@ class ReturnableReceiptExtractor:
                     - from: Sender address
                     - subject: Subject line
                     - body: Body text
+                    - body_html: Optional HTML body (fallback when body is empty)
                     - received_at: Optional datetime
 
         Returns:
-            List of ExtractionResult for each email
+            List of ExtractionResult for each email (deduplicated)
         """
         results = []
 
@@ -356,6 +514,7 @@ class ReturnableReceiptExtractor:
                     subject=email.get("subject", ""),
                     body=email.get("body", ""),
                     received_at=email.get("received_at"),
+                    body_html=email.get("body_html"),
                 )
                 results.append(result)
 
@@ -371,6 +530,14 @@ class ReturnableReceiptExtractor:
                     )
                 )
 
+        # Deduplicate successful results
+        results = self._deduplicate_results(results)
+
+        # Cross-email cancellation suppression (free, deterministic)
+        cancelled_orders = self._detect_cancelled_orders(emails)
+        if cancelled_orders:
+            results = self._suppress_cancelled_cards(results, cancelled_orders)
+
         # Log batch summary
         successful = sum(1 for r in results if r.success)
         log_event(
@@ -381,6 +548,145 @@ class ReturnableReceiptExtractor:
         )
 
         return results
+
+    @staticmethod
+    def _card_richness(card: ReturnCard) -> int:
+        """Score how many useful fields a card has (higher = richer)."""
+        score = 0
+        if card.order_number:
+            score += 2
+        if card.return_by_date:
+            score += 3
+        if card.amount:
+            score += 1
+        if card.order_date:
+            score += 1
+        if card.delivery_date:
+            score += 1
+        if card.item_summary and len(card.item_summary) > 10:
+            score += 1
+        if card.evidence_snippet:
+            score += 1
+        return score
+
+    def _deduplicate_results(
+        self, results: list[ExtractionResult]
+    ) -> list[ExtractionResult]:
+        """Deduplicate extraction results in three passes.
+
+        Pass 1: Group by (merchant_domain, order_number) — same merchant, same order.
+        Pass 2: Merge cross-domain groups that share the same order_number —
+                handles cases like ILIA emails from shopifyemail.com vs iliabeauty.com.
+        Pass 3: Merge cards without order numbers into their merchant's group
+                when there's exactly one group for that merchant (unambiguous).
+
+        For each group, keeps the richest card and merges source_email_ids
+        and missing dates from siblings.
+        """
+        successful = [r for r in results if r.success and r.card]
+        non_successful = [r for r in results if not r.success or not r.card]
+
+        if not successful:
+            return results
+
+        # Pass 1: Group by (merchant_domain, order_number)
+        groups: dict[tuple[str, str], list[ExtractionResult]] = {}
+        ungrouped: list[ExtractionResult] = []
+
+        for r in successful:
+            card = r.card
+            key_domain = (card.merchant_domain or "").lower()
+            key_order = (card.order_number or "").strip()
+
+            if not key_order:
+                ungrouped.append(r)
+                continue
+
+            key = (key_domain, key_order)
+            groups.setdefault(key, []).append(r)
+
+        # Pass 2: Merge cross-domain groups sharing the same order_number
+        by_order: dict[str, list[tuple[str, str]]] = {}
+        for key_domain, key_order in groups:
+            by_order.setdefault(key_order, []).append((key_domain, key_order))
+
+        for order_num, keys in by_order.items():
+            if len(keys) <= 1:
+                continue
+            # Merge all groups for this order_number into the first group
+            primary_key = keys[0]
+            for secondary_key in keys[1:]:
+                groups[primary_key].extend(groups.pop(secondary_key))
+            logger.info(
+                "Dedup: merged %d domain variants for order %s",
+                len(keys),
+                order_num,
+            )
+
+        # Pass 3: Merge ungrouped (no order#) into unambiguous merchant groups
+        # Build domain -> group keys mapping
+        domain_to_keys: dict[str, list[tuple[str, str]]] = {}
+        for key in groups:
+            domain_to_keys.setdefault(key[0], []).append(key)
+
+        still_ungrouped: list[ExtractionResult] = []
+        for r in ungrouped:
+            card_domain = (r.card.merchant_domain or "").lower()
+            matching_keys = domain_to_keys.get(card_domain, [])
+            if len(matching_keys) == 1:
+                # Unambiguous: exactly one order from this merchant
+                groups[matching_keys[0]].append(r)
+                logger.info(
+                    "Dedup: merged no-order# card into %s/%s",
+                    matching_keys[0][0],
+                    matching_keys[0][1],
+                )
+            else:
+                still_ungrouped.append(r)
+
+        # Merge each group into a single result
+        deduped: list[ExtractionResult] = []
+
+        for key, group in groups.items():
+            if len(group) == 1:
+                deduped.append(group[0])
+                continue
+
+            # Pick the richest card
+            group.sort(key=lambda r: self._card_richness(r.card), reverse=True)
+            winner = group[0]
+            card = winner.card
+
+            # Merge source_email_ids from all siblings
+            all_email_ids: list[str] = []
+            seen: set[str] = set()
+            for r in group:
+                for eid in r.card.source_email_ids:
+                    if eid not in seen:
+                        all_email_ids.append(eid)
+                        seen.add(eid)
+            card.source_email_ids = all_email_ids
+
+            # Fill missing dates from siblings
+            for r in group[1:]:
+                sibling = r.card
+                if not card.order_date and sibling.order_date:
+                    card.order_date = sibling.order_date
+                if not card.delivery_date and sibling.delivery_date:
+                    card.delivery_date = sibling.delivery_date
+                if not card.return_by_date and sibling.return_by_date:
+                    card.return_by_date = sibling.return_by_date
+                    card.confidence = sibling.confidence
+
+            logger.info(
+                "Dedup: merged %d cards for %s/%s",
+                len(group),
+                key[0],
+                key[1],
+            )
+            deduped.append(winner)
+
+        return non_successful + deduped + still_ungrouped
 
 
 # Convenience function for single email extraction
