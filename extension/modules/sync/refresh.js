@@ -132,7 +132,8 @@ async function triggerScan(window_days, trigger) {
   try {
     const result = await scanPurchases({
       window_days,
-      incremental: trigger !== 'gmail_load', // Full scan on load, incremental otherwise
+      incremental: true, // Always incremental — processed email IDs prevent duplicate work
+      skipPersistence: true, // Don't save to backend DB — sidebar reads from IndexedDB
     });
 
     refreshState.lastScanEnd = Date.now();
@@ -229,7 +230,14 @@ async function onManualRefresh() {
 /**
  * Start the periodic scan alarm.
  */
-function startPeriodicAlarm() {
+async function startPeriodicAlarm() {
+  const existing = await chrome.alarms.get(REFRESH_CONFIG.PERIODIC_ALARM_NAME);
+  if (existing) {
+    console.log(REFRESH_LOG_PREFIX, 'PERIODIC_ALARM_ALREADY_EXISTS',
+      `interval=${existing.periodInMinutes}min`);
+    return;
+  }
+
   chrome.alarms.create(REFRESH_CONFIG.PERIODIC_ALARM_NAME, {
     periodInMinutes: REFRESH_CONFIG.PERIODIC_INTERVAL_MS / 60000,
   });
@@ -339,25 +347,15 @@ function handleTabRemoved(tabId) {
  * Sets up listeners and starts periodic alarm.
  */
 function initializeRefreshSystem() {
-  console.log(REFRESH_LOG_PREFIX, 'INITIALIZING (manual-only mode)');
+  console.log(REFRESH_LOG_PREFIX, 'INITIALIZING');
 
-  // Auto-scan disabled for debugging. Only manual scan (popup button / sidebar rescan) is active.
-  // To re-enable automatic scanning, uncomment the listeners and alarm below.
+  // Scan on Gmail page load
+  chrome.tabs.onUpdated.addListener(handleTabUpdated);
 
-  // // Set up alarm listener
-  // chrome.alarms.onAlarm.addListener(handleAlarm);
-
-  // // Set up tab listeners for auto-scan
-  // chrome.tabs.onActivated.addListener(handleTabActivated);
-  // chrome.tabs.onUpdated.addListener(handleTabUpdated);
-
-  // Tab removal listener still useful for state cleanup
+  // Tab removal listener for state cleanup
   chrome.tabs.onRemoved.addListener(handleTabRemoved);
 
-  // // Start periodic alarm
-  // startPeriodicAlarm();
-
-  // Track Gmail tab state (useful for UI) but don't trigger scan
+  // Track Gmail tab state (useful for periodic alarm gating)
   chrome.tabs.query({ url: 'https://mail.google.com/*' }, (tabs) => {
     if (tabs.length > 0) {
       refreshState.gmailTabActive = true;
@@ -365,7 +363,11 @@ function initializeRefreshSystem() {
     }
   });
 
-  console.log(REFRESH_LOG_PREFIX, 'INITIALIZED (manual-only mode)');
+  // Enable periodic background scanning (every 45 minutes)
+  chrome.alarms.onAlarm.addListener(handleAlarm);
+  startPeriodicAlarm();
+
+  console.log(REFRESH_LOG_PREFIX, 'INITIALIZED');
 }
 
 /**

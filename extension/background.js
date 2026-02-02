@@ -1,5 +1,5 @@
 /**
- * ShopQ Return Watch Background Service Worker
+ * Reclaim Background Service Worker
  * Handles purchase email scanning and return tracking
  */
 
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Load dependencies - only modules that exist for Return Watch
+// Load dependencies - only modules that exist for Reclaim
 importScripts(
   'modules/shared/config.js',
   'modules/shared/utils.js',
@@ -54,7 +54,7 @@ importScripts(
   'modules/returns/api.js'
 );
 
-console.log(`🛒 ShopQ Return Watch: Background service worker loaded v${CONFIG.VERSION}`);
+console.log(`🛒 Reclaim: Background service worker loaded v${CONFIG.VERSION}`);
 
 // Promise that resolves once onInstalled processing (including pipeline reset) is complete.
 // Scans await this to avoid reading stale data during extension reload.
@@ -261,7 +261,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.notifications.create({
           type: 'basic',
           iconUrl: 'icons/icon48.png',
-          title: message.title || 'ShopQ Return Watch',
+          title: message.title || 'Reclaim',
           message: message.message,
           priority: 2
         });
@@ -323,14 +323,14 @@ chrome.runtime.onInstalled.addListener((details) => {
     await initializeStorage();
 
     if (details.reason === 'install') {
-      console.log('🎉 ShopQ Return Watch installed');
+      console.log('🎉 Reclaim installed');
       // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
       // Don't set default_user - proper user isolation requires real Google user ID
       // Initial scan will be triggered by refresh system when Gmail is opened
     } else if (details.reason === 'update') {
-      console.log(`📦 ShopQ Return Watch updated to v${CONFIG.VERSION}`);
-      await resetPipelineData();
-      console.log('🔄 Pipeline data reset — will re-process on next scan');
+      console.log(`📦 Reclaim updated to v${CONFIG.VERSION}`);
+      await resetScanState();
+      console.log('🔄 Scan state reset — cards preserved, emails will be re-evaluated');
     }
   })();
 });

@@ -164,6 +164,13 @@ async function upsertOrder(order) {
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
 
+  // Preserve terminal statuses (returned/dismissed/cancelled) — atomic with the read.
+  // Once set, these persist across rescans. Use updateOrderStatus() to override.
+  const existing = orders[order.order_key];
+  if (existing && (existing.order_status === 'returned' || existing.order_status === 'dismissed' || existing.order_status === 'cancelled')) {
+    order.order_status = existing.order_status;
+  }
+
   // Update timestamp
   order.updated_at = new Date().toISOString();
 
@@ -641,6 +648,26 @@ async function resetPipelineData() {
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
   });
   console.log(STORE_LOG_PREFIX, 'Reset pipeline data (preserved merchant rules)');
+}
+
+/**
+ * Soft reset: clear scan state so emails get re-evaluated, but preserve existing orders.
+ * Called on extension update so cards persist across reloads while allowing
+ * updated pipeline code to re-process emails.
+ *
+ * Clears: processed email IDs, scan timestamps, template cache
+ * Preserves: orders, indices, merchant rules
+ *
+ * @returns {Promise<void>}
+ */
+async function resetScanState() {
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
+    [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
+    [STORAGE_KEYS.TEMPLATE_CACHE]: {},
+  });
+  console.log(STORE_LOG_PREFIX, 'Reset scan state (preserved orders and merchant rules)');
 }
 
 /**

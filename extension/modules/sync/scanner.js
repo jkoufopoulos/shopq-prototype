@@ -460,12 +460,14 @@ async function processEmailThroughPipeline({ user_id, message, token }) {
  * @param {Object} options
  * @param {number} [options.window_days=14] - How many days back to scan
  * @param {boolean} [options.incremental=true] - Use incremental scanning
+ * @param {boolean} [options.skipPersistence=false] - Skip backend DB save/dedup
  * @returns {Promise<ScanResult>}
  */
 async function scanPurchases(options = {}) {
   const {
     window_days = 14,
     incremental = true,
+    skipPersistence = false,
   } = options;
 
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
@@ -606,73 +608,67 @@ async function scanPurchases(options = {}) {
   console.log(SCANNER_LOG_PREFIX, 'COLLECT_COMPLETE',
     emailsForBackend.length, 'emails ready for batch processing');
 
-  // ---- Phase 2: Batch send to backend ----
+  // ---- Phase 2+3: Send to backend in chunks, store results after each ----
+  const BATCH_CHUNK_SIZE = 10;
   let batchCards = [];
 
   if (emailsForBackend.length > 0) {
-    try {
-      console.log(SCANNER_LOG_PREFIX, 'BATCH_SEND', emailsForBackend.length, 'emails');
-      const batchResponse = await processEmailBatch(emailsForBackend);
-
-      if (batchResponse.success) {
-        batchCards = batchResponse.cards || [];
-        stats.orders_created = batchResponse.stats.cards_created;
-
-        console.log(SCANNER_LOG_PREFIX, 'BATCH_RESULT',
-          'cards:', batchCards.length,
-          'created:', batchResponse.stats.cards_created,
-          'merged:', batchResponse.stats.cards_merged,
-          'rejected_filter:', batchResponse.stats.rejected_filter,
-          'rejected_classifier:', batchResponse.stats.rejected_classifier);
-      } else {
-        console.error(SCANNER_LOG_PREFIX, 'BATCH_FAILED', 'success=false');
-        stats.errors += emailsForBackend.length;
-      }
-
-      // Mark all batch emails as processed
-      for (const email of emailsForBackend) {
-        await markEmailProcessed(email.email_id);
-      }
-      stats.processed += emailsForBackend.length;
-
-    } catch (error) {
-      console.error(SCANNER_LOG_PREFIX, 'BATCH_API_ERROR', error.message);
-      // Don't mark as processed so they can be retried on next scan
-      stats.errors += emailsForBackend.length;
+    // Split into chunks to avoid service worker timeout (~5 min limit)
+    const chunks = [];
+    for (let i = 0; i < emailsForBackend.length; i += BATCH_CHUNK_SIZE) {
+      chunks.push(emailsForBackend.slice(i, i + BATCH_CHUNK_SIZE));
     }
-  }
 
-  // ---- Phase 3: Store results ----
-  if (batchCards.length > 0) {
-    try {
-      // Preserve user-initiated status changes (returned/dismissed) before clearing
-      const existingOrders = await getAllOrders();
-      const userStatusMap = new Map();
-      for (const o of existingOrders) {
-        if (o.order_status === 'returned' || o.order_status === 'dismissed') {
-          userStatusMap.set(o.order_key, o.order_status);
+    console.log(SCANNER_LOG_PREFIX, 'BATCH_SEND', emailsForBackend.length,
+      'emails in', chunks.length, 'chunks of', BATCH_CHUNK_SIZE);
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const chunk = chunks[ci];
+      try {
+        console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK',
+          `${ci + 1}/${chunks.length}`, chunk.length, 'emails');
+
+        const batchResponse = await processEmailBatch(chunk, { skipPersistence });
+
+        if (batchResponse.success) {
+          const chunkCards = batchResponse.cards || [];
+          batchCards.push(...chunkCards);
+          stats.orders_created += batchResponse.stats?.cards_created || 0;
+
+          // Store results immediately so cards appear progressively
+          // upsertOrder() preserves user-initiated statuses (returned/dismissed)
+          for (const card of chunkCards) {
+            const order = convertReturnCardToOrder(card, user_id);
+            await upsertOrder(order);
+          }
+
+          console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_RESULT',
+            `${ci + 1}/${chunks.length}`,
+            'cards:', chunkCards.length,
+            'total:', batchCards.length);
+        } else {
+          console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_FAILED',
+            `${ci + 1}/${chunks.length}`, 'success=false');
+          stats.errors += chunk.length;
         }
-      }
 
-      // Clear existing orders — the batch response is the complete deduplicated set
-      await clearOrders();
-
-      for (const card of batchCards) {
-        const order = convertReturnCardToOrder(card, user_id);
-
-        // Restore user-initiated status if previously set
-        const preservedStatus = userStatusMap.get(order.order_key);
-        if (preservedStatus) {
-          order.order_status = preservedStatus;
+        // Mark chunk emails as processed
+        for (const email of chunk) {
+          await markEmailProcessed(email.email_id);
         }
+        stats.processed += chunk.length;
 
-        await upsertOrder(order);
+      } catch (error) {
+        console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_ERROR',
+          `${ci + 1}/${chunks.length}`, error.message);
+        // Don't mark as processed so they can be retried on next scan
+        stats.errors += chunk.length;
       }
+    }
 
-      console.log(SCANNER_LOG_PREFIX, 'STORED', batchCards.length, 'orders');
-    } catch (error) {
-      console.error(SCANNER_LOG_PREFIX, 'STORAGE_ERROR', 'Failed to store batch results:', error.message);
-      stats.errors += batchCards.length;
+    if (batchCards.length > 0) {
+      console.log(SCANNER_LOG_PREFIX, 'STORED', batchCards.length, 'orders from',
+        chunks.length, 'chunks');
     }
   }
 
