@@ -320,6 +320,36 @@ function extractHtmlBodyFromPayload(payload) {
 // ============================================================
 
 /**
+ * Extract order number from text using common patterns.
+ * Handles cases where backend didn't extract order_number but it's in item_summary.
+ *
+ * @param {string} text - Text to search
+ * @returns {string|null} Extracted order number or null
+ */
+function extractOrderNumber(text) {
+  if (!text) return null;
+
+  const patterns = [
+    // Amazon format: 123-1234567-1234567
+    /\b(\d{3}-\d{7}-\d{7})\b/,
+    // Generic: Order #ABC123 or Order #: ABC123
+    /order\s*#\s*:?\s*([A-Z0-9][-A-Z0-9]{3,20})/i,
+    // Confirmation #ABC123
+    /confirmation\s*[#:]\s*([A-Z0-9][-A-Z0-9]{3,20})/i,
+    // For/regarding ABC123 at end of string
+    /(?:for|regarding)\s+#?\s*([A-Z0-9][-A-Z0-9]{4,20})\s*$/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1].toUpperCase();
+    }
+  }
+  return null;
+}
+
+/**
  * Generate a deterministic order key for client-side deduplication.
  * Uses merchant_domain + order_number when available, falls back to
  * merchant_domain + item_summary hash.
@@ -331,14 +361,22 @@ function generateOrderKey(card) {
   const domain = (card.merchant_domain || card.merchant || 'unknown').toLowerCase();
 
   // Primary: merchant + order_number (most reliable)
-  if (card.order_number) {
-    return `${domain}::${card.order_number}`;
+  let orderNum = card.order_number;
+
+  // Fallback: try to extract order number from item_summary
+  // (handles cases where backend didn't extract it but it's in the text)
+  if (!orderNum) {
+    orderNum = extractOrderNumber(card.item_summary);
+  }
+
+  if (orderNum) {
+    return `${domain}::${orderNum.toUpperCase()}`;
   }
 
   // Fallback: merchant + item_summary hash (for orders without order numbers)
   const summary = (card.item_summary || '').toLowerCase().trim();
   if (summary) {
-    // Simple hash: first 8 chars + length (good enough for dedup)
+    // Simple hash: first 40 chars alphanumeric + length
     const hash = summary.substring(0, 40).replace(/[^a-z0-9]/g, '') + summary.length;
     return `${domain}::item::${hash}`;
   }
