@@ -164,11 +164,40 @@ async function upsertOrder(order) {
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
 
-  // Preserve terminal statuses (returned/dismissed/cancelled) — atomic with the read.
-  // Once set, these persist across rescans. Use updateOrderStatus() to override.
+  // Merge with existing order if present
   const existing = orders[order.order_key];
-  if (existing && (existing.order_status === 'returned' || existing.order_status === 'dismissed' || existing.order_status === 'cancelled')) {
-    order.order_status = existing.order_status;
+  if (existing) {
+    // Preserve terminal statuses (returned/dismissed/cancelled)
+    if (existing.order_status === 'returned' || existing.order_status === 'dismissed' || existing.order_status === 'cancelled') {
+      order.order_status = existing.order_status;
+    }
+
+    // Merge source_email_ids (union)
+    const emailIds = new Set([...(existing.source_email_ids || []), ...(order.source_email_ids || [])]);
+    order.source_email_ids = Array.from(emailIds);
+
+    // Keep earlier purchase_date
+    if (existing.purchase_date && (!order.purchase_date || existing.purchase_date < order.purchase_date)) {
+      order.purchase_date = existing.purchase_date;
+    }
+
+    // Keep existing created_at
+    order.created_at = existing.created_at;
+
+    // Prefer non-empty values from either source
+    order.delivery_date = order.delivery_date || existing.delivery_date;
+    order.return_by_date = order.return_by_date || existing.return_by_date;
+    order.order_id = order.order_id || existing.order_id;
+    order.tracking_number = order.tracking_number || existing.tracking_number;
+    order.return_portal_link = order.return_portal_link || existing.return_portal_link;
+    order.evidence_quote = order.evidence_quote || existing.evidence_quote;
+    order.amount = order.amount || existing.amount;
+
+    // Prefer higher-confidence deadline
+    if (existing.deadline_confidence === 'exact' && order.deadline_confidence !== 'exact') {
+      order.deadline_confidence = existing.deadline_confidence;
+      order.return_by_date = existing.return_by_date;
+    }
   }
 
   // Update timestamp

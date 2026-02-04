@@ -320,6 +320,34 @@ function extractHtmlBodyFromPayload(payload) {
 // ============================================================
 
 /**
+ * Generate a deterministic order key for client-side deduplication.
+ * Uses merchant_domain + order_number when available, falls back to
+ * merchant_domain + item_summary hash.
+ *
+ * @param {Object} card - ReturnCardResponse from backend
+ * @returns {string} Deterministic order key
+ */
+function generateOrderKey(card) {
+  const domain = (card.merchant_domain || card.merchant || 'unknown').toLowerCase();
+
+  // Primary: merchant + order_number (most reliable)
+  if (card.order_number) {
+    return `${domain}::${card.order_number}`;
+  }
+
+  // Fallback: merchant + item_summary hash (for orders without order numbers)
+  const summary = (card.item_summary || '').toLowerCase().trim();
+  if (summary) {
+    // Simple hash: first 8 chars + length (good enough for dedup)
+    const hash = summary.substring(0, 40).replace(/[^a-z0-9]/g, '') + summary.length;
+    return `${domain}::item::${hash}`;
+  }
+
+  // Last resort: use backend ID (won't dedup, but rare)
+  return card.id;
+}
+
+/**
  * Convert a backend ReturnCardResponse to the extension's Order model.
  *
  * @param {Object} card - ReturnCardResponse from POST /api/returns/process
@@ -329,7 +357,7 @@ function extractHtmlBodyFromPayload(payload) {
 function convertReturnCardToOrder(card, user_id) {
   const now = new Date().toISOString();
   return {
-    order_key: card.id,
+    order_key: generateOrderKey(card),
     user_id,
     merchant_domain: card.merchant_domain || '',
     merchant_display_name: card.merchant || '',
