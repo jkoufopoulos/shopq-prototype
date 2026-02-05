@@ -309,154 +309,128 @@ function renderEnrichingState() {
  */
 function renderDetailView(order, needsEnrichment) {
   const daysUntil = getDaysUntil(order.return_by_date);
-  let deadlineText = 'No deadline set';
+  let deadlineDate = 'No deadline set';
+  let daysLeftText = '';
   let deadlineClass = '';
 
   if (order.return_by_date) {
     const date = new Date(order.return_by_date);
-    deadlineText = date.toLocaleDateString('en-US', {
+    deadlineDate = date.toLocaleDateString('en-US', {
       weekday: 'long',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     });
 
     if (daysUntil !== null) {
       if (daysUntil < 0) {
-        deadlineText += ' (Expired)';
+        daysLeftText = '(Expired)';
         deadlineClass = 'urgent';
       } else if (daysUntil === 0) {
-        deadlineText += ' (Today!)';
+        daysLeftText = '(Today!)';
         deadlineClass = 'urgent';
-      } else if (daysUntil <= 3) {
-        deadlineText += ` (${daysUntil} days)`;
-        deadlineClass = 'urgent';
+      } else if (daysUntil === 1) {
+        daysLeftText = '(1 day left)';
+        deadlineClass = daysUntil <= 3 ? 'urgent' : '';
       } else {
-        deadlineText += ` (${daysUntil} days)`;
+        daysLeftText = `(${daysUntil} days left)`;
+        deadlineClass = daysUntil <= 3 ? 'urgent' : '';
       }
     }
   }
 
-  const amount = formatAmount(order.amount, order.currency);
+  // Icons
+  const externalLinkIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>`;
+  const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
+  const infoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
 
-  // Build enrichment section
+  // Build confidence badge
+  const confidenceBadge = `
+    <div class="confidence-badge">
+      ${infoIcon}
+      <span>Confidence: <strong>${order.deadline_confidence || 'unknown'}</strong></span>
+      <span class="edit-link" id="edit-deadline-btn">Edit</span>
+    </div>
+  `;
+
+  // Build order info card
+  let orderInfoCard = '';
+  if (order.order_id || order.purchase_date) {
+    orderInfoCard = `
+      <div class="order-info-card">
+        ${order.order_id ? `
+        <div class="order-info-item">
+          <span class="order-info-label">Order ID</span>
+          <span class="order-info-value">${escapeHtml(order.order_id)}</span>
+        </div>
+        ` : ''}
+        ${order.purchase_date ? `
+        <div class="order-info-item">
+          <span class="order-info-label">Date</span>
+          <span class="order-info-value">${new Date(order.purchase_date).toLocaleDateString()}</span>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // Build enrichment section (for unknown deadlines)
   let enrichSection = '';
   if (needsEnrichment) {
     if (isEnriching) {
       enrichSection = `
-        <div id="enrich-section" class="detail-section" style="text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+        <div id="enrich-section" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; margin-bottom: 20px;">
           <div class="spinner" style="margin: 0 auto 8px;"></div>
-          <div style="color: #5f6368;">Checking return policy...</div>
+          <div style="color: #5f6368; font-size: 13px;">Checking return policy...</div>
         </div>
       `;
     } else {
       enrichSection = `
-        <div id="enrich-section" class="detail-section" style="text-align: center; padding: 16px; background: #fff3e0; border-radius: 8px;">
-          <div style="color: #e65100; margin-bottom: 8px;">No return deadline found</div>
-          <button id="set-rule-btn" class="action-btn secondary" style="margin-top: 8px;">
-            Set Return Window for ${escapeHtml(order.merchant_display_name)}
+        <div id="enrich-section" style="text-align: center; padding: 20px; background: #fff3e0; border-radius: 12px; margin-bottom: 20px;">
+          <div style="color: #e65100; margin-bottom: 12px; font-size: 14px;">No return deadline found</div>
+          <button id="set-rule-btn" class="action-btn secondary" style="width: auto; padding: 10px 20px;">
+            Set Return Window
           </button>
         </div>
       `;
     }
   }
 
-  // Build evidence section if available
-  let evidenceSection = '';
-  if (order.evidence_quote) {
-    evidenceSection = `
-      <div class="detail-section">
-        <div class="detail-label">Return Policy</div>
-        <div class="detail-value" style="font-style: italic; color: #5f6368; font-size: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
-          "${escapeHtml(order.evidence_quote)}"
-        </div>
-      </div>
-    `;
-  }
-
   detailView.innerHTML = `
     <div class="detail-header">
       <div class="detail-merchant">${escapeHtml(order.merchant_display_name)}</div>
       <div class="detail-item">${escapeHtml(order.item_summary)}</div>
-    </div>
-
-    ${order.source_email_ids && order.source_email_ids.length > 0 ? `
-    <div class="detail-section">
+      ${order.source_email_ids && order.source_email_ids.length > 0 ? `
       <a href="https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(order.source_email_ids[0])}"
          target="_top"
-         style="color: #1a73e8; text-decoration: none; font-size: 13px;">
-        View Order Email &rarr;
+         class="detail-email-link">
+        View Order Email ${externalLinkIcon}
       </a>
+      ` : ''}
     </div>
-    ` : ''}
 
     <div class="detail-section">
       <div class="detail-label">Return By</div>
-      <div class="detail-value large ${deadlineClass}">${deadlineText}</div>
-      <div style="font-size: 12px; color: #9aa0a6; margin-top: 4px;">
-        Confidence: ${order.deadline_confidence || 'unknown'}
+      <div class="detail-value large ${deadlineClass}">
+        ${deadlineDate}${daysLeftText ? `<span class="days-left">${daysLeftText}</span>` : ''}
       </div>
+      ${confidenceBadge}
     </div>
 
     ${enrichSection}
-    ${evidenceSection}
-
-    ${amount ? `
-    <div class="detail-section">
-      <div class="detail-label">Purchase Amount</div>
-      <div class="detail-value">${amount}</div>
-    </div>
-    ` : ''}
-
-    ${order.order_id ? `
-    <div class="detail-section">
-      <div class="detail-label">Order Number</div>
-      <div class="detail-value">${escapeHtml(order.order_id)}</div>
-    </div>
-    ` : ''}
-
-    ${order.purchase_date ? `
-    <div class="detail-section">
-      <div class="detail-label">Order Date</div>
-      <div class="detail-value">${new Date(order.purchase_date).toLocaleDateString()}</div>
-    </div>
-    ` : ''}
-
-    ${order.delivery_date ? `
-    <div class="detail-section">
-      <div class="detail-label">Delivery Date</div>
-      <div class="detail-value">${new Date(order.delivery_date).toLocaleDateString()}</div>
-    </div>
-    ` : ''}
-
-    ${order.return_portal_link && sanitizeUrl(order.return_portal_link) ? `
-    <div class="detail-section">
-      <div class="detail-label">Return Portal</div>
-      <div class="detail-value">
-        <a href="${sanitizeUrl(order.return_portal_link)}" target="_top">Start Return</a>
-      </div>
-    </div>
-    ` : ''}
-
-    ${order.tracking_number ? `
-    <div class="detail-section">
-      <div class="detail-label">Tracking Number</div>
-      <div class="detail-value">${escapeHtml(order.tracking_number)}</div>
-    </div>
-    ` : ''}
+    ${orderInfoCard}
 
     ${order.order_status === 'active' ? `
     <div class="detail-actions">
-      <button class="action-btn primary" id="mark-returned-btn">Mark Returned</button>
-    </div>
-    <div style="text-align: center; margin-top: 16px;">
-      <button id="dismiss-order-btn" style="
-        background: none;
-        border: none;
-        color: #9aa0a6;
-        font-size: 12px;
-        cursor: pointer;
-        padding: 8px;
-      ">Not a purchase? Dismiss</button>
+      <button class="action-btn primary" id="deliver-carrier-btn">
+        ${truckIcon}
+        Deliver to Carrier
+      </button>
+      <button class="action-btn secondary" id="mark-returned-btn">
+        Mark as Returned
+      </button>
+      <button class="action-btn tertiary" id="dismiss-order-btn">
+        Dismiss (Not an Order)
+      </button>
     </div>
     ` : ''}
   `;
@@ -465,6 +439,8 @@ function renderDetailView(order, needsEnrichment) {
   const markReturnedBtn = document.getElementById('mark-returned-btn');
   const setRuleBtn = document.getElementById('set-rule-btn');
   const dismissOrderBtn = document.getElementById('dismiss-order-btn');
+  const deliverCarrierBtn = document.getElementById('deliver-carrier-btn');
+  const editDeadlineBtn = document.getElementById('edit-deadline-btn');
 
   if (markReturnedBtn) {
     markReturnedBtn.addEventListener('click', () => {
@@ -481,6 +457,19 @@ function renderDetailView(order, needsEnrichment) {
   if (dismissOrderBtn) {
     dismissOrderBtn.addEventListener('click', () => {
       dismissOrder(order.order_key);
+    });
+  }
+
+  if (deliverCarrierBtn) {
+    deliverCarrierBtn.addEventListener('click', () => {
+      // Placeholder - will show courier options in future
+      alert('Courier pickup coming soon! This will let you schedule a pickup to drop off your return.');
+    });
+  }
+
+  if (editDeadlineBtn) {
+    editDeadlineBtn.addEventListener('click', () => {
+      showMerchantRuleDialog(order.merchant_domain, order.merchant_display_name);
     });
   }
 }
