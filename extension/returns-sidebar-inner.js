@@ -423,7 +423,7 @@ function renderDetailView(order, needsEnrichment) {
     <div class="detail-actions">
       <button class="action-btn primary" id="deliver-carrier-btn">
         ${truckIcon}
-        Deliver to Carrier
+        Schedule Delivery
       </button>
       <button class="action-btn secondary" id="mark-returned-btn">
         Mark as Returned
@@ -463,7 +463,7 @@ function renderDetailView(order, needsEnrichment) {
   if (deliverCarrierBtn) {
     deliverCarrierBtn.addEventListener('click', () => {
       // Placeholder - will show courier options in future
-      alert('Courier pickup coming soon! This will let you schedule a pickup to drop off your return.');
+      alert('Coming soon! Schedule an Uber to pick up your return and drop it off at UPS/FedEx.');
     });
   }
 
