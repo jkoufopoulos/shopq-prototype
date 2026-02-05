@@ -22,8 +22,14 @@ from pydantic import BaseModel, ValidationError
 from shopq.observability.telemetry import counter, log_event
 from shopq.storage.cache import TTLCache
 
-# Feature flag: disable LLM by default for safety
-USE_LLM = os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
+def _use_llm() -> bool:
+    """Check LLM feature flag at call time (not import time).
+
+    Reads env var fresh to avoid stale cache when dotenv loads after module import.
+    """
+    return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
 
 # LLM response cache (keyed by prompt_hash + email_key)
 # TTL: 24 hours (classifications shouldn't change frequently)
@@ -94,7 +100,7 @@ def classify_email_llm(
     """
 
     # Check feature flag
-    if not USE_LLM:
+    if not _use_llm():
         counter("llm.disabled")
         log_event("llm.skipped", reason="feature_flag_disabled")
         return None

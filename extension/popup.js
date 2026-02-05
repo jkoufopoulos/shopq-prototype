@@ -1,6 +1,6 @@
 /**
- * ShopQ Return Watch Popup Script
- * Handles popup UI interactions for Return Watch feature
+ * Reclaim Popup Script
+ * Handles popup UI interactions for Reclaim feature
  */
 
 // Update return counts display using local storage via background script

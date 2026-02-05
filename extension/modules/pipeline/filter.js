@@ -52,7 +52,7 @@ const BLOCKED_DOMAINS = {
     'dailyharvest.com',
   ],
 
-  // Digital goods
+  // Digital goods & SaaS
   // NOTE: amazon.com is NOT blocked by domain - legitimate retail purchases come from it.
   // Digital Amazon purchases are blocked by keywords (ebook, kindle edition, etc.)
   digital: [
@@ -67,6 +67,9 @@ const BLOCKED_DOMAINS = {
     'epicgames.com',
     'gog.com',
     'humblebundle.com',
+    'anthropic.com',    // AI SaaS
+    'openai.com',       // AI SaaS
+    'mobbin.com',       // Design tool SaaS
   ],
 
   // Subscriptions/streaming
@@ -108,6 +111,35 @@ const BLOCKED_DOMAINS = {
     'caviar.com',
     'seamless.com',
     'ubereats.com',
+  ],
+
+  // Tickets & events
+  tickets: [
+    'shotgun.live',
+    'ticketmaster.com',
+    'stubhub.com',
+    'eventbrite.com',
+    'seatgeek.com',
+    'dice.fm',
+  ],
+
+  // Telecom & eSIM (digital passes, not physical goods)
+  telecom: [
+    'mintmobile.com',
+    'holafly.com',
+    't-mobile.com',
+    'att.com',
+    'verizon.com',
+    'xfinity.com',
+    'spectrum.com',
+  ],
+
+  // Services (warranty, insurance, returns processing)
+  services: [
+    'asurion.com',
+    'happyreturns.com',
+    'allstate.com',
+    'squaretrade.com',
   ],
 
   // Travel
@@ -165,7 +197,7 @@ const BLOCKED_DOMAINS = {
  * These are checked even if domain is not in blocklist.
  */
 const BLOCKED_KEYWORDS = {
-  // Digital purchases
+  // Digital purchases & services
   digital: [
     'ebook',
     'e-book',
@@ -185,6 +217,15 @@ const BLOCKED_KEYWORDS = {
     'watch now',
     'stream now',
     'digital order',
+    'verification code',
+    'is your verification',
+    'esim',
+    'e-sim',
+    'protection plan',
+    'protection plan terms',
+    'terms and conditions',
+    'keep your',
+    'open drawing',
   ],
 
   // Food/groceries

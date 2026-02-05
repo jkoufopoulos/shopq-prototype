@@ -41,13 +41,14 @@ def get_gemini_model():
     Raises:
         GeminiInitializationError: If model cannot be initialized
     """
+    # Read env vars fresh (settings.py may have stale values if loaded before dotenv)
+    project = os.getenv("GOOGLE_CLOUD_PROJECT") or GOOGLE_CLOUD_PROJECT
+    location = os.getenv("GEMINI_LOCATION", "") or GEMINI_LOCATION or "us-central1"
+
     # Try Vertex AI first (production / Cloud Run)
     try:
         import vertexai
         from vertexai.generative_models import GenerativeModel
-
-        project = GOOGLE_CLOUD_PROJECT or os.getenv("GOOGLE_CLOUD_PROJECT")
-        location = GEMINI_LOCATION or "us-central1"
 
         if not project:
             raise GeminiInitializationError("GOOGLE_CLOUD_PROJECT not set")

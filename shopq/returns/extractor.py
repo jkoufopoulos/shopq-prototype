@@ -91,6 +91,34 @@ _STOP_WORDS = frozenset(
 _MIN_WORD_LEN = 3
 
 
+_ORDER_KEYWORDS = {
+    "order confirmation",
+    "your order",
+    "order placed",
+    "receipt",
+    "purchase confirmation",
+    "thank you for your",
+}
+_SHIPPING_KEYWORDS = {
+    "shipped",
+    "delivered",
+    "delivery",
+    "tracking",
+    "on its way",
+    "out for delivery",
+}
+
+
+def _email_link_priority(subject: str) -> int:
+    """Lower = better priority for the 'View Order Email' link."""
+    lower = subject.lower()
+    if any(kw in lower for kw in _ORDER_KEYWORDS):
+        return 0  # order confirmation — best
+    if any(kw in lower for kw in _SHIPPING_KEYWORDS):
+        return 2  # shipping/delivery — fallback
+    return 1  # unknown — might be order-related, rank above shipping
+
+
 def _items_overlap(summary_a: str | None, summary_b: str | None) -> bool:
     """Check if two item summaries share meaningful product-name words.
 
@@ -651,6 +679,14 @@ class ReturnableReceiptExtractor:
         cancelled_orders = self._detect_cancelled_orders(emails)
         if cancelled_orders:
             results = self._suppress_cancelled_cards(results, cancelled_orders)
+
+        # Sort source_email_ids: order confirmation first, then unknown, then shipping
+        subject_by_id = {e["id"]: e.get("subject", "") for e in emails}
+        for result in results:
+            if result.card and len(result.card.source_email_ids) > 1:
+                result.card.source_email_ids.sort(
+                    key=lambda eid: _email_link_priority(subject_by_id.get(eid, ""))
+                )
 
         # Log batch summary
         successful = sum(1 for r in results if r.success)

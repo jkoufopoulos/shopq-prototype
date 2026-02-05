@@ -78,6 +78,10 @@ class MerchantDomainFilter:
             "nintendo.com",
             "gog.com",
             "humblebundle.com",
+            # AI / SaaS services
+            "anthropic.com",
+            "openai.com",
+            "mobbin.com",
             # News & memberships
             "nytimes.com",
             "wsj.com",
@@ -93,12 +97,14 @@ class MerchantDomainFilter:
             "chase.com",
             "bankofamerica.com",
             "wellsfargo.com",
-            # Utilities & bills
+            # Telecom & eSIM providers
             "xfinity.com",
             "spectrum.com",
             "att.com",
             "verizon.com",
             "t-mobile.com",
+            "mintmobile.com",
+            "holafly.com",
             # Donations & crowdfunding
             "gofundme.com",
             "kickstarter.com",
@@ -108,6 +114,8 @@ class MerchantDomainFilter:
             "stubhub.com",
             "eventbrite.com",
             "seatgeek.com",
+            "shotgun.live",
+            "dice.fm",
             # Travel (different refund process)
             "expedia.com",
             "booking.com",
@@ -127,8 +135,10 @@ class MerchantDomainFilter:
             "hallmark.com",
             "americangreetings.com",
             "bluemountain.com",
-            # Return processing services (never send purchase confirmations)
+            # Services (warranty, insurance, return processing)
             "happyreturns.com",
+            "asurion.com",
+            "squaretrade.com",
         }
     )
 
@@ -319,6 +329,16 @@ class MerchantDomainFilter:
         "protection plan",
         "warranty plan",
         "extended warranty",
+        "terms and conditions",
+        # Verification / auth codes (not purchases)
+        "verification code",
+        "is your verification",
+        # Digital passes / eSIM (not physical goods)
+        "esim",
+        "e-sim",
+        # Misc non-purchase
+        "keep your",
+        "open drawing",
     }
 
     def __init__(self, merchant_rules_path: Path | None = None):

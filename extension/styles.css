@@ -138,7 +138,7 @@ tr.zA.shopq-critical-row,
 }
 
 /* Main icon container gets subtle pulse */
-[data-tooltip="Return Watch"].shopq-has-expiring {
+[data-tooltip="Reclaim"].shopq-has-expiring {
   animation: shopq-pulse-red 1.5s ease-in-out infinite;
   border-radius: 50%;
 }

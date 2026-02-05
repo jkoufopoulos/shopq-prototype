@@ -716,6 +716,9 @@ async def process_email(
 async def process_email_batch(
     request: ProcessBatchRequest,
     user: AuthenticatedUser = Depends(get_current_user),
+    skip_persistence: bool = Query(
+        False, description="Skip DB save/dedup — return pipeline results directly (for testing)"
+    ),
 ) -> ProcessBatchResponse:
     """
     Process a batch of emails through the 3-stage extraction pipeline.
@@ -727,6 +730,10 @@ async def process_email_batch(
     seeing the full batch.
 
     Max 500 emails per batch.
+
+    When skip_persistence=true, the pipeline runs normally but results are not
+    saved to the database and not deduplicated against existing DB cards. This
+    ensures reproducible results independent of database state.
     """
     from shopq.returns import ReturnableReceiptExtractor
 
@@ -779,8 +786,16 @@ async def process_email_batch(
                     stats.rejected_empty += 1
                 continue
 
-            # Dedup against DB: check for existing card
             card = result.card
+
+            if skip_persistence:
+                # Return pipeline results directly — no DB interaction
+                card.user_id = user_id
+                saved_cards.append(card)
+                stats.cards_created += 1
+                continue
+
+            # Dedup against DB: check for existing card
             normalized_domain = (card.merchant_domain or "").lower()
 
             existing_card = None

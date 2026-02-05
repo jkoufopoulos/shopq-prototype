@@ -27,8 +27,14 @@ from shopq.utils.redaction import redact_subject
 
 logger = get_logger(__name__)
 
-# Feature flag: control LLM usage
-USE_LLM = os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
+def _use_llm() -> bool:
+    """Check LLM feature flag at call time (not import time).
+
+    Reads env var fresh to avoid stale cache when dotenv loads after module import.
+    """
+    return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
 
 # CODE-003/CODE-004: LLM call configuration
 LLM_TIMEOUT_SECONDS = 30  # Maximum time to wait for LLM response
@@ -234,7 +240,7 @@ Respond with ONLY the JSON, no other text."""
             - Increments telemetry counters
         """
         # Check feature flag
-        if not USE_LLM:
+        if not _use_llm():
             counter("returns.classifier.llm_disabled")
             logger.warning(
                 "LLM DISABLED: SHOPQ_USE_LLM=%s - returning default returnable",

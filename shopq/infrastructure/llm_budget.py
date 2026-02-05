@@ -26,7 +26,7 @@ from shopq.observability.telemetry import counter
 logger = get_logger(__name__)
 
 # Budget limits
-DEFAULT_USER_DAILY_LIMIT = 100  # LLM calls per user per day
+DEFAULT_USER_DAILY_LIMIT = 500  # LLM calls per user per day
 DEFAULT_GLOBAL_DAILY_LIMIT = 10000  # Total LLM calls per day
 
 # Cost estimates per call type (for monitoring)

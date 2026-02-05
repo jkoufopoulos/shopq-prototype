@@ -66,7 +66,7 @@ const DEFAULT_RETURN_WINDOWS = {
  * @returns {string} New ISO date string
  */
 function addDays(dateStr, days) {
-  const date = new Date(dateStr + 'T00:00:00Z');
+  const date = new Date(dateStr.split('T')[0] + 'T00:00:00Z');
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().split('T')[0];
 }
@@ -79,8 +79,8 @@ function addDays(dateStr, days) {
  * @returns {number} Days between (negative if endDate is before startDate)
  */
 function daysBetween(startDate, endDate) {
-  const start = new Date(startDate + 'T00:00:00Z');
-  const end = new Date(endDate + 'T00:00:00Z');
+  const start = new Date(startDate.split('T')[0] + 'T00:00:00Z');
+  const end = new Date(endDate.split('T')[0] + 'T00:00:00Z');
   const diffMs = end.getTime() - start.getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
@@ -453,7 +453,7 @@ async function getAllPurchasesForDisplay() {
 // ============================================================
 
 /**
- * Check if an order is stale (expired AND 90+ days since purchase).
+ * Check if an order is stale (expired more than 14 days ago).
  * Stale orders are hidden from the unified list.
  *
  * @param {Order} order
@@ -463,14 +463,14 @@ function isStaleOrder(order) {
   if (!order.return_by_date) return false;
 
   const today = getToday();
+  const returnDate = order.return_by_date.split('T')[0];
 
-  // Must be expired (return_by_date in the past)
-  if (order.return_by_date >= today) return false;
+  // Not expired yet
+  if (returnDate >= today) return false;
 
-  // Must be 90+ days since purchase_date
-  if (!order.purchase_date) return false;
-  const daysSincePurchase = daysBetween(order.purchase_date, today);
-  return daysSincePurchase >= 90;
+  // Expired more than 14 days ago — too old to act on
+  const daysSinceExpiry = daysBetween(returnDate, today);
+  return daysSinceExpiry > 14;
 }
 
 /**
@@ -490,9 +490,15 @@ function isStaleOrder(order) {
 async function getVisibleOrders() {
   const allOrders = await getAllOrders();
 
-  // Filter: active only, exclude stale
+  // DEMO: Hide specific items from sidebar
+  const DEMO_HIDDEN_ITEMS = [
+    'e.l.f. wow brow gel',
+  ];
+
+  // Filter: active only, exclude stale, exclude demo-hidden
   const visible = allOrders.filter(o =>
-    o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o)
+    o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o) &&
+    !DEMO_HIDDEN_ITEMS.some(h => (o.item_summary || '').toLowerCase().includes(h))
   );
 
   // Split into has-deadline and no-deadline groups

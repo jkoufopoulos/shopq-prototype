@@ -29,8 +29,14 @@ from shopq.utils.redaction import redact_pii, redact_subject
 
 logger = get_logger(__name__)
 
-# Feature flag
-USE_LLM = os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
+def _use_llm() -> bool:
+    """Check LLM feature flag at call time (not import time).
+
+    Reads env var fresh to avoid stale cache when dotenv loads after module import.
+    """
+    return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
+
 
 # CODE-003/CODE-004: LLM call configuration
 LLM_TIMEOUT_SECONDS = 30  # Maximum time to wait for LLM response
@@ -293,7 +299,7 @@ Respond with ONLY the JSON."""
         rules_fields = self._extract_with_rules(body, subject)
 
         # LLM extraction for complex fields
-        if USE_LLM:
+        if _use_llm():
             try:
                 llm_fields = self._extract_with_llm(from_address, subject, body, received_at)
                 counter("returns.extractor.llm_success")
@@ -328,11 +334,9 @@ Respond with ONLY the JSON."""
             received_at=received_at,
         )
 
-        # Build evidence snippet - prefer return policy quote, fallback to body preview
+        # Build evidence snippet - only use actual return policy quote from LLM
         # CODE-008: Redact PII from evidence before storage
-        raw_evidence = (
-            return_policy_quote if return_policy_quote else (body[:200] if body else None)
-        )
+        raw_evidence = return_policy_quote
         evidence = redact_pii(raw_evidence, max_length=200) if raw_evidence else None
 
         # Build result
