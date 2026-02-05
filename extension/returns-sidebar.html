@@ -45,6 +45,14 @@
     .nav-btn:hover { background: #e8eaed; }
     .nav-btn svg { width: 20px; height: 20px; }
     .nav-btn.hidden { display: none; }
+    .nav-btn.active {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 4px;
+    }
 
     /* Main content area */
     .content {
@@ -213,6 +221,42 @@
       text-transform: uppercase;
     }
 
+    /* Dismiss button on cards */
+    .dismiss-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9aa0a6;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .return-card:hover .dismiss-btn {
+      opacity: 1;
+    }
+    .dismiss-btn:hover {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+    .dismiss-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Expired card styling */
+    .return-card.expired {
+      opacity: 0.6;
+      filter: grayscale(0.3);
+    }
+    .return-card.expired:hover {
+      opacity: 0.8;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -337,12 +381,19 @@
         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
       </svg>
     </button>
-    <span class="nav-title">Return Watch</span>
-    <button id="close-btn" class="nav-btn" title="Close">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-      </svg>
-    </button>
+    <span class="nav-title">Reclaim</span>
+    <div class="nav-actions">
+      <button id="hide-expired-btn" class="nav-btn" title="Hide expired orders">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+        </svg>
+      </button>
+      <button id="close-btn" class="nav-btn" title="Close">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Main content -->
