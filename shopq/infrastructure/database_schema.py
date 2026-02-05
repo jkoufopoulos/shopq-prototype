@@ -196,6 +196,47 @@ def init_database(db_path: Path) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_llm_usage_user_date
         ON llm_usage(user_id, call_date);
+
+        -- Deliveries for Uber Direct return pickups
+        CREATE TABLE IF NOT EXISTS deliveries (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            order_key TEXT NOT NULL,
+            uber_delivery_id TEXT,
+            status TEXT NOT NULL DEFAULT 'quote_pending',
+
+            -- Addresses (JSON)
+            pickup_address TEXT NOT NULL,
+            dropoff_address TEXT NOT NULL,
+            dropoff_location_name TEXT,
+
+            -- Quote & payment
+            quote_json TEXT,
+            fee_cents INTEGER,
+
+            -- Driver info
+            driver_name TEXT,
+            driver_phone TEXT,
+            tracking_url TEXT,
+
+            -- Timestamps
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            pickup_eta TEXT,
+            dropoff_eta TEXT,
+            completed_at TEXT,
+
+            FOREIGN KEY (order_key) REFERENCES return_cards(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_deliveries_user_status
+        ON deliveries(user_id, status);
+
+        CREATE INDEX IF NOT EXISTS idx_deliveries_order
+        ON deliveries(order_key);
+
+        CREATE INDEX IF NOT EXISTS idx_deliveries_uber_id
+        ON deliveries(uber_delivery_id);
     """)
 
     conn.commit()
@@ -224,6 +265,7 @@ def validate_schema(conn: sqlite3.Connection) -> bool:
         "feedback": ["id", "email_id", "predicted_labels"],
         "learned_patterns": ["id", "pattern_type", "pattern_value"],
         "return_cards": ["id", "user_id", "merchant", "item_summary", "status", "confidence"],
+        "deliveries": ["id", "user_id", "order_key", "status", "pickup_address", "dropoff_address"],
     }
 
     cursor = conn.cursor()

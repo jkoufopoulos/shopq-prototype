@@ -645,6 +645,66 @@ async function deleteMerchantRule(merchant_domain) {
 }
 
 // ============================================================
+// USER ADDRESS (for Uber Delivery)
+// ============================================================
+
+/**
+ * Get saved user pickup address.
+ *
+ * @typedef {Object} UserAddress
+ * @property {string} street - Street address
+ * @property {string} city - City
+ * @property {string} state - State code (e.g., "CA")
+ * @property {string} zip_code - ZIP code
+ * @property {string} [country] - Country code (default "US")
+ * @property {number} [lat] - Latitude
+ * @property {number} [lng] - Longitude
+ *
+ * @returns {Promise<UserAddress|null>}
+ */
+async function getUserAddress() {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.USER_ADDRESS);
+  return result[STORAGE_KEYS.USER_ADDRESS] || null;
+}
+
+/**
+ * Save user pickup address.
+ *
+ * @param {UserAddress} address
+ * @returns {Promise<void>}
+ */
+async function setUserAddress(address) {
+  if (!address || !address.street || !address.city || !address.state || !address.zip_code) {
+    console.warn(STORE_LOG_PREFIX, 'Invalid address - missing required fields');
+    return;
+  }
+
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.USER_ADDRESS]: {
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zip_code: address.zip_code,
+      country: address.country || 'US',
+      lat: address.lat || null,
+      lng: address.lng || null,
+    },
+  });
+
+  console.log(STORE_LOG_PREFIX, 'Saved user address:', address.city, address.state);
+}
+
+/**
+ * Clear saved user address.
+ *
+ * @returns {Promise<void>}
+ */
+async function clearUserAddress() {
+  await chrome.storage.local.remove(STORAGE_KEYS.USER_ADDRESS);
+  console.log(STORE_LOG_PREFIX, 'Cleared user address');
+}
+
+// ============================================================
 // UTILITIES
 // ============================================================
 

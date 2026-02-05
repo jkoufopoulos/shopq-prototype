@@ -857,7 +857,7 @@ function createDigestPanelContent() {
  * IFRAME ISOLATION: DOM changes inside iframe don't trigger Gmail's layout recalculation.
  */
 async function initializeDigestSidebar(sdk) {
-  console.log('ShopQ: Setting up Return Watch sidebar with IFRAME ISOLATION...');
+  console.log('ShopQ: Setting up Reclaim sidebar with IFRAME ISOLATION...');
 
   // SEC-007: Use explicit origin for postMessage instead of '*'
   const EXTENSION_ORIGIN = chrome.runtime.getURL('').slice(0, -1); // Remove trailing slash
@@ -992,7 +992,7 @@ async function initializeDigestSidebar(sdk) {
     // Handle close button - close the sidebar panel
     if (event.data?.type === 'SHOPQ_CLOSE_SIDEBAR') {
       console.log('ShopQ: Closing sidebar');
-      const shopqIcon = document.querySelector('[data-tooltip="Return Watch"]');
+      const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
       if (shopqIcon) {
         shopqIcon.click();
       }
@@ -1015,6 +1015,169 @@ async function initializeDigestSidebar(sdk) {
           console.error('ShopQ: Rescan failed:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', error: err.message }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // =========================================================================
+    // DELIVERY MODAL MESSAGE HANDLERS
+    // =========================================================================
+
+    // Get user address
+    if (event.data?.type === 'SHOPQ_GET_USER_ADDRESS') {
+      chrome.runtime.sendMessage({ type: 'GET_USER_ADDRESS' })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_USER_ADDRESS',
+              address: result?.address || null
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to get user address:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_USER_ADDRESS',
+              address: null
+            }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // Set user address
+    if (event.data?.type === 'SHOPQ_SET_USER_ADDRESS') {
+      chrome.runtime.sendMessage({
+        type: 'SET_USER_ADDRESS',
+        address: event.data.address
+      }).catch(err => console.error('ShopQ: Failed to save address:', err));
+    }
+
+    // Get delivery locations
+    if (event.data?.type === 'SHOPQ_GET_DELIVERY_LOCATIONS') {
+      chrome.runtime.sendMessage({
+        type: 'GET_DELIVERY_LOCATIONS',
+        address: event.data.address
+      })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_LOCATIONS',
+              locations: result?.locations || []
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to get delivery locations:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_LOCATIONS',
+              locations: [],
+              error: err.message
+            }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // Get delivery quote
+    if (event.data?.type === 'SHOPQ_GET_DELIVERY_QUOTE') {
+      chrome.runtime.sendMessage({
+        type: 'GET_DELIVERY_QUOTE',
+        order_key: event.data.order_key,
+        pickup_address: event.data.pickup_address,
+        dropoff_location_id: event.data.dropoff_location_id
+      })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_QUOTE',
+              quote: result?.quote || result,
+              error: result?.error
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to get delivery quote:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_QUOTE',
+              error: err.message
+            }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // Confirm delivery
+    if (event.data?.type === 'SHOPQ_CONFIRM_DELIVERY') {
+      chrome.runtime.sendMessage({
+        type: 'CONFIRM_DELIVERY',
+        delivery_id: event.data.delivery_id
+      })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_CONFIRMED',
+              delivery: result?.delivery || result,
+              error: result?.error
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to confirm delivery:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_CONFIRMED',
+              error: err.message
+            }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // Cancel delivery
+    if (event.data?.type === 'SHOPQ_CANCEL_DELIVERY') {
+      chrome.runtime.sendMessage({
+        type: 'CANCEL_DELIVERY',
+        delivery_id: event.data.delivery_id
+      })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_CANCELED',
+              error: result?.error
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to cancel delivery:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_DELIVERY_CANCELED',
+              error: err.message
+            }, EXTENSION_ORIGIN);
+          }
+        });
+    }
+
+    // Get active deliveries
+    if (event.data?.type === 'SHOPQ_GET_ACTIVE_DELIVERIES') {
+      chrome.runtime.sendMessage({
+        type: 'GET_ACTIVE_DELIVERIES'
+      })
+        .then(result => {
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_ACTIVE_DELIVERIES',
+              deliveries: result?.deliveries || []
+            }, EXTENSION_ORIGIN);
+          }
+        })
+        .catch(err => {
+          console.error('ShopQ: Failed to get active deliveries:', err);
+          if (iframeReady && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'SHOPQ_ACTIVE_DELIVERIES',
+              deliveries: []
+            }, EXTENSION_ORIGIN);
           }
         });
     }
@@ -1066,7 +1229,7 @@ async function initializeDigestSidebar(sdk) {
    * v0.6.2: Uses Order model with order_status and return_by_date
    */
   function updateExpiringIndicator(orders) {
-    const shopqIcon = document.querySelector('[data-tooltip="Return Watch"]');
+    const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
     if (!shopqIcon) {
       console.log('ShopQ: Could not find sidebar icon for expiring indicator');
       return;
@@ -1146,11 +1309,11 @@ async function initializeDigestSidebar(sdk) {
 
     const panelView = await sdk.Global.addSidebarContentPanel({
       el: panelEl,
-      title: 'Return Watch',
+      title: 'Reclaim',
       iconUrl: iconDataUrl,
     });
 
-    console.log('ShopQ: Return Watch sidebar registered successfully:', panelView);
+    console.log('ShopQ: Reclaim sidebar registered successfully:', panelView);
 
     // Track sidebar state for persistence across navigation
     let sidebarShouldBeOpen = true;  // Start open by default
@@ -1158,13 +1321,13 @@ async function initializeDigestSidebar(sdk) {
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
-      console.log('ShopQ: Return Watch panel activated');
+      console.log('ShopQ: Reclaim panel activated');
       // Refresh visible orders when panel opens
       fetchVisibleOrders();
     });
 
     panelView.on('deactivate', () => {
-      console.log('ShopQ: Return Watch panel deactivated, isNavigating:', isNavigating);
+      console.log('ShopQ: Reclaim panel deactivated, isNavigating:', isNavigating);
       if (!isNavigating) {
         sidebarShouldBeOpen = false;
         console.log('ShopQ: User closed sidebar');
@@ -1204,7 +1367,7 @@ async function initializeDigestSidebar(sdk) {
 
     // Auto-open on first load
     panelView.open();
-    console.log('ShopQ: Return Watch sidebar opened on initial load');
+    console.log('ShopQ: Reclaim sidebar opened on initial load');
 
     // Auto-scan on Gmail load disabled for debugging. Use popup button or sidebar rescan.
     // To re-enable, uncomment below:
@@ -1217,7 +1380,7 @@ async function initializeDigestSidebar(sdk) {
     //   .catch(err => console.log('ShopQ: Auto-scan error:', err));
 
   } catch (error) {
-    console.error('ShopQ: Failed to add Return Watch sidebar panel:', error);
+    console.error('ShopQ: Failed to add Reclaim sidebar panel:', error);
     console.log('ShopQ: Falling back to manual button injection...');
     injectShopQButton();
 

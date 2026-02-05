@@ -478,6 +478,413 @@
     /* Link styles */
     a { color: #1a73e8; text-decoration: none; }
     a:hover { text-decoration: underline; }
+
+    /* =========================================
+       DELIVERY MODAL
+       ========================================= */
+
+    .delivery-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .delivery-modal {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .delivery-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .delivery-modal-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #202124;
+    }
+
+    .delivery-modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      color: #5f6368;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delivery-modal-close:hover {
+      background: #f1f3f4;
+    }
+
+    .delivery-modal-content {
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(90vh - 70px);
+    }
+
+    .delivery-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      color: #5f6368;
+    }
+
+    .delivery-error {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .delivery-error .error-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .delivery-error .error-message {
+      color: #c5221f;
+      margin-bottom: 16px;
+    }
+
+    .delivery-step {
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+
+    .step-description {
+      font-size: 14px;
+      color: #5f6368;
+      margin-bottom: 20px;
+    }
+
+    /* Address form */
+    .address-form {
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #5f6368;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #202124;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .form-row .form-group.small {
+      flex: 0 0 80px;
+    }
+
+    /* Locations list */
+    .locations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .location-card {
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .location-card:hover {
+      border-color: #dadce0;
+      background: #f8f9fa;
+    }
+
+    .location-card.selected {
+      border-color: #1a73e8;
+      background: #e8f0fe;
+    }
+
+    .location-carrier {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #1a73e8;
+      margin-bottom: 4px;
+    }
+
+    .location-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 4px;
+    }
+
+    .location-address {
+      font-size: 13px;
+      color: #5f6368;
+      margin-bottom: 4px;
+    }
+
+    .location-distance {
+      font-size: 12px;
+      color: #1a73e8;
+      font-weight: 500;
+    }
+
+    .location-hours {
+      font-size: 11px;
+      color: #9aa0a6;
+      margin-top: 4px;
+    }
+
+    /* Quote summary */
+    .quote-summary {
+      text-align: center;
+      padding: 24px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .quote-fee {
+      font-size: 36px;
+      font-weight: 700;
+      color: #202124;
+    }
+
+    .quote-label {
+      font-size: 14px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+
+    .quote-details {
+      margin-bottom: 16px;
+    }
+
+    .quote-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    .quote-row:last-child {
+      border-bottom: none;
+    }
+
+    .quote-row .quote-label {
+      font-size: 13px;
+      color: #5f6368;
+    }
+
+    .quote-row .quote-value {
+      font-size: 13px;
+      color: #202124;
+      font-weight: 500;
+    }
+
+    .quote-expires {
+      text-align: center;
+      font-size: 12px;
+      color: #ea8600;
+      padding: 8px;
+      background: #fff3e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    /* Success state */
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #e8f5e9;
+      color: #1e8e3e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px;
+    }
+
+    /* Tracking link */
+    .tracking-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px;
+      background: #e8f0fe;
+      border-radius: 8px;
+      color: #1a73e8;
+      font-weight: 500;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+
+    .tracking-link:hover {
+      background: #d2e3fc;
+      text-decoration: none;
+    }
+
+    /* Driver info */
+    .driver-info {
+      text-align: center;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .driver-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #202124;
+    }
+
+    .driver-phone {
+      font-size: 14px;
+      color: #1a73e8;
+    }
+
+    /* Delivery status badge */
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .status-badge.active {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
+    .status-badge.success {
+      background: #e8f5e9;
+      color: #1e8e3e;
+    }
+
+    .status-badge.error {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+
+    /* Delivery actions in modal */
+    .delivery-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .delivery-actions .action-btn {
+      flex: 1;
+    }
+
+    .delivery-actions .action-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Delivery badge on cards */
+    .delivery-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .delivery-badge:hover {
+      opacity: 0.8;
+    }
+
+    .delivery-badge svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .delivery-badge-active {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
+    .delivery-badge-success {
+      background: #e8f5e9;
+      color: #1e8e3e;
+    }
+
+    .delivery-badge-error {
+      background: #fce8e6;
+      color: #c5221f;
+    }
   </style>
 </head>
 <body>

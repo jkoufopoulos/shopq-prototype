@@ -35,6 +35,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/health",
     "/api/health/live",
     "/api/health/ready",
+    "/api/delivery/webhook/uber",  # Uber Direct webhook (validates HMAC signature)
 }
 
 

@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from shopq.api.middleware.csrf import CSRFMiddleware
 from shopq.api.middleware.rate_limit import RateLimitMiddleware
 from shopq.api.middleware.security_headers import SecurityHeadersMiddleware
+from shopq.api.routes.delivery import router as delivery_router
 from shopq.api.routes.health import router as health_router
 from shopq.api.routes.returns import router as returns_router
 from shopq.infrastructure.database import init_database
@@ -124,6 +125,7 @@ except Exception as e:
 # Include routers
 app.include_router(health_router)
 app.include_router(returns_router)
+app.include_router(delivery_router)
 
 log_event("api.startup", service="shopq-return-watch", version="1.0.0")
 
@@ -140,5 +142,8 @@ def root() -> dict[str, Any]:
             "process": "/api/returns/process",
             "expiring": "/api/returns/expiring",
             "counts": "/api/returns/counts",
+            "delivery": "/api/delivery",
+            "delivery_quote": "/api/delivery/quote",
+            "delivery_locations": "/api/delivery/locations",
         },
     }
