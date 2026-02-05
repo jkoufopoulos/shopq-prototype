@@ -15,7 +15,7 @@ let visibleOrders = [];
 let currentDetailOrder = null;
 let isEnriching = false;
 let hasCompletedFirstScan = false;
-let hideExpired = false;
+let expiredAccordionOpen = false; // Controls expired orders accordion
 let deliveryModal = null;
 let activeDeliveries = {}; // Map of order_key -> delivery object
 let deliveryState = {
@@ -39,7 +39,7 @@ const backBtn = document.getElementById('back-btn');
 const closeBtn = document.getElementById('close-btn');
 const refreshBtn = document.getElementById('refresh-btn');
 const refreshStatus = document.getElementById('refresh-status');
-const hideExpiredBtn = document.getElementById('hide-expired-btn');
+// hideExpiredBtn removed - using accordion instead
 
 // =============================================================================
 // UTILITIES
@@ -118,23 +118,40 @@ function formatAmount(amount, currency = 'USD') {
 // =============================================================================
 
 /**
- * Get filtered orders based on current filter state
+ * Separate orders into active and expired
  */
-function getFilteredOrders() {
-  if (!hideExpired) return visibleOrders;
-  return visibleOrders.filter(o => {
-    const daysUntil = getDaysUntil(o.return_by_date);
-    return daysUntil === null || daysUntil >= 0;
-  });
+function getOrdersByStatus() {
+  const active = [];
+  const expired = [];
+
+  for (const order of visibleOrders) {
+    const daysUntil = getDaysUntil(order.return_by_date);
+    if (daysUntil !== null && daysUntil < 0) {
+      expired.push(order);
+    } else {
+      active.push(order);
+    }
+  }
+
+  return { active, expired };
 }
 
 /**
- * Render the returns list view — single flat list sorted by urgency
+ * Toggle expired accordion
+ */
+function toggleExpiredAccordion() {
+  expiredAccordionOpen = !expiredAccordionOpen;
+  renderListView();
+}
+
+/**
+ * Render the returns list view — active orders + expired accordion
  */
 function renderListView() {
-  const filteredOrders = getFilteredOrders();
+  const { active, expired } = getOrdersByStatus();
 
-  if (filteredOrders.length === 0) {
+  // Empty state - no orders at all
+  if (visibleOrders.length === 0) {
     if (!hasCompletedFirstScan) {
       listView.innerHTML = `
         <div class="empty-state">
@@ -143,26 +160,6 @@ function renderListView() {
           <p style="font-size: 13px;">Scanning your emails for recent purchases.</p>
         </div>
       `;
-    } else if (hideExpired && visibleOrders.length > 0) {
-      // Have orders but all expired and hidden
-      listView.innerHTML = `
-        <div class="empty-state">
-          <div class="icon">✓</div>
-          <p><strong>All caught up!</strong></p>
-          <p style="font-size: 13px;">${visibleOrders.length} expired order${visibleOrders.length === 1 ? '' : 's'} hidden.</p>
-          <button id="show-expired-btn" style="
-            margin-top: 12px;
-            padding: 8px 16px;
-            background: transparent;
-            color: #1a73e8;
-            border: 1px solid #1a73e8;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-          ">Show expired</button>
-        </div>
-      `;
-      document.getElementById('show-expired-btn')?.addEventListener('click', toggleHideExpired);
     } else {
       listView.innerHTML = `
         <div class="empty-state">
@@ -175,8 +172,50 @@ function renderListView() {
     return;
   }
 
-  const html = filteredOrders.map(o => renderOrderCard(o)).join('');
+  let html = '';
+
+  // Render expired accordion at the TOP if there are expired orders
+  if (expired.length > 0) {
+    const chevronIcon = expiredAccordionOpen
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
+
+    html += `
+      <div class="expired-accordion">
+        <button class="expired-accordion-header" id="expired-accordion-toggle">
+          <span class="expired-accordion-title">
+            <span class="expired-icon">📦</span>
+            Expired (${expired.length})
+          </span>
+          ${chevronIcon}
+        </button>
+        ${expiredAccordionOpen ? `
+          <div class="expired-accordion-content">
+            ${expired.map(o => renderOrderCard(o)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // Render active orders below the accordion
+  if (active.length > 0) {
+    html += active.map(o => renderOrderCard(o)).join('');
+  } else if (expired.length > 0) {
+    // Only expired orders exist
+    html += `
+      <div class="empty-state" style="padding: 24px 20px;">
+        <div class="icon">✓</div>
+        <p><strong>All caught up!</strong></p>
+        <p style="font-size: 13px;">No active return windows.</p>
+      </div>
+    `;
+  }
+
   listView.innerHTML = html;
+
+  // Add accordion toggle handler
+  document.getElementById('expired-accordion-toggle')?.addEventListener('click', toggleExpiredAccordion);
 
   // Add click handlers to cards
   listView.querySelectorAll('.return-card').forEach(card => {
@@ -479,9 +518,9 @@ function renderDetailView(order, needsEnrichment) {
 
     ${order.order_status === 'active' ? `
     <div class="detail-actions">
-      <button class="action-btn primary" id="deliver-carrier-btn">
+      <button class="action-btn uber" id="deliver-carrier-btn">
         ${truckIcon}
-        Schedule Delivery
+        Courier Pickup with Uber
       </button>
       <button class="action-btn secondary" id="mark-returned-btn">
         Mark as Returned
@@ -1119,31 +1158,6 @@ function dismissOrder(orderKey) {
   updateOrderStatus(orderKey, 'dismissed');
 }
 
-/**
- * Toggle hide expired orders
- */
-function toggleHideExpired() {
-  hideExpired = !hideExpired;
-  hideExpiredBtn.classList.toggle('active', hideExpired);
-  hideExpiredBtn.title = hideExpired ? 'Show expired orders' : 'Hide expired orders';
-
-  // Update icon to show eye-off when hiding
-  if (hideExpired) {
-    hideExpiredBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
-      </svg>
-    `;
-  } else {
-    hideExpiredBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-      </svg>
-    `;
-  }
-
-  renderListView();
-}
 
 /**
  * Render error state
@@ -1351,8 +1365,7 @@ refreshBtn.addEventListener('click', () => {
   window.parent.postMessage({ type: 'SHOPQ_RESCAN_EMAILS' }, '*');
 });
 
-// Hide expired toggle
-hideExpiredBtn.addEventListener('click', toggleHideExpired);
+// Expired orders now shown in accordion at top of list
 
 // =============================================================================
 // INITIALIZATION

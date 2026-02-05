@@ -107,6 +107,57 @@
     }
     .section-header.urgent { color: #c5221f; }
 
+    /* Expired Accordion */
+    .expired-accordion {
+      margin-bottom: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8f9fa;
+    }
+    .expired-accordion-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #5f6368;
+      transition: background 0.15s;
+    }
+    .expired-accordion-header:hover {
+      background: #e8eaed;
+    }
+    .expired-accordion-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .expired-icon {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    .expired-accordion-header svg {
+      color: #9aa0a6;
+      flex-shrink: 0;
+    }
+    .expired-accordion-content {
+      padding: 8px;
+      padding-top: 0;
+      background: #f8f9fa;
+    }
+    .expired-accordion-content .return-card {
+      background: #fff;
+      margin-bottom: 8px;
+    }
+    .expired-accordion-content .return-card:last-child {
+      margin-bottom: 0;
+    }
+
     /* Return cards */
     .return-card {
       background: #fff;
@@ -456,6 +507,52 @@
       background: #3367d6;
       box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
     }
+    /* Uber-branded button - matches Base Web button specs */
+    .action-btn.uber {
+      background: var(--uber-black, #000000);
+      color: var(--uber-white, #FFFFFF);
+      border-radius: var(--uber-radius-button, 8px);
+      font-weight: 500;
+      letter-spacing: 0;
+      padding: 14px 24px;
+      font-size: 16px;
+      transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+    .action-btn.uber:hover {
+      background: var(--uber-gray-800, #333333);
+    }
+    .action-btn.uber:active {
+      background: var(--uber-gray-600, #545454);
+    }
+    .action-btn.uber svg {
+      width: 20px;
+      height: 20px;
+    }
+    /* Uber secondary button variant */
+    .action-btn.uber-secondary {
+      background: var(--uber-white, #FFFFFF);
+      color: var(--uber-black, #000000);
+      border: 2px solid var(--uber-gray-200, #E2E2E2);
+      border-radius: var(--uber-radius-button, 8px);
+      font-weight: 500;
+      transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .action-btn.uber-secondary:hover {
+      background: var(--uber-gray-50, #F6F6F6);
+      border-color: var(--uber-gray-400, #AFAFAF);
+    }
+    /* Uber tertiary button variant */
+    .action-btn.uber-tertiary {
+      background: transparent;
+      color: var(--uber-black, #000000);
+      font-weight: 500;
+      padding: 8px 16px;
+      transition: background 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .action-btn.uber-tertiary:hover {
+      background: var(--uber-gray-50, #F6F6F6);
+    }
     .action-btn.secondary {
       background: white;
       color: #202124;
@@ -480,8 +577,42 @@
     a:hover { text-decoration: underline; }
 
     /* =========================================
-       DELIVERY MODAL
+       UBER-STYLE DELIVERY MODAL
+       Based on Uber Base Web Design System
+       https://base.uber.com / https://baseweb.design
        ========================================= */
+
+    /* Uber Design Tokens */
+    :root {
+      /* Colors */
+      --uber-black: #000000;
+      --uber-white: #FFFFFF;
+      --uber-gray-50: #F6F6F6;
+      --uber-gray-100: #EEEEEE;
+      --uber-gray-200: #E2E2E2;
+      --uber-gray-400: #AFAFAF;
+      --uber-gray-600: #6B6B6B;
+      --uber-gray-800: #333333;
+      --uber-positive: #05944F;
+      --uber-negative: #E11900;
+      --uber-warning: #FFC043;
+      /* Spacing (scale) */
+      --uber-scale300: 8px;
+      --uber-scale400: 10px;
+      --uber-scale500: 12px;
+      --uber-scale600: 16px;
+      --uber-scale700: 20px;
+      --uber-scale800: 24px;
+      --uber-scale900: 32px;
+      /* Border Radius */
+      --uber-radius-button: 8px;
+      --uber-radius-input: 8px;
+      --uber-radius-surface: 0px;
+      --uber-radius-popover: 8px;
+      /* Animation */
+      --uber-ease-decelerate: cubic-bezier(0.22, 1, 0.36, 1);
+      --uber-timing-400: 400ms;
+    }
 
     .delivery-modal-overlay {
       position: fixed;
@@ -491,141 +622,172 @@
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
       display: flex;
-      align-items: center;
+      align-items: flex-end; /* Uber sheets slide from bottom */
       justify-content: center;
       z-index: 1000;
-      padding: 16px;
+      opacity: 0;
+      animation: uber-overlay-in var(--uber-timing-400) var(--uber-ease-decelerate) forwards;
+    }
+
+    @keyframes uber-overlay-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .delivery-modal {
-      background: white;
-      border-radius: 16px;
+      background: var(--uber-white);
+      border-radius: var(--uber-radius-surface); /* Uber modals have square corners */
+      border-top-left-radius: var(--uber-scale300);
+      border-top-right-radius: var(--uber-scale300);
       width: 100%;
-      max-width: 400px;
-      max-height: 90vh;
+      max-width: 100%;
+      max-height: 85vh;
       overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+      transform: translateY(100%);
+      animation: uber-modal-slide-up var(--uber-timing-400) var(--uber-ease-decelerate) forwards;
+    }
+
+    @keyframes uber-modal-slide-up {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
     .delivery-modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
-      border-bottom: 1px solid #e0e0e0;
+      padding: var(--uber-scale600) var(--uber-scale700);
+      border-bottom: 1px solid var(--uber-gray-100);
     }
 
     .delivery-modal-header h3 {
       font-size: 18px;
-      font-weight: 600;
-      color: #202124;
+      font-weight: 500;
+      color: var(--uber-black);
+      letter-spacing: -0.2px;
     }
 
     .delivery-modal-close {
-      width: 32px;
-      height: 32px;
+      width: var(--uber-scale800);
+      height: var(--uber-scale800);
       border: none;
       background: transparent;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 24px;
-      color: #5f6368;
+      font-size: 20px;
+      color: var(--uber-black);
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background var(--uber-timing-400) var(--uber-ease-decelerate);
     }
 
     .delivery-modal-close:hover {
-      background: #f1f3f4;
+      background: var(--uber-gray-50);
     }
 
     .delivery-modal-content {
-      padding: 20px;
+      padding: var(--uber-scale700);
       overflow-y: auto;
-      max-height: calc(90vh - 70px);
+      max-height: calc(85vh - 70px);
     }
 
     .delivery-loading {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px;
-      color: #5f6368;
+      padding: var(--uber-scale900);
+      color: var(--uber-gray-600);
+    }
+
+    /* Uber-style spinner */
+    .delivery-loading .spinner {
+      border-color: var(--uber-gray-100);
+      border-top-color: var(--uber-black);
     }
 
     .delivery-error {
       text-align: center;
-      padding: 20px;
+      padding: var(--uber-scale700);
     }
 
     .delivery-error .error-icon {
       font-size: 32px;
-      margin-bottom: 12px;
+      margin-bottom: var(--uber-scale500);
     }
 
     .delivery-error .error-message {
-      color: #c5221f;
-      margin-bottom: 16px;
+      color: var(--uber-negative);
+      margin-bottom: var(--uber-scale600);
     }
 
     .delivery-step {
-      animation: fadeIn 0.2s ease-out;
+      animation: uber-step-in var(--uber-timing-400) var(--uber-ease-decelerate);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+    @keyframes uber-step-in {
+      from { opacity: 0; transform: translateY(var(--uber-scale300)); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .step-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #202124;
-      margin-bottom: 8px;
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--uber-black);
+      margin-bottom: var(--uber-scale300);
+      letter-spacing: -0.5px;
     }
 
     .step-description {
       font-size: 14px;
-      color: #5f6368;
-      margin-bottom: 20px;
+      color: var(--uber-gray-600);
+      margin-bottom: var(--uber-scale700);
+      line-height: 1.5;
     }
 
-    /* Address form */
+    /* Address form - Uber style */
     .address-form {
-      margin-bottom: 24px;
+      margin-bottom: var(--uber-scale800);
     }
 
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: var(--uber-scale600);
     }
 
     .form-group label {
       display: block;
       font-size: 12px;
       font-weight: 500;
-      color: #5f6368;
+      color: var(--uber-gray-600);
       margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .form-group input {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #dadce0;
-      border-radius: 8px;
-      font-size: 14px;
-      color: #202124;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      padding: var(--uber-scale500);
+      border: 2px solid var(--uber-gray-200);
+      border-radius: var(--uber-radius-input);
+      font-size: 16px;
+      color: var(--uber-black);
+      background: var(--uber-white);
+      transition: border-color 200ms var(--uber-ease-decelerate);
     }
 
     .form-group input:focus {
       outline: none;
-      border-color: #1a73e8;
-      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+      border-color: var(--uber-black);
+    }
+
+    .form-group input::placeholder {
+      color: var(--uber-gray-400);
     }
 
     .form-row {
       display: flex;
-      gap: 12px;
+      gap: var(--uber-scale500);
     }
 
     .form-row .form-group {
@@ -636,97 +798,100 @@
       flex: 0 0 80px;
     }
 
-    /* Locations list */
+    /* Locations list - Uber style */
     .locations-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: var(--uber-scale500);
+      margin-bottom: var(--uber-scale700);
       max-height: 300px;
       overflow-y: auto;
     }
 
     .location-card {
-      padding: 14px;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
+      padding: var(--uber-scale600);
+      border: 2px solid var(--uber-gray-200);
+      border-radius: var(--uber-radius-input);
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
+      transition: all 200ms var(--uber-ease-decelerate);
+      background: var(--uber-white);
     }
 
     .location-card:hover {
-      border-color: #dadce0;
-      background: #f8f9fa;
+      border-color: var(--uber-gray-400);
+      background: var(--uber-gray-50);
     }
 
     .location-card.selected {
-      border-color: #1a73e8;
-      background: #e8f0fe;
+      border-color: var(--uber-black);
+      background: var(--uber-gray-50);
     }
 
     .location-carrier {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      color: #1a73e8;
+      color: var(--uber-black);
       margin-bottom: 4px;
+      letter-spacing: 0.5px;
     }
 
     .location-name {
-      font-size: 15px;
-      font-weight: 600;
-      color: #202124;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--uber-black);
       margin-bottom: 4px;
     }
 
     .location-address {
-      font-size: 13px;
-      color: #5f6368;
+      font-size: 14px;
+      color: var(--uber-gray-600);
       margin-bottom: 4px;
     }
 
     .location-distance {
-      font-size: 12px;
-      color: #1a73e8;
+      font-size: 14px;
+      color: var(--uber-black);
       font-weight: 500;
     }
 
     .location-hours {
-      font-size: 11px;
-      color: #9aa0a6;
+      font-size: 12px;
+      color: var(--uber-gray-400);
       margin-top: 4px;
     }
 
-    /* Quote summary */
+    /* Quote summary - Uber style */
     .quote-summary {
       text-align: center;
-      padding: 24px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      margin-bottom: 20px;
+      padding: var(--uber-scale800);
+      background: var(--uber-gray-50);
+      border-radius: var(--uber-radius-input);
+      margin-bottom: var(--uber-scale700);
     }
 
     .quote-fee {
-      font-size: 36px;
-      font-weight: 700;
-      color: #202124;
+      font-size: 48px;
+      font-weight: 500;
+      color: var(--uber-black);
+      letter-spacing: -2px;
     }
 
     .quote-label {
       font-size: 14px;
-      color: #5f6368;
+      color: var(--uber-gray-600);
       margin-top: 4px;
     }
 
     .quote-details {
-      margin-bottom: 16px;
+      margin-bottom: var(--uber-scale600);
     }
 
     .quote-row {
       display: flex;
       justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f3f4;
+      padding: var(--uber-scale400) 0;
+      border-bottom: 1px solid var(--uber-gray-100);
     }
 
     .quote-row:last-child {
@@ -734,132 +899,136 @@
     }
 
     .quote-row .quote-label {
-      font-size: 13px;
-      color: #5f6368;
+      font-size: 14px;
+      color: var(--uber-gray-600);
     }
 
     .quote-row .quote-value {
-      font-size: 13px;
-      color: #202124;
+      font-size: 14px;
+      color: var(--uber-black);
       font-weight: 500;
     }
 
     .quote-expires {
       text-align: center;
       font-size: 12px;
-      color: #ea8600;
-      padding: 8px;
-      background: #fff3e0;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      color: var(--uber-gray-800);
+      padding: var(--uber-scale300);
+      background: var(--uber-warning);
+      border-radius: var(--uber-radius-button);
+      margin-bottom: var(--uber-scale700);
+      font-weight: 500;
     }
 
-    /* Success state */
+    /* Success state - Uber style */
     .success-icon {
       width: 64px;
       height: 64px;
-      background: #e8f5e9;
-      color: #1e8e3e;
+      background: var(--uber-black);
+      color: var(--uber-white);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 32px;
-      margin: 0 auto 16px;
+      margin: 0 auto var(--uber-scale600);
     }
 
-    /* Tracking link */
+    /* Tracking link - Uber style */
     .tracking-link {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 12px;
-      background: #e8f0fe;
-      border-radius: 8px;
-      color: #1a73e8;
+      padding: var(--uber-scale500);
+      background: var(--uber-gray-50);
+      border-radius: var(--uber-radius-button);
+      color: var(--uber-black);
       font-weight: 500;
       text-decoration: none;
-      margin-bottom: 20px;
+      margin-bottom: var(--uber-scale700);
+      transition: background 200ms var(--uber-ease-decelerate);
     }
 
     .tracking-link:hover {
-      background: #d2e3fc;
+      background: var(--uber-gray-100);
       text-decoration: none;
     }
 
-    /* Driver info */
+    /* Driver info - Uber style */
     .driver-info {
       text-align: center;
-      padding: 16px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      margin-bottom: 16px;
+      padding: var(--uber-scale600);
+      background: var(--uber-gray-50);
+      border-radius: var(--uber-radius-input);
+      margin-bottom: var(--uber-scale600);
     }
 
     .driver-name {
-      font-size: 16px;
-      font-weight: 600;
-      color: #202124;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--uber-black);
     }
 
     .driver-phone {
       font-size: 14px;
-      color: #1a73e8;
+      color: var(--uber-black);
+      text-decoration: underline;
     }
 
-    /* Delivery status badge */
-    .status-badge {
+    /* Delivery status badge - Uber style */
+    .status-badge.delivery {
       display: inline-block;
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: var(--uber-scale300) var(--uber-scale600);
+      border-radius: 100px;
       font-size: 14px;
       font-weight: 500;
-      margin-bottom: 20px;
+      margin-bottom: var(--uber-scale700);
     }
 
     .status-badge.active {
-      background: #e8f0fe;
-      color: #1a73e8;
+      background: var(--uber-gray-50);
+      color: var(--uber-black);
     }
 
     .status-badge.success {
-      background: #e8f5e9;
-      color: #1e8e3e;
+      background: var(--uber-positive);
+      color: var(--uber-white);
     }
 
     .status-badge.error {
-      background: #fce8e6;
-      color: #c5221f;
+      background: var(--uber-negative);
+      color: var(--uber-white);
     }
 
-    /* Delivery actions in modal */
+    /* Delivery actions in modal - Uber style */
     .delivery-actions {
       display: flex;
-      gap: 12px;
-      margin-top: 8px;
+      flex-direction: column;
+      gap: var(--uber-scale500);
+      margin-top: var(--uber-scale300);
     }
 
     .delivery-actions .action-btn {
-      flex: 1;
+      width: 100%;
     }
 
     .delivery-actions .action-btn[disabled] {
-      opacity: 0.5;
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
-    /* Delivery badge on cards */
+    /* Delivery badge on cards - Uber style */
     .delivery-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 4px 8px;
-      border-radius: 12px;
+      padding: 4px var(--uber-scale300);
+      border-radius: 100px;
       font-size: 11px;
       font-weight: 500;
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: opacity 200ms var(--uber-ease-decelerate);
     }
 
     .delivery-badge:hover {
@@ -872,18 +1041,18 @@
     }
 
     .delivery-badge-active {
-      background: #e8f0fe;
-      color: #1a73e8;
+      background: var(--uber-gray-100);
+      color: var(--uber-black);
     }
 
     .delivery-badge-success {
-      background: #e8f5e9;
-      color: #1e8e3e;
+      background: var(--uber-positive);
+      color: var(--uber-white);
     }
 
     .delivery-badge-error {
-      background: #fce8e6;
-      color: #c5221f;
+      background: var(--uber-negative);
+      color: var(--uber-white);
     }
   </style>
 </head>
@@ -897,11 +1066,6 @@
     </button>
     <span class="nav-title">Reclaim</span>
     <div class="nav-actions">
-      <button id="hide-expired-btn" class="nav-btn" title="Hide expired orders">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-        </svg>
-      </button>
       <button id="close-btn" class="nav-btn" title="Close">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
