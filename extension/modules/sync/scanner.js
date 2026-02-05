@@ -350,6 +350,38 @@ function extractOrderNumber(text) {
 }
 
 /**
+ * Normalize merchant domain to canonical form.
+ * Handles cases where same merchant uses multiple domains/subdomains.
+ *
+ * @param {string} domain - Raw domain
+ * @returns {string} Normalized domain
+ */
+function normalizeMerchantDomain(domain) {
+  if (!domain) return 'unknown';
+
+  let normalized = domain.toLowerCase().trim();
+
+  // Remove common prefixes
+  normalized = normalized.replace(/^(www\.|shop\.|store\.|mail\.|email\.|orders?\.)/, '');
+
+  // Domain aliases - map variants to canonical domain
+  const aliases = {
+    'iliabeauty.com': 'ilia.com',
+    'shopifyemail.com': null,  // Will use merchant name instead
+    'postmarkapp.com': null,
+    'sendgrid.net': null,
+    'mailchimp.com': null,
+    'klaviyo.com': null,
+  };
+
+  if (aliases[normalized] !== undefined) {
+    return aliases[normalized];
+  }
+
+  return normalized;
+}
+
+/**
  * Generate a deterministic order key for client-side deduplication.
  * Uses merchant_domain + order_number when available, falls back to
  * merchant_domain + item_summary hash.
@@ -358,7 +390,11 @@ function extractOrderNumber(text) {
  * @returns {string} Deterministic order key
  */
 function generateOrderKey(card) {
-  const domain = (card.merchant_domain || card.merchant || 'unknown').toLowerCase();
+  // Normalize domain, fall back to merchant name for email service domains
+  let domain = normalizeMerchantDomain(card.merchant_domain);
+  if (!domain) {
+    domain = (card.merchant || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
 
   // Primary: merchant + order_number (most reliable)
   let orderNum = card.order_number;
