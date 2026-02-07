@@ -264,6 +264,10 @@ function undoReturnOrder(orderKey) {
     status: 'active'
   }, '*');
   showToast('Moved back to active returns', 'success');
+
+  // Refresh both lists to update UI immediately
+  fetchReturns();
+  window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
 }
 
 /**
@@ -296,7 +300,31 @@ function renderListView() {
 
   let html = '';
 
-  // Render expired accordion at the TOP if there are expired orders
+  // Render returned accordion at the TOP if there are returned orders
+  if (returnedOrders.length > 0) {
+    const chevronIcon = returnedAccordionOpen
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
+
+    html += `
+      <div class="returned-accordion">
+        <button class="returned-accordion-header" id="returned-accordion-toggle">
+          <span class="returned-accordion-title">
+            <span class="returned-icon">✓</span>
+            Returned (${returnedOrders.length})
+          </span>
+          ${chevronIcon}
+        </button>
+        ${returnedAccordionOpen ? `
+          <div class="returned-accordion-content">
+            ${returnedOrders.map(o => renderReturnedCard(o)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // Render expired accordion if there are expired orders
   if (expired.length > 0) {
     const chevronIcon = expiredAccordionOpen
       ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
@@ -320,40 +348,16 @@ function renderListView() {
     `;
   }
 
-  // Render active orders below the accordion
+  // Render active orders below the accordions
   if (active.length > 0) {
     html += active.map(o => renderOrderCard(o)).join('');
-  } else if (expired.length > 0) {
-    // Only expired orders exist
+  } else if (expired.length > 0 || returnedOrders.length > 0) {
+    // Only expired/returned orders exist
     html += `
       <div class="empty-state" style="padding: 24px 20px;">
         <div class="icon">✓</div>
         <p><strong>All caught up!</strong></p>
         <p style="font-size: 13px;">No active return windows.</p>
-      </div>
-    `;
-  }
-
-  // Render returned accordion at the BOTTOM if there are returned orders
-  if (returnedOrders.length > 0) {
-    const chevronIcon = returnedAccordionOpen
-      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
-      : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
-
-    html += `
-      <div class="returned-accordion">
-        <button class="returned-accordion-header" id="returned-accordion-toggle">
-          <span class="returned-accordion-title">
-            <span class="returned-icon">✓</span>
-            Returned (${returnedOrders.length})
-          </span>
-          ${chevronIcon}
-        </button>
-        ${returnedAccordionOpen ? `
-          <div class="returned-accordion-content">
-            ${returnedOrders.map(o => renderReturnedCard(o)).join('')}
-          </div>
-        ` : ''}
       </div>
     `;
   }
