@@ -73,12 +73,9 @@ tr.zA.reclaim-critical-row,
   box-shadow: none !important;
 }
 
-/* InboxSDK content panel wrappers - be very aggressive */
-.inboxsdk__sidebar_content_panel,
-.inboxsdk__sidebar_content_panel > *,
-.inboxsdk__sidebar_content_panel div,
-[class*="inboxsdk__sidebar"],
-[class*="inboxsdk__sidebar"] > * {
+/* InboxSDK content panel wrappers - only target our panel */
+.inboxsdk__sidebar_content_panel:has(#reclaim-sidebar-iframe),
+.inboxsdk__sidebar_content_panel:has(#reclaim-sidebar-iframe) > * {
   border: none !important;
   border-left: none !important;
   border-right: none !important;
@@ -87,23 +84,7 @@ tr.zA.reclaim-critical-row,
   outline: none !important;
 }
 
-/* Gmail's sidebar container may have blue accent */
-.bq9,
-.brC-dA-I-Jw,
-.bq9 > div,
-.aeN .brC-dA-I-Jw {
-  border-left: none !important;
-  box-shadow: none !important;
-}
-
-/* Target any element with inline blue border/background near sidebar */
-[style*="border"][style*="rgb(26, 115, 232)"],
-[style*="border"][style*="#1a73e8"],
-[style*="background"][style*="rgb(26, 115, 232)"],
-[style*="background"][style*="#1a73e8"] {
-  border-color: transparent !important;
-  background-color: transparent !important;
-}
+/* Note: Removed overly broad Gmail sidebar selectors that were affecting other icons */
 
 /* Hide InboxSDK's blue selected indicator (issue #113) */
 .inboxsdk__button_selectedIndicator {
