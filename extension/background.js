@@ -164,7 +164,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
       // SEC-008: Validate sender before processing any message
       if (!isTrustedSender(sender)) {
-        console.warn('🚫 ShopQ: Blocked message from untrusted sender:', sender);
+        console.warn('🚫 Reclaim: Blocked message from untrusted sender:', sender);
         sendResponse({ success: false, error: 'Unauthorized sender' });
         return;
       }
@@ -172,7 +172,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // SEC-017: Check rate limit before processing
       const rateCheck = checkMessageRateLimit(sender);
       if (!rateCheck.allowed) {
-        console.warn('🚫 ShopQ: Rate limit exceeded for sender:', sender.tab?.id ?? sender.url);
+        console.warn('🚫 Reclaim: Rate limit exceeded for sender:', sender.tab?.id ?? sender.url);
         sendResponse({ success: false, error: 'Rate limit exceeded. Please slow down.' });
         return;
       }

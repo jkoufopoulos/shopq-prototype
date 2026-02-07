@@ -1,8 +1,8 @@
-# ShopQ Return Watch - Claude Code Guidelines
+# Reclaim - Claude Code Guidelines
 
 ## Project Overview
 
-**ShopQ Return Watch** is a Gmail companion that automatically detects online purchases from order/delivery emails and tracks return deadlines. It helps users never miss return windows through a three-stage AI extraction pipeline.
+**Reclaim** is a Gmail companion that automatically detects online purchases from order/delivery emails and tracks return deadlines. It helps users never miss return windows through a three-stage AI extraction pipeline.
 
 **Architecture**: Python FastAPI backend + Chrome Manifest V3 extension
 **AI Model**: Google Gemini (via Vertex AI)
@@ -19,7 +19,7 @@ Help users track and act on return windows before they expire. Every feature sho
 ## Critical Rules
 
 ### Single Database Principle
-All features use ONE centralized SQLite database at `shopq/data/shopq.db`. Creating new databases is forbidden without architectural review. Use `shopq/infrastructure/database.py` for all database access.
+All features use ONE centralized SQLite database at `shopq/data/reclaim.db`. Creating new databases is forbidden without architectural review. Use `shopq/infrastructure/database.py` for all database access.
 
 ### Three-Stage Extraction Pipeline
 Email processing follows a fixed cost-optimization pattern:
@@ -30,11 +30,11 @@ Email processing follows a fixed cost-optimization pattern:
 Never bypass stages. See `shopq/returns/extractor.py` for orchestration.
 
 ### Module Import Convention
-Always use explicit `shopq.*` imports for Docker compatibility:
+Always use explicit `reclaim.*` imports for Docker compatibility:
 ```python
 # Correct
-from shopq.returns.models import ReturnCard
-from shopq.returns.extractor import ExtractionPipeline
+from reclaim.returns.models import ReturnCard
+from reclaim.returns.extractor import ExtractionPipeline
 
 # Wrong
 from returns.models import ReturnCard
@@ -98,7 +98,7 @@ Default: 30 days from delivery for unknown merchants.
 uv sync
 
 # Run API server (development)
-uv run uvicorn shopq.api.app:app --reload
+uv run uvicorn reclaim.api.app:app --reload
 
 # Run tests
 PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/ -v
@@ -167,7 +167,7 @@ newstore.com:
 ### Debugging Extraction
 Enable verbose logging or check the extraction pipeline:
 ```python
-from shopq.returns.extractor import ExtractionPipeline
+from reclaim.returns.extractor import ExtractionPipeline
 pipeline = ExtractionPipeline()
 result = pipeline.process_email(email_content)
 ```
@@ -175,7 +175,7 @@ result = pipeline.process_email(email_content)
 ### Database Queries
 Always use the infrastructure module:
 ```python
-from shopq.infrastructure.database import get_db_connection
+from reclaim.infrastructure.database import get_db_connection
 with get_db_connection() as conn:
     # queries here
 ```

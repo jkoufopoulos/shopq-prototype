@@ -11,7 +11,7 @@
  * Colored per type (defined in content.js getTypeColor())
  * ============================================================================= */
 
-.shopq-badge {
+.reclaim-badge {
   display: inline-flex;
   align-items: center;
   padding: 0 6px;
@@ -24,7 +24,7 @@
   vertical-align: middle;
 }
 
-.shopq-badge-type {
+.reclaim-badge-type {
   background-color: #e3f2fd;
   color: #1565c0;
   border: 1px solid #90caf9;
@@ -35,7 +35,7 @@
  * For importance === 'critical'
  * ============================================================================= */
 
-.shopq-badge-critical {
+.reclaim-badge-critical {
   background-color: #ffebee;
   color: #c62828;
   border: 1px solid #ef9a9a;
@@ -43,8 +43,8 @@
 }
 
 /* Red left border for critical rows */
-tr.zA.shopq-critical-row,
-.zA.shopq-critical-row {
+tr.zA.reclaim-critical-row,
+.zA.reclaim-critical-row {
   border-left: 3px solid #c62828 !important;
   background-color: rgba(255, 235, 238, 0.3);
 }
@@ -56,7 +56,7 @@ tr.zA.shopq-critical-row,
  * ============================================================================= */
 
 /* InboxSDK adds labels as spans */
-.inboxsdk__thread_row_label .shopq-badge {
+.inboxsdk__thread_row_label .reclaim-badge {
   margin-right: 4px;
 }
 
@@ -66,8 +66,8 @@ tr.zA.shopq-critical-row,
  * ============================================================================= */
 
 /* Target our sidebar panel and its parents */
-#shopq-sidebar-panel,
-#shopq-sidebar-iframe {
+#reclaim-sidebar-panel,
+#reclaim-sidebar-iframe {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -115,7 +115,7 @@ tr.zA.shopq-critical-row,
  * Applied when there are returns expiring soon
  * ============================================================================= */
 
-@keyframes shopq-pulse-red {
+@keyframes reclaim-pulse-red {
   0%, 100% {
     background-color: transparent;
     box-shadow: none;
@@ -126,7 +126,7 @@ tr.zA.shopq-critical-row,
   }
 }
 
-@keyframes shopq-dot-pulse {
+@keyframes reclaim-dot-pulse {
   0%, 100% {
     transform: scale(1);
     opacity: 1;
@@ -138,13 +138,13 @@ tr.zA.shopq-critical-row,
 }
 
 /* Main icon container gets subtle pulse */
-[data-tooltip="Reclaim"].shopq-has-expiring {
-  animation: shopq-pulse-red 1.5s ease-in-out infinite;
+[data-tooltip="Reclaim"].reclaim-has-expiring {
+  animation: reclaim-pulse-red 1.5s ease-in-out infinite;
   border-radius: 50%;
 }
 
 /* Red notification badge for expiring returns */
-.shopq-expiring-dot {
+.reclaim-expiring-dot {
   position: absolute;
   top: -4px;
   right: -4px;
@@ -154,7 +154,7 @@ tr.zA.shopq-critical-row,
   background-color: #dc3545;
   border-radius: 8px;
   border: 2px solid white;
-  animation: shopq-dot-pulse 1.5s ease-in-out infinite;
+  animation: reclaim-dot-pulse 1.5s ease-in-out infinite;
   z-index: 1000;
   pointer-events: none;
   /* Text styling for count */

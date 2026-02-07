@@ -173,7 +173,7 @@ function sanitizeUrl(url) {
     return url; // Return original (preserving case)
   }
   // Block javascript:, data:, vbscript:, etc.
-  console.warn('ShopQ: Blocked unsafe URL:', url.substring(0, 50));
+  console.warn('Reclaim: Blocked unsafe URL:', url.substring(0, 50));
   return '';
 }
 
@@ -1358,7 +1358,7 @@ async function fetchReturns() {
   try {
     window.parent.postMessage({ type: 'SHOPQ_GET_ORDERS' }, '*');
   } catch (error) {
-    console.error('ShopQ Returns: Failed to request orders:', error);
+    console.error('Reclaim Returns: Failed to request orders:', error);
     renderError('Failed to load returns');
   }
 }
@@ -1440,7 +1440,7 @@ async function updateOrderStatus(orderKey, newStatus) {
     showListView();
     fetchReturns();
   } catch (error) {
-    console.error('ShopQ Returns: Failed to update status:', error);
+    console.error('Reclaim Returns: Failed to update status:', error);
   }
 }
 
@@ -1510,7 +1510,7 @@ window.addEventListener('message', (event) => {
 
   // Handle scan complete notification
   if (event.data?.type === 'SHOPQ_SCAN_COMPLETE') {
-    console.log('ShopQ Returns: Scan complete', event.data);
+    console.log('Reclaim Returns: Scan complete', event.data);
     hasCompletedFirstScan = true;
     refreshBtn.classList.remove('scanning');
     refreshStatus.textContent = '';

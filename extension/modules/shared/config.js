@@ -1,5 +1,5 @@
 /**
- * ShopQ Return Watch Extension Configuration
+ * Reclaim Return Watch Extension Configuration
  */
 
 const VERSION = '1.0.0';
@@ -20,9 +20,9 @@ const CONFIG = {
 
   // Storage keys
   KEYS: {
-    USER_ID: 'shopq_user_id',
-    RETURNS: 'shopq_returns',
-    SETTINGS: 'shopq_settings',
+    USER_ID: 'reclaim_user_id',
+    RETURNS: 'reclaim_returns',
+    SETTINGS: 'reclaim_settings',
   },
 
   // Logging

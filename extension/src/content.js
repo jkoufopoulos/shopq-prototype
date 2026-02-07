@@ -1,5 +1,5 @@
 /**
- * ShopQ Content Script (ES Module Entry Point)
+ * Reclaim Content Script (ES Module Entry Point)
  *
  * This file is bundled by webpack with InboxSDK.
  * Implements the Visual Layer for Gmail:
@@ -19,14 +19,14 @@ import DOMPurify from 'dompurify';
 
 // Prevent multiple initializations - use a global flag
 if (window.__SHOPQ_INITIALIZED__) {
-  console.log('ShopQ: Already initialized, skipping duplicate');
+  console.log('Reclaim: Already initialized, skipping duplicate');
 } else {
   window.__SHOPQ_INITIALIZED__ = true;
-  initShopQ();
+  initReclaim();
 }
 
-function initShopQ() {
-console.log('ShopQ: Content script loaded (bundled)');
+function initReclaim() {
+console.log('Reclaim: Content script loaded (bundled)');
 
 // =============================================================================
 // HTML SANITIZATION (XSS Protection)
@@ -48,22 +48,22 @@ function sanitizeHtml(html) {
 }
 
 // =============================================================================
-// CLEANUP: Remove any stale ShopQ elements/styles from previous loads
+// CLEANUP: Remove any stale Reclaim elements/styles from previous loads
 // =============================================================================
 
 (function cleanupStaleElements() {
   // Remove old drawer/iframe elements only
   // IMPORTANT: Do NOT reset html/body styles - this interferes with Gmail's dark mode
-  document.getElementById('shopq-digest-iframe')?.remove();
-  document.getElementById('shopq-nav-button')?.remove();
-  document.getElementById('shopq-refresh-banner')?.remove();
-  document.getElementById('shopq-layout-styles')?.remove();
-  document.getElementById('shopq-sidebar-panel')?.remove();
+  document.getElementById('reclaim-digest-iframe')?.remove();
+  document.getElementById('reclaim-nav-button')?.remove();
+  document.getElementById('reclaim-refresh-banner')?.remove();
+  document.getElementById('reclaim-layout-styles')?.remove();
+  document.getElementById('reclaim-sidebar-panel')?.remove();
 
-  // Remove any ShopQ-specific classes only
-  document.documentElement.classList.remove('shopq-drawer-open');
+  // Remove any Reclaim-specific classes only
+  document.documentElement.classList.remove('reclaim-drawer-open');
 
-  console.log('ShopQ: Cleaned up stale elements');
+  console.log('Reclaim: Cleaned up stale elements');
 })();
 
 // =============================================================================
@@ -100,7 +100,7 @@ function createLabelStream() {
 // API CONFIGURATION
 // =============================================================================
 
-const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
+const API_BASE_URL = 'https://reclaim-api-488078904670.us-central1.run.app';
 
 // =============================================================================
 // CONFIGURATION
@@ -142,7 +142,7 @@ async function preloadCache() {
     const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
     return data[LABEL_CACHE_KEY] || {};
   } catch (error) {
-    console.error('ShopQ: Failed to preload cache:', error);
+    console.error('Reclaim: Failed to preload cache:', error);
     return {};
   }
 }
@@ -198,7 +198,7 @@ function applyBadgesFromCache(threadId, labelData) {
   const displayType = labelData?.type || CLIENT_LABEL_TO_TYPE[labelData?.clientLabel];
   if (displayType) {
     const descriptor = buildTypeLabelDescriptor(displayType);
-    console.log(`ShopQ: Updating type badge for ${threadId}:`, descriptor.title);
+    console.log(`Reclaim: Updating type badge for ${threadId}:`, descriptor.title);
     entry.typeStream.update(descriptor);
   } else {
     entry.typeStream.clear();
@@ -214,14 +214,14 @@ function applyBadgesFromCache(threadId, labelData) {
     // Add red border
     const element = entry.threadRowView.getElement();
     if (element) {
-      element.classList.add('shopq-critical-row');
+      element.classList.add('reclaim-critical-row');
     }
   } else {
     entry.criticalStream.clear();
     // Remove red border
     const element = entry.threadRowView.getElement();
     if (element) {
-      element.classList.remove('shopq-critical-row');
+      element.classList.remove('reclaim-critical-row');
     }
   }
 }
@@ -246,7 +246,7 @@ async function handleThreadRow(threadRowView) {
     // Log first few calls for debugging
     if (handlerCallCount <= 5) {
       const cacheKeys = Object.keys(localCache).slice(0, 3);
-      console.log(`ShopQ: Handler #${handlerCallCount} - threadId: ${threadId}, cache sample: ${cacheKeys.join(', ')}`);
+      console.log(`Reclaim: Handler #${handlerCallCount} - threadId: ${threadId}, cache sample: ${cacheKeys.join(', ')}`);
     }
 
     if (!threadId) return;
@@ -291,7 +291,7 @@ async function handleThreadRow(threadRowView) {
     });
 
   } catch (error) {
-    console.debug('ShopQ: Error handling thread row:', error);
+    console.debug('Reclaim: Error handling thread row:', error);
   }
 }
 
@@ -313,11 +313,11 @@ function isExtensionContextValid() {
  */
 function showRefreshBanner() {
   // Remove any existing banner first
-  const existing = document.getElementById('shopq-refresh-banner');
+  const existing = document.getElementById('reclaim-refresh-banner');
   if (existing) existing.remove();
 
   const banner = document.createElement('div');
-  banner.id = 'shopq-refresh-banner';
+  banner.id = 'reclaim-refresh-banner';
   banner.innerHTML = `
     <div style="
       position: fixed;
@@ -336,7 +336,7 @@ function showRefreshBanner() {
       align-items: center;
       gap: 12px;
     ">
-      <span>ShopQ was updated. Please refresh this page to continue.</span>
+      <span>Reclaim was updated. Please refresh this page to continue.</span>
       <button onclick="location.reload()" style="
         background: white;
         color: #1a73e8;
@@ -365,14 +365,14 @@ function showRefreshBanner() {
 async function initializeVisualLayer() {
   // Check if extension context is still valid
   if (!isExtensionContextValid()) {
-    console.warn('ShopQ: Extension context invalidated - showing refresh banner');
+    console.warn('Reclaim: Extension context invalidated - showing refresh banner');
     showRefreshBanner();
     return;
   }
 
   // Preload the cache
   localCache = await preloadCache();
-  console.log(`ShopQ: Preloaded ${Object.keys(localCache).length} cached threads`);
+  console.log(`Reclaim: Preloaded ${Object.keys(localCache).length} cached threads`);
 
   // Signal that cache is ready
   cacheReadyResolve();
@@ -387,7 +387,7 @@ async function initializeVisualLayer() {
       const oldCache = localCache;
       localCache = newCache;
 
-      console.log(`ShopQ: Cache updated, ${Object.keys(localCache).length} threads, ${threadRowRegistry.size} rows registered`);
+      console.log(`Reclaim: Cache updated, ${Object.keys(localCache).length} threads, ${threadRowRegistry.size} rows registered`);
 
       // Update badges for all registered thread rows
       for (const [threadId, entry] of threadRowRegistry) {
@@ -396,7 +396,7 @@ async function initializeVisualLayer() {
 
         // Only update if data changed
         if (JSON.stringify(oldData) !== JSON.stringify(newData)) {
-          console.log(`ShopQ: Updating badges for thread ${threadId}`);
+          console.log(`Reclaim: Updating badges for thread ${threadId}`);
           applyBadgesFromCache(threadId, newData);
         }
       }
@@ -404,27 +404,27 @@ async function initializeVisualLayer() {
 
     // Handle digest refresh signal (from auto-organize)
     if (changes.shopq_digest_needs_refresh && triggerDigestRefresh) {
-      console.log('ShopQ: Digest refresh signal received from auto-organize');
+      console.log('Reclaim: Digest refresh signal received from auto-organize');
       triggerDigestRefresh();
       // Clear the signal so it doesn't fire again
       chrome.storage.local.remove('shopq_digest_needs_refresh');
     }
   });
 
-  console.log('ShopQ: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
+  console.log('Reclaim: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
 
   try {
     const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
-    console.log('ShopQ: InboxSDK loaded successfully');
+    console.log('Reclaim: InboxSDK loaded successfully');
 
     // Register thread row handler for badges
     sdk.Lists.registerThreadRowViewHandler(handleThreadRow);
-    console.log('ShopQ: Thread row handler registered');
+    console.log('Reclaim: Thread row handler registered');
 
     // Add digest sidebar panel via InboxSDK
     await initializeDigestSidebar(sdk);
   } catch (error) {
-    console.error('ShopQ: Failed to load InboxSDK:', error.message);
+    console.error('Reclaim: Failed to load InboxSDK:', error.message);
     // Check if this is due to extension context being invalidated
     if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {
       showRefreshBanner();
@@ -443,7 +443,7 @@ window.addEventListener('message', async (event) => {
   if (event.source !== window) return;
 
   if (event.data?.type === 'SHOPQ_TEST_ORGANIZE') {
-    console.log('ShopQ: Test hook - triggering organize...');
+    console.log('Reclaim: Test hook - triggering organize...');
     try {
       const response = await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
       window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE_RESPONSE', response }, '*');
@@ -453,7 +453,7 @@ window.addEventListener('message', async (event) => {
   }
 
   if (event.data?.type === 'SHOPQ_TEST_CHECK_AUTH') {
-    console.log('ShopQ: Test hook - checking auth...');
+    console.log('Reclaim: Test hook - checking auth...');
     try {
       const response = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
       window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH_RESPONSE', response }, '*');
@@ -463,7 +463,7 @@ window.addEventListener('message', async (event) => {
   }
 
   if (event.data?.type === 'SHOPQ_TEST_CLEAR_CACHE') {
-    console.log('ShopQ: Test hook - clearing cache...');
+    console.log('Reclaim: Test hook - clearing cache...');
     try {
       await chrome.storage.local.remove('shopq_label_cache');
       window.postMessage({ type: 'SHOPQ_TEST_CLEAR_CACHE_RESPONSE', success: true }, '*');
@@ -473,7 +473,7 @@ window.addEventListener('message', async (event) => {
   }
 
   if (event.data?.type === 'SHOPQ_TEST_SET_CACHE') {
-    console.log('ShopQ: Test hook - setting cache with', Object.keys(event.data.cacheData || {}).length, 'entries...');
+    console.log('Reclaim: Test hook - setting cache with', Object.keys(event.data.cacheData || {}).length, 'entries...');
     try {
       await chrome.storage.local.set({ [LABEL_CACHE_KEY]: event.data.cacheData });
       localCache = event.data.cacheData;
@@ -484,12 +484,12 @@ window.addEventListener('message', async (event) => {
   }
 
   if (event.data?.type === 'SHOPQ_TEST_GET_THREAD_IDS') {
-    console.log('ShopQ: Test hook - returning', seenThreadIds.length, 'thread IDs');
+    console.log('Reclaim: Test hook - returning', seenThreadIds.length, 'thread IDs');
     window.postMessage({ type: 'SHOPQ_TEST_GET_THREAD_IDS_RESPONSE', threadIds: [...seenThreadIds] }, '*');
   }
 
   if (event.data?.type === 'SHOPQ_TEST_GET_CACHE_STATUS') {
-    console.log('ShopQ: Test hook - getting cache status...');
+    console.log('Reclaim: Test hook - getting cache status...');
     try {
       const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
       const cache = data[LABEL_CACHE_KEY] || {};
@@ -523,7 +523,7 @@ async function fetchDigest() {
     const entries = Object.entries(cache);
 
     if (entries.length === 0) {
-      return { empty: true, message: 'No classified emails yet. Click the ShopQ icon to organize your inbox first.' };
+      return { empty: true, message: 'No classified emails yet. Click the Reclaim icon to organize your inbox first.' };
     }
 
     // Convert cache to digest format (current_data)
@@ -551,7 +551,7 @@ async function fetchDigest() {
       region: storageData.userRegion || undefined
     };
 
-    console.log('ShopQ: Digest request payload:', {
+    console.log('Reclaim: Digest request payload:', {
       emailCount: currentData.length,
       sampleEmail: currentData[0],
       timezone: requestPayload.timezone,
@@ -576,15 +576,15 @@ async function fetchDigest() {
       } catch {
         errorDetail = await response.text();
       }
-      console.error('ShopQ: Digest API error:', response.status, errorDetail);
+      console.error('Reclaim: Digest API error:', response.status, errorDetail);
       throw new Error(`API error ${response.status}: ${errorDetail}`);
     }
 
     const result = await response.json();
-    console.log('ShopQ: Digest API response:', result);
+    console.log('Reclaim: Digest API response:', result);
     return { success: true, data: result };
   } catch (error) {
-    console.error('ShopQ: Failed to fetch digest:', error);
+    console.error('Reclaim: Failed to fetch digest:', error);
 
     // Detect extension context invalidated (happens after extension reload)
     if (error.message?.includes('Extension context invalidated') ||
@@ -604,28 +604,28 @@ async function fetchDigest() {
  * Render digest content into the panel
  */
 function renderDigestContent(panel, result) {
-  const contentEl = panel.querySelector('.shopq-digest-content');
+  const contentEl = panel.querySelector('.reclaim-digest-content');
 
   if (result.empty) {
     contentEl.innerHTML = `
-      <div class="shopq-digest-empty">
+      <div class="reclaim-digest-empty">
         <div class="icon">📭</div>
         <p>${sanitizeHtml(result.message)}</p>
-        <button class="shopq-refresh-btn" id="shopq-organize-btn">Organize Inbox</button>
+        <button class="reclaim-refresh-btn" id="reclaim-organize-btn">Organize Inbox</button>
       </div>
     `;
     // Add click handler for organize button
-    contentEl.querySelector('#shopq-organize-btn')?.addEventListener('click', async () => {
+    contentEl.querySelector('#reclaim-organize-btn')?.addEventListener('click', async () => {
       try {
         await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
         contentEl.innerHTML = `
-          <div class="shopq-digest-loading">
+          <div class="reclaim-digest-loading">
             <div class="spinner"></div>
             <span>Organizing inbox...</span>
           </div>
         `;
       } catch (e) {
-        console.error('ShopQ: Failed to trigger organize:', e);
+        console.error('Reclaim: Failed to trigger organize:', e);
       }
     });
     return;
@@ -635,27 +635,27 @@ function renderDigestContent(panel, result) {
     // Special handling for extension context invalidated
     if (result.needsRefresh) {
       contentEl.innerHTML = `
-        <div class="shopq-digest-error" style="text-align: center;">
+        <div class="reclaim-digest-error" style="text-align: center;">
           <div style="font-size: 32px; margin-bottom: 12px;">🔄</div>
           <p style="font-weight: 500;">Extension Updated</p>
           <p style="font-size: 13px; margin-top: 8px; color: #5f6368;">Please refresh Gmail to reconnect.</p>
-          <button class="shopq-refresh-btn" id="shopq-refresh-page-btn" style="margin-top: 16px;">Refresh Gmail</button>
+          <button class="reclaim-refresh-btn" id="reclaim-refresh-page-btn" style="margin-top: 16px;">Refresh Gmail</button>
         </div>
       `;
-      contentEl.querySelector('#shopq-refresh-page-btn')?.addEventListener('click', () => {
+      contentEl.querySelector('#reclaim-refresh-page-btn')?.addEventListener('click', () => {
         window.location.reload();
       });
       return;
     }
 
     contentEl.innerHTML = `
-      <div class="shopq-digest-error">
+      <div class="reclaim-digest-error">
         <p>Failed to load digest</p>
         <p style="font-size: 12px; margin-top: 8px;">${sanitizeHtml(result.message)}</p>
-        <button class="shopq-refresh-btn" id="shopq-retry-btn">Retry</button>
+        <button class="reclaim-refresh-btn" id="reclaim-retry-btn">Retry</button>
       </div>
     `;
-    contentEl.querySelector('#shopq-retry-btn')?.addEventListener('click', () => refreshDigest(panel));
+    contentEl.querySelector('#reclaim-retry-btn')?.addEventListener('click', () => refreshDigest(panel));
     return;
   }
 
@@ -666,37 +666,37 @@ function renderDigestContent(panel, result) {
   if (data.html) {
     // If API returns HTML, render it directly (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="shopq-digest-narrative">${sanitizeHtml(data.html)}</div>
-      <button class="shopq-refresh-btn" id="shopq-refresh-btn" style="margin-top: 20px;">Refresh</button>
+      <div class="reclaim-digest-narrative">${sanitizeHtml(data.html)}</div>
+      <button class="reclaim-refresh-btn" id="reclaim-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else if (data.narrative) {
     // If API returns narrative text (sanitized for XSS protection)
     contentEl.innerHTML = `
-      <div class="shopq-digest-narrative">${sanitizeHtml(data.narrative)}</div>
-      <button class="shopq-refresh-btn" id="shopq-refresh-btn" style="margin-top: 20px;">Refresh</button>
+      <div class="reclaim-digest-narrative">${sanitizeHtml(data.narrative)}</div>
+      <button class="reclaim-refresh-btn" id="reclaim-refresh-btn" style="margin-top: 20px;">Refresh</button>
     `;
   } else {
     // Fallback: no digest content available
     contentEl.innerHTML = `
-      <div class="shopq-digest-empty">
+      <div class="reclaim-digest-empty">
         <div class="icon">📊</div>
         <p>No digest available yet.</p>
         <p style="font-size: 12px; margin-top: 8px;">Classify some emails first, then refresh.</p>
-        <button class="shopq-refresh-btn" id="shopq-refresh-btn">Refresh</button>
+        <button class="reclaim-refresh-btn" id="reclaim-refresh-btn">Refresh</button>
       </div>
     `;
   }
 
-  contentEl.querySelector('#shopq-refresh-btn')?.addEventListener('click', () => refreshDigest(panel));
+  contentEl.querySelector('#reclaim-refresh-btn')?.addEventListener('click', () => refreshDigest(panel));
 }
 
 /**
  * Refresh the digest
  */
 async function refreshDigest(panel) {
-  const contentEl = panel.querySelector('.shopq-digest-content');
+  const contentEl = panel.querySelector('.reclaim-digest-content');
   contentEl.innerHTML = `
-    <div class="shopq-digest-loading">
+    <div class="reclaim-digest-loading">
       <div class="spinner"></div>
       <span>Loading digest...</span>
     </div>
@@ -714,7 +714,7 @@ let digestSidebarPanel = null;
  */
 function createDigestPanelContent() {
   const container = document.createElement('div');
-  container.id = 'shopq-digest-panel';
+  container.id = 'reclaim-digest-panel';
   container.style.cssText = `
     height: 100%;
     display: flex;
@@ -728,7 +728,7 @@ function createDigestPanelContent() {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-    " id="shopq-digest-content">
+    " id="reclaim-digest-content">
       <div style="
         display: flex;
         flex-direction: column;
@@ -743,24 +743,24 @@ function createDigestPanelContent() {
           border: 3px solid #e0e0e0;
           border-top-color: #1a73e8;
           border-radius: 50%;
-          animation: shopq-spin 1s linear infinite;
+          animation: reclaim-spin 1s linear infinite;
           margin-bottom: 12px;
         "></div>
         <span>Loading digest...</span>
       </div>
     </div>
     <style>
-      @keyframes shopq-spin {
+      @keyframes reclaim-spin {
         to { transform: rotate(360deg); }
       }
-      #shopq-digest-panel a { color: #1a73e8; text-decoration: none; }
-      #shopq-digest-panel a:hover { text-decoration: underline; }
+      #reclaim-digest-panel a { color: #1a73e8; text-decoration: none; }
+      #reclaim-digest-panel a:hover { text-decoration: underline; }
     </style>
   `;
 
   // Load digest content
   fetchDigest().then(result => {
-    const content = container.querySelector('#shopq-digest-content');
+    const content = container.querySelector('#reclaim-digest-content');
     if (!content) return;
 
     if (result.empty) {
@@ -768,7 +768,7 @@ function createDigestPanelContent() {
         <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
           <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
           <p style="margin-bottom: 16px;">${sanitizeHtml(result.message)}</p>
-          <button id="shopq-organize-btn" style="
+          <button id="reclaim-organize-btn" style="
             padding: 8px 16px;
             background: #1a73e8;
             color: white;
@@ -779,7 +779,7 @@ function createDigestPanelContent() {
           ">Organize Inbox</button>
         </div>
       `;
-      content.querySelector('#shopq-organize-btn')?.addEventListener('click', async () => {
+      content.querySelector('#reclaim-organize-btn')?.addEventListener('click', async () => {
         try {
           await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
           content.innerHTML = `
@@ -789,7 +789,7 @@ function createDigestPanelContent() {
             </div>
           `;
         } catch (e) {
-          console.error('ShopQ: Failed to trigger organize:', e);
+          console.error('Reclaim: Failed to trigger organize:', e);
         }
       });
     } else if (result.error) {
@@ -799,7 +799,7 @@ function createDigestPanelContent() {
             <div style="font-size: 48px; margin-bottom: 16px;">🔄</div>
             <p style="font-weight: 500; color: #202124; margin-bottom: 8px;">Extension Updated</p>
             <p style="font-size: 13px; color: #5f6368; margin-bottom: 16px;">Please refresh Gmail to reconnect.</p>
-            <button id="shopq-refresh-btn" style="
+            <button id="reclaim-refresh-btn" style="
               padding: 8px 16px;
               background: #1a73e8;
               color: white;
@@ -809,14 +809,14 @@ function createDigestPanelContent() {
             ">Refresh Gmail</button>
           </div>
         `;
-        content.querySelector('#shopq-refresh-btn')?.addEventListener('click', () => {
+        content.querySelector('#reclaim-refresh-btn')?.addEventListener('click', () => {
           window.location.reload();
         });
       } else {
         content.innerHTML = `
           <div style="text-align: center; padding: 40px 20px;">
             <p style="color: #c5221f; margin-bottom: 16px;">Error: ${sanitizeHtml(result.message)}</p>
-            <button id="shopq-retry-btn" style="
+            <button id="reclaim-retry-btn" style="
               padding: 8px 16px;
               background: #1a73e8;
               color: white;
@@ -826,7 +826,7 @@ function createDigestPanelContent() {
             ">Retry</button>
           </div>
         `;
-        content.querySelector('#shopq-retry-btn')?.addEventListener('click', () => {
+        content.querySelector('#reclaim-retry-btn')?.addEventListener('click', () => {
           // Refresh the panel
           const newContent = createDigestPanelContent();
           container.replaceWith(newContent);
@@ -857,13 +857,13 @@ function createDigestPanelContent() {
  * IFRAME ISOLATION: DOM changes inside iframe don't trigger Gmail's layout recalculation.
  */
 async function initializeDigestSidebar(sdk) {
-  console.log('ShopQ: Setting up Reclaim sidebar with IFRAME ISOLATION...');
+  console.log('Reclaim: Setting up Reclaim sidebar with IFRAME ISOLATION...');
 
   // SEC-007: Use explicit origin for postMessage instead of '*'
   const EXTENSION_ORIGIN = chrome.runtime.getURL('').slice(0, -1); // Remove trailing slash
 
   const panelEl = document.createElement('div');
-  panelEl.id = 'shopq-returns-panel';
+  panelEl.id = 'reclaim-returns-panel';
   panelEl.style.cssText = `
     width: 100%;
     height: 100%;
@@ -876,7 +876,7 @@ async function initializeDigestSidebar(sdk) {
   // Create iframe pointing to our returns sidebar HTML
   const iframe = document.createElement('iframe');
   iframe.src = chrome.runtime.getURL('returns-sidebar.html');
-  iframe.id = 'shopq-returns-iframe';
+  iframe.id = 'reclaim-returns-iframe';
   iframe.style.cssText = `
     width: 100%;
     height: 100%;
@@ -899,7 +899,7 @@ async function initializeDigestSidebar(sdk) {
 
     // Returns sidebar ready
     if (event.data?.type === 'SHOPQ_RETURNS_SIDEBAR_READY') {
-      console.log('ShopQ: Returns sidebar iframe ready');
+      console.log('Reclaim: Returns sidebar iframe ready');
       iframeReady = true;
       // Fetch and send visible orders
       await fetchVisibleOrders();
@@ -907,25 +907,25 @@ async function initializeDigestSidebar(sdk) {
 
     // Unified order fetch request from sidebar
     if (event.data?.type === 'SHOPQ_GET_ORDERS') {
-      console.log('ShopQ: Fetching visible orders...');
+      console.log('Reclaim: Fetching visible orders...');
       await fetchVisibleOrders();
     }
 
     // Fetch returned orders for undo drawer
     if (event.data?.type === 'SHOPQ_GET_RETURNED_ORDERS') {
-      console.log('ShopQ: Fetching returned orders...');
+      console.log('Reclaim: Fetching returned orders...');
       await fetchReturnedOrders();
     }
 
     // v0.6.2: Update order status
     if (event.data?.type === 'SHOPQ_UPDATE_ORDER_STATUS') {
-      console.log('ShopQ: Updating order status:', event.data.order_key, event.data.status);
+      console.log('Reclaim: Updating order status:', event.data.order_key, event.data.status);
       await updateOrderStatus(event.data.order_key, event.data.status);
     }
 
     // v0.6.2: Enrich order (on-demand LLM)
     if (event.data?.type === 'SHOPQ_ENRICH_ORDER') {
-      console.log('ShopQ: Enriching order:', event.data.order_key);
+      console.log('Reclaim: Enriching order:', event.data.order_key);
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'ENRICH_ORDER',
@@ -938,7 +938,7 @@ async function initializeDigestSidebar(sdk) {
           }, EXTENSION_ORIGIN);
         }
       } catch (err) {
-        console.error('ShopQ: Enrichment failed:', err);
+        console.error('Reclaim: Enrichment failed:', err);
         if (iframeReady && iframe.contentWindow) {
           iframe.contentWindow.postMessage({
             type: 'SHOPQ_ENRICH_RESULT',
@@ -951,7 +951,7 @@ async function initializeDigestSidebar(sdk) {
 
     // v0.6.2: Set merchant rule
     if (event.data?.type === 'SHOPQ_SET_MERCHANT_RULE') {
-      console.log('ShopQ: Setting merchant rule:', event.data.merchant_domain, event.data.window_days);
+      console.log('Reclaim: Setting merchant rule:', event.data.merchant_domain, event.data.window_days);
       try {
         await chrome.runtime.sendMessage({
           type: 'SET_MERCHANT_RULE',
@@ -972,13 +972,13 @@ async function initializeDigestSidebar(sdk) {
         // Refresh data
         await fetchVisibleOrders();
       } catch (err) {
-        console.error('ShopQ: Set merchant rule failed:', err);
+        console.error('Reclaim: Set merchant rule failed:', err);
       }
     }
 
     // v0.6.2: Get single order
     if (event.data?.type === 'SHOPQ_GET_ORDER') {
-      console.log('ShopQ: Getting order:', event.data.order_key);
+      console.log('Reclaim: Getting order:', event.data.order_key);
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'GET_ORDER',
@@ -991,13 +991,13 @@ async function initializeDigestSidebar(sdk) {
           }, EXTENSION_ORIGIN);
         }
       } catch (err) {
-        console.error('ShopQ: Get order failed:', err);
+        console.error('Reclaim: Get order failed:', err);
       }
     }
 
     // Update order return date directly (inline date picker)
     if (event.data?.type === 'SHOPQ_UPDATE_ORDER_RETURN_DATE') {
-      console.log('ShopQ: Updating order return date:', event.data.order_key, event.data.return_by_date);
+      console.log('Reclaim: Updating order return date:', event.data.order_key, event.data.return_by_date);
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'UPDATE_ORDER_RETURN_DATE',
@@ -1014,7 +1014,7 @@ async function initializeDigestSidebar(sdk) {
         // Refresh the visible orders list
         await fetchVisibleOrders();
       } catch (err) {
-        console.error('ShopQ: Failed to update return date:', err);
+        console.error('Reclaim: Failed to update return date:', err);
         if (iframeReady && iframe.contentWindow) {
           iframe.contentWindow.postMessage({
             type: 'SHOPQ_ORDER_RETURN_DATE_UPDATED',
@@ -1026,7 +1026,7 @@ async function initializeDigestSidebar(sdk) {
 
     // Handle close button - close the sidebar panel
     if (event.data?.type === 'SHOPQ_CLOSE_SIDEBAR') {
-      console.log('ShopQ: Closing sidebar');
+      console.log('Reclaim: Closing sidebar');
       const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
       if (shopqIcon) {
         shopqIcon.click();
@@ -1035,10 +1035,10 @@ async function initializeDigestSidebar(sdk) {
 
     // Handle rescan request from sidebar
     if (event.data?.type === 'SHOPQ_RESCAN_EMAILS') {
-      console.log('ShopQ: Manual rescan requested...');
+      console.log('Reclaim: Manual rescan requested...');
       chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
         .then(result => {
-          console.log('ShopQ: Rescan complete:', result);
+          console.log('Reclaim: Rescan complete:', result);
           // Notify iframe that scan is complete
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', result }, EXTENSION_ORIGIN);
@@ -1047,7 +1047,7 @@ async function initializeDigestSidebar(sdk) {
           fetchVisibleOrders();
         })
         .catch(err => {
-          console.error('ShopQ: Rescan failed:', err);
+          console.error('Reclaim: Rescan failed:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({ type: 'SHOPQ_SCAN_COMPLETE', error: err.message }, EXTENSION_ORIGIN);
           }
@@ -1070,7 +1070,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to get user address:', err);
+          console.error('Reclaim: Failed to get user address:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_USER_ADDRESS',
@@ -1085,7 +1085,7 @@ async function initializeDigestSidebar(sdk) {
       chrome.runtime.sendMessage({
         type: 'SET_USER_ADDRESS',
         address: event.data.address
-      }).catch(err => console.error('ShopQ: Failed to save address:', err));
+      }).catch(err => console.error('Reclaim: Failed to save address:', err));
     }
 
     // Get delivery locations
@@ -1103,7 +1103,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to get delivery locations:', err);
+          console.error('Reclaim: Failed to get delivery locations:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_DELIVERY_LOCATIONS',
@@ -1132,7 +1132,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to get delivery quote:', err);
+          console.error('Reclaim: Failed to get delivery quote:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_DELIVERY_QUOTE',
@@ -1158,7 +1158,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to confirm delivery:', err);
+          console.error('Reclaim: Failed to confirm delivery:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_DELIVERY_CONFIRMED',
@@ -1183,7 +1183,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to cancel delivery:', err);
+          console.error('Reclaim: Failed to cancel delivery:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_DELIVERY_CANCELED',
@@ -1207,7 +1207,7 @@ async function initializeDigestSidebar(sdk) {
           }
         })
         .catch(err => {
-          console.error('ShopQ: Failed to get active deliveries:', err);
+          console.error('Reclaim: Failed to get active deliveries:', err);
           if (iframeReady && iframe.contentWindow) {
             iframe.contentWindow.postMessage({
               type: 'SHOPQ_ACTIVE_DELIVERIES',
@@ -1232,7 +1232,7 @@ async function initializeDigestSidebar(sdk) {
       // Update expiring indicator
       updateExpiringIndicator(orders);
     } catch (err) {
-      console.error('ShopQ: Failed to fetch visible orders:', err);
+      console.error('Reclaim: Failed to fetch visible orders:', err);
     }
   }
 
@@ -1248,7 +1248,7 @@ async function initializeDigestSidebar(sdk) {
         }, EXTENSION_ORIGIN);
       }
     } catch (err) {
-      console.error('ShopQ: Failed to fetch returned orders:', err);
+      console.error('Reclaim: Failed to fetch returned orders:', err);
     }
   }
 
@@ -1271,7 +1271,7 @@ async function initializeDigestSidebar(sdk) {
       await fetchVisibleOrders();
       await fetchReturnedOrders();
     } catch (err) {
-      console.error('ShopQ: Failed to update order status:', err);
+      console.error('Reclaim: Failed to update order status:', err);
     }
   }
 
@@ -1283,7 +1283,7 @@ async function initializeDigestSidebar(sdk) {
   function updateExpiringIndicator(orders) {
     const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
     if (!shopqIcon) {
-      console.log('ShopQ: Could not find sidebar icon for expiring indicator');
+      console.log('Reclaim: Could not find sidebar icon for expiring indicator');
       return;
     }
 
@@ -1300,34 +1300,34 @@ async function initializeDigestSidebar(sdk) {
       return deadline >= now && deadline <= sevenDaysFromNow;
     }).length;
 
-    console.log('ShopQ: Expiring returns count:', expiringCount);
+    console.log('Reclaim: Expiring returns count:', expiringCount);
 
     // Add or remove the flashing indicator
-    const existingDot = shopqIcon.querySelector('.shopq-expiring-dot');
+    const existingDot = shopqIcon.querySelector('.reclaim-expiring-dot');
 
     if (expiringCount > 0) {
       // Add flashing class to icon
-      shopqIcon.classList.add('shopq-has-expiring');
+      shopqIcon.classList.add('reclaim-has-expiring');
       shopqIcon.style.position = 'relative';
 
       // Add red badge if not already present
       if (!existingDot) {
         const dot = document.createElement('div');
-        dot.className = 'shopq-expiring-dot';
+        dot.className = 'reclaim-expiring-dot';
         dot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         dot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
         shopqIcon.appendChild(dot);
-        console.log('ShopQ: Added expiring returns indicator');
+        console.log('Reclaim: Added expiring returns indicator');
       } else {
         existingDot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         existingDot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
       }
     } else {
       // Remove flashing class and dot
-      shopqIcon.classList.remove('shopq-has-expiring');
+      shopqIcon.classList.remove('reclaim-has-expiring');
       if (existingDot) {
         existingDot.remove();
-        console.log('ShopQ: Removed expiring returns indicator');
+        console.log('Reclaim: Removed expiring returns indicator');
       }
     }
   }
@@ -1341,17 +1341,17 @@ async function initializeDigestSidebar(sdk) {
         return response.userId;
       }
       // If no user ID yet, user needs to authenticate
-      console.warn('ShopQ: No authenticated user ID - user may need to sign in');
+      console.warn('Reclaim: No authenticated user ID - user may need to sign in');
       return null;
     } catch (err) {
-      console.error('ShopQ: Failed to get user ID:', err);
+      console.error('Reclaim: Failed to get user ID:', err);
       return null;
     }
   }
 
   try {
     // Use InboxSDK's Global.addSidebarContentPanel API
-    console.log('ShopQ: Calling sdk.Global.addSidebarContentPanel...');
+    console.log('Reclaim: Calling sdk.Global.addSidebarContentPanel...');
     // Use data URL for icon to avoid chrome-extension:// loading issues
     const iconDataUrl = 'data:image/svg+xml,' + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1367,7 +1367,7 @@ async function initializeDigestSidebar(sdk) {
       iconUrl: iconDataUrl,
     });
 
-    console.log('ShopQ: Reclaim sidebar registered successfully:', panelView);
+    console.log('Reclaim: Reclaim sidebar registered successfully:', panelView);
 
     // Track sidebar state for persistence across navigation
     let sidebarShouldBeOpen = true;  // Start open by default
@@ -1377,7 +1377,7 @@ async function initializeDigestSidebar(sdk) {
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
-      console.log('ShopQ: Reclaim panel activated');
+      console.log('Reclaim: Reclaim panel activated');
       // Refresh visible orders when panel opens
       fetchVisibleOrders();
 
@@ -1392,7 +1392,7 @@ async function initializeDigestSidebar(sdk) {
     });
 
     panelView.on('deactivate', () => {
-      console.log('ShopQ: Reclaim panel deactivated, isNavigating:', isNavigating);
+      console.log('Reclaim: Reclaim panel deactivated, isNavigating:', isNavigating);
 
       // Stop periodic refresh when sidebar closes
       if (sidebarRefreshInterval) {
@@ -1402,13 +1402,13 @@ async function initializeDigestSidebar(sdk) {
 
       if (!isNavigating) {
         sidebarShouldBeOpen = false;
-        console.log('ShopQ: User closed sidebar');
+        console.log('Reclaim: User closed sidebar');
       }
     });
 
     // Keep sidebar open during navigation
     sdk.Router.handleAllRoutes((routeView) => {
-      console.log('ShopQ: Route changed to:', routeView.getRouteID());
+      console.log('Reclaim: Route changed to:', routeView.getRouteID());
       isNavigating = true;
 
       setTimeout(() => {
@@ -1416,9 +1416,9 @@ async function initializeDigestSidebar(sdk) {
         if (sidebarShouldBeOpen) {
           try {
             panelView.open();
-            console.log('ShopQ: Re-opened sidebar after navigation');
+            console.log('Reclaim: Re-opened sidebar after navigation');
           } catch (e) {
-            console.log('ShopQ: Could not re-open sidebar:', e.message);
+            console.log('Reclaim: Could not re-open sidebar:', e.message);
           }
         }
       }, 150);
@@ -1428,37 +1428,37 @@ async function initializeDigestSidebar(sdk) {
     triggerDigestRefresh = () => {
       const now = Date.now();
       if (now - lastDigestRefreshTime < DIGEST_REFRESH_DEBOUNCE_MS) {
-        console.log('ShopQ: Returns refresh debounced (too soon)');
+        console.log('Reclaim: Returns refresh debounced (too soon)');
         return;
       }
       lastDigestRefreshTime = now;
 
-      console.log('ShopQ: External returns refresh triggered');
+      console.log('Reclaim: External returns refresh triggered');
       fetchVisibleOrders();
     };
 
     // Auto-open on first load
     panelView.open();
-    console.log('ShopQ: Reclaim sidebar opened on initial load');
+    console.log('Reclaim: Reclaim sidebar opened on initial load');
 
     // Auto-scan on Gmail load disabled for debugging. Use popup button or sidebar rescan.
     // To re-enable, uncomment below:
-    // console.log('ShopQ: Triggering background purchase scan...');
+    // console.log('Reclaim: Triggering background purchase scan...');
     // chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' })
     //   .then(result => {
-    //     console.log('ShopQ: Auto-scan complete:', result);
+    //     console.log('Reclaim: Auto-scan complete:', result);
     //     fetchVisibleOrders();
     //   })
-    //   .catch(err => console.log('ShopQ: Auto-scan error:', err));
+    //   .catch(err => console.log('Reclaim: Auto-scan error:', err));
 
   } catch (error) {
-    console.error('ShopQ: Failed to add Reclaim sidebar panel:', error);
-    console.log('ShopQ: Falling back to manual button injection...');
-    injectShopQButton();
+    console.error('Reclaim: Failed to add Reclaim sidebar panel:', error);
+    console.log('Reclaim: Falling back to manual button injection...');
+    injectReclaimButton();
 
     const observer = new MutationObserver(() => {
-      if (!document.getElementById('shopq-nav-button')) {
-        injectShopQButton();
+      if (!document.getElementById('reclaim-nav-button')) {
+        injectReclaimButton();
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -1474,7 +1474,7 @@ async function loadDigestIntoPanel(panelEl) {
   const sendToIframe = panelEl._sendToIframe;
 
   if (!sendToIframe) {
-    console.error('ShopQ: sendToIframe function not found on panelEl');
+    console.error('Reclaim: sendToIframe function not found on panelEl');
     return;
   }
 
@@ -1505,10 +1505,10 @@ async function loadDigestIntoPanel(panelEl) {
       </div>
     `;
   } else if (result.data?.html) {
-    console.log('ShopQ: Digest HTML received, length:', result.data.html?.length);
+    console.log('Reclaim: Digest HTML received, length:', result.data.html?.length);
     contentHtml = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.html)}</div>`;
   } else if (result.data?.narrative) {
-    console.log('ShopQ: Digest narrative received, length:', result.data.narrative?.length);
+    console.log('Reclaim: Digest narrative received, length:', result.data.narrative?.length);
     contentHtml = `<div style="line-height: 1.6;">${sanitizeHtml(result.data.narrative)}</div>`;
   } else {
     contentHtml = `<p style="text-align: center; color: #5f6368;">No digest available.</p>`;
@@ -1517,20 +1517,20 @@ async function loadDigestIntoPanel(panelEl) {
   // Cache the content for navigation persistence
   if (panelEl._setCachedHtml) {
     panelEl._setCachedHtml(contentHtml);
-    console.log('ShopQ: Digest content cached for navigation persistence');
+    console.log('Reclaim: Digest content cached for navigation persistence');
   }
 
   // Send content to iframe via postMessage (isolated from Gmail's DOM)
   sendToIframe(contentHtml);
-  console.log('ShopQ: Digest content sent to iframe');
+  console.log('Reclaim: Digest content sent to iframe');
 }
 
 /**
- * Inject ShopQ button into Gmail's top nav
+ * Inject Reclaim button into Gmail's top nav
  */
-function injectShopQButton() {
+function injectReclaimButton() {
   // Skip if already exists
-  if (document.getElementById('shopq-nav-button')) {
+  if (document.getElementById('reclaim-nav-button')) {
     return;
   }
 
@@ -1540,17 +1540,17 @@ function injectShopQButton() {
                       document.querySelector('[aria-label="Support"]')?.closest('div')?.parentElement;
 
   if (!headerRight) {
-    console.log('ShopQ: Header area not found, retrying...');
-    setTimeout(injectShopQButton, 1000);
+    console.log('Reclaim: Header area not found, retrying...');
+    setTimeout(injectReclaimButton, 1000);
     return;
   }
 
-  // Create ShopQ button matching Gmail's style
+  // Create Reclaim button matching Gmail's style
   const button = document.createElement('div');
-  button.id = 'shopq-nav-button';
+  button.id = 'reclaim-nav-button';
   button.innerHTML = `
     <style>
-      #shopq-nav-button {
+      #reclaim-nav-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1561,11 +1561,11 @@ function injectShopQButton() {
         margin: 0 4px;
         transition: background 0.2s;
       }
-      #shopq-nav-button:hover { background: rgba(255,255,255,0.1); }
-      #shopq-nav-button img { width: 24px; height: 24px; }
-      #shopq-nav-button.active { background: rgba(138, 180, 248, 0.2); }
+      #reclaim-nav-button:hover { background: rgba(255,255,255,0.1); }
+      #reclaim-nav-button img { width: 24px; height: 24px; }
+      #reclaim-nav-button.active { background: rgba(138, 180, 248, 0.2); }
     </style>
-    <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="ShopQ Digest" title="ShopQ Digest">
+    <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Reclaim Digest" title="Reclaim Digest">
   `;
 
   button.addEventListener('click', () => {
@@ -1577,10 +1577,10 @@ function injectShopQButton() {
   const profilePic = headerRight.querySelector('img[aria-label]')?.closest('a, div') || headerRight.lastElementChild;
   if (profilePic) {
     profilePic.parentElement.insertBefore(button, profilePic);
-    console.log('ShopQ: Nav button injected successfully');
+    console.log('Reclaim: Nav button injected successfully');
   } else {
     headerRight.appendChild(button);
-    console.log('ShopQ: Nav button appended to header');
+    console.log('Reclaim: Nav button appended to header');
   }
 }
 
@@ -1588,7 +1588,7 @@ function injectShopQButton() {
  * Toggle the digest drawer open/closed
  */
 function toggleDigestDrawer() {
-  const existing = document.getElementById('shopq-digest-iframe');
+  const existing = document.getElementById('reclaim-digest-iframe');
   if (existing) {
     existing.remove();
     return;
@@ -1596,7 +1596,7 @@ function toggleDigestDrawer() {
 
   // Create drawer as iframe for isolation
   const iframe = document.createElement('iframe');
-  iframe.id = 'shopq-digest-iframe';
+  iframe.id = 'reclaim-digest-iframe';
   iframe.style.cssText = `
     position: fixed !important;
     top: 0 !important;
@@ -1665,7 +1665,7 @@ function toggleDigestDrawer() {
     <body>
       <div class="drawer">
         <div class="header">
-          <h2>ShopQ Digest</h2>
+          <h2>Reclaim Digest</h2>
           <button class="close-btn" id="close-btn">&times;</button>
         </div>
         <div class="content" id="content">
@@ -1682,7 +1682,7 @@ function toggleDigestDrawer() {
   // Close button
   doc.getElementById('close-btn').addEventListener('click', () => {
     iframe.remove();
-    document.getElementById('shopq-nav-button')?.classList.remove('active');
+    document.getElementById('reclaim-nav-button')?.classList.remove('active');
   });
 
   // Load digest content
@@ -1723,4 +1723,4 @@ if (document.readyState === 'loading') {
   initializeVisualLayer();
 }
 
-} // End of initShopQ()
+} // End of initReclaim()
