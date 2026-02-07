@@ -50,7 +50,7 @@
   ],
 
   "oauth2": {
-    "client_id": "488078904670-eddkde05mhmuvplhgb9ks37mj7rbmhhp.apps.googleusercontent.com",
+    "client_id": "142227390702-a1v5icgnl8sjc1e7t87gono0ebl55q6v.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/gmail.readonly",
       "https://www.googleapis.com/auth/userinfo.profile"
