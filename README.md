@@ -73,6 +73,16 @@ The extension needs Gmail read access. Currently in testing mode, so:
 - Contact the developer to add your Gmail to the test users list
 - Or set up your own OAuth credentials in Google Cloud Console
 
+### Backend (Already Hosted)
+
+The backend is already deployed — you don't need to run it yourself.
+
+The extension automatically connects to the hosted API for:
+- **Uber Direct pickup scheduling** — Book a driver to pick up your return
+- **LLM enrichment** — Fallback AI extraction for tricky emails
+
+All core features (email scanning, deadline tracking, alerts) work locally without the backend.
+
 ---
 
 ## Project Structure
@@ -93,8 +103,9 @@ shopq-prototype/
 │   │   └── gmail/             # Gmail API + OAuth
 │   └── dist/                  # Built bundles
 │
-├── shopq/                     # Python backend (optional)
+├── shopq/                     # Python backend (already hosted, for contributors)
 │   ├── api/                   # FastAPI routes
+│   ├── delivery/              # Uber Direct integration
 │   └── returns/               # LLM-based extraction
 │
 └── config/
@@ -132,8 +143,13 @@ _default:
 cd extension
 npm install
 npm run watch    # Build with hot reload
+```
 
-# Backend (optional, for LLM enrichment)
+### Running Backend Locally (Contributors Only)
+
+The backend is already hosted. Only run locally if you're contributing to backend code:
+
+```bash
 uv sync
 uv run uvicorn shopq.api.app:app --reload
 ```
@@ -145,7 +161,7 @@ uv run uvicorn shopq.api.app:app --reload
 cd extension && npm test
 
 # Backend tests
-PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/ -v
+PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest shopq/tests/ -v
 ```
 
 ---
