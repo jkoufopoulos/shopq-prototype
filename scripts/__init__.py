@@ -1,1 +1,0 @@
-# ShopQ utility scripts

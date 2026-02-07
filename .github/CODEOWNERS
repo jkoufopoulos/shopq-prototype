@@ -1,8 +1,2 @@
-# Default ownership for ShopQ repository
-* @justinkoufopoulos
-shopq/ @justinkoufopoulos
-extension/ @justinkoufopoulos
-scripts/ @justinkoufopoulos
-docs/ @justinkoufopoulos
-/claude.md @justinkoufopoulos
-/config/merchant_rules.yaml @justinkoufopoulos
+# Default ownership for Reclaim repository
+* @jkoufopoulos
