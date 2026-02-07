@@ -760,6 +760,75 @@ async function resetScanState() {
 }
 
 /**
+ * Backfill estimated_delivery_date for existing orders.
+ *
+ * For orders that have delivery_date but no delivery confirmation email,
+ * the delivery_date was likely an estimated date. This moves it to
+ * estimated_delivery_date so the anchor date logic works correctly.
+ *
+ * @returns {Promise<{updated: number, skipped: number}>}
+ */
+async function backfillEstimatedDeliveryDates() {
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.ORDERS_BY_KEY,
+    STORAGE_KEYS.ORDER_EMAILS_BY_ID,
+  ]);
+
+  const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
+  const orderEmails = result[STORAGE_KEYS.ORDER_EMAILS_BY_ID] || {};
+
+  let updated = 0;
+  let skipped = 0;
+
+  for (const [order_key, order] of Object.entries(orders)) {
+    // Skip if no delivery_date to migrate
+    if (!order.delivery_date) {
+      skipped++;
+      continue;
+    }
+
+    // Skip if already has estimated_delivery_date (already migrated)
+    if (order.estimated_delivery_date) {
+      skipped++;
+      continue;
+    }
+
+    // Check if any source email is a DELIVERY type
+    const hasDeliveryEmail = (order.source_email_ids || []).some(emailId => {
+      const emailRecord = orderEmails[emailId];
+      return emailRecord && emailRecord.email_type === 'delivery';
+    });
+
+    if (hasDeliveryEmail) {
+      // This order has an actual delivery email, so delivery_date is correct
+      console.log(STORE_LOG_PREFIX, 'BACKFILL_SKIP', order_key, 'has delivery email');
+      skipped++;
+      continue;
+    }
+
+    // No delivery email - the delivery_date was probably estimated
+    // Move it to estimated_delivery_date
+    console.log(STORE_LOG_PREFIX, 'BACKFILL_MIGRATE', order_key,
+      'moving delivery_date to estimated_delivery_date:', order.delivery_date);
+
+    order.estimated_delivery_date = order.delivery_date;
+    order.delivery_date = null;
+    order.updated_at = new Date().toISOString();
+    updated++;
+  }
+
+  // Save updated orders
+  if (updated > 0) {
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ORDERS_BY_KEY]: orders,
+    });
+  }
+
+  console.log(STORE_LOG_PREFIX, 'BACKFILL_COMPLETE', `updated: ${updated}, skipped: ${skipped}`);
+  return { updated, skipped };
+}
+
+/**
  * Get storage stats for diagnostics.
  *
  * @returns {Promise<Object>}

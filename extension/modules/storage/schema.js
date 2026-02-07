@@ -31,7 +31,8 @@
  * @property {string} [tracking_number] - Shipping tracking number (secondary key)
  * @property {string} purchase_date - ISO date string
  * @property {string} [ship_date] - ISO date string
- * @property {string} [delivery_date] - ISO date string
+ * @property {string} [delivery_date] - ISO date string (actual confirmed delivery)
+ * @property {string} [estimated_delivery_date] - ISO date string (estimated/expected delivery from order email)
  * @property {number} [return_window_days] - Days allowed for return
  * @property {string} [explicit_return_by_date] - ISO date if explicitly stated
  * @property {string} [return_by_date] - Computed return deadline (ISO date)
@@ -57,7 +58,8 @@
  * @property {number} [amount]
  * @property {string} [order_date] - ISO date
  * @property {string} [ship_date] - ISO date
- * @property {string} [delivery_date] - ISO date
+ * @property {string} [delivery_date] - ISO date (actual confirmed delivery)
+ * @property {string} [estimated_delivery_date] - ISO date (estimated/expected delivery)
  */
 
 /**
@@ -175,7 +177,8 @@ function generateOrderKey(user_id, merchant_domain, identifier) {
  * @param {string} [params.order_id] - Merchant order number
  * @param {string} [params.tracking_number] - Shipping tracking number
  * @param {string} [params.ship_date] - Ship date
- * @param {string} [params.delivery_date] - Delivery date
+ * @param {string} [params.delivery_date] - Actual confirmed delivery date
+ * @param {string} [params.estimated_delivery_date] - Estimated delivery date from order email
  * @param {number} [params.amount] - Purchase amount
  * @param {string} [params.currency] - Currency code
  * @param {number} [params.return_window_days] - Return window in days
@@ -195,6 +198,7 @@ function createOrder({
   tracking_number,
   ship_date,
   delivery_date,
+  estimated_delivery_date,
   amount,
   currency,
   return_window_days,
@@ -213,6 +217,7 @@ function createOrder({
     purchase_date,
     ship_date: ship_date || null,
     delivery_date: delivery_date || null,
+    estimated_delivery_date: estimated_delivery_date || null,
     amount: amount || null,
     currency: currency || 'USD',
     return_window_days: return_window_days || null,

@@ -109,16 +109,23 @@ function getToday() {
  * Get the anchor date for computing return deadline.
  *
  * Priority:
- * 1. delivery_date (best - most retailers start clock at delivery)
- * 2. ship_date (fallback)
- * 3. purchase_date (last resort)
+ * 1. delivery_date (best - actual confirmed delivery, most retailers start clock here)
+ * 2. estimated_delivery_date (good - estimated delivery from order confirmation)
+ * 3. ship_date (fallback)
+ * 4. purchase_date (last resort)
  *
  * @param {Order} order
- * @returns {{anchor_date: string|null, anchor_type: 'delivery' | 'ship' | 'purchase' | null}}
+ * @returns {{anchor_date: string|null, anchor_type: 'delivery' | 'estimated_delivery' | 'ship' | 'purchase' | null}}
  */
 function getAnchorDate(order) {
+  // Actual confirmed delivery date (from delivery confirmation email)
   if (order.delivery_date) {
     return { anchor_date: order.delivery_date, anchor_type: 'delivery' };
+  }
+
+  // Estimated delivery date (from order confirmation or shipping email)
+  if (order.estimated_delivery_date) {
+    return { anchor_date: order.estimated_delivery_date, anchor_type: 'estimated_delivery' };
   }
 
   if (order.ship_date) {
@@ -524,4 +531,25 @@ async function getVisibleOrders() {
   });
 
   return [...withDeadline, ...withoutDeadline];
+}
+
+/**
+ * Get orders that have been marked as returned.
+ * Used for the "Returned" accordion with undo functionality.
+ *
+ * @returns {Promise<Order[]>}
+ */
+async function getReturnedOrders() {
+  const allOrders = await getAllOrders();
+
+  // Filter to returned orders only, sorted by updated_at DESC (most recent first)
+  const returned = allOrders
+    .filter(o => o.order_status === ORDER_STATUS.RETURNED)
+    .sort((a, b) => {
+      if (!a.updated_at) return 1;
+      if (!b.updated_at) return -1;
+      return b.updated_at.localeCompare(a.updated_at);
+    });
+
+  return returned;
 }

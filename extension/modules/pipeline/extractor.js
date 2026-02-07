@@ -260,19 +260,21 @@ function extractShipDate(text) {
 }
 
 /**
- * Extract delivery date from email.
+ * Extract ACTUAL delivery date from email (past tense - item was delivered).
+ * This is for delivery confirmation emails.
  *
  * @param {string} text
  * @returns {string|null} ISO date or null
  */
-function extractDeliveryDate(text) {
+function extractActualDeliveryDate(text) {
   if (!text) return null;
 
+  // Patterns for ACTUAL delivery (past tense)
   const patterns = [
-    /(?:delivered|arrival)\s*(?:on)?\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    /(?:delivered|was delivered)\s*(?:on)?\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
     /(?:delivery|delivered)\s*date\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
-    /(?:delivered|arrival)\s*(?:on)?\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
-    /(?:arriving|arrives?|expected)\s*(?:on|by)?\s*:?\s*([A-Za-z]+\s+\d{1,2})/i,
+    /(?:delivered|was delivered)\s*(?:on)?\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+    /your (?:package|order|item) (?:has been |was )?delivered/i,  // Just a trigger, date from context
   ];
 
   for (const pattern of patterns) {
@@ -284,6 +286,53 @@ function extractDeliveryDate(text) {
   }
 
   return null;
+}
+
+/**
+ * Extract ESTIMATED delivery date from email (future tense - expected arrival).
+ * This is for order confirmation and shipping emails.
+ *
+ * @param {string} text
+ * @returns {string|null} ISO date or null
+ */
+function extractEstimatedDeliveryDate(text) {
+  if (!text) return null;
+
+  // Patterns for ESTIMATED delivery (future tense)
+  const patterns = [
+    /(?:arriving|arrives?|expected|estimated)\s*(?:on|by)?\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    /(?:arriving|arrives?|expected|estimated)\s*(?:on|by)?\s*:?\s*([A-Za-z]+\s+\d{1,2})/i,
+    /(?:delivery|arrival)\s*(?:date|estimate)\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    /(?:estimated|expected)\s*(?:delivery|arrival)\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    /(?:get it|receive it|arrives?)\s*(?:by)?\s*([A-Za-z]+\.?\s+\d{1,2})/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const parsed = parseDateToISO(match[1]);
+      if (parsed) return parsed;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract delivery date from email.
+ * Returns actual delivery date if found, otherwise estimated.
+ *
+ * @deprecated Use extractActualDeliveryDate and extractEstimatedDeliveryDate separately
+ * @param {string} text
+ * @returns {string|null} ISO date or null
+ */
+function extractDeliveryDate(text) {
+  // First try actual delivery date
+  const actual = extractActualDeliveryDate(text);
+  if (actual) return actual;
+
+  // Fall back to estimated
+  return extractEstimatedDeliveryDate(text);
 }
 
 /**
@@ -473,7 +522,11 @@ function extractFields(subject, snippet, body = '') {
   // Extract dates
   const purchase_date = extractPurchaseDate(text);
   const ship_date = extractShipDate(text);
-  const delivery_date = extractDeliveryDate(text);
+  // Extract both actual and estimated delivery dates separately
+  const actual_delivery_date = extractActualDeliveryDate(text);
+  const estimated_delivery_date = extractEstimatedDeliveryDate(text);
+  // For backwards compatibility, delivery_date is actual if found, otherwise estimated
+  const delivery_date = actual_delivery_date || estimated_delivery_date;
   const explicit_return_by_date = extractReturnByDate(text);
   const return_window_days = extractReturnWindowDays(text);
 
@@ -495,6 +548,8 @@ function extractFields(subject, snippet, body = '') {
     purchase_date,
     ship_date,
     delivery_date,
+    actual_delivery_date,
+    estimated_delivery_date,
     explicit_return_by_date,
     return_window_days,
     amount,
@@ -517,7 +572,9 @@ function extractFields(subject, snippet, body = '') {
  * @property {string|null} tracking_number
  * @property {string|null} purchase_date
  * @property {string|null} ship_date
- * @property {string|null} delivery_date
+ * @property {string|null} delivery_date - Actual or estimated (for backwards compatibility)
+ * @property {string|null} actual_delivery_date - Actual confirmed delivery date
+ * @property {string|null} estimated_delivery_date - Estimated/expected delivery date
  * @property {string|null} explicit_return_by_date
  * @property {number|null} return_window_days
  * @property {number|null} amount

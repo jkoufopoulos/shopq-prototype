@@ -911,6 +911,12 @@ async function initializeDigestSidebar(sdk) {
       await fetchVisibleOrders();
     }
 
+    // Fetch returned orders for undo drawer
+    if (event.data?.type === 'SHOPQ_GET_RETURNED_ORDERS') {
+      console.log('ShopQ: Fetching returned orders...');
+      await fetchReturnedOrders();
+    }
+
     // v0.6.2: Update order status
     if (event.data?.type === 'SHOPQ_UPDATE_ORDER_STATUS') {
       console.log('ShopQ: Updating order status:', event.data.order_key, event.data.status);
@@ -986,6 +992,35 @@ async function initializeDigestSidebar(sdk) {
         }
       } catch (err) {
         console.error('ShopQ: Get order failed:', err);
+      }
+    }
+
+    // Update order return date directly (inline date picker)
+    if (event.data?.type === 'SHOPQ_UPDATE_ORDER_RETURN_DATE') {
+      console.log('ShopQ: Updating order return date:', event.data.order_key, event.data.return_by_date);
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: 'UPDATE_ORDER_RETURN_DATE',
+          order_key: event.data.order_key,
+          return_by_date: event.data.return_by_date
+        });
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_ORDER_RETURN_DATE_UPDATED',
+            order_key: event.data.order_key,
+            ...result
+          }, EXTENSION_ORIGIN);
+        }
+        // Refresh the visible orders list
+        await fetchVisibleOrders();
+      } catch (err) {
+        console.error('ShopQ: Failed to update return date:', err);
+        if (iframeReady && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'SHOPQ_ORDER_RETURN_DATE_UPDATED',
+            error: err.message
+          }, EXTENSION_ORIGIN);
+        }
       }
     }
 
@@ -1201,6 +1236,22 @@ async function initializeDigestSidebar(sdk) {
     }
   }
 
+  // Fetch returned orders from background (for undo drawer)
+  async function fetchReturnedOrders() {
+    try {
+      const result = await chrome.runtime.sendMessage({ type: 'GET_RETURNED_ORDERS' });
+      const orders = result.orders || [];
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_RETURNED_ORDERS_DATA',
+          orders
+        }, EXTENSION_ORIGIN);
+      }
+    } catch (err) {
+      console.error('ShopQ: Failed to fetch returned orders:', err);
+    }
+  }
+
   // v0.6.2: Update order status via background
   async function updateOrderStatus(orderKey, newStatus) {
     try {
@@ -1216,8 +1267,9 @@ async function initializeDigestSidebar(sdk) {
           status: newStatus
         }, EXTENSION_ORIGIN);
       }
-      // Refresh data
+      // Refresh data (both visible and returned)
       await fetchVisibleOrders();
+      await fetchReturnedOrders();
     } catch (err) {
       console.error('ShopQ: Failed to update order status:', err);
     }
@@ -1258,14 +1310,16 @@ async function initializeDigestSidebar(sdk) {
       shopqIcon.classList.add('shopq-has-expiring');
       shopqIcon.style.position = 'relative';
 
-      // Add red dot if not already present
+      // Add red badge if not already present
       if (!existingDot) {
         const dot = document.createElement('div');
         dot.className = 'shopq-expiring-dot';
+        dot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         dot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
         shopqIcon.appendChild(dot);
         console.log('ShopQ: Added expiring returns indicator');
       } else {
+        existingDot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         existingDot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
       }
     } else {
@@ -1318,16 +1372,34 @@ async function initializeDigestSidebar(sdk) {
     // Track sidebar state for persistence across navigation
     let sidebarShouldBeOpen = true;  // Start open by default
     let isNavigating = false;
+    let sidebarRefreshInterval = null;
+    const SIDEBAR_REFRESH_INTERVAL_MS = 60000; // 1 minute
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
       console.log('ShopQ: Reclaim panel activated');
       // Refresh visible orders when panel opens
       fetchVisibleOrders();
+
+      // Start periodic refresh while sidebar is open
+      if (!sidebarRefreshInterval) {
+        sidebarRefreshInterval = setInterval(() => {
+          if (iframeReady) {
+            fetchVisibleOrders();
+          }
+        }, SIDEBAR_REFRESH_INTERVAL_MS);
+      }
     });
 
     panelView.on('deactivate', () => {
       console.log('ShopQ: Reclaim panel deactivated, isNavigating:', isNavigating);
+
+      // Stop periodic refresh when sidebar closes
+      if (sidebarRefreshInterval) {
+        clearInterval(sidebarRefreshInterval);
+        sidebarRefreshInterval = null;
+      }
+
       if (!isNavigating) {
         sidebarShouldBeOpen = false;
         console.log('ShopQ: User closed sidebar');

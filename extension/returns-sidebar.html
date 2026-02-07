@@ -158,6 +158,103 @@
       margin-bottom: 0;
     }
 
+    /* Returned Accordion (undo drawer) */
+    .returned-accordion {
+      margin-top: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e8f5e9;
+    }
+    .returned-accordion-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e8e3e;
+      transition: background 0.15s;
+    }
+    .returned-accordion-header:hover {
+      background: #c8e6c9;
+    }
+    .returned-accordion-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .returned-icon {
+      font-size: 14px;
+    }
+    .returned-accordion-header svg {
+      color: #1e8e3e;
+      flex-shrink: 0;
+    }
+    .returned-accordion-content {
+      padding: 8px;
+      padding-top: 0;
+      background: #e8f5e9;
+    }
+
+    /* Returned card (compact with undo) */
+    .returned-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #c8e6c9;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .returned-card:last-child {
+      margin-bottom: 0;
+    }
+    .returned-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .returned-merchant {
+      font-size: 12px;
+      font-weight: 500;
+      color: #5f6368;
+    }
+    .returned-item {
+      font-size: 13px;
+      color: #202124;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .undo-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1e8e3e;
+      transition: background 0.15s;
+    }
+    .undo-btn:hover {
+      background: #c8e6c9;
+    }
+    .undo-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
     /* Return cards */
     .return-card {
       background: #fff;
@@ -442,6 +539,217 @@
     }
     .confidence-badge .edit-link:hover {
       text-decoration: underline;
+    }
+
+    /* Date editing */
+    .date-display-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .deadline-basis {
+      font-size: 12px;
+      color: #5f6368;
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    .edit-date-btn {
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+      color: #5f6368;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .edit-date-btn:hover {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+
+    .edit-date-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .date-edit-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .date-input {
+      padding: 12px 14px;
+      border: 2px solid #dadce0;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      color: #202124;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+
+    .date-input:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+
+    .date-edit-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .date-save-btn {
+      flex: 1;
+      padding: 10px 20px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .date-save-btn:hover {
+      background: #1557b0;
+    }
+
+    .date-cancel-btn {
+      flex: 1;
+      padding: 10px 20px;
+      background: #f1f3f4;
+      color: #5f6368;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .date-cancel-btn:hover {
+      background: #e8eaed;
+    }
+
+    .date-error {
+      color: #c5221f;
+      font-size: 12px;
+      min-height: 16px;
+    }
+
+    /* Toast notifications */
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10000;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .toast-notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success {
+      background: #1e8e3e;
+      color: white;
+    }
+
+    .toast-error {
+      background: #c5221f;
+      color: white;
+    }
+
+    .toast-info {
+      background: #1a73e8;
+      color: white;
+    }
+
+    /* Confirm dialog */
+    .confirm-dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+    }
+
+    .confirm-dialog {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 300px;
+      width: 90%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .confirm-dialog-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 8px;
+    }
+
+    .confirm-dialog-message {
+      font-size: 14px;
+      color: #5f6368;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .confirm-dialog-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .confirm-dialog-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .confirm-dialog-btn.cancel {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+
+    .confirm-dialog-btn.cancel:hover {
+      background: #e8eaed;
+    }
+
+    .confirm-dialog-btn.confirm {
+      background: #1a73e8;
+      color: white;
+    }
+
+    .confirm-dialog-btn.confirm:hover {
+      background: #1557b0;
     }
 
     /* Order info card */

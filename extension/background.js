@@ -214,6 +214,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const orders = await getVisibleOrders();
         sendResponse({ success: true, orders });
       }
+      else if (message.type === 'GET_RETURNED_ORDERS') {
+        const orders = await getReturnedOrders();
+        sendResponse({ success: true, orders });
+      }
       else if (message.type === 'RECOMPUTE_ORDER_DEADLINE') {
         const order = await recomputeOrderDeadline(message.order_key);
         sendResponse({ success: true, order });
@@ -383,6 +387,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true, deliveries });
         } catch (error) {
           console.error('❌ Failed to fetch active deliveries:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      }
+      // Run backfill migration for estimated_delivery_date
+      else if (message.type === 'BACKFILL_ESTIMATED_DELIVERY_DATES') {
+        try {
+          console.log('🔄 Running estimated_delivery_date backfill...');
+          const result = await backfillEstimatedDeliveryDates();
+          console.log('✅ Backfill complete:', result);
+          // Also reset scan state so emails get reprocessed with new logic
+          await resetScanState();
+          console.log('🔄 Scan state reset - emails will be reprocessed on next scan');
+          sendResponse({ success: true, ...result });
+        } catch (error) {
+          console.error('❌ Backfill failed:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      }
+      // Update a single order's return date directly (local storage)
+      else if (message.type === 'UPDATE_ORDER_RETURN_DATE') {
+        try {
+          const order = await getOrder(message.order_key);
+          if (!order) {
+            throw new Error('Order not found');
+          }
+          // Update the return_by_date
+          order.return_by_date = message.return_by_date;
+          // Set confidence to 'exact' since user explicitly set it
+          order.deadline_confidence = 'exact';
+          // Save the updated order
+          const updatedOrder = await upsertOrder(order);
+          console.log('✅ Updated order return date:', message.order_key, '->', message.return_by_date);
+          sendResponse({ success: true, order: updatedOrder });
+        } catch (error) {
+          console.error('❌ Failed to update order return date:', error);
           sendResponse({ success: false, error: error.message });
         }
       }

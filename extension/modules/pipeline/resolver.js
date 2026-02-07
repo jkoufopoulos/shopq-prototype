@@ -99,7 +99,8 @@ function createNewOrder({
   // Determine initial dates based on email type
   let purchase_date = extracted.purchase_date;
   let ship_date = extracted.ship_date;
-  let delivery_date = extracted.delivery_date;
+  let delivery_date = null;
+  let estimated_delivery_date = extracted.estimated_delivery_date;
 
   // For confirmation emails, use today as purchase date if not extracted
   if (email_type === EMAIL_TYPE.CONFIRMATION && !purchase_date) {
@@ -111,9 +112,17 @@ function createNewOrder({
     ship_date = now.split('T')[0];
   }
 
-  // For delivery emails, use today as delivery date if not extracted
-  if (email_type === EMAIL_TYPE.DELIVERY && !delivery_date) {
-    delivery_date = now.split('T')[0];
+  // For delivery emails, set actual delivery_date
+  // Only DELIVERY emails set the actual delivery_date
+  if (email_type === EMAIL_TYPE.DELIVERY) {
+    delivery_date = extracted.actual_delivery_date || extracted.delivery_date || now.split('T')[0];
+  }
+
+  // For confirmation/shipping emails, preserve estimated delivery date
+  // Don't set delivery_date from confirmation/shipping - only estimated_delivery_date
+  if ((email_type === EMAIL_TYPE.CONFIRMATION || email_type === EMAIL_TYPE.SHIPPING) && !estimated_delivery_date) {
+    // Check if we have an estimated date from extraction
+    estimated_delivery_date = extracted.estimated_delivery_date || null;
   }
 
   const order = createOrder({
@@ -129,6 +138,7 @@ function createNewOrder({
     purchase_date,
     ship_date,
     delivery_date,
+    estimated_delivery_date,
     return_window_days: extracted.return_window_days,
     explicit_return_by_date: extracted.explicit_return_by_date,
     return_portal_link: extracted.return_portal_link,
@@ -265,10 +275,16 @@ function updateOrderFromEmail(order, extracted, email_type, email_id) {
   }
 
   if (email_type === EMAIL_TYPE.DELIVERY) {
-    if (!order.delivery_date && extracted.delivery_date) {
-      order.delivery_date = extracted.delivery_date;
-    } else if (!order.delivery_date) {
-      order.delivery_date = now.split('T')[0];
+    // DELIVERY emails set the actual delivery_date
+    if (!order.delivery_date) {
+      order.delivery_date = extracted.actual_delivery_date || extracted.delivery_date || now.split('T')[0];
+    }
+  }
+
+  // For confirmation/shipping emails, update estimated_delivery_date if we don't have an actual delivery
+  if ((email_type === EMAIL_TYPE.CONFIRMATION || email_type === EMAIL_TYPE.SHIPPING) && !order.delivery_date) {
+    if (!order.estimated_delivery_date && extracted.estimated_delivery_date) {
+      order.estimated_delivery_date = extracted.estimated_delivery_date;
     }
   }
 
@@ -329,6 +345,11 @@ async function handleMergeEscalation(orderIdOrder, trackingOrder) {
   if (!winner.delivery_date && loser.delivery_date) {
     winner.delivery_date = loser.delivery_date;
     console.log(RESOLVER_LOG_PREFIX, 'MERGE_COPY', 'delivery_date from loser');
+  }
+
+  if (!winner.estimated_delivery_date && loser.estimated_delivery_date) {
+    winner.estimated_delivery_date = loser.estimated_delivery_date;
+    console.log(RESOLVER_LOG_PREFIX, 'MERGE_COPY', 'estimated_delivery_date from loser');
   }
 
   if (!winner.tracking_number && loser.tracking_number) {

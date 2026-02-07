@@ -421,3 +421,31 @@ async function fetchActiveDeliveries() {
 
   return response.json();
 }
+
+/**
+ * Update the return-by date for a specific order
+ * @param {string} orderKey - The order/return card ID
+ * @param {string} returnByDate - The new return-by date (YYYY-MM-DD format)
+ * @returns {Promise<Object>} Updated order object
+ */
+async function updateOrderReturnDate(orderKey, returnByDate) {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/returns/${encodeURIComponent(orderKey)}`,
+    {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ return_by_date: returnByDate }),
+    }
+  );
+
+  validateResponseOrigin(response);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update return date: ${response.status} ${errorText}`);
+  }
+
+  return response.json();
+}

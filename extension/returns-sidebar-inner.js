@@ -12,12 +12,15 @@
 // =============================================================================
 
 let visibleOrders = [];
+let returnedOrders = []; // Orders marked as returned (for undo drawer)
 let currentDetailOrder = null;
 let isEnriching = false;
 let hasCompletedFirstScan = false;
 let expiredAccordionOpen = false; // Controls expired orders accordion
+let returnedAccordionOpen = false; // Controls returned orders accordion
 let deliveryModal = null;
 let activeDeliveries = {}; // Map of order_key -> delivery object
+let isEditingDate = false; // Controls inline date picker visibility
 let deliveryState = {
   step: 'address', // 'address' | 'locations' | 'quote' | 'confirmed' | 'status'
   address: null,
@@ -28,6 +31,26 @@ let deliveryState = {
   loading: false,
   error: null,
 };
+
+// Periodic date refresh timer
+let dateRefreshInterval = null;
+const DATE_REFRESH_INTERVAL_MS = 60000; // 1 minute
+
+function startDateRefreshTimer() {
+  if (dateRefreshInterval) return;
+  dateRefreshInterval = setInterval(() => {
+    if (visibleOrders.length > 0) {
+      renderListView();
+    }
+  }, DATE_REFRESH_INTERVAL_MS);
+}
+
+function stopDateRefreshTimer() {
+  if (dateRefreshInterval) {
+    clearInterval(dateRefreshInterval);
+    dateRefreshInterval = null;
+  }
+}
 
 // =============================================================================
 // DOM ELEMENTS
@@ -44,6 +67,85 @@ const refreshStatus = document.getElementById('refresh-status');
 // =============================================================================
 // UTILITIES
 // =============================================================================
+
+// =============================================================================
+// TOAST NOTIFICATIONS
+// =============================================================================
+
+/**
+ * Show a toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - 'success' | 'error' | 'info'
+ * @param {number} duration - Duration in ms (default 3000)
+ */
+function showToast(message, type = 'info', duration = 3000) {
+  // Remove any existing toast
+  const existing = document.querySelector('.toast-notification');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `toast-notification toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // Auto-dismiss
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+/**
+ * Show a confirmation dialog
+ * @param {string} title - Dialog title
+ * @param {string} message - Dialog message
+ * @param {Function} onConfirm - Callback when confirmed
+ * @param {Function} [onCancel] - Optional callback when cancelled
+ */
+function showConfirmDialog(title, message, onConfirm, onCancel) {
+  // Remove any existing dialog
+  const existing = document.querySelector('.confirm-dialog-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-dialog-overlay';
+  overlay.innerHTML = `
+    <div class="confirm-dialog">
+      <div class="confirm-dialog-title">${escapeHtml(title)}</div>
+      <div class="confirm-dialog-message">${escapeHtml(message)}</div>
+      <div class="confirm-dialog-actions">
+        <button class="confirm-dialog-btn cancel">Cancel</button>
+        <button class="confirm-dialog-btn confirm">Confirm</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Handle clicks
+  overlay.querySelector('.confirm-dialog-btn.cancel').addEventListener('click', () => {
+    overlay.remove();
+    if (onCancel) onCancel();
+  });
+
+  overlay.querySelector('.confirm-dialog-btn.confirm').addEventListener('click', () => {
+    overlay.remove();
+    onConfirm();
+  });
+
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      if (onCancel) onCancel();
+    }
+  });
+}
 
 /**
  * Escape HTML to prevent XSS attacks (SEC-001)
@@ -145,6 +247,26 @@ function toggleExpiredAccordion() {
 }
 
 /**
+ * Toggle returned accordion
+ */
+function toggleReturnedAccordion() {
+  returnedAccordionOpen = !returnedAccordionOpen;
+  renderListView();
+}
+
+/**
+ * Undo marking an order as returned (set back to active)
+ */
+function undoReturnOrder(orderKey) {
+  window.parent.postMessage({
+    type: 'SHOPQ_UPDATE_ORDER_STATUS',
+    order_key: orderKey,
+    status: 'active'
+  }, '*');
+  showToast('Moved back to active returns', 'success');
+}
+
+/**
  * Render the returns list view — active orders + expired accordion
  */
 function renderListView() {
@@ -212,10 +334,35 @@ function renderListView() {
     `;
   }
 
+  // Render returned accordion at the BOTTOM if there are returned orders
+  if (returnedOrders.length > 0) {
+    const chevronIcon = returnedAccordionOpen
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
+
+    html += `
+      <div class="returned-accordion">
+        <button class="returned-accordion-header" id="returned-accordion-toggle">
+          <span class="returned-accordion-title">
+            <span class="returned-icon">✓</span>
+            Returned (${returnedOrders.length})
+          </span>
+          ${chevronIcon}
+        </button>
+        ${returnedAccordionOpen ? `
+          <div class="returned-accordion-content">
+            ${returnedOrders.map(o => renderReturnedCard(o)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   listView.innerHTML = html;
 
-  // Add accordion toggle handler
+  // Add accordion toggle handlers
   document.getElementById('expired-accordion-toggle')?.addEventListener('click', toggleExpiredAccordion);
+  document.getElementById('returned-accordion-toggle')?.addEventListener('click', toggleReturnedAccordion);
 
   // Add click handlers to cards
   listView.querySelectorAll('.return-card').forEach(card => {
@@ -239,6 +386,15 @@ function renderListView() {
     });
   });
 
+  // Add undo button handlers (for returned orders)
+  listView.querySelectorAll('.undo-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const orderKey = btn.dataset.id;
+      undoReturnOrder(orderKey);
+    });
+  });
+
   // Add delivery badge click handlers
   listView.querySelectorAll('.delivery-badge').forEach(badge => {
     badge.addEventListener('click', (e) => {
@@ -250,6 +406,25 @@ function renderListView() {
       }
     });
   });
+}
+
+/**
+ * Render a returned order card with undo button
+ */
+function renderReturnedCard(order) {
+  const undoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+
+  return `
+    <div class="returned-card" data-id="${escapeHtml(order.order_key)}">
+      <div class="returned-card-content">
+        <span class="returned-merchant">${escapeHtml(order.merchant_display_name || 'Unknown')}</span>
+        <span class="returned-item">${escapeHtml(order.item_summary || 'Unknown item')}</span>
+      </div>
+      <button class="undo-btn" data-id="${escapeHtml(order.order_key)}" title="Undo - move back to active">
+        ${undoIcon}
+      </button>
+    </div>
+  `;
 }
 
 /**
@@ -438,15 +613,47 @@ function renderDetailView(order, needsEnrichment) {
   // Icons
   const externalLinkIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>`;
   const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
-  const infoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
+  const editIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
 
-  // Build confidence badge
-  const confidenceBadge = `
-    <div class="confidence-badge">
-      ${infoIcon}
-      <span>Confidence: <strong>${order.deadline_confidence || 'unknown'}</strong></span>
-      <span class="edit-link" id="edit-deadline-btn">Edit</span>
+  // Determine deadline basis text (what date the deadline is calculated from)
+  // Only show for estimated deadlines - exact deadlines from email need no explanation
+  let deadlineBasisText = '';
+  if (order.return_by_date && order.deadline_confidence === 'estimated') {
+    if (order.delivery_date) {
+      deadlineBasisText = 'Estimated based on delivery date';
+    } else if (order.estimated_delivery_date) {
+      deadlineBasisText = 'Estimated based on expected delivery';
+    } else if (order.ship_date) {
+      deadlineBasisText = 'Estimated based on ship date';
+    } else if (order.purchase_date) {
+      deadlineBasisText = 'Estimated based on purchase date';
+    }
+  }
+  // No text for 'exact' - the date speaks for itself
+
+  // Build editable return date section
+  const currentDateValue = order.return_by_date ? order.return_by_date.split('T')[0] : '';
+  const dateEditSection = isEditingDate ? `
+    <div class="date-edit-container">
+      <input type="date" id="return-date-input"
+             value="${currentDateValue}"
+             class="date-input">
+      <div class="date-error" id="date-error"></div>
+      <div class="date-edit-actions">
+        <button class="date-save-btn" id="save-date-btn">Save</button>
+        <button class="date-cancel-btn" id="cancel-date-btn">Cancel</button>
+      </div>
     </div>
+  ` : `
+    <div class="date-display-container">
+      <div class="detail-value large ${deadlineClass}">
+        ${deadlineDate}${daysLeftText ? `<span class="days-left">${daysLeftText}</span>` : ''}
+      </div>
+      <button class="edit-date-btn" id="edit-date-btn" title="Edit return date">
+        ${editIcon}
+      </button>
+    </div>
+    ${deadlineBasisText ? `<div class="deadline-basis">${deadlineBasisText}</div>` : ''}
   `;
 
   // Build order info card
@@ -472,7 +679,7 @@ function renderDetailView(order, needsEnrichment) {
 
   // Build enrichment section (for unknown deadlines)
   let enrichSection = '';
-  if (needsEnrichment) {
+  if (needsEnrichment && !isEditingDate) {
     if (isEnriching) {
       enrichSection = `
         <div id="enrich-section" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; margin-bottom: 20px;">
@@ -507,10 +714,7 @@ function renderDetailView(order, needsEnrichment) {
 
     <div class="detail-section">
       <div class="detail-label">Return By</div>
-      <div class="detail-value large ${deadlineClass}">
-        ${deadlineDate}${daysLeftText ? `<span class="days-left">${daysLeftText}</span>` : ''}
-      </div>
-      ${confidenceBadge}
+      ${dateEditSection}
     </div>
 
     ${enrichSection}
@@ -537,11 +741,63 @@ function renderDetailView(order, needsEnrichment) {
   const setRuleBtn = document.getElementById('set-rule-btn');
   const dismissOrderBtn = document.getElementById('dismiss-order-btn');
   const deliverCarrierBtn = document.getElementById('deliver-carrier-btn');
-  const editDeadlineBtn = document.getElementById('edit-deadline-btn');
+
+  // Date editing handlers
+  const editDateBtn = document.getElementById('edit-date-btn');
+  const saveDateBtn = document.getElementById('save-date-btn');
+  const cancelDateBtn = document.getElementById('cancel-date-btn');
+
+  if (editDateBtn) {
+    editDateBtn.addEventListener('click', () => {
+      isEditingDate = true;
+      renderDetailView(order, false);
+    });
+  }
+
+  if (saveDateBtn) {
+    saveDateBtn.addEventListener('click', () => {
+      const input = document.getElementById('return-date-input');
+      const errorEl = document.getElementById('date-error');
+
+      // Clear previous error
+      if (errorEl) errorEl.textContent = '';
+
+      if (input?.value) {
+        // Validate date before sending
+        const validation = validateReturnDate(input.value);
+        if (!validation.valid) {
+          if (errorEl) {
+            errorEl.textContent = validation.error;
+          } else {
+            showToast(validation.error, 'error');
+          }
+          return;
+        }
+        // Show saving state
+        saveDateBtn.disabled = true;
+        saveDateBtn.textContent = 'Saving...';
+        updateOrderReturnDate(order.order_key, input.value);
+      }
+    });
+  }
+
+  if (cancelDateBtn) {
+    cancelDateBtn.addEventListener('click', () => {
+      isEditingDate = false;
+      renderDetailView(order, needsEnrichment);
+    });
+  }
 
   if (markReturnedBtn) {
     markReturnedBtn.addEventListener('click', () => {
-      updateOrderStatus(order.order_key, 'returned');
+      showConfirmDialog(
+        'Mark as Returned?',
+        'This will remove the item from your active returns list.',
+        () => {
+          updateOrderStatus(order.order_key, 'returned');
+          showToast('Marked as returned', 'success');
+        }
+      );
     });
   }
 
@@ -560,12 +816,6 @@ function renderDetailView(order, needsEnrichment) {
   if (deliverCarrierBtn) {
     deliverCarrierBtn.addEventListener('click', () => {
       showDeliveryModal(order);
-    });
-  }
-
-  if (editDeadlineBtn) {
-    editDeadlineBtn.addEventListener('click', () => {
-      showMerchantRuleDialog(order.merchant_domain, order.merchant_display_name);
     });
   }
 }
@@ -1090,6 +1340,7 @@ function renderStatusStep(content) {
  */
 function showListView() {
   currentDetailCard = null;
+  isEditingDate = false; // Reset date editing state
   listView.classList.remove('hidden');
   detailView.classList.remove('active');
   backBtn.classList.add('hidden');
@@ -1129,6 +1380,48 @@ async function setMerchantRule(merchantDomain, windowDays) {
     type: 'SHOPQ_SET_MERCHANT_RULE',
     merchant_domain: merchantDomain,
     window_days: windowDays
+  }, '*');
+}
+
+/**
+ * Validate YYYY-MM-DD date format
+ */
+function validateReturnDate(dateStr) {
+  if (!dateStr) return { valid: false, error: 'Date is required' };
+
+  // Check format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateStr)) {
+    return { valid: false, error: 'Invalid date format' };
+  }
+
+  // Check if parseable
+  const date = new Date(dateStr + 'T00:00:00');
+  if (isNaN(date.getTime())) {
+    return { valid: false, error: 'Invalid date' };
+  }
+
+  // Warn if more than 365 days in future (probably a typo)
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+  if (date > oneYearFromNow) {
+    return {
+      valid: false,
+      error: 'Return date is more than 1 year away. Please double-check.'
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Update the return-by date for a specific order
+ */
+function updateOrderReturnDate(orderKey, returnByDate) {
+  window.parent.postMessage({
+    type: 'SHOPQ_UPDATE_ORDER_RETURN_DATE',
+    order_key: orderKey,
+    return_by_date: returnByDate
   }, '*');
 }
 
@@ -1193,7 +1486,14 @@ window.addEventListener('message', (event) => {
     visibleOrders = event.data.orders || [];
     if (visibleOrders.length > 0) {
       hasCompletedFirstScan = true;
+      startDateRefreshTimer();
     }
+    renderListView();
+  }
+
+  // Handle returned orders data (for undo drawer)
+  if (event.data?.type === 'SHOPQ_RETURNED_ORDERS_DATA') {
+    returnedOrders = event.data.orders || [];
     renderListView();
   }
 
@@ -1214,6 +1514,18 @@ window.addEventListener('message', (event) => {
     hasCompletedFirstScan = true;
     refreshBtn.classList.remove('scanning');
     refreshStatus.textContent = '';
+
+    // Show toast with results
+    const newCount = event.data.new_orders || 0;
+    const processedCount = event.data.processed || 0;
+    if (newCount > 0) {
+      showToast(`Found ${newCount} new return${newCount === 1 ? '' : 's'}`, 'success');
+    } else if (processedCount > 0) {
+      showToast('Scan complete - no new returns found', 'info');
+    } else {
+      showToast('Scan complete', 'info');
+    }
+
     // Refresh the returns list
     fetchReturns();
   }
@@ -1238,6 +1550,39 @@ window.addEventListener('message', (event) => {
         type: 'SHOPQ_GET_ORDER',
         order_key: currentDetailOrder.order_key
       }, '*');
+    }
+  }
+
+  // Handle order return date update confirmation
+  if (event.data?.type === 'SHOPQ_ORDER_RETURN_DATE_UPDATED') {
+    if (event.data.error) {
+      // Show error but keep editing mode open so user can retry
+      const errorEl = document.getElementById('date-error');
+      const saveBtn = document.getElementById('save-date-btn');
+      if (errorEl) {
+        errorEl.textContent = event.data.error;
+      } else {
+        showToast('Failed to save: ' + event.data.error, 'error');
+      }
+      // Re-enable save button
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+      }
+    } else {
+      // Success - close editor and show confirmation
+      isEditingDate = false;
+      showToast('Return date updated', 'success');
+
+      // Refresh to show updated date
+      fetchReturns();
+      if (currentDetailOrder && event.data.order_key === currentDetailOrder.order_key) {
+        // Re-fetch the current order to get updated data
+        window.parent.postMessage({
+          type: 'SHOPQ_GET_ORDER',
+          order_key: currentDetailOrder.order_key
+        }, '*');
+      }
     }
   }
 
@@ -1378,6 +1723,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch initial data
   fetchReturns();
 
+  // Fetch returned orders for undo drawer
+  window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
+
   // Fetch active deliveries
   window.parent.postMessage({ type: 'SHOPQ_GET_ACTIVE_DELIVERIES' }, '*');
+});
+
+// Refresh when tab becomes visible (user switches back to Gmail)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && visibleOrders.length > 0) {
+    renderListView();  // Refresh date displays
+    fetchReturns();    // Also fetch fresh data
+  }
 });
