@@ -317,7 +317,7 @@ function renderListView() {
         </button>
         ${returnedAccordionOpen ? `
           <div class="returned-accordion-content">
-            ${returnedOrders.map(o => renderReturnedCard(o)).join('')}
+            ${returnedOrders.map(o => renderOrderCard(o, true)).join('')}
           </div>
         ` : ''}
       </div>
@@ -371,10 +371,17 @@ function renderListView() {
   // Add click handlers to cards
   listView.querySelectorAll('.return-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      // Don't navigate if clicking dismiss button
-      if (e.target.closest('.dismiss-btn')) return;
+      // Don't navigate if clicking dismiss or undo button
+      if (e.target.closest('.dismiss-btn') || e.target.closest('.undo-btn')) return;
       const orderKey = card.dataset.id;
-      const order = visibleOrders.find(o => o.order_key === orderKey);
+      const isReturned = card.dataset.returned === 'true';
+
+      // Find order in appropriate list
+      let order = visibleOrders.find(o => o.order_key === orderKey);
+      if (!order && isReturned) {
+        order = returnedOrders.find(o => o.order_key === orderKey);
+      }
+
       if (order) {
         showDetailView(order);
       }
@@ -466,8 +473,10 @@ function getDeliveryBadge(orderKey) {
 
 /**
  * Render a single order card — urgency always derived from days remaining
+ * @param {Object} order - The order object
+ * @param {boolean} isReturned - Whether this is a returned order (shows undo button)
  */
-function renderOrderCard(order) {
+function renderOrderCard(order, isReturned = false) {
   const daysUntil = getDaysUntil(order.return_by_date);
   const isExpiring = daysUntil !== null && daysUntil <= 7 && daysUntil >= 0;
   const isCritical = daysUntil !== null && daysUntil <= 3 && daysUntil >= 0;
@@ -506,21 +515,28 @@ function renderOrderCard(order) {
   let cardClass = isCritical ? 'critical' : (isExpiring ? 'expiring' : '');
   if (isExpired) cardClass += ' expired';
 
-  // Trash icon SVG for dismiss button
+  // Icons for buttons
   const trashIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+  const undoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+
+  // For returned orders, show undo button; otherwise show dismiss button
+  const actionButton = isReturned
+    ? `<button class="undo-btn" data-id="${escapeHtml(order.order_key)}" title="Undo - move back to active">${undoIcon}</button>`
+    : `<button class="dismiss-btn" data-id="${escapeHtml(order.order_key)}" title="Not a purchase / Dismiss">${trashIcon}</button>`;
+
+  // For returned orders, show "Returned" badge
+  const statusBadge = isReturned ? '<span class="returned-badge">Returned</span>' : '';
 
   return `
-    <div class="return-card ${cardClass}" data-id="${escapeHtml(order.order_key)}">
+    <div class="return-card ${cardClass} ${isReturned ? 'returned' : ''}" data-id="${escapeHtml(order.order_key)}" data-returned="${isReturned}">
       <div class="card-header">
         <span class="merchant">${escapeHtml(order.merchant_display_name)}</span>
-        ${deliveryBadge || urgentBadge}
+        ${statusBadge || deliveryBadge || urgentBadge}
       </div>
       <div class="item-summary">${escapeHtml(order.item_summary)}</div>
       <div class="card-footer">
         <span class="return-date ${dateClass}">${dateText}</span>
-        <button class="dismiss-btn" data-id="${escapeHtml(order.order_key)}" title="Not a purchase / Dismiss">
-          ${trashIcon}
-        </button>
+        ${actionButton}
       </div>
     </div>
   `;
@@ -738,10 +754,18 @@ function renderDetailView(order, needsEnrichment) {
       </button>
     </div>
     ` : ''}
+    ${order.order_status === 'returned' ? `
+    <div class="detail-actions">
+      <button class="action-btn secondary" id="mark-active-btn">
+        Mark as Active
+      </button>
+    </div>
+    ` : ''}
   `;
 
   // Add action handlers
   const markReturnedBtn = document.getElementById('mark-returned-btn');
+  const markActiveBtn = document.getElementById('mark-active-btn');
   const setRuleBtn = document.getElementById('set-rule-btn');
   const dismissOrderBtn = document.getElementById('dismiss-order-btn');
   const deliverCarrierBtn = document.getElementById('deliver-carrier-btn');
@@ -802,6 +826,15 @@ function renderDetailView(order, needsEnrichment) {
           showToast('Marked as returned', 'success');
         }
       );
+    });
+  }
+
+  if (markActiveBtn) {
+    markActiveBtn.addEventListener('click', () => {
+      updateOrderStatus(order.order_key, 'active');
+      showToast('Moved back to active returns', 'success');
+      // Also refresh returned orders list
+      window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
     });
   }
 
