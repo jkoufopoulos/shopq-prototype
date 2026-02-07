@@ -1,64 +1,77 @@
-# ShopQ - Return Watch
+# Reclaim
 
 **Track return windows on your online purchases. Never miss a return deadline again.**
 
----
-
-## What is Return Watch?
-
-Return Watch is a Gmail companion that automatically detects your online purchases and tracks return deadlines. It uses a 3-stage AI pipeline to identify returnable purchases and calculate when your return window closes.
-
-**Key Features:**
-- **Automatic Detection** - Scans Gmail for purchase receipts and shipping confirmations
-- **Smart Filtering** - Filters out non-returnable transactions (subscriptions, services, digital goods)
-- **Return Window Tracking** - Calculates return-by dates using merchant-specific policies
-- **Gmail Sidebar** - View all returnable purchases in Gmail's native sidebar
+Reclaim is a Chrome extension that lives in your Gmail sidebar. It automatically detects purchases from your emails, calculates return deadlines, and alerts you before windows close.
 
 ---
 
-## Architecture
+## Features
+
+- **Automatic Detection** — Scans Gmail for order confirmations, shipping updates, and delivery notifications
+- **Smart Deadline Calculation** — Uses delivery dates when available, falls back to purchase date + merchant policy
+- **Expiring Alerts** — Red notification badge when returns are expiring soon
+- **Inline Date Editing** — Manually adjust return dates with a date picker
+- **Uber Direct Integration** — Schedule a pickup to return items without leaving home
+- **Privacy-First** — All email processing happens locally in your browser
+
+---
+
+## How It Works
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                       Return Watch                               │
-├─────────────────────────────────────────────────────────────────┤
-│  Chrome Extension          │  FastAPI Backend                   │
-│                            │                                    │
-│  ┌──────────────┐          │  ┌──────────────────────────────┐ │
-│  │ Popup        │──────────┼─▶│ GET /api/returns             │ │
-│  │ Sidebar UI   │          │  │ POST /api/returns/process    │ │
-│  │ Gmail Scan   │          │  │ PUT /api/returns/{id}/status │ │
-│  └──────────────┘          │  └──────────────────────────────┘ │
-│                            │                                    │
-│                            │  ┌──────────────────────────────┐ │
-│                            │  │ 3-Stage Extraction Pipeline  │ │
-│                            │  │ 1. Domain Filter (FREE)      │ │
-│                            │  │ 2. Returnability Classifier  │ │
-│                            │  │ 3. Field Extractor           │ │
-│                            │  └──────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+Gmail Emails
+     │
+     ▼
+┌─────────────────────────────────────────────────┐
+│  Chrome Extension (runs locally)                │
+│                                                 │
+│  1. Filter    - Skip newsletters, promos, etc.  │
+│  2. Classify  - Is this a returnable purchase?  │
+│  3. Extract   - Merchant, items, dates, order # │
+│  4. Calculate - Return deadline from policy     │
+└─────────────────────────────────────────────────┘
+     │
+     ▼
+Gmail Sidebar showing your returns with deadlines
 ```
 
-### Extraction Pipeline
+### Deadline Calculation Priority
 
-```
-Email → Stage 1: Domain Filter (FREE)
-              │
-              ├─ Blocklist (Uber, Netflix, etc.) → Reject
-              ├─ Allowlist (Amazon, Target, etc.) → Pass
-              └─ Unknown → Keyword heuristics
-              │
-        Stage 2: Returnability Classifier (~$0.0001)
-              │
-              └─ LLM determines: product_order | service | subscription | digital
-              │
-        Stage 3: Field Extractor (~$0.0002)
-              │
-              └─ Extract: merchant, items, dates, order number
-              └─ Compute: return_by_date using merchant rules
-              │
-        Result: ReturnCard with confidence (exact | estimated | unknown)
-```
+1. **Actual delivery date** (from delivery confirmation email)
+2. **Estimated delivery date** (from order/shipping email)
+3. **Ship date** (from shipping notification)
+4. **Purchase date** (from order confirmation)
+
+Plus merchant-specific return window (default: 30 days).
+
+---
+
+## Installation
+
+### For Users
+
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/jkoufopoulos/shopq-prototype.git
+   cd shopq-prototype/extension
+   npm install
+   npm run build
+   ```
+
+2. Load in Chrome:
+   - Go to `chrome://extensions`
+   - Enable "Developer mode" (top right)
+   - Click "Load unpacked"
+   - Select the `extension` folder
+
+3. Open Gmail — you'll see the Reclaim icon in the sidebar
+
+### OAuth Setup
+
+The extension needs Gmail read access. Currently in testing mode, so:
+- Contact the developer to add your Gmail to the test users list
+- Or set up your own OAuth credentials in Google Cloud Console
 
 ---
 
@@ -66,73 +79,26 @@ Email → Stage 1: Domain Filter (FREE)
 
 ```
 shopq-prototype/
-├── extension/               # Chrome extension
-│   ├── background.js        # Service worker, Gmail scanning
-│   ├── popup.*              # Extension popup UI
-│   ├── returns-sidebar.*    # Gmail sidebar for returns
-│   ├── src/content.js       # Gmail page integration
-│   └── modules/             # Shared modules
+├── extension/                 # Chrome Extension (Manifest V3)
+│   ├── background.js          # Service worker
+│   ├── src/content.js         # Gmail page integration
+│   ├── returns-sidebar-inner.js  # Sidebar UI
+│   ├── modules/
+│   │   ├── pipeline/          # Email processing stages
+│   │   │   ├── filter.js      # Domain filtering
+│   │   │   ├── classifier.js  # Purchase detection
+│   │   │   ├── extractor.js   # Field extraction
+│   │   │   └── lifecycle.js   # Deadline calculation
+│   │   ├── storage/           # Local storage schema
+│   │   └── gmail/             # Gmail API + OAuth
+│   └── dist/                  # Built bundles
 │
-├── shopq/                   # Python backend
-│   ├── api/                 # FastAPI routes
-│   │   └── routes/returns.py
-│   ├── returns/             # Return Watch core
-│   │   ├── filters.py       # Domain blocklist/allowlist
-│   │   ├── returnability_classifier.py
-│   │   ├── field_extractor.py
-│   │   ├── extractor.py     # Pipeline orchestrator
-│   │   ├── models.py        # ReturnCard model
-│   │   └── repository.py    # Database operations
-│   ├── gmail/               # Gmail API client
-│   ├── infrastructure/      # Database, auth
-│   └── observability/       # Logging, telemetry
+├── shopq/                     # Python backend (optional)
+│   ├── api/                   # FastAPI routes
+│   └── returns/               # LLM-based extraction
 │
-├── config/
-│   └── merchant_rules.yaml  # Return window policies
-│
-├── docs/
-│   └── RETURN_WATCH_PRD.yaml
-│
-└── tests/
-    └── integration/
-        └── test_extraction_pipeline.py
-```
-
----
-
-## Quick Start
-
-### Backend
-
-```bash
-cd shopq-prototype
-
-# Install dependencies
-uv sync
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your GOOGLE_CLOUD_PROJECT
-
-# Run backend
-uv run uvicorn shopq.api.app:app --reload
-```
-
-### Extension
-
-```bash
-cd extension
-
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Load in Chrome
-# 1. Open chrome://extensions/
-# 2. Enable Developer Mode
-# 3. Load unpacked from extension/ directory
+└── config/
+    └── merchant_rules.yaml    # Return policies by domain
 ```
 
 ---
@@ -141,87 +107,62 @@ npm run build
 
 ### Merchant Rules
 
-Return window policies are defined in `config/merchant_rules.yaml`:
+Return window policies in `config/merchant_rules.yaml`:
 
 ```yaml
-merchants:
-  amazon.com:
-    days: 30
-    anchor: delivery
-    return_url: https://www.amazon.com/gp/css/returns
+amazon.com:
+  return_window_days: 30
+  anchor: delivery
 
-  target.com:
-    days: 90
-    anchor: purchase
+target.com:
+  return_window_days: 90
+  anchor: purchase
 
-  _default:
-    days: 30
-    anchor: delivery
+_default:
+  return_window_days: 30
+  anchor: delivery
 ```
 
-### Environment Variables
+---
+
+## Development
 
 ```bash
-# Required
-GOOGLE_CLOUD_PROJECT=your-project-id
+# Extension
+cd extension
+npm install
+npm run watch    # Build with hot reload
 
-# Optional
-SHOPQ_USE_LLM=true  # Enable LLM classification
+# Backend (optional, for LLM enrichment)
+uv sync
+uv run uvicorn shopq.api.app:app --reload
 ```
 
----
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/returns` | GET | List return cards for user |
-| `/api/returns/process` | POST | Process email through extraction pipeline |
-| `/api/returns/{id}/status` | PUT | Update card status (returned/dismissed) |
-| `/api/returns/counts` | GET | Get status counts by status |
-| `/api/returns/expiring` | GET | Get cards expiring soon |
-| `/api/health` | GET | Health check |
-
----
-
-## Testing
+### Testing
 
 ```bash
-# Run extraction pipeline tests
-PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/integration/test_extraction_pipeline.py -v
+# Extension tests
+cd extension && npm test
+
+# Backend tests
+PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/ -v
 ```
 
 ---
 
-## Data Model
+## Tech Stack
 
-### ReturnCard
-
-```python
-class ReturnCard:
-    id: str
-    user_id: str
-    merchant: str
-    merchant_domain: str
-    item_summary: str
-    status: active | expiring_soon | expired | returned | dismissed
-    confidence: exact | estimated | unknown
-    return_by_date: datetime | None
-    order_number: str | None
-    amount: float | None
-    # ... more fields
-```
-
-### Confidence Levels
-
-| Level | Description |
-|-------|-------------|
-| `exact` | Return-by date explicitly stated in email |
-| `estimated` | Calculated from merchant rules + anchor date |
-| `unknown` | No date information available |
+| Component | Technology |
+|-----------|------------|
+| Extension | Chrome Manifest V3, InboxSDK |
+| Frontend | Vanilla JS, CSS |
+| Backend | Python, FastAPI |
+| AI | Google Gemini (via Vertex AI) |
+| Database | SQLite (local + Cloud Run) |
+| Delivery | Uber Direct API |
 
 ---
 
 ## License
 
-Proprietary
+MIT License — see [LICENSE](LICENSE)
