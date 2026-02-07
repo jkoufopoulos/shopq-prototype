@@ -75,10 +75,13 @@ label_schema.json
 !shopq/tests/fixtures/*.json
 !shopq/tests/fixtures/*.csv
 
-# Keep eval ground truth data
+# Keep eval ground truth data (anonymized only)
 !data/evals/classification/gds-2.0.csv
 !data/evals/classification/importance_review_decisions.csv
-!data/labeling/60-days-gds-*.csv
+
+# Never commit real email data
+data/labeling/
+emails_full.json
 
 # ============================================
 # IDE & Editors
