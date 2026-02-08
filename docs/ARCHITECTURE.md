@@ -1,6 +1,6 @@
 # Reclaim Architecture
 
-> Last updated: Phase 4, Step 4.0 (skeleton). Will be completed in Step 4.11.
+> Last updated: Phase 4, Step 4.11 (finalized).
 
 ## System Overview
 
@@ -65,6 +65,24 @@ FastAPI Backend (Cloud Run)
 7. Sidebar receives updated orders via postMessage
 ```
 
+### Sidebar Module Structure
+
+The sidebar runs in an iframe loaded via `chrome.runtime.getURL('returns-sidebar.html')`.
+
+```
+returns-sidebar.html          (shell: <link> + <script> tags)
+  |--- returns-sidebar.css    (all sidebar styles)
+  |--- returns-sidebar-inner.js  (namespace, utilities, list/detail views, event handlers)
+  |--- returns-sidebar-delivery.js  (delivery modal: 5-step Uber pickup wizard)
+```
+
+**Load order matters**: inner.js creates `window.ReclaimSidebar` namespace and utility functions.
+delivery.js defines functions that reference these globals — JavaScript resolves them at call
+time, not definition time, so inner.js must load first.
+
+**Communication**: Sidebar ↔ content script via `window.parent.postMessage()`.
+No direct access to Chrome APIs or CONFIG from the iframe.
+
 ### Config Propagation
 
 Single source: `extension/modules/shared/config.js`
@@ -117,6 +135,20 @@ ReturnCardRepository (repository.py)
     |--- SQLite CRUD operations
     |--- @retry_on_db_lock decorator
 ```
+
+### Module Boundaries (Post-Phase 4)
+
+```
+returns/
+  types.py           ← Stable import boundary (FilterResult, ExtractedFields, etc.)
+  filters.py         ← Stage 1 logic only (imports constants from filter_data)
+  filter_data.py     ← Pure data: blocklists, keyword sets, domain lists
+  extractor.py       ← Pipeline orchestrator (imports types from types.py)
+  field_extractor.py ← Stage 3 logic (imports types from types.py)
+```
+
+`types.py` uses `TYPE_CHECKING` to prevent circular imports while maintaining type safety.
+All downstream code imports shared types from `shopq.returns.types`.
 
 ### Layer Responsibilities
 
