@@ -186,6 +186,9 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
     """
     FastAPI dependency to get the current authenticated user.
 
+    In development mode (SHOPQ_ENV=development), returns a default user when
+    no Authorization header is provided. This enables curl-based testing.
+
     Usage:
         @router.get("/endpoint")
         async def endpoint(user: AuthenticatedUser = Depends(get_current_user)):
@@ -194,6 +197,11 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
             ...
     """
     authorization = request.headers.get("Authorization")
+
+    # Development bypass: return default user when no auth header
+    if not authorization and os.getenv("SHOPQ_ENV", "development") == "development":
+        return AuthenticatedUser(id="default", email="dev@localhost")
+
     token = _extract_bearer_token(authorization)
     return await verify_google_token(token)
 
