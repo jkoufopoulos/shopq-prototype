@@ -16,6 +16,15 @@ from pathlib import Path
 import yaml
 
 from shopq.observability.logging import get_logger
+from shopq.returns.filter_data import (
+    DEFAULT_BLOCKLIST,
+    DELIVERY_KEYWORDS,
+    GROCERY_PERISHABLE_PATTERNS,
+    NON_PURCHASE_KEYWORDS,
+    PURCHASE_CONFIRMATION_KEYWORDS,
+    SHIPPING_SERVICE_DOMAINS,
+    SURVEY_SUBJECT_KEYWORDS,
+)
 from shopq.returns.types import FilterResult
 
 logger = get_logger(__name__)
@@ -29,307 +38,9 @@ class MerchantDomainFilter:
     1. Blocks known non-returnable services (Uber, Netflix, etc.)
     2. Passes known shopping merchants (Amazon, Target, etc.)
     3. Uses keyword heuristics for unknown domains
+
+    Keyword/domain constants live in filter_data.py.
     """
-
-    # CODE-009: Default blocklist - copied to instance variable in __init__
-    # Known non-returnable services - block immediately
-    # These never need LLM classification
-    _DEFAULT_BLOCKLIST: frozenset[str] = frozenset(
-        {
-            # Ride-sharing & transportation
-            "uber.com",
-            "lyft.com",
-            "bird.co",
-            "lime.bike",
-            # Food delivery (consumables, not returnable)
-            "doordash.com",
-            "grubhub.com",
-            "postmates.com",
-            "ubereats.com",
-            "seamless.com",
-            "caviar.com",
-            "instacart.com",
-            # Streaming & subscriptions
-            "netflix.com",
-            "spotify.com",
-            "hulu.com",
-            "disneyplus.com",
-            "hbomax.com",
-            "peacocktv.com",
-            "paramount.com",
-            "apple.com",  # iTunes/App Store; physical orders use different sender
-            "music.apple.com",
-            "itunes.com",
-            # Digital games & software
-            "steampowered.com",
-            "epicgames.com",
-            "playstation.com",
-            "xbox.com",
-            "nintendo.com",
-            "gog.com",
-            "humblebundle.com",
-            # AI / SaaS services
-            "anthropic.com",
-            "openai.com",
-            "mobbin.com",
-            # News & memberships
-            "nytimes.com",
-            "wsj.com",
-            "washingtonpost.com",
-            "patreon.com",
-            "substack.com",
-            "medium.com",
-            # Financial services
-            "venmo.com",
-            "paypal.com",
-            "cashapp.com",
-            "zelle.com",
-            "chase.com",
-            "bankofamerica.com",
-            "wellsfargo.com",
-            # Telecom & eSIM providers
-            "xfinity.com",
-            "spectrum.com",
-            "att.com",
-            "verizon.com",
-            "t-mobile.com",
-            "mintmobile.com",
-            "holafly.com",
-            # Donations & crowdfunding
-            "gofundme.com",
-            "kickstarter.com",
-            "indiegogo.com",
-            # Tickets & events (different refund process)
-            "ticketmaster.com",
-            "stubhub.com",
-            "eventbrite.com",
-            "seatgeek.com",
-            "shotgun.live",
-            "dice.fm",
-            # Travel (different refund process)
-            "expedia.com",
-            "booking.com",
-            "airbnb.com",
-            "hotels.com",
-            "kayak.com",
-            "priceline.com",
-            # Restaurants & hospitality
-            "starbucks.com",
-            "dunkindonuts.com",
-            "mcdonalds.com",
-            "chipotle.com",
-            "opentable.com",
-            "resy.com",
-            # E-cards & greetings (not purchases)
-            "jibjab.com",
-            "hallmark.com",
-            "americangreetings.com",
-            "bluemountain.com",
-            # Services (warranty, insurance, return processing)
-            "happyreturns.com",
-            "asurion.com",
-            "squaretrade.com",
-        }
-    )
-
-    # Keywords that suggest PURCHASE CONFIRMATION (not shipping updates)
-    # Per R1: Must have order ID, purchase amount + confirmation, or explicit confirmation language
-    # Note: These are phrases that appear primarily in ORDER CONFIRMATIONS, not updates
-    PURCHASE_CONFIRMATION_KEYWORDS: set[str] = {
-        # Strong confirmation phrases
-        "order confirm",
-        "order confirmation",
-        "order confirmed",
-        "thanks for your order",
-        "thank you for your order",
-        "thank you for your purchase",
-        "thanks for your purchase",
-        "payment received",
-        "payment confirmed",
-        "purchase confirmation",
-        "purchase confirmed",
-        # Order identifiers (with specific patterns)
-        "confirmation #",
-        "confirmation number",
-        "receipt",
-        "invoice",
-        # Financial indicators
-        "subtotal",
-        "order total",
-        # Order patterns
-        "you ordered",
-        "your order of",
-        "order of",  # e.g., "Amazon.com order of Product Name"
-    }
-
-    # Keywords that indicate DELIVERY (these are GOOD signals - means there's a purchase to track)
-    # These should PASS to the LLM, not be rejected
-    DELIVERY_KEYWORDS: set[str] = {
-        "shipped",
-        "has shipped",
-        "is shipping",
-        "out for delivery",
-        "has been delivered",
-        "was delivered",
-        "delivery update",
-        "on its way",
-        "in transit",
-        "en route",
-        "arriving",
-        "your package",
-        "delivered",
-    }
-
-    # Subject patterns that indicate NON-RETURNABLE purchases (block even from allowlisted domains)
-    # Groceries, food, and perishables are consumed - NEVER returnable
-    # NOTE: These must be specific enough to avoid false positives (e.g., "shipt" matches "shipped")
-    GROCERY_PERISHABLE_PATTERNS: set[str] = {
-        # Grocery services - use full names to avoid substring matches
-        "whole foods",
-        "whole foods market",
-        "amazon fresh",
-        "instacart order",
-        "your grocery",
-        "grocery order",
-        "grocery delivery",
-        "fresh delivery",
-        "walmart grocery",
-        "target grocery",
-        "shipt order",  # Specific to avoid matching "shipped"
-        "shipt delivery",
-        # Food delivery
-        "food delivery",
-        "doordash order",
-        "grubhub order",
-        "uber eats",
-        "postmates order",
-        "seamless order",
-        "caviar order",
-        # Meal kits
-        "meal kit",
-        "hello fresh",
-        "hellofresh",
-        "blue apron",
-        "freshly",
-        "factor meals",
-        "factor_",
-        "home chef",
-        "homechef",
-        "sunbasket",
-        "green chef",
-        # Perishables
-        "flowers",
-        "flower delivery",
-        "bouquet",
-        "1-800-flowers",
-        "ftd",
-        "proflowers",
-        "fresh produce",
-        "perishable",
-        # Consumable health/nutrition products
-        "protein shake",
-        "protein bar",
-        "energy drink",
-        "vitamins",
-        "supplements",
-        "snack",
-        "snacks",
-    }
-
-    # Survey/feedback solicitation keywords in subject lines
-    # These are never purchase confirmations — free rejection before LLM
-    _SURVEY_SUBJECT_KEYWORDS: list[str] = [
-        "share your thoughts",
-        "leave a review",
-        "write a review",
-        "rate your",
-        "how did we do",
-    ]
-
-    # Keywords for NON-PURCHASE emails (should be EXCLUDED)
-    NON_PURCHASE_KEYWORDS: set[str] = {
-        # Order updates (not confirmations)
-        "update to your order",
-        "an update to",
-        "order update",
-        "update on your order",
-        "changes to your order",
-        "order has been received",  # Ambiguous - seller received vs. delivered
-        "order placed",  # Just placed, not confirmed
-        # Shipping/delivery notifications
-        "rate your experience",
-        "rate your order",
-        "how was your",
-        "leave a review",
-        "write a review",
-        "feedback",
-        # Return reminders (not purchases)
-        "return your items",
-        "return deadline",
-        "time to return",
-        "return window",
-        "don't forget to return",
-        # Marketing
-        "sale ends",
-        "shop now",
-        "buy now",
-        "limited time",
-        "% off",
-        "discount code",
-        # Subscriptions & services
-        "subscription",
-        "monthly plan",
-        "recurring",
-        "membership",
-        "ride",
-        "trip",
-        "your driver",
-        "donation",
-        "contribution",
-        "tip",
-        "gratuity",
-        "streaming",
-        "download",
-        "digital",
-        "e-book",
-        "ebook",
-        "license",
-        "activation",
-        # E-cards & non-products
-        "special delivery from",  # JibJab-style e-cards
-        "sent you",
-        "e-card",
-        "ecard",
-        "greeting",
-        # Cancellation emails (no product to return)
-        "cancelled",
-        "item cancelled",
-        "cancellation",
-        "order cancelled",
-        "has been cancelled",
-        "successfully cancelled",
-        # Return confirmation emails (outgoing, not incoming products)
-        "return is approved",
-        "return approved",
-        "return has been processed",
-        "refund has been",
-        "refund processed",
-        "return confirmation",
-        # Warranty/protection plans (service contracts, not physical products)
-        "protection plan",
-        "warranty plan",
-        "extended warranty",
-        "terms and conditions",
-        # Verification / auth codes (not purchases)
-        "verification code",
-        "is your verification",
-        # Digital passes / eSIM (not physical goods)
-        "esim",
-        "e-sim",
-        # Misc non-purchase
-        "keep your",
-        "open drawing",
-    }
 
     def __init__(self, merchant_rules_path: Path | None = None):
         """
@@ -344,8 +55,8 @@ class MerchantDomainFilter:
                 Path(__file__).parent.parent.parent / "config" / "merchant_rules.yaml"
             )
 
-        # CODE-009: Copy class blocklist to instance to prevent cross-worker state issues
-        self.blocklist: set[str] = set(self._DEFAULT_BLOCKLIST)
+        # CODE-009: Copy to instance to prevent cross-worker state issues
+        self.blocklist: set[str] = set(DEFAULT_BLOCKLIST)
 
         self.merchant_rules = self._load_merchant_rules(merchant_rules_path)
         self.allowlist = self._build_allowlist()
@@ -388,7 +99,7 @@ class MerchantDomainFilter:
         text_lower = f"{subject} {snippet}".lower()
 
         # Check grocery/perishable patterns first (never returnable, even from allowlisted domains)
-        for pattern in self.GROCERY_PERISHABLE_PATTERNS:
+        for pattern in GROCERY_PERISHABLE_PATTERNS:
             if pattern in text_lower:
                 return FilterResult(
                     is_candidate=False,
@@ -399,7 +110,7 @@ class MerchantDomainFilter:
 
         # Check survey/feedback subject keywords (free rejection)
         subject_lower = subject.lower()
-        for keyword in self._SURVEY_SUBJECT_KEYWORDS:
+        for keyword in SURVEY_SUBJECT_KEYWORDS:
             if keyword in subject_lower:
                 return FilterResult(
                     is_candidate=False,
@@ -429,16 +140,6 @@ class MerchantDomainFilter:
         # Unknown domain - use keyword heuristics
         return self._check_heuristics(domain, subject, snippet)
 
-    # Shipping service domains where the subdomain indicates the merchant
-    # e.g., bananarepublic.narvar.com -> bananarepublic.com
-    SHIPPING_SERVICE_DOMAINS: set[str] = {
-        "narvar.com",
-        "narvar.io",
-        "returnly.com",
-        "loop.com",
-        "happyreturns.com",
-    }
-
     def _extract_domain(self, from_address: str) -> str:
         """
         Extract domain from email address.
@@ -467,7 +168,7 @@ class MerchantDomainFilter:
         # e.g., "bananarepublic.narvar.com" -> "bananarepublic.com"
         if len(parts) >= 3:
             base_domain = ".".join(parts[-2:])
-            if base_domain in self.SHIPPING_SERVICE_DOMAINS:
+            if base_domain in SHIPPING_SERVICE_DOMAINS:
                 # Use subdomain as merchant (e.g., bananarepublic.narvar.com -> bananarepublic.com)
                 merchant_subdomain = parts[0]
                 if merchant_subdomain and len(merchant_subdomain) > 2:
@@ -495,9 +196,9 @@ class MerchantDomainFilter:
         text = f"{subject} {snippet}".lower()
 
         # Count keyword matches
-        purchase_score = sum(1 for kw in self.PURCHASE_CONFIRMATION_KEYWORDS if kw in text)
-        delivery_score = sum(1 for kw in self.DELIVERY_KEYWORDS if kw in text)
-        non_purchase_score = sum(1 for kw in self.NON_PURCHASE_KEYWORDS if kw in text)
+        purchase_score = sum(1 for kw in PURCHASE_CONFIRMATION_KEYWORDS if kw in text)
+        delivery_score = sum(1 for kw in DELIVERY_KEYWORDS if kw in text)
+        non_purchase_score = sum(1 for kw in NON_PURCHASE_KEYWORDS if kw in text)
 
         # NEW LOGIC: Be permissive - delivery/shipping signals are GOOD
         # Let the LLM decide what's returnable
