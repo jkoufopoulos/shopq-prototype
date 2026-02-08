@@ -519,9 +519,10 @@ function renderOrderCard(order, isReturned = false) {
   const trashIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
   const undoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
 
-  // For returned orders, show undo button; otherwise show dismiss button
-  const actionButton = isReturned
-    ? `<button class="undo-btn" data-id="${escapeHtml(order.order_key)}" title="Undo - move back to active">${undoIcon}</button>`
+  // For returned orders, show both undo and dismiss buttons; otherwise just dismiss
+  const actionButtons = isReturned
+    ? `<button class="undo-btn" data-id="${escapeHtml(order.order_key)}" title="Undo - move back to active">${undoIcon}</button>
+       <button class="dismiss-btn" data-id="${escapeHtml(order.order_key)}" title="Delete">${trashIcon}</button>`
     : `<button class="dismiss-btn" data-id="${escapeHtml(order.order_key)}" title="Not a purchase / Dismiss">${trashIcon}</button>`;
 
   // For returned orders, show "Returned" badge
@@ -536,7 +537,7 @@ function renderOrderCard(order, isReturned = false) {
       <div class="item-summary">${escapeHtml(order.item_summary)}</div>
       <div class="card-footer">
         <span class="return-date ${dateClass}">${dateText}</span>
-        ${actionButton}
+        <div class="card-actions">${actionButtons}</div>
       </div>
     </div>
   `;

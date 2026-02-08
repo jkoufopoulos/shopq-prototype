@@ -409,6 +409,38 @@
       height: 14px;
     }
 
+    /* Card actions container (for multiple action buttons) */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .card-actions .undo-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9aa0a6;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .return-card:hover .card-actions .undo-btn {
+      opacity: 1;
+    }
+    .card-actions .undo-btn:hover {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+    .card-actions .undo-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
     /* Expired card styling */
     .return-card.expired {
       opacity: 0.6;
