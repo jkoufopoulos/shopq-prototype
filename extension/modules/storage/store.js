@@ -167,7 +167,9 @@ async function upsertOrder(order) {
   // Merge with existing order if present
   const existing = orders[order.order_key];
   if (existing) {
-    // Preserve terminal statuses (returned/dismissed/cancelled)
+    // Preserve terminal statuses during pipeline re-processing.
+    // This prevents the scanner from resetting user-marked statuses.
+    // For intentional status changes, use updateOrderStatus() which bypasses this.
     if (existing.order_status === 'returned' || existing.order_status === 'dismissed' || existing.order_status === 'cancelled') {
       order.order_status = existing.order_status;
     }
@@ -263,17 +265,29 @@ async function linkEmailToOrder(email_id, order_key) {
 
 /**
  * Update Order status.
+ * Directly updates storage to bypass upsertOrder's terminal status preservation.
  *
  * @param {string} order_key
  * @param {OrderStatus} status
  * @returns {Promise<Order|null>}
  */
 async function updateOrderStatus(order_key, status) {
-  const order = await getOrder(order_key);
+  const result = await chrome.storage.local.get(STORAGE_KEYS.ORDERS_BY_KEY);
+  const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
+
+  const order = orders[order_key];
   if (!order) return null;
 
+  // Update status and timestamp
   order.order_status = status;
-  return upsertOrder(order);
+  order.updated_at = new Date().toISOString();
+
+  // Save directly to bypass upsertOrder's terminal status preservation
+  orders[order_key] = order;
+  await chrome.storage.local.set({ [STORAGE_KEYS.ORDERS_BY_KEY]: orders });
+
+  console.log(STORE_LOG_PREFIX, 'Updated order status:', order_key, '->', status);
+  return order;
 }
 
 /**
