@@ -1,6 +1,6 @@
 # File Map
 
-> Auto-maintained during Phase 4. Last updated: Step 4.0 (initial scaffolding).
+> Auto-maintained during Phase 4. Last updated: Step 4.9 (post Segment 4).
 
 ## Extension
 
@@ -9,8 +9,10 @@
 | Path | Purpose | Loading | Lines | Phase 4 |
 |------|---------|---------|-------|---------|
 | `extension/background.js` | Service worker entry; importScripts + message routing | manifest.json `service_worker` | 459 | unchanged |
-| `extension/returns-sidebar-inner.js` | Sidebar UI: list/detail views, delivery modal, state mgmt | `<script>` in iframe HTML | 1,756 | split (delivery modal extracted) |
-| `extension/returns-sidebar.html` | Sidebar iframe HTML + inline CSS | `chrome.runtime.getURL()` iframe | 1,458 | extracted (CSS to .css file) |
+| `extension/returns-sidebar-inner.js` | Sidebar UI: list/detail views, state mgmt, utilities | `<script>` in iframe HTML | 1,261 | split (delivery modal + CSS extracted) |
+| `extension/returns-sidebar-delivery.js` | Delivery modal: 5-step Uber pickup wizard | `<script>` in iframe HTML | 521 | **NEW** (extracted from inner.js) |
+| `extension/returns-sidebar.html` | Sidebar iframe shell (scripts + CSS link) | `chrome.runtime.getURL()` iframe | 57 | extracted (CSS to .css, delivery to .js) |
+| `extension/returns-sidebar.css` | Sidebar styles | `<link>` in iframe HTML | 1,403 | **NEW** (extracted from HTML) |
 | `extension/popup.js` | Extension popup: badge counts, scan trigger | `<script>` in popup.html | 108 | unchanged |
 | `extension/popup.html` | Popup HTML | manifest.json `action` | 110 | unchanged |
 | `extension/styles.css` | Content script injected styles (Gmail page) | manifest.json `content_scripts.css` | 150 | unchanged |
@@ -38,7 +40,7 @@
 
 | Path | Purpose | Loading | Lines | Phase 4 |
 |------|---------|---------|-------|---------|
-| `modules/gmail/api.js` | Gmail API: label management, email fetching, parsing | importScripts | 805 | cleaned (dead code removed) |
+| `modules/gmail/api.js` | Gmail API: label management, email fetching, parsing | importScripts | 673 | cleaned (dead code removed) |
 | `modules/gmail/auth.js` | OAuth token management | importScripts | 207 | unchanged |
 
 ### modules/pipeline/
@@ -47,7 +49,7 @@
 |------|---------|---------|-------|---------|
 | `modules/pipeline/resolver.js` | P6-P7: order key generation, upsert, merge escalation | importScripts | 590 | unchanged |
 | `modules/pipeline/extractor.js` | FREE regex-based field extraction (dates, amounts, links) | importScripts | 587 | unchanged |
-| `modules/pipeline/lifecycle.js` | P8: deadline computation, staleness, display queries | importScripts | 555 | cleaned (dead code removed) |
+| `modules/pipeline/lifecycle.js` | P8: deadline computation, staleness, display queries | importScripts | 549 | cleaned (dead code removed) |
 | `modules/pipeline/filter.js` | P1: domain filtering + keyword heuristics | importScripts | 431 | unchanged |
 | `modules/pipeline/classifier.js` | P3: LLM classification dispatch | importScripts | 321 | unchanged |
 | `modules/pipeline/linker.js` | P2: order ID + tracking number extraction | importScripts | 221 | unchanged |
@@ -93,10 +95,12 @@
 
 | Path | Purpose | Lines | Phase 4 |
 |------|---------|-------|---------|
-| `returns/extractor.py` | 3-stage pipeline orchestrator; batch dedup + cancellation | 956 | cleaned (types extracted) |
+| `returns/extractor.py` | 3-stage pipeline orchestrator; batch dedup + cancellation | 862 | cleaned (types extracted) |
 | `returns/repository.py` | ReturnCard CRUD (pure persistence) | 722 | unchanged (deferred) |
-| `returns/field_extractor.py` | Stage 3: hybrid LLM + rules field extraction | 594 | cleaned (types extracted) |
-| `returns/filters.py` | Stage 1: domain filter + keyword heuristics | 589 | split (constants extracted) |
+| `returns/field_extractor.py` | Stage 3: hybrid LLM + rules field extraction | 564 | cleaned (types extracted) |
+| `returns/filters.py` | Stage 1: domain filter + keyword heuristics | 280 | split (constants + types extracted) |
+| `returns/filter_data.py` | Filter constants: blocklist, keywords, patterns | 337 | **NEW** (extracted from filters.py) |
+| `returns/types.py` | Shared domain types: FilterResult, ExtractedFields, etc. | 175 | **NEW** (seam for future splits) |
 | `returns/returnability_classifier.py` | Stage 2: LLM returnability check | 350 | unchanged |
 | `returns/service.py` | Business logic: dedup, merge, ownership | 263 | unchanged |
 | `returns/models.py` | ReturnCard, ReturnStatus, ReturnConfidence | 263 | unchanged |
