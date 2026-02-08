@@ -606,6 +606,72 @@ class ReturnCardRepository:
         return ReturnCardRepository.get_by_id(card_id)
 
     @staticmethod
+    @retry_on_db_lock()
+    def add_email_and_update(
+        card_id: str,
+        email_id: str,
+        field_updates: dict[str, Any],
+    ) -> ReturnCard | None:
+        """Atomically add email_id to source list and apply pre-resolved field updates.
+
+        Unlike merge_email_into_card(), this method does NOT apply merge policy —
+        the caller is responsible for determining which fields to update.
+
+        Args:
+            card_id: Card to update
+            email_id: Email ID to append to source_email_ids
+            field_updates: Dict of {column: value} to set (already resolved by caller)
+
+        Returns:
+            Updated ReturnCard, or None if not found
+        """
+        import json
+        from datetime import datetime
+
+        now_str = utc_now().isoformat()
+
+        with db_transaction() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT source_email_ids FROM return_cards WHERE id = ?",
+                (card_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            updates: dict[str, Any] = {"updated_at": now_str}
+
+            # Append email ID (dedup)
+            current_ids = json.loads(row["source_email_ids"]) if row["source_email_ids"] else []
+            if email_id and email_id not in current_ids:
+                current_ids.append(email_id)
+                updates["source_email_ids"] = json.dumps(current_ids)
+
+            # Apply field updates (serialize datetimes)
+            for key, value in field_updates.items():
+                if isinstance(value, datetime):
+                    updates[key] = value.isoformat()
+                else:
+                    updates[key] = value
+
+            if updates:
+                set_clause = ", ".join(f"{k} = ?" for k in updates)
+                values = list(updates.values()) + [card_id]
+                cursor.execute(
+                    f"UPDATE return_cards SET {set_clause} WHERE id = ?",
+                    values,
+                )
+
+        logger.info(
+            "Updated card %s: added email %s, updated %d fields",
+            card_id,
+            email_id,
+            len(field_updates),
+        )
+        return ReturnCardRepository.get_by_id(card_id)
+
+    @staticmethod
     def find_by_item_summary(
         user_id: str,
         merchant_domain: str,

@@ -6,6 +6,7 @@ Centralizes ownership checks, dedup/merge logic, and business rules.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from shopq.observability.logging import get_logger
 from shopq.returns.models import (
@@ -113,6 +114,50 @@ class ReturnsService:
         return ReturnCardRepository.refresh_statuses(user_id, threshold_days)
 
     @staticmethod
+    def _compute_merge_updates(existing: ReturnCard, new_card: ReturnCard) -> dict[str, Any]:
+        """Determine which fields to update based on merge precedence rules.
+
+        Rules (invariant — do not reorder or change semantics):
+        - delivery_date: fill if empty
+        - return_by_date: fill if empty, or replace if delivery_date was just filled
+        - item_summary: longer wins
+        - evidence_snippet: keyword-gated (must contain return/refund/days/policy)
+        - return_portal_link: fill if empty
+        - shipping_tracking_link: fill if empty
+        """
+        updates: dict[str, Any] = {}
+
+        # delivery_date: use new if existing is None
+        if new_card.delivery_date and not existing.delivery_date:
+            updates["delivery_date"] = new_card.delivery_date
+
+        # return_by_date: use new if existing is None or delivery_date was just set
+        if new_card.return_by_date and (
+            not existing.return_by_date or "delivery_date" in updates
+        ):
+            updates["return_by_date"] = new_card.return_by_date
+
+        # item_summary: longer wins
+        new_summary = new_card.item_summary or ""
+        existing_summary = existing.item_summary or ""
+        if len(new_summary) > len(existing_summary):
+            updates["item_summary"] = new_summary
+
+        # evidence_snippet: keyword-gated
+        if new_card.evidence_snippet:
+            lower = new_card.evidence_snippet.lower()
+            if any(kw in lower for kw in ["return", "refund", "days", "policy"]):
+                updates["evidence_snippet"] = new_card.evidence_snippet
+
+        # Links: fill if missing
+        if new_card.return_portal_link and not existing.return_portal_link:
+            updates["return_portal_link"] = new_card.return_portal_link
+        if new_card.shipping_tracking_link and not existing.shipping_tracking_link:
+            updates["shipping_tracking_link"] = new_card.shipping_tracking_link
+
+        return updates
+
+    @staticmethod
     def dedup_and_persist(user_id: str, card: ReturnCard) -> DedupResult:
         """Deduplicate a card against the DB and persist (create or merge).
 
@@ -121,7 +166,7 @@ class ReturnsService:
         2. Match by merchant_domain + item_summary (fuzzy, with order# conflict guard)
         3. Match by email_id (any in card.source_email_ids)
 
-        If a match is found, merges the new card's data into the existing card.
+        If a match is found, computes merge updates and persists atomically.
         Otherwise, creates a new card.
 
         Returns:
@@ -177,18 +222,11 @@ class ReturnsService:
                     break
 
         if existing_card:
-            # Merge new data into existing card
-            new_data = {
-                "delivery_date": card.delivery_date,
-                "return_by_date": card.return_by_date,
-                "item_summary": card.item_summary,
-                "evidence_snippet": card.evidence_snippet,
-                "return_portal_link": card.return_portal_link,
-                "shipping_tracking_link": card.shipping_tracking_link,
-            }
+            # Compute merge updates using policy rules, then persist atomically
+            merge_updates = ReturnsService._compute_merge_updates(existing_card, card)
             email_id = card.source_email_ids[0] if card.source_email_ids else ""
-            saved = ReturnCardRepository.merge_email_into_card(
-                existing_card.id, email_id, new_data
+            saved = ReturnCardRepository.add_email_and_update(
+                existing_card.id, email_id, merge_updates
             )
             if saved:
                 logger.info(
