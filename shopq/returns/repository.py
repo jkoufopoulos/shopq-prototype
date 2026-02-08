@@ -491,122 +491,6 @@ class ReturnCardRepository:
 
     @staticmethod
     @retry_on_db_lock()
-    def merge_email_into_card(
-        card_id: str,
-        email_id: str,
-        new_data: dict | None = None,
-    ) -> ReturnCard | None:
-        """
-        Merge a new email into an existing card, updating with new data.
-
-        This implements the entity-based approach where multiple emails about
-        the same order are merged into ONE card, with status derived from
-        the latest/best information.
-
-        Update logic:
-        - delivery_date: Use new value if existing is None
-        - return_by_date: Recalculate if delivery_date updated
-        - item_summary: Use new value if more detailed (longer)
-        - evidence_snippet: Use new value if it contains return policy info
-
-        Args:
-            card_id: Card to update
-            email_id: Email ID to add
-            new_data: Optional dict with fields to potentially update:
-                - delivery_date, order_date, return_by_date
-                - item_summary, evidence_snippet
-                - return_portal_link, shipping_tracking_link
-
-        Returns:
-            Updated ReturnCard, or None if not found
-        """
-        import json
-        from datetime import datetime
-
-        now = utc_now()
-        now_str = now.isoformat()
-
-        with db_transaction() as conn:
-            cursor = conn.cursor()
-            # Get current card data
-            cursor.execute(
-                "SELECT * FROM return_cards WHERE id = ?",
-                (card_id,),
-            )
-            row = cursor.fetchone()
-            if not row:
-                return None
-
-            row_dict = dict(row)
-            updates = {"updated_at": now_str}
-
-            # Add email ID to source list
-            current_ids = (
-                json.loads(row_dict["source_email_ids"]) if row_dict["source_email_ids"] else []
-            )
-            if email_id not in current_ids:
-                current_ids.append(email_id)
-                updates["source_email_ids"] = json.dumps(current_ids)
-
-            # Merge new data if provided
-            if new_data:
-                # Delivery date: Use new if existing is None (order→shipped→delivered)
-                if new_data.get("delivery_date") and not row_dict.get("delivery_date"):
-                    new_delivery = new_data["delivery_date"]
-                    if isinstance(new_delivery, datetime):
-                        updates["delivery_date"] = new_delivery.isoformat()
-                    else:
-                        updates["delivery_date"] = new_delivery
-                    logger.info("Card %s: Updated delivery_date from new email", card_id)
-
-                # Return-by date: Use new if existing is None or if we just got delivery_date
-                if new_data.get("return_by_date") and (
-                    not row_dict.get("return_by_date") or "delivery_date" in updates
-                ):
-                    new_return_by = new_data["return_by_date"]
-                    if isinstance(new_return_by, datetime):
-                        updates["return_by_date"] = new_return_by.isoformat()
-                    else:
-                        updates["return_by_date"] = new_return_by
-                    logger.info("Card %s: Updated return_by_date from new email", card_id)
-
-                # Item summary: Use new if longer (more detailed)
-                if new_data.get("item_summary"):
-                    existing_summary = row_dict.get("item_summary") or ""
-                    new_summary = new_data["item_summary"]
-                    if len(new_summary) > len(existing_summary):
-                        updates["item_summary"] = new_summary
-
-                # Evidence snippet: Prefer one with return policy keywords
-                if new_data.get("evidence_snippet"):
-                    new_evidence = new_data["evidence_snippet"].lower()
-                    if any(kw in new_evidence for kw in ["return", "refund", "days", "policy"]):
-                        updates["evidence_snippet"] = new_data["evidence_snippet"]
-
-                # Links: Fill in if missing
-                if new_data.get("return_portal_link") and not row_dict.get("return_portal_link"):
-                    updates["return_portal_link"] = new_data["return_portal_link"]
-                if new_data.get("shipping_tracking_link") and not row_dict.get(
-                    "shipping_tracking_link"
-                ):
-                    updates["shipping_tracking_link"] = new_data["shipping_tracking_link"]
-
-            # Perform update
-            if updates:
-                set_clause = ", ".join(f"{k} = ?" for k in updates)
-                values = list(updates.values()) + [card_id]
-                cursor.execute(
-                    f"UPDATE return_cards SET {set_clause} WHERE id = ?",
-                    values,
-                )
-
-        logger.info(
-            "Merged email %s into card %s (updated %d fields)", email_id, card_id, len(updates)
-        )
-        return ReturnCardRepository.get_by_id(card_id)
-
-    @staticmethod
-    @retry_on_db_lock()
     def add_email_and_update(
         card_id: str,
         email_id: str,
@@ -614,8 +498,8 @@ class ReturnCardRepository:
     ) -> ReturnCard | None:
         """Atomically add email_id to source list and apply pre-resolved field updates.
 
-        Unlike merge_email_into_card(), this method does NOT apply merge policy —
-        the caller is responsible for determining which fields to update.
+        This method does NOT apply merge policy — the caller (ReturnsService)
+        is responsible for determining which fields to update.
 
         Args:
             card_id: Card to update
