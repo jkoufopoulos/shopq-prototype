@@ -13,6 +13,10 @@ from functools import lru_cache
 import requests
 from fastapi import Header, HTTPException
 
+from shopq.observability.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def get_current_user_id(authorization: str | None = Header(None)) -> str:
     """
@@ -106,22 +110,22 @@ def validate_google_oauth_token(token: str) -> str | None:
         scopes = token_info.get("scope", "")
 
         if required_scope not in scopes:
-            print(f"⚠️ Token missing required scope: {required_scope}")
+            logger.warning("Token missing required scope: %s", required_scope)
             return None
 
         email = token_info.get("email")
         if not email:
-            print("⚠️ Token has no email claim")
+            logger.warning("Token has no email claim")
             return None
 
-        print(f"✅ Token validated for user: {email}")
+        logger.info("Token validated for user: %s", email)
         return email
 
     except requests.exceptions.Timeout:
-        print("❌ Token validation timeout (Google tokeninfo API)")
+        logger.warning("Token validation timeout (Google tokeninfo API)")
         return None
     except requests.exceptions.RequestException as e:
-        print(f"❌ Token validation error: {e}")
+        logger.error("Token validation error: %s", e)
         return None
 
 
@@ -141,7 +145,7 @@ def clear_token_cache() -> None:
             None (pure function)
     """
     validate_google_oauth_token.cache_clear()
-    print("✅ Token cache cleared")
+    logger.info("Token cache cleared")
 
 
 # For testing: Mock authentication

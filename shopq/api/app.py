@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from shopq.api.middleware.csrf import CSRFMiddleware
 from shopq.api.middleware.rate_limit import RateLimitMiddleware
 from shopq.api.middleware.security_headers import SecurityHeadersMiddleware
-from shopq.config import APP_VERSION
+from shopq.config import APP_VERSION, CHROME_EXTENSION_ORIGIN
 from shopq.api.routes.delivery import router as delivery_router
 from shopq.api.routes.health import router as health_router
 from shopq.api.routes.returns import router as returns_router
@@ -61,17 +61,11 @@ async def validation_exception_handler(
 
 
 # CORS - Restrict to specific origins for security
-SHOPQ_EXTENSION_ID = os.getenv("SHOPQ_EXTENSION_ID", "")
-
 ALLOWED_ORIGINS = [
     "https://mail.google.com",
     "https://shopq-api-488078904670.us-central1.run.app",
-    "chrome-extension://aagmmkcefeaaffcnfgdfhnfokhnajhbb",  # ShopQ Return Watch extension
+    CHROME_EXTENSION_ORIGIN,
 ]
-
-# Add Chrome extension origin if ID is configured
-if SHOPQ_EXTENSION_ID:
-    ALLOWED_ORIGINS.append(f"chrome-extension://{SHOPQ_EXTENSION_ID}")
 
 # Allow localhost and unpacked extensions in development only
 if os.getenv("SHOPQ_ENV", "development") == "development":

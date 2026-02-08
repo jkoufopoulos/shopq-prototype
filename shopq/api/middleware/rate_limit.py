@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from shopq.config import (
+    CHROME_EXTENSION_ORIGIN,
     RATE_LIMIT_MAX_IPS,
     RATE_LIMIT_RPH,
     RATE_LIMIT_RPM,
@@ -164,7 +165,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         cors_headers = {}
         if origin in [
             "https://mail.google.com",
-            "chrome-extension://aagmmkcefeaaffcnfgdfhnfokhnajhbb",
+            CHROME_EXTENSION_ORIGIN,
         ]:
             cors_headers = {
                 "Access-Control-Allow-Origin": origin,
