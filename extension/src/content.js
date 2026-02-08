@@ -21,6 +21,10 @@ import {
   DIGEST_REFRESH_DEBOUNCE_MS,
   SIDEBAR_REFRESH_INTERVAL_MS,
   LABEL_CACHE_KEY,
+  TOAST_DURATION_MS,
+  TOAST_FADEOUT_MS,
+  EXPIRING_SOON_DAYS,
+  CRITICAL_DAYS,
 } from './config.js';
 
 // Prevent multiple initializations - use a global flag
@@ -899,6 +903,17 @@ async function initializeDigestSidebar(sdk) {
     if (event.data?.type === 'SHOPQ_RETURNS_SIDEBAR_READY') {
       console.log('Reclaim: Returns sidebar iframe ready');
       iframeReady = true;
+      // Send config values before any data (sidebar can't access CONFIG directly)
+      iframe.contentWindow.postMessage({
+        type: 'SHOPQ_CONFIG_INIT',
+        config: {
+          DATE_REFRESH_INTERVAL_MS: SIDEBAR_REFRESH_INTERVAL_MS,
+          TOAST_DURATION_MS,
+          TOAST_FADEOUT_MS,
+          EXPIRING_SOON_DAYS,
+          CRITICAL_DAYS,
+        }
+      }, EXTENSION_ORIGIN);
       // Fetch and send visible orders
       await fetchVisibleOrders();
     }

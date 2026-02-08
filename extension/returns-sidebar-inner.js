@@ -8,14 +8,14 @@
  */
 
 // =============================================================================
-// CONSTANTS (mirror CONFIG from modules/shared/config.js — iframe has no access)
+// CONSTANTS (defaults; overwritten by SHOPQ_CONFIG_INIT from parent)
 // =============================================================================
 
-const DATE_REFRESH_INTERVAL_MS = 60000;
-const TOAST_DURATION_MS = 3000;
-const TOAST_FADEOUT_MS = 300;
-const EXPIRING_SOON_DAYS = 7;
-const CRITICAL_DAYS = 3;
+let DATE_REFRESH_INTERVAL_MS = 60000;
+let TOAST_DURATION_MS = 3000;
+let TOAST_FADEOUT_MS = 300;
+let EXPIRING_SOON_DAYS = 7;
+let CRITICAL_DAYS = 3;
 
 // =============================================================================
 // STATE
@@ -1528,6 +1528,16 @@ function renderError(message) {
 // =============================================================================
 
 window.addEventListener('message', (event) => {
+  // Receive config from parent (content script) — overrides defaults
+  if (event.data?.type === 'SHOPQ_CONFIG_INIT') {
+    const c = event.data.config || {};
+    if (c.DATE_REFRESH_INTERVAL_MS) DATE_REFRESH_INTERVAL_MS = c.DATE_REFRESH_INTERVAL_MS;
+    if (c.TOAST_DURATION_MS) TOAST_DURATION_MS = c.TOAST_DURATION_MS;
+    if (c.TOAST_FADEOUT_MS) TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
+    if (c.EXPIRING_SOON_DAYS) EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
+    if (c.CRITICAL_DAYS) CRITICAL_DAYS = c.CRITICAL_DAYS;
+  }
+
   // Handle unified visible orders
   if (event.data?.type === 'SHOPQ_ORDERS_DATA') {
     visibleOrders = event.data.orders || [];
