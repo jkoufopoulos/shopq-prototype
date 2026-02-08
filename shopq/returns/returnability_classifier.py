@@ -17,11 +17,8 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pydantic import BaseModel, Field
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from shopq.config import LLM_MAX_RETRIES, LLM_TIMEOUT_SECONDS
 from shopq.infrastructure.settings import GEMINI_MODEL
-from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.utils.redaction import redact_subject
@@ -185,33 +182,14 @@ Respond with ONLY the JSON, no other text."""
         # CODE-011: Model is now obtained from shared singleton
         pass
 
-    def _get_model(self):
-        """Get shared Gemini model instance.
-
-        CODE-011: Uses shared singleton instead of per-instance model.
-        """
-        return get_gemini_model()
-
-    @retry(
-        stop=stop_after_attempt(LLM_MAX_RETRIES),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((TimeoutError, ConnectionError, OSError)),
-        reraise=True,
-    )
     def _call_llm_with_retry(self, prompt: str) -> str:
         """Call LLM with retry logic and timeout.
 
-        CODE-003: Retries up to 3 times with exponential backoff for transient failures.
-        CODE-004: 30-second timeout to prevent hanging requests.
+        CODE-003: Delegates to shared call_llm() with classifier-specific counter prefix.
         """
-        model = self._get_model()
+        from shopq.llm.retry import call_llm
 
-        try:
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            logger.error("LLM call failed: %s", e)
-            raise
+        return call_llm(prompt, counter_prefix="classifier")
 
     def classify(
         self,

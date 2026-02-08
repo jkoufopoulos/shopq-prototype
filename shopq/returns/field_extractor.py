@@ -19,18 +19,13 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-
 from shopq.config import (
-    LLM_MAX_RETRIES,
-    LLM_TIMEOUT_SECONDS,
     PIPELINE_BODY_TRUNCATION,
     PIPELINE_DATE_WINDOW_DAYS,
     PIPELINE_DEFAULT_RETURN_DAYS,
     PIPELINE_ORDER_NUM_MAX_LEN,
     PIPELINE_ORDER_NUM_MIN_LEN,
 )
-from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.models import ReturnConfidence
@@ -191,40 +186,14 @@ Respond with ONLY the JSON."""
         self.merchant_rules = merchant_rules or {}
         # CODE-011: Model is now obtained from shared singleton
 
-    def _get_model(self):
-        """Get shared Gemini model instance.
-
-        CODE-011: Uses shared singleton instead of per-instance model.
-        """
-        return get_gemini_model()
-
-    @retry(
-        stop=stop_after_attempt(LLM_MAX_RETRIES),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((TimeoutError, ConnectionError, OSError)),
-        reraise=True,
-    )
     def _call_llm_with_retry(self, prompt: str) -> str:
         """Call LLM with retry logic and timeout.
 
-        CODE-003: Retries up to 3 times with exponential backoff for transient failures.
-        CODE-004: 30-second timeout to prevent hanging requests.
+        CODE-003: Delegates to shared call_llm() with extractor-specific counter prefix.
         """
-        from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
+        from shopq.llm.retry import call_llm
 
-        model = self._get_model()
-
-        try:
-            response = model.generate_content(prompt)
-            return response.text
-        except DeadlineExceeded as e:
-            counter("returns.extractor.timeout")
-            logger.warning("LLM call timed out after %ds", LLM_TIMEOUT_SECONDS)
-            raise TimeoutError(f"LLM call timed out: {e}") from e
-        except ServiceUnavailable as e:
-            counter("returns.extractor.service_unavailable")
-            logger.warning("LLM service unavailable, will retry: %s", e)
-            raise ConnectionError(f"LLM service unavailable: {e}") from e
+        return call_llm(prompt, counter_prefix="extractor")
 
     # Common garbage values the LLM or regex may extract as order numbers
     _GARBAGE_ORDER_WORDS = frozenset(
