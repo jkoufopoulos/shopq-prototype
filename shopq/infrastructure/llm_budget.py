@@ -19,15 +19,16 @@ from __future__ import annotations
 from datetime import date
 from typing import NamedTuple
 
+from shopq.config import LLM_GLOBAL_DAILY_LIMIT, LLM_USER_DAILY_LIMIT
 from shopq.infrastructure.database import get_db_connection, retry_on_db_lock
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter
 
 logger = get_logger(__name__)
 
-# Budget limits
-DEFAULT_USER_DAILY_LIMIT = 500  # LLM calls per user per day
-DEFAULT_GLOBAL_DAILY_LIMIT = 10000  # Total LLM calls per day
+# Budget limits (from centralized config)
+DEFAULT_USER_DAILY_LIMIT = LLM_USER_DAILY_LIMIT
+DEFAULT_GLOBAL_DAILY_LIMIT = LLM_GLOBAL_DAILY_LIMIT
 
 # Cost estimates per call type (for monitoring)
 COST_ESTIMATES = {

@@ -5,6 +5,7 @@ from __future__ import annotations
 import concurrent.futures
 from collections.abc import Callable, Iterable
 
+from shopq.config import LLM_MAX_WORKERS
 from shopq.gmail.client import fetch_messages_with_retry, parse_messages
 from shopq.gmail.parser import parse_message_strict
 from shopq.infrastructure.idempotency import email_key, is_duplicate, reset_seen
@@ -15,8 +16,8 @@ from shopq.storage.models import ClassifiedEmail, Digest, ParsedEmail
 ClassifierFn = Callable[[Iterable[ParsedEmail]], list[ClassifiedEmail]]
 AssemblerFn = Callable[[Iterable[ClassifiedEmail]], Digest]
 
-# Parallelization config
-MAX_WORKERS = 4  # Limit concurrency to avoid overwhelming LLM APIs
+# Parallelization config (from centralized config)
+MAX_WORKERS = LLM_MAX_WORKERS
 
 
 def run_pipeline(

@@ -23,6 +23,13 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from shopq.config import (
+    RATE_LIMIT_EMAILS_PH,
+    RATE_LIMIT_EMAILS_PM,
+    RATE_LIMIT_MAX_IPS,
+    RATE_LIMIT_RPH,
+    RATE_LIMIT_RPM,
+)
 from shopq.observability.telemetry import log_event
 
 
@@ -40,10 +47,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: Any,
-        requests_per_minute: int = 60,
-        requests_per_hour: int = 1000,
-        emails_per_minute: int = 100,
-        emails_per_hour: int = 2000,
+        requests_per_minute: int = RATE_LIMIT_RPM,
+        requests_per_hour: int = RATE_LIMIT_RPH,
+        emails_per_minute: int = RATE_LIMIT_EMAILS_PM,
+        emails_per_hour: int = RATE_LIMIT_EMAILS_PH,
     ) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
@@ -52,8 +59,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.emails_per_hour = emails_per_hour
 
         # EXT-002: Use TTLCache to prevent unbounded memory growth
-        # Max 10000 unique IPs tracked, with automatic expiry
-        _max_ips = 10000
+        _max_ips = RATE_LIMIT_MAX_IPS
 
         # Request tracking: {ip: [timestamp, ...]}
         # TTLCache auto-evicts entries after ttl seconds

@@ -13,6 +13,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
 from shopq.api.middleware.user_auth import AuthenticatedUser, get_current_user
+from shopq.config import (
+    API_BATCH_SIZE_MAX,
+    API_EXPIRING_THRESHOLD_DAYS,
+    API_LIST_LIMIT_DEFAULT,
+    API_LIST_LIMIT_MAX,
+)
 from shopq.observability.logging import get_logger
 from shopq.returns import (
     ReturnCard,
@@ -177,7 +183,7 @@ async def list_returns(
         None,
         description="Comma-separated statuses: active,expiring_soon,expired,returned,dismissed",
     ),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(API_LIST_LIMIT_DEFAULT, ge=1, le=API_LIST_LIMIT_MAX),
     offset: int = Query(0, ge=0),
 ) -> ReturnCardListResponse:
     """
@@ -225,7 +231,7 @@ async def list_returns(
 @router.get("/expiring", response_model=list[ReturnCardResponse])
 async def list_expiring_returns(
     user: AuthenticatedUser = Depends(get_current_user),
-    threshold_days: int = Query(7, ge=1, le=30, description="Days to look ahead"),
+    threshold_days: int = Query(API_EXPIRING_THRESHOLD_DAYS, ge=1, le=30, description="Days to look ahead"),
 ) -> list[ReturnCardResponse]:
     """
     Get returns expiring within threshold days for the authenticated user.
@@ -458,7 +464,7 @@ async def delete_return(
 @router.post("/refresh-statuses")
 async def refresh_statuses(
     user: AuthenticatedUser = Depends(get_current_user),
-    threshold_days: int = Query(7, ge=1, le=30, description="Days threshold for expiring_soon"),
+    threshold_days: int = Query(API_EXPIRING_THRESHOLD_DAYS, ge=1, le=30, description="Days threshold for expiring_soon"),
 ) -> dict[str, Any]:
     """
     Refresh return card statuses based on current date for the authenticated user.
@@ -533,7 +539,7 @@ class ProcessBatchEmail(BaseModel):
 class ProcessBatchRequest(BaseModel):
     """Request to process a batch of emails through the extraction pipeline."""
 
-    emails: list[ProcessBatchEmail] = Field(..., max_length=500)
+    emails: list[ProcessBatchEmail] = Field(..., max_length=API_BATCH_SIZE_MAX)
 
 
 class ProcessBatchStats(BaseModel):
