@@ -1,26 +1,19 @@
 /**
  * Reclaim Content Script (ES Module Entry Point)
  *
- * Bundled by webpack with InboxSDK. Implements the Visual Layer for Gmail.
+ * Bundled by webpack with InboxSDK. Implements the Returns Sidebar for Gmail.
  *
- * Architecture (Phase 3 refactor):
+ * Architecture:
  *   DisposeBag           — lifecycle cleanup utility
- *   ThreadBadgeManager   — thread row badges (type + critical) via Kefir streams
- *   SidebarMessageRouter — origin-validated postMessage dispatch (replaces if/else chain)
+ *   SidebarMessageRouter — origin-validated postMessage dispatch
  *   SidebarController    — iframe panel, order CRUD, expiring indicator, nav persistence
  *
- * Cache pattern: write-through (background writes, content reads on InboxSDK handler fire)
  * Disposal: 30-second context check → disposeAll() → refresh banner on extension reload
  */
 
 import * as InboxSDK from '@inboxsdk/core';
-import Kefir from 'kefir';
-import DOMPurify from 'dompurify';
 import {
-  API_BASE_URL,
-  DIGEST_REFRESH_DEBOUNCE_MS,
   SIDEBAR_REFRESH_INTERVAL_MS,
-  LABEL_CACHE_KEY,
   TOAST_DURATION_MS,
   TOAST_FADEOUT_MS,
   EXPIRING_SOON_DAYS,
@@ -37,25 +30,6 @@ if (window.__SHOPQ_INITIALIZED__) {
 
 function initReclaim() {
 console.log('Reclaim: Content script loaded (bundled)');
-
-// =============================================================================
-// HTML SANITIZATION (XSS Protection)
-// =============================================================================
-
-/**
- * Sanitize HTML content to prevent XSS attacks.
- * Use this for any HTML content from external sources (API responses, etc.)
- * @param {string} html - Raw HTML string
- * @returns {string} Sanitized HTML safe for innerHTML
- */
-function sanitizeHtml(html) {
-  if (!html) return '';
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'tr', 'td', 'th', 'thead', 'tbody'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
-    ALLOW_DATA_ATTR: false,
-  });
-}
 
 // =============================================================================
 // MESSAGE HELPERS
@@ -82,31 +56,15 @@ function sendMessageWithTimeout(message, timeoutMs = 10000) {
 }
 
 // =============================================================================
-// CLEANUP: Remove any stale Reclaim elements/styles from previous loads
+// CLEANUP: Remove any stale Reclaim elements from previous loads
 // =============================================================================
 
 (function cleanupStaleElements() {
-  // Remove old drawer/iframe elements only
   // IMPORTANT: Do NOT reset html/body styles - this interferes with Gmail's dark mode
-  document.getElementById('reclaim-digest-iframe')?.remove();
-  document.getElementById('reclaim-nav-button')?.remove();
   document.getElementById('reclaim-refresh-banner')?.remove();
-  document.getElementById('reclaim-layout-styles')?.remove();
   document.getElementById('reclaim-sidebar-panel')?.remove();
-
-  // Remove any Reclaim-specific classes only
-  document.documentElement.classList.remove('reclaim-drawer-open');
-
   console.log('Reclaim: Cleaned up stale elements');
 })();
-
-// =============================================================================
-// DIGEST REFRESH (for continuous organization)
-// =============================================================================
-
-// Global function to trigger digest refresh (set by initializeDigestSidebar)
-let triggerDigestRefresh = null;
-let lastDigestRefreshTime = 0;
 
 // =============================================================================
 // CONFIGURATION
@@ -114,199 +72,6 @@ let lastDigestRefreshTime = 0;
 
 // Registered InboxSDK App ID
 const SHOPQ_APP_ID = 'sdk_mailqapp_8eb273b616';
-
-// =============================================================================
-// THREAD BADGE MANAGER
-// =============================================================================
-
-/**
- * Manages thread row badges (type + critical) using InboxSDK Observable streams.
- * Owns the thread row registry, label cache, and all badge rendering logic.
- */
-class ThreadBadgeManager {
-  static MAX_REGISTRY_SIZE = 500;
-
-  static TYPE_DISPLAY_NAMES = {
-    'Event': 'Event',
-    'Notification': 'Notif',
-    'Newsletter': 'Newsletter',
-    'Promotion': 'Promo',
-    'Receipt': 'Receipt',
-    'Message': 'Message',
-    'Otp': 'OTP'
-  };
-
-  static CLIENT_LABEL_TO_TYPE = {
-    'receipts': 'Receipt',
-    'messages': 'Message',
-    'action-required': null
-  };
-
-  static TYPE_COLORS = {
-    'Event': { foreground: '#7b1fa2', background: '#f3e5f5' },
-    'Newsletter': { foreground: '#2e7d32', background: '#e8f5e9' },
-    'Receipt': { foreground: '#ef6c00', background: '#fff3e0' },
-    'Notification': { foreground: '#00838f', background: '#e0f7fa' },
-    'Promotion': { foreground: '#c2185b', background: '#fce4ec' },
-    'Message': { foreground: '#1565c0', background: '#e3f2fd' },
-    'Otp': { foreground: '#d84315', background: '#fbe9e7' }
-  };
-
-  static getTypeColor(typeName) {
-    return ThreadBadgeManager.TYPE_COLORS[typeName] || { foreground: '#5f6368', background: '#f1f3f4' };
-  }
-
-  static buildTypeLabelDescriptor(typeName) {
-    const title = ThreadBadgeManager.TYPE_DISPLAY_NAMES[typeName] || typeName;
-    const color = ThreadBadgeManager.getTypeColor(typeName);
-    return { title, foregroundColor: color.foreground, backgroundColor: color.background };
-  }
-
-  static createLabelStream() {
-    const pool = Kefir.pool();
-    return {
-      observable: pool,
-      update: (descriptor) => pool.plug(Kefir.constant(descriptor)),
-      clear: () => pool.plug(Kefir.constant(null))
-    };
-  }
-
-  constructor() {
-    this._registry = new Map();
-    this._cache = {};
-    this._cacheReadyResolve = null;
-    this._cacheReady = new Promise(resolve => { this._cacheReadyResolve = resolve; });
-    this._handlerCallCount = 0;
-    this._seenThreadIds = [];
-
-    // Bind for use as InboxSDK callback
-    this.handleThreadRow = this.handleThreadRow.bind(this);
-  }
-
-  get cache() { return this._cache; }
-  get seenThreadIds() { return [...this._seenThreadIds]; }
-  get registrySize() { return this._registry.size; }
-
-  async init() {
-    try {
-      const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
-      this._cache = data[LABEL_CACHE_KEY] || {};
-      console.log(`Reclaim: Preloaded ${Object.keys(this._cache).length} cached threads`);
-    } catch (error) {
-      console.error('Reclaim: Failed to preload cache:', error);
-      this._cache = {};
-    }
-    this._cacheReadyResolve();
-  }
-
-  dispose() {
-    this._registry.clear();
-    this._cache = {};
-    this._seenThreadIds = [];
-    this._handlerCallCount = 0;
-  }
-
-  updateCache(newCache) {
-    const oldCache = this._cache;
-    this._cache = newCache;
-    console.log(`Reclaim: Cache updated, ${Object.keys(this._cache).length} threads, ${this._registry.size} rows registered`);
-
-    for (const [threadId] of this._registry) {
-      const oldData = oldCache[threadId];
-      const newData = newCache[threadId];
-      if (JSON.stringify(oldData) !== JSON.stringify(newData)) {
-        console.log(`Reclaim: Updating badges for thread ${threadId}`);
-        this._applyBadgesFromCache(threadId, newData);
-      }
-    }
-  }
-
-  async handleThreadRow(threadRowView) {
-    try {
-      await this._cacheReady;
-
-      this._handlerCallCount++;
-      const threadId = await threadRowView.getThreadIDAsync();
-
-      if (this._handlerCallCount <= 5) {
-        const cacheKeys = Object.keys(this._cache).slice(0, 3);
-        console.log(`Reclaim: Handler #${this._handlerCallCount} - threadId: ${threadId}, cache sample: ${cacheKeys.join(', ')}`);
-      }
-
-      if (!threadId) return;
-
-      if (this._seenThreadIds.length < 50 && !this._seenThreadIds.includes(threadId)) {
-        this._seenThreadIds.push(threadId);
-      }
-
-      if (this._registry.has(threadId)) {
-        this._applyBadgesFromCache(threadId, this._cache[threadId]);
-        return;
-      }
-
-      // Evict oldest entry if registry is full
-      if (this._registry.size >= ThreadBadgeManager.MAX_REGISTRY_SIZE) {
-        const oldestKey = this._registry.keys().next().value;
-        this._registry.delete(oldestKey);
-      }
-
-      const typeStream = ThreadBadgeManager.createLabelStream();
-      const criticalStream = ThreadBadgeManager.createLabelStream();
-
-      threadRowView.addLabel(typeStream.observable);
-      threadRowView.addLabel(criticalStream.observable);
-
-      this._registry.set(threadId, { typeStream, criticalStream, threadRowView });
-
-      const labelData = this._cache[threadId];
-      if (labelData) {
-        this._applyBadgesFromCache(threadId, labelData);
-      }
-
-      threadRowView.on('destroy', () => {
-        this._registry.delete(threadId);
-      });
-
-    } catch (error) {
-      console.debug('Reclaim: Error handling thread row:', error);
-    }
-  }
-
-  _applyBadgesFromCache(threadId, labelData) {
-    const entry = this._registry.get(threadId);
-    if (!entry) return;
-
-    const displayType = labelData?.type || ThreadBadgeManager.CLIENT_LABEL_TO_TYPE[labelData?.clientLabel];
-    if (displayType) {
-      const descriptor = ThreadBadgeManager.buildTypeLabelDescriptor(displayType);
-      console.log(`Reclaim: Updating type badge for ${threadId}:`, descriptor.title);
-      entry.typeStream.update(descriptor);
-    } else {
-      entry.typeStream.clear();
-    }
-
-    if (labelData?.importance === 'critical') {
-      entry.criticalStream.update({
-        title: 'CRITICAL',
-        foregroundColor: '#c62828',
-        backgroundColor: '#ffebee'
-      });
-      const element = entry.threadRowView.getElement();
-      if (element) {
-        element.classList.add('reclaim-critical-row');
-      }
-    } else {
-      entry.criticalStream.clear();
-      const element = entry.threadRowView.getElement();
-      if (element) {
-        element.classList.remove('reclaim-critical-row');
-      }
-    }
-  }
-}
-
-// Module-scope reference (created in initializeVisualLayer)
-let badgeManager = null;
 
 // =============================================================================
 // DISPOSE BAG (lifecycle cleanup utility)
@@ -460,476 +225,6 @@ function showRefreshBanner() {
   document.body.appendChild(banner);
 }
 
-// Global dispose bag for cleanup on extension invalidation
-const globalDisposeBag = new DisposeBag();
-
-/**
- * Dispose all managed resources (badge manager, sidebar controller, global listeners).
- * Called when extension context is invalidated.
- */
-function disposeAll() {
-  console.log('Reclaim: Disposing all resources...');
-  if (badgeManager) {
-    badgeManager.dispose();
-    badgeManager = null;
-  }
-  if (sidebarController) {
-    sidebarController.dispose();
-    sidebarController = null;
-  }
-  globalDisposeBag.dispose();
-  triggerDigestRefresh = null;
-}
-
-/**
- * Initialize InboxSDK
- */
-async function initializeVisualLayer() {
-  // Check if extension context is still valid
-  if (!isExtensionContextValid()) {
-    console.warn('Reclaim: Extension context invalidated - showing refresh banner');
-    showRefreshBanner();
-    return;
-  }
-
-  // Create and initialize badge manager
-  badgeManager = new ThreadBadgeManager();
-  await badgeManager.init();
-
-  // Listen for cache updates from background and update badges dynamically
-  const storageListener = (changes, areaName) => {
-    if (areaName !== 'local') return;
-
-    // Handle label cache updates (for badges)
-    if (changes[LABEL_CACHE_KEY] && badgeManager) {
-      const newCache = changes[LABEL_CACHE_KEY].newValue || {};
-      badgeManager.updateCache(newCache);
-    }
-
-    // Handle digest refresh signal (from auto-organize)
-    if (changes.shopq_digest_needs_refresh && triggerDigestRefresh) {
-      console.log('Reclaim: Digest refresh signal received from auto-organize');
-      triggerDigestRefresh();
-      chrome.storage.local.remove('shopq_digest_needs_refresh');
-    }
-  };
-  chrome.storage.onChanged.addListener(storageListener);
-  globalDisposeBag.addCustom(() => chrome.storage.onChanged.removeListener(storageListener));
-
-  // Periodic extension context check (detect extension reload while page stays open)
-  const contextCheckInterval = setInterval(() => {
-    if (!isExtensionContextValid()) {
-      console.warn('Reclaim: Extension context invalidated - cleaning up');
-      clearInterval(contextCheckInterval);
-      disposeAll();
-      showRefreshBanner();
-    }
-  }, 30000);
-  globalDisposeBag.addInterval(contextCheckInterval);
-
-  console.log('Reclaim: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
-
-  try {
-    const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
-    console.log('Reclaim: InboxSDK loaded successfully');
-
-    // Register thread row handler for badges
-    sdk.Lists.registerThreadRowViewHandler(badgeManager.handleThreadRow);
-    console.log('Reclaim: Thread row handler registered');
-
-    // Add digest sidebar panel via InboxSDK
-    await initializeDigestSidebar(sdk);
-  } catch (error) {
-    console.error('Reclaim: Failed to load InboxSDK:', error.message);
-    // Check if this is due to extension context being invalidated
-    if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {
-      showRefreshBanner();
-    }
-  }
-}
-
-// =============================================================================
-// TEST HOOKS (for E2E testing only - uses '*' for same-window communication)
-// =============================================================================
-
-// Listen for postMessage from page context (for E2E tests)
-// Note: These hooks use '*' intentionally since they communicate within the same window
-// for test purposes. The event.source check ensures only same-window messages are processed.
-const testHookListener = async (event) => {
-  if (event.source !== window) return;
-
-  if (event.data?.type === 'SHOPQ_TEST_ORGANIZE') {
-    console.log('Reclaim: Test hook - triggering organize...');
-    try {
-      const response = await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
-      window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE_RESPONSE', response }, '*');
-    } catch (error) {
-      window.postMessage({ type: 'SHOPQ_TEST_ORGANIZE_RESPONSE', error: error.message }, '*');
-    }
-  }
-
-  if (event.data?.type === 'SHOPQ_TEST_CHECK_AUTH') {
-    console.log('Reclaim: Test hook - checking auth...');
-    try {
-      const response = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
-      window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH_RESPONSE', response }, '*');
-    } catch (error) {
-      window.postMessage({ type: 'SHOPQ_TEST_CHECK_AUTH_RESPONSE', error: error.message }, '*');
-    }
-  }
-
-  if (event.data?.type === 'SHOPQ_TEST_CLEAR_CACHE') {
-    console.log('Reclaim: Test hook - clearing cache...');
-    try {
-      await chrome.storage.local.remove('shopq_label_cache');
-      window.postMessage({ type: 'SHOPQ_TEST_CLEAR_CACHE_RESPONSE', success: true }, '*');
-    } catch (error) {
-      window.postMessage({ type: 'SHOPQ_TEST_CLEAR_CACHE_RESPONSE', error: error.message }, '*');
-    }
-  }
-
-  if (event.data?.type === 'SHOPQ_TEST_SET_CACHE') {
-    console.log('Reclaim: Test hook - setting cache with', Object.keys(event.data.cacheData || {}).length, 'entries...');
-    try {
-      await chrome.storage.local.set({ [LABEL_CACHE_KEY]: event.data.cacheData });
-      if (badgeManager) {
-        badgeManager.updateCache(event.data.cacheData);
-      }
-      window.postMessage({ type: 'SHOPQ_TEST_SET_CACHE_RESPONSE', success: true }, '*');
-    } catch (error) {
-      window.postMessage({ type: 'SHOPQ_TEST_SET_CACHE_RESPONSE', error: error.message }, '*');
-    }
-  }
-
-  if (event.data?.type === 'SHOPQ_TEST_GET_THREAD_IDS') {
-    const ids = badgeManager ? badgeManager.seenThreadIds : [];
-    console.log('Reclaim: Test hook - returning', ids.length, 'thread IDs');
-    window.postMessage({ type: 'SHOPQ_TEST_GET_THREAD_IDS_RESPONSE', threadIds: ids }, '*');
-  }
-
-  if (event.data?.type === 'SHOPQ_TEST_GET_CACHE_STATUS') {
-    console.log('Reclaim: Test hook - getting cache status...');
-    try {
-      const data = await chrome.storage.local.get(LABEL_CACHE_KEY);
-      const cache = data[LABEL_CACHE_KEY] || {};
-      const entries = Object.entries(cache);
-      window.postMessage({
-        type: 'SHOPQ_TEST_GET_CACHE_STATUS_RESPONSE',
-        count: entries.length,
-        sample: entries.slice(0, 5).map(([id, v]) => ({ threadId: id.slice(0, 12), ...v }))
-      }, '*');
-    } catch (error) {
-      window.postMessage({ type: 'SHOPQ_TEST_GET_CACHE_STATUS_RESPONSE', error: error.message }, '*');
-    }
-  }
-};
-globalDisposeBag.addListener(window, 'message', testHookListener);
-
-// =============================================================================
-// DIGEST SIDEBAR PANEL
-// =============================================================================
-
-// createDigestPanel removed - was unused code that could inject styles
-// The active panel is showDigestDrawer() which uses position:fixed
-
-/**
- * Fetch digest from API using cached classifications
- */
-async function fetchDigest() {
-  try {
-    // Get cached classifications and user settings
-    const storageData = await chrome.storage.local.get([LABEL_CACHE_KEY, 'userName', 'userCity', 'userRegion']);
-    const cache = storageData[LABEL_CACHE_KEY] || {};
-    const entries = Object.entries(cache);
-
-    if (entries.length === 0) {
-      return { empty: true, message: 'No classified emails yet. Click the Reclaim icon to organize your inbox first.' };
-    }
-
-    // Convert cache to digest format (current_data)
-    // API expects: id (required), subject (required), plus optional fields
-    const currentData = entries.slice(0, 50).map(([threadId, item]) => ({
-      id: threadId,  // Required by SummaryRequest validator
-      messageId: item.messageId || threadId,
-      threadId: threadId,
-      subject: item.subject || '(no subject)',
-      snippet: item.snippet || '',
-      from: item.from || '',
-      type: item.type?.toLowerCase() || 'message',
-      importance: item.importance || 'routine',
-      client_label: item.clientLabel || 'everything-else',
-      date: item.date || item.updatedAt || new Date().toISOString()
-    }));
-
-    // Call digest API with user info for personalized greeting/weather
-    const requestPayload = {
-      current_data: currentData,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      client_now: new Date().toISOString(),
-      user_name: storageData.userName || undefined,
-      city: storageData.userCity || undefined,
-      region: storageData.userRegion || undefined
-    };
-
-    console.log('Reclaim: Digest request payload:', {
-      emailCount: currentData.length,
-      sampleEmail: currentData[0],
-      timezone: requestPayload.timezone,
-      user_name: requestPayload.user_name,
-      city: requestPayload.city
-    });
-
-    const response = await fetch(`${API_BASE_URL}/api/context-digest`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestPayload)
-    });
-
-    if (!response.ok) {
-      // Try to get detailed error message from response
-      let errorDetail = '';
-      try {
-        const errorBody = await response.json();
-        errorDetail = errorBody.detail || JSON.stringify(errorBody);
-      } catch {
-        errorDetail = await response.text();
-      }
-      console.error('Reclaim: Digest API error:', response.status, errorDetail);
-      throw new Error(`API error ${response.status}: ${errorDetail}`);
-    }
-
-    const result = await response.json();
-    console.log('Reclaim: Digest API response:', result);
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Reclaim: Failed to fetch digest:', error);
-
-    // Detect extension context invalidated (happens after extension reload)
-    if (error.message?.includes('Extension context invalidated') ||
-        error.message?.includes('context invalidated')) {
-      return {
-        error: true,
-        message: 'Extension was updated. Please refresh Gmail (Cmd+R or F5).',
-        needsRefresh: true
-      };
-    }
-
-    return { error: true, message: error.message };
-  }
-}
-
-/**
- * Build HTML for a digest result. Returns { html, needsRefresh, isEmpty, isError }.
- * Callers wire up interactive buttons after inserting the HTML.
- */
-function buildDigestHtml(result) {
-  if (result.empty) {
-    return {
-      html: `
-        <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
-          <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-          <p style="margin-bottom: 16px;">${sanitizeHtml(result.message)}</p>
-          <button id="reclaim-organize-btn" style="
-            padding: 8px 16px; background: #1a73e8; color: white;
-            border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
-          ">Organize Inbox</button>
-        </div>
-      `,
-      isEmpty: true,
-      needsRefresh: false,
-      isError: false,
-    };
-  }
-
-  if (result.error) {
-    if (result.needsRefresh) {
-      return {
-        html: `
-          <div style="text-align: center; padding: 40px 20px;">
-            <div style="font-size: 48px; margin-bottom: 16px;">🔄</div>
-            <p style="font-weight: 500; color: #202124; margin-bottom: 8px;">Extension Updated</p>
-            <p style="font-size: 13px; color: #5f6368; margin-bottom: 16px;">Please refresh Gmail to reconnect.</p>
-            <button id="reclaim-refresh-btn" style="
-              padding: 8px 16px; background: #1a73e8; color: white;
-              border: none; border-radius: 4px; cursor: pointer;
-            ">Refresh Gmail</button>
-          </div>
-        `,
-        isEmpty: false,
-        needsRefresh: true,
-        isError: true,
-      };
-    }
-
-    return {
-      html: `
-        <div style="text-align: center; padding: 40px 20px;">
-          <p style="color: #c5221f; margin-bottom: 16px;">Error: ${sanitizeHtml(result.message)}</p>
-          <button id="reclaim-retry-btn" style="
-            padding: 8px 16px; background: #1a73e8; color: white;
-            border: none; border-radius: 4px; cursor: pointer;
-          ">Retry</button>
-        </div>
-      `,
-      isEmpty: false,
-      needsRefresh: false,
-      isError: true,
-    };
-  }
-
-  if (result.data?.html) {
-    return {
-      html: `<div style="line-height: 1.6;">${sanitizeHtml(result.data.html)}</div>`,
-      isEmpty: false,
-      needsRefresh: false,
-      isError: false,
-    };
-  }
-
-  if (result.data?.narrative) {
-    return {
-      html: `<div style="line-height: 1.6;">${sanitizeHtml(result.data.narrative)}</div>`,
-      isEmpty: false,
-      needsRefresh: false,
-      isError: false,
-    };
-  }
-
-  return {
-    html: `
-      <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
-        <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
-        <p>No digest content available.</p>
-      </div>
-    `,
-    isEmpty: true,
-    needsRefresh: false,
-    isError: false,
-  };
-}
-
-/**
- * Render digest content into the panel
- */
-function renderDigestContent(panel, result) {
-  const contentEl = panel.querySelector('.reclaim-digest-content');
-  const digestMeta = buildDigestHtml(result);
-  contentEl.innerHTML = digestMeta.html;
-  wireDigestButtons(contentEl, digestMeta, () => refreshDigest(panel));
-}
-
-/**
- * Refresh the digest
- */
-async function refreshDigest(panel) {
-  const contentEl = panel.querySelector('.reclaim-digest-content');
-  contentEl.innerHTML = `
-    <div class="reclaim-digest-loading">
-      <div class="spinner"></div>
-      <span>Loading digest...</span>
-    </div>
-  `;
-
-  const result = await fetchDigest();
-  renderDigestContent(panel, result);
-}
-
-/**
- * Wire interactive buttons inside a container after inserting digest HTML.
- * Handles Organize, Refresh Gmail, and Retry buttons.
- */
-function wireDigestButtons(container, digestMeta, retryFn) {
-  if (digestMeta.isEmpty) {
-    container.querySelector('#reclaim-organize-btn')?.addEventListener('click', async () => {
-      try {
-        await chrome.runtime.sendMessage({ type: 'ORGANIZE_NOW' });
-        container.innerHTML = `
-          <div style="text-align: center; padding: 40px 20px; color: #5f6368;">
-            <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
-            <p>Organizing inbox...</p>
-          </div>
-        `;
-      } catch (e) {
-        console.error('Reclaim: Failed to trigger organize:', e);
-      }
-    });
-  }
-  if (digestMeta.needsRefresh) {
-    container.querySelector('#reclaim-refresh-btn')?.addEventListener('click', () => {
-      window.location.reload();
-    });
-  }
-  if (digestMeta.isError && !digestMeta.needsRefresh && retryFn) {
-    container.querySelector('#reclaim-retry-btn')?.addEventListener('click', retryFn);
-  }
-}
-
-/**
- * Create the digest content element for the sidebar
- */
-function createDigestPanelContent() {
-  const container = document.createElement('div');
-  container.id = 'reclaim-digest-panel';
-  container.style.cssText = `
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    font-family: 'Google Sans', Roboto, sans-serif;
-    background: white;
-  `;
-
-  container.innerHTML = `
-    <div style="
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-    " id="reclaim-digest-content">
-      <div style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 200px;
-        color: #5f6368;
-      ">
-        <div style="
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          border-top-color: #1a73e8;
-          border-radius: 50%;
-          animation: reclaim-spin 1s linear infinite;
-          margin-bottom: 12px;
-        "></div>
-        <span>Loading digest...</span>
-      </div>
-    </div>
-    <style>
-      @keyframes reclaim-spin {
-        to { transform: rotate(360deg); }
-      }
-      #reclaim-digest-panel a { color: #1a73e8; text-decoration: none; }
-      #reclaim-digest-panel a:hover { text-decoration: underline; }
-    </style>
-  `;
-
-  fetchDigest().then(result => {
-    const content = container.querySelector('#reclaim-digest-content');
-    if (!content) return;
-
-    const digestMeta = buildDigestHtml(result);
-    content.innerHTML = digestMeta.html;
-    wireDigestButtons(content, digestMeta, () => {
-      const newContent = createDigestPanelContent();
-      container.replaceWith(newContent);
-    });
-  });
-
-  return container;
-}
-
 // =============================================================================
 // SIDEBAR CONTROLLER
 // =============================================================================
@@ -949,19 +244,6 @@ class SidebarController {
     this._shouldBeOpen = true;
     this._isNavigating = false;
     this._disposed = false;
-  }
-
-  get triggerRefresh() {
-    return () => {
-      const now = Date.now();
-      if (now - lastDigestRefreshTime < DIGEST_REFRESH_DEBOUNCE_MS) {
-        console.log('Reclaim: Returns refresh debounced (too soon)');
-        return;
-      }
-      lastDigestRefreshTime = now;
-      console.log('Reclaim: External returns refresh triggered');
-      this._fetchVisibleOrders();
-    };
   }
 
   postToSidebar(message) {
@@ -1018,22 +300,11 @@ class SidebarController {
       console.log('Reclaim: Reclaim sidebar registered successfully:', panelView);
       this._wirePanelLifecycle(panelView, sdk);
 
-      triggerDigestRefresh = this.triggerRefresh;
-
       panelView.open();
       console.log('Reclaim: Reclaim sidebar opened on initial load');
 
     } catch (error) {
       console.error('Reclaim: Failed to add Reclaim sidebar panel:', error);
-      console.log('Reclaim: Falling back to manual button injection...');
-      injectReclaimButton();
-
-      const observer = new MutationObserver(() => {
-        if (!document.getElementById('reclaim-nav-button')) {
-          injectReclaimButton();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
     }
   }
 
@@ -1384,225 +655,68 @@ class SidebarController {
   }
 }
 
-// Module-scope reference (created in initializeDigestSidebar)
+// Module-scope reference
 let sidebarController = null;
 
-/**
- * Initialize the returns sidebar using InboxSDK's Global sidebar API.
- * Creates a SidebarController that owns the iframe, router, and all panel lifecycle.
- */
-async function initializeDigestSidebar(sdk) {
-  const extensionOrigin = chrome.runtime.getURL('').slice(0, -1);
-  const router = new SidebarMessageRouter(extensionOrigin);
-  sidebarController = new SidebarController(router);
-  await sidebarController.init(sdk);
-}
+// Global dispose bag for cleanup on extension invalidation
+const globalDisposeBag = new DisposeBag();
 
 /**
- * Load digest content into a panel element
- * PHASE 3: Uses iframe postMessage to avoid Gmail layout issues
+ * Dispose all managed resources (sidebar controller, global listeners).
+ * Called when extension context is invalidated.
  */
-async function loadDigestIntoPanel(panelEl) {
-  const sendToIframe = panelEl._sendToIframe;
-
-  if (!sendToIframe) {
-    console.error('Reclaim: sendToIframe function not found on panelEl');
-    return;
+function disposeAll() {
+  console.log('Reclaim: Disposing all resources...');
+  if (sidebarController) {
+    sidebarController.dispose();
+    sidebarController = null;
   }
-
-  sendToIframe(`
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: #5f6368;">
-      <div class="spinner"></div>
-      <span>Loading digest...</span>
-    </div>
-  `);
-
-  const result = await fetchDigest();
-  const digestMeta = buildDigestHtml(result);
-
-  if (panelEl._setCachedHtml) {
-    panelEl._setCachedHtml(digestMeta.html);
-    console.log('Reclaim: Digest content cached for navigation persistence');
-  }
-
-  sendToIframe(digestMeta.html);
-  console.log('Reclaim: Digest content sent to iframe');
-}
-
-/**
- * Inject Reclaim button into Gmail's top nav
- */
-function injectReclaimButton() {
-  // Skip if already exists
-  if (document.getElementById('reclaim-nav-button')) {
-    return;
-  }
-
-  // Find the area where Gemini/Settings icons are (right side of header)
-  const headerRight = document.querySelector('[data-ogsr-up]')?.closest('div')?.parentElement ||
-                      document.querySelector('header')?.querySelector('[role="navigation"]') ||
-                      document.querySelector('[aria-label="Support"]')?.closest('div')?.parentElement;
-
-  if (!headerRight) {
-    console.log('Reclaim: Header area not found, retrying...');
-    setTimeout(injectReclaimButton, 1000);
-    return;
-  }
-
-  // Create Reclaim button matching Gmail's style
-  const button = document.createElement('div');
-  button.id = 'reclaim-nav-button';
-  button.innerHTML = `
-    <style>
-      #reclaim-nav-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        cursor: pointer;
-        margin: 0 4px;
-        transition: background 0.2s;
-      }
-      #reclaim-nav-button:hover { background: rgba(255,255,255,0.1); }
-      #reclaim-nav-button img { width: 24px; height: 24px; }
-      #reclaim-nav-button.active { background: rgba(138, 180, 248, 0.2); }
-    </style>
-    <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Reclaim Digest" title="Reclaim Digest">
-  `;
-
-  button.addEventListener('click', () => {
-    button.classList.toggle('active');
-    toggleDigestDrawer();
-  });
-
-  // Try to insert before the profile picture (last item)
-  const profilePic = headerRight.querySelector('img[aria-label]')?.closest('a, div') || headerRight.lastElementChild;
-  if (profilePic) {
-    profilePic.parentElement.insertBefore(button, profilePic);
-    console.log('Reclaim: Nav button injected successfully');
-  } else {
-    headerRight.appendChild(button);
-    console.log('Reclaim: Nav button appended to header');
-  }
-}
-
-/**
- * Toggle the digest drawer open/closed
- */
-function toggleDigestDrawer() {
-  const existing = document.getElementById('reclaim-digest-iframe');
-  if (existing) {
-    existing.remove();
-    return;
-  }
-
-  // Create drawer as iframe for isolation
-  const iframe = document.createElement('iframe');
-  iframe.id = 'reclaim-digest-iframe';
-  iframe.style.cssText = `
-    position: fixed !important;
-    top: 0 !important;
-    right: 0 !important;
-    width: 360px !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    border: none !important;
-    z-index: 2147483647 !important;
-    background: white !important;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.15) !important;
-  `;
-  document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument;
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html><head>
-      <meta charset="UTF-8">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; font-family: 'Google Sans', Roboto, sans-serif; }
-        .drawer { display: flex; flex-direction: column; height: 100%; }
-        .header {
-          padding: 16px 20px;
-          border-bottom: 1px solid #e0e0e0;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .header h2 { font-size: 18px; font-weight: 500; color: #202124; }
-        .close-btn {
-          background: none;
-          border: none;
-          font-size: 24px;
-          cursor: pointer;
-          color: #5f6368;
-          padding: 4px 8px;
-          border-radius: 4px;
-        }
-        .close-btn:hover { background: #f1f3f4; }
-        .content { flex: 1; overflow-y: auto; padding: 16px 20px; }
-        .loading {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 200px;
-          color: #5f6368;
-        }
-        .spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid #e0e0e0;
-          border-top-color: #1a73e8;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 12px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        a { color: #1a73e8; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-      </style>
-    </head>
-    <body>
-      <div class="drawer">
-        <div class="header">
-          <h2>Reclaim Digest</h2>
-          <button class="close-btn" id="close-btn">&times;</button>
-        </div>
-        <div class="content" id="content">
-          <div class="loading">
-            <div class="spinner"></div>
-            <span>Loading digest...</span>
-          </div>
-        </div>
-      </div>
-    </body></html>
-  `);
-  doc.close();
-
-  // Close button
-  doc.getElementById('close-btn').addEventListener('click', () => {
-    iframe.remove();
-    document.getElementById('reclaim-nav-button')?.classList.remove('active');
-  });
-
-  // Load digest content
-  fetchDigest().then(result => {
-    const content = doc.getElementById('content');
-    if (!content) return;
-
-    const digestMeta = buildDigestHtml(result);
-    content.innerHTML = digestMeta.html;
-    wireDigestButtons(content, digestMeta);
-  });
+  globalDisposeBag.dispose();
 }
 
 // =============================================================================
 // INITIALIZATION
 // =============================================================================
+
+/**
+ * Initialize InboxSDK and the returns sidebar.
+ */
+async function initializeVisualLayer() {
+  if (!isExtensionContextValid()) {
+    console.warn('Reclaim: Extension context invalidated - showing refresh banner');
+    showRefreshBanner();
+    return;
+  }
+
+  // Periodic extension context check (detect extension reload while page stays open)
+  const contextCheckInterval = setInterval(() => {
+    if (!isExtensionContextValid()) {
+      console.warn('Reclaim: Extension context invalidated - cleaning up');
+      clearInterval(contextCheckInterval);
+      disposeAll();
+      showRefreshBanner();
+    }
+  }, 30000);
+  globalDisposeBag.addInterval(contextCheckInterval);
+
+  console.log('Reclaim: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
+
+  try {
+    const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
+    console.log('Reclaim: InboxSDK loaded successfully');
+
+    // Initialize returns sidebar
+    const extensionOrigin = chrome.runtime.getURL('').slice(0, -1);
+    const router = new SidebarMessageRouter(extensionOrigin);
+    sidebarController = new SidebarController(router);
+    await sidebarController.init(sdk);
+  } catch (error) {
+    console.error('Reclaim: Failed to load InboxSDK:', error.message);
+    if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {
+      showRefreshBanner();
+    }
+  }
+}
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeVisualLayer);
