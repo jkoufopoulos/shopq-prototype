@@ -24,7 +24,6 @@ from shopq.returns import (
     ExtractionStage,
     ReturnCard,
     ReturnCardCreate,
-    ReturnCardRepository,
     ReturnCardUpdate,
     ReturnConfidence,
     ReturnStatus,
@@ -553,121 +552,12 @@ async def process_email(
         )
 
         if result.success and result.card:
-            # Log extraction result for debugging dedup issues
-            logger.info(
-                "DEDUP CHECK: merchant=%s, order_number=%s, item_summary=%s",
-                result.card.merchant_domain,
-                result.card.order_number,
-                result.card.item_summary[:50] if result.card.item_summary else None,
+            dedup_result = ReturnsService.dedup_and_persist(user_id, result.card)
+            return ProcessEmailResponse(
+                success=True,
+                stage_reached=result.stage_reached,
+                card=ReturnCardResponse.from_card(dedup_result.card),
             )
-
-            # Check for existing card (deduplication)
-            # Normalize domain for consistent matching
-            normalized_domain = (result.card.merchant_domain or "").lower()
-
-            # Strategy 1: Match by merchant_domain + order_number
-            existing_card = None
-            if result.card.order_number:
-                existing_card = ReturnCardRepository.find_by_order_key(
-                    user_id=user_id,
-                    merchant_domain=normalized_domain,
-                    order_number=result.card.order_number,
-                    tracking_number=None,
-                )
-                if existing_card:
-                    logger.info("DEDUP MATCH: Found by order_number %s", result.card.order_number)
-
-            # Strategy 2: Match by merchant_domain + item_summary (for when order_number missing)
-            if not existing_card and result.card.item_summary:
-                candidate = ReturnCardRepository.find_by_item_summary(
-                    user_id=user_id,
-                    merchant_domain=normalized_domain,
-                    item_summary=result.card.item_summary,
-                )
-                if candidate:
-                    # Don't merge if order numbers conflict
-                    new_order = result.card.order_number
-                    existing_order = candidate.order_number
-                    if new_order and existing_order and new_order != existing_order:
-                        logger.info(
-                            "DEDUP SKIP: order# conflict %s vs %s", new_order, existing_order
-                        )
-                        candidate = None
-                    else:
-                        logger.info("DEDUP MATCH: Found by item_summary similarity")
-                existing_card = candidate
-
-            # Strategy 3: Check if this email was already processed
-            if not existing_card:
-                existing_card = ReturnCardRepository.find_by_email_id(user_id, request.email_id)
-                if existing_card:
-                    logger.info("DEDUP MATCH: Found by email_id")
-
-            if not existing_card:
-                logger.info(
-                    "DEDUP NO MATCH: Creating new card for %s - %s",
-                    result.card.merchant_domain,
-                    result.card.item_summary[:40] if result.card.item_summary else "unknown",
-                )
-
-            if existing_card:
-                # Merge email into existing card with new data
-                # This updates the card if the new email has better info
-                # (e.g., delivery date from shipping email, return policy from confirmation)
-                new_data = {
-                    "delivery_date": result.card.delivery_date,
-                    "return_by_date": result.card.return_by_date,
-                    "item_summary": result.card.item_summary,
-                    "evidence_snippet": result.card.evidence_snippet,
-                    "return_portal_link": result.card.return_portal_link,
-                    "shipping_tracking_link": result.card.shipping_tracking_link,
-                }
-                saved_card = ReturnCardRepository.merge_email_into_card(
-                    existing_card.id, request.email_id, new_data
-                )
-                if saved_card:
-                    logger.info(
-                        "Processed email %s -> merged into existing card %s for %s",
-                        request.email_id,
-                        saved_card.id,
-                        saved_card.merchant,
-                    )
-            else:
-                # Create new card
-                from shopq.returns import ReturnCardCreate
-
-                card_create = ReturnCardCreate(
-                    user_id=result.card.user_id,
-                    merchant=result.card.merchant,
-                    merchant_domain=normalized_domain,
-                    item_summary=result.card.item_summary,
-                    confidence=result.card.confidence,
-                    source_email_ids=result.card.source_email_ids,
-                    order_number=result.card.order_number,
-                    amount=result.card.amount,
-                    currency=result.card.currency,
-                    order_date=result.card.order_date,
-                    delivery_date=result.card.delivery_date,
-                    return_by_date=result.card.return_by_date,
-                    return_portal_link=result.card.return_portal_link,
-                    shipping_tracking_link=result.card.shipping_tracking_link,
-                    evidence_snippet=result.card.evidence_snippet,
-                )
-
-                saved_card = ReturnCardRepository.create(card_create)
-                logger.info(
-                    "Processed email %s -> created new card %s for %s",
-                    request.email_id,
-                    saved_card.id,
-                    saved_card.merchant,
-                )
-
-            if saved_card:
-                return ProcessEmailResponse(
-                    success=True,
-                    stage_reached=result.stage_reached,
-                    card=ReturnCardResponse.from_card(saved_card),
-                )
 
         return ProcessEmailResponse(
             success=False,
@@ -764,79 +654,11 @@ async def process_email_batch(
                 stats.cards_created += 1
                 continue
 
-            # Dedup against DB: check for existing card
-            normalized_domain = (card.merchant_domain or "").lower()
-
-            existing_card = None
-            if card.order_number:
-                existing_card = ReturnCardRepository.find_by_order_key(
-                    user_id=user_id,
-                    merchant_domain=normalized_domain,
-                    order_number=card.order_number,
-                    tracking_number=None,
-                )
-
-            if not existing_card and card.item_summary:
-                candidate = ReturnCardRepository.find_by_item_summary(
-                    user_id=user_id,
-                    merchant_domain=normalized_domain,
-                    item_summary=card.item_summary,
-                )
-                if candidate:
-                    # Don't merge if order numbers conflict
-                    new_order = card.order_number
-                    existing_order = candidate.order_number
-                    if new_order and existing_order and new_order != existing_order:
-                        logger.info(
-                            "DEDUP SKIP: order# conflict %s vs %s", new_order, existing_order
-                        )
-                        candidate = None
-                    existing_card = candidate
-
-            if not existing_card and card.source_email_ids:
-                for eid in card.source_email_ids:
-                    existing_card = ReturnCardRepository.find_by_email_id(user_id, eid)
-                    if existing_card:
-                        break
-
-            if existing_card:
-                new_data = {
-                    "delivery_date": card.delivery_date,
-                    "return_by_date": card.return_by_date,
-                    "item_summary": card.item_summary,
-                    "evidence_snippet": card.evidence_snippet,
-                    "return_portal_link": card.return_portal_link,
-                    "shipping_tracking_link": card.shipping_tracking_link,
-                }
-                email_id = card.source_email_ids[0] if card.source_email_ids else ""
-                saved = ReturnCardRepository.merge_email_into_card(
-                    existing_card.id, email_id, new_data
-                )
-                if saved:
-                    saved_cards.append(saved)
-                    stats.cards_merged += 1
+            dedup_result = ReturnsService.dedup_and_persist(user_id, card)
+            saved_cards.append(dedup_result.card)
+            if dedup_result.was_merged:
+                stats.cards_merged += 1
             else:
-                from shopq.returns import ReturnCardCreate
-
-                card_create = ReturnCardCreate(
-                    user_id=user_id,
-                    merchant=card.merchant,
-                    merchant_domain=normalized_domain,
-                    item_summary=card.item_summary,
-                    confidence=card.confidence,
-                    source_email_ids=card.source_email_ids,
-                    order_number=card.order_number,
-                    amount=card.amount,
-                    currency=card.currency,
-                    order_date=card.order_date,
-                    delivery_date=card.delivery_date,
-                    return_by_date=card.return_by_date,
-                    return_portal_link=card.return_portal_link,
-                    shipping_tracking_link=card.shipping_tracking_link,
-                    evidence_snippet=card.evidence_snippet,
-                )
-                saved = ReturnCardRepository.create(card_create)
-                saved_cards.append(saved)
                 stats.cards_created += 1
 
         logger.info(

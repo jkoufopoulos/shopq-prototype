@@ -127,4 +127,99 @@ class ReturnsService:
         Returns:
             DedupResult with the saved card and whether it was merged.
         """
-        raise NotImplementedError("Implemented in Step 1.7b")
+        normalized_domain = (card.merchant_domain or "").lower()
+
+        logger.info(
+            "DEDUP CHECK: merchant=%s, order_number=%s, item_summary=%s",
+            card.merchant_domain,
+            card.order_number,
+            card.item_summary[:50] if card.item_summary else None,
+        )
+
+        # Strategy 1: Match by merchant_domain + order_number
+        existing_card = None
+        if card.order_number:
+            existing_card = ReturnCardRepository.find_by_order_key(
+                user_id=user_id,
+                merchant_domain=normalized_domain,
+                order_number=card.order_number,
+                tracking_number=None,
+            )
+            if existing_card:
+                logger.info("DEDUP MATCH: Found by order_number %s", card.order_number)
+
+        # Strategy 2: Match by merchant_domain + item_summary
+        if not existing_card and card.item_summary:
+            candidate = ReturnCardRepository.find_by_item_summary(
+                user_id=user_id,
+                merchant_domain=normalized_domain,
+                item_summary=card.item_summary,
+            )
+            if candidate:
+                # Don't merge if order numbers conflict
+                new_order = card.order_number
+                existing_order = candidate.order_number
+                if new_order and existing_order and new_order != existing_order:
+                    logger.info(
+                        "DEDUP SKIP: order# conflict %s vs %s", new_order, existing_order
+                    )
+                    candidate = None
+                else:
+                    logger.info("DEDUP MATCH: Found by item_summary similarity")
+            existing_card = candidate
+
+        # Strategy 3: Match by email_id
+        if not existing_card:
+            for eid in card.source_email_ids:
+                existing_card = ReturnCardRepository.find_by_email_id(user_id, eid)
+                if existing_card:
+                    logger.info("DEDUP MATCH: Found by email_id")
+                    break
+
+        if existing_card:
+            # Merge new data into existing card
+            new_data = {
+                "delivery_date": card.delivery_date,
+                "return_by_date": card.return_by_date,
+                "item_summary": card.item_summary,
+                "evidence_snippet": card.evidence_snippet,
+                "return_portal_link": card.return_portal_link,
+                "shipping_tracking_link": card.shipping_tracking_link,
+            }
+            email_id = card.source_email_ids[0] if card.source_email_ids else ""
+            saved = ReturnCardRepository.merge_email_into_card(
+                existing_card.id, email_id, new_data
+            )
+            if saved:
+                logger.info(
+                    "DEDUP MERGED: email -> existing card %s for %s",
+                    saved.id,
+                    saved.merchant,
+                )
+                return DedupResult(card=saved, was_merged=True)
+
+        # No match — create new card
+        logger.info(
+            "DEDUP NO MATCH: Creating new card for %s - %s",
+            card.merchant_domain,
+            card.item_summary[:40] if card.item_summary else "unknown",
+        )
+        card_create = ReturnCardCreate(
+            user_id=user_id,
+            merchant=card.merchant,
+            merchant_domain=normalized_domain,
+            item_summary=card.item_summary,
+            confidence=card.confidence,
+            source_email_ids=card.source_email_ids,
+            order_number=card.order_number,
+            amount=card.amount,
+            currency=card.currency,
+            order_date=card.order_date,
+            delivery_date=card.delivery_date,
+            return_by_date=card.return_by_date,
+            return_portal_link=card.return_portal_link,
+            shipping_tracking_link=card.shipping_tracking_link,
+            evidence_snippet=card.evidence_snippet,
+        )
+        saved = ReturnCardRepository.create(card_create)
+        return DedupResult(card=saved, was_merged=False)
