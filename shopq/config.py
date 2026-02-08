@@ -54,3 +54,6 @@ API_EXPIRING_THRESHOLD_DAYS: int = 7
 # --- LLM Budget ---
 LLM_USER_DAILY_LIMIT: int = 500
 LLM_GLOBAL_DAILY_LIMIT: int = 10000
+
+# --- Feature Flags ---
+USE_SERVICE_DEDUP: bool = os.getenv("SHOPQ_USE_SERVICE_DEDUP", "true").lower() == "true"

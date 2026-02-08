@@ -1,10 +1,11 @@
 """Returns service layer — facade between API routes and repository.
 
-Centralizes ownership checks and business logic that currently lives in routes.
-Repository calls are pass-through for now; dedup/merge logic moves here in Step 1.7.
+Centralizes ownership checks, dedup/merge logic, and business rules.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from shopq.observability.logging import get_logger
 from shopq.returns.models import (
@@ -16,6 +17,14 @@ from shopq.returns.models import (
 from shopq.returns.repository import ReturnCardRepository
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class DedupResult:
+    """Result of dedup-and-persist operation."""
+
+    card: ReturnCard
+    was_merged: bool
 
 
 class ReturnsService:
@@ -102,3 +111,20 @@ class ReturnsService:
     def refresh_statuses(user_id: str, threshold_days: int = 7) -> int:
         """Refresh card statuses based on current date."""
         return ReturnCardRepository.refresh_statuses(user_id, threshold_days)
+
+    @staticmethod
+    def dedup_and_persist(user_id: str, card: ReturnCard) -> DedupResult:
+        """Deduplicate a card against the DB and persist (create or merge).
+
+        Dedup strategy (order matters — never reorder):
+        1. Match by merchant_domain + order_number
+        2. Match by merchant_domain + item_summary (fuzzy, with order# conflict guard)
+        3. Match by email_id (any in card.source_email_ids)
+
+        If a match is found, merges the new card's data into the existing card.
+        Otherwise, creates a new card.
+
+        Returns:
+            DedupResult with the saved card and whether it was merged.
+        """
+        raise NotImplementedError("Implemented in Step 1.7b")
