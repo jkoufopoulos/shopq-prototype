@@ -22,15 +22,8 @@ const SCANNER_LOG_PREFIX = '[ReturnWatch:Scanner]';
  */
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
-/**
- * Delay between Gmail API requests (ms).
- */
-const API_REQUEST_DELAY = 100;
-
-/**
- * Maximum messages per search query.
- */
-const MAX_MESSAGES_PER_QUERY = 100;
+const API_REQUEST_DELAY = CONFIG.API_REQUEST_DELAY_MS;
+const MAX_MESSAGES_PER_QUERY = CONFIG.MAX_MESSAGES_PER_QUERY;
 
 /**
  * Search queries for finding purchase emails.
@@ -711,7 +704,7 @@ async function scanPurchases(options = {}) {
     emailsForBackend.length, 'emails ready for batch processing');
 
   // ---- Phase 2+3: Send to backend in chunks, store results after each ----
-  const BATCH_CHUNK_SIZE = 10;
+  const BATCH_CHUNK_SIZE = CONFIG.BATCH_CHUNK_SIZE;
   let batchCards = [];
 
   if (emailsForBackend.length > 0) {
