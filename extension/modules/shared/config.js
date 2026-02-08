@@ -9,7 +9,7 @@ const VERSION = '1.0.0';
 
 const CONFIG = {
   // --- API Endpoints (SINGLE SOURCE OF TRUTH) ---
-  API_BASE_URL: 'https://reclaim-api-488078904670.us-central1.run.app',
+  API_BASE_URL: 'https://shopq-api-488078904670.us-central1.run.app',
   GMAIL_API_BASE: 'https://www.googleapis.com/gmail/v1/users/me',
 
   VERSION: VERSION,
