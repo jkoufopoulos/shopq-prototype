@@ -66,7 +66,7 @@ LOG_FILE = SHOPQ_ROOT / "logs" / "shopq.log"
 MODEL_VERSION = "v2025-10-05"
 
 # API URL (matches extension config.js)
-SHOPQ_API_URL = "https://shopq-api-pgccmbjxvq-uc.a.run.app"
+SHOPQ_API_URL = "https://reclaim-api-488078904670.us-central1.run.app"
 
 
 def is_production() -> bool:
