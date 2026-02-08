@@ -1794,3 +1794,8 @@ document.addEventListener('visibilitychange', () => {
     fetchReturns();    // Also fetch fresh data
   }
 });
+
+// Clean up intervals when iframe is about to be destroyed (Gmail navigation)
+window.addEventListener('beforeunload', () => {
+  stopDateRefreshTimer();
+});
