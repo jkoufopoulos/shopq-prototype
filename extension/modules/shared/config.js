@@ -69,3 +69,6 @@ const CONFIG = {
 
   VERBOSE_LOGGING: false,
 };
+
+// Allow webpack to import CONFIG as a module (ignored by importScripts/script tags)
+if (typeof module !== 'undefined') module.exports = CONFIG;
