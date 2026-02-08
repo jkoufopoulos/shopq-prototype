@@ -9,9 +9,9 @@ async function updateReturnCounts() {
     const result = await chrome.runtime.sendMessage({ type: 'GET_VISIBLE_ORDERS' });
     const orders = result.orders || [];
 
-    // Derive expiring count: orders with return_by_date within 7 days
+    // Derive expiring count: orders with return_by_date within threshold
     const now = new Date();
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const sevenDaysMs = CONFIG.EXPIRING_SOON_DAYS * 24 * 60 * 60 * 1000;
     let expiringCount = 0;
 
     for (const order of orders) {
