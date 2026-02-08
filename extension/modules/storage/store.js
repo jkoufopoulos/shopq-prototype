@@ -1248,6 +1248,157 @@ function jaccardSimilarity(setA, setB) {
 }
 
 /**
+ * Count how many "richness" fields an order has populated.
+ * Used to pick the best card when merging duplicate clusters.
+ *
+ * @param {Order} order
+ * @returns {number}
+ */
+function orderRichness(order) {
+  let score = 0;
+  if (order.delivery_date) score += 3;
+  if (order.return_by_date) score += 3;
+  if (order.order_id) score += 2;
+  if (order.ship_date) score += 1;
+  if (order.estimated_delivery_date) score += 1;
+  if (order.amount) score += 1;
+  if (order.return_portal_link) score += 1;
+  if (order.tracking_number) score += 1;
+  if (order.explicit_return_by_date) score += 2;
+  if (order.return_window_days) score += 1;
+  return score;
+}
+
+/**
+ * Deduplicate stored orders for a set of merchants.
+ * Runs pairwise matching within each merchant group and merges duplicates.
+ * Only processes merchants in the input set (bounded scope).
+ *
+ * @param {Set<string>} merchantKeys - Normalized merchant keys to check
+ * @returns {Promise<{merged: number}>}
+ */
+async function deduplicateStoredOrders(merchantKeys) {
+  if (!merchantKeys || merchantKeys.size === 0) return { merged: 0 };
+
+  const FUZZY_TIME_WINDOW_DAYS = 14;
+  const JACCARD_THRESHOLD = 0.60;
+
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.ORDERS_BY_KEY,
+    STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT,
+  ]);
+
+  const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
+  const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
+
+  let totalMerged = 0;
+
+  for (const merchant of merchantKeys) {
+    const candidateKeys = merchantIndex[merchant];
+    if (!candidateKeys || candidateKeys.length <= 1) continue;
+
+    // Load candidate orders
+    const candidates = [];
+    for (const key of candidateKeys) {
+      if (orders[key]) {
+        candidates.push({ key, order: orders[key] });
+      }
+    }
+    if (candidates.length <= 1) continue;
+
+    // Build clusters using union-find
+    const parent = candidates.map((_, i) => i);
+    const ufFind = (idx) => {
+      while (parent[idx] !== idx) {
+        parent[idx] = parent[parent[idx]];
+        idx = parent[idx];
+      }
+      return idx;
+    };
+    const ufUnion = (i, j) => {
+      const ri = ufFind(i);
+      const rj = ufFind(j);
+      if (ri !== rj) parent[ri] = rj;
+    };
+
+    // Pairwise matching
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        const a = candidates[i].order;
+        const b = candidates[j].order;
+
+        // Order ID conflict guard
+        const idA = (a.order_id || '').trim().toUpperCase();
+        const idB = (b.order_id || '').trim().toUpperCase();
+        if (idA && idB && idA !== idB) continue;
+
+        // Same order_id → merge
+        if (idA && idB && idA === idB) {
+          ufUnion(i, j);
+          continue;
+        }
+
+        // Time window check
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (timeA && timeB) {
+          const daysDiff = Math.abs(timeA - timeB) / (1000 * 60 * 60 * 24);
+          if (daysDiff > FUZZY_TIME_WINDOW_DAYS) continue;
+        }
+
+        // Jaccard similarity on item tokens
+        const tokensA = normalizeItemTokens(a.item_summary);
+        const tokensB = normalizeItemTokens(b.item_summary);
+
+        if (tokensA.size === 0 && tokensB.size === 0) {
+          // Both empty summaries — match
+          ufUnion(i, j);
+          continue;
+        }
+
+        if (tokensA.size === 0 || tokensB.size === 0) continue;
+
+        const score = jaccardSimilarity(tokensA, tokensB);
+        if (score >= JACCARD_THRESHOLD) {
+          ufUnion(i, j);
+        }
+      }
+    }
+
+    // Group by cluster root
+    const clusters = new Map();
+    for (let i = 0; i < candidates.length; i++) {
+      const root = ufFind(i);
+      if (!clusters.has(root)) clusters.set(root, []);
+      clusters.get(root).push(candidates[i]);
+    }
+
+    // Merge each cluster with >1 member
+    for (const cluster of clusters.values()) {
+      if (cluster.length <= 1) continue;
+
+      // Pick richest order as winner
+      cluster.sort((a, b) => orderRichness(b.order) - orderRichness(a.order));
+      const winner = cluster[0];
+
+      for (let k = 1; k < cluster.length; k++) {
+        const loser = cluster[k];
+        console.log(STORE_LOG_PREFIX, 'DEDUP_MERGED',
+          'merchant:', merchant, 'winner:', winner.key, 'loser:', loser.key);
+        await mergeOrders(winner.key, loser.key);
+        totalMerged++;
+      }
+    }
+  }
+
+  if (totalMerged > 0) {
+    console.log(STORE_LOG_PREFIX, 'DEDUP_COMPLETE', 'merged:', totalMerged, 'duplicates');
+  }
+
+  return { merged: totalMerged };
+}
+
+/**
  * Find Orders by thread_id for thread-hint linking.
  * Returns orders where any source_email has matching thread_id.
  *

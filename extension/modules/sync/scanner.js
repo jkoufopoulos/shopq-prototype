@@ -717,6 +717,7 @@ async function scanPurchases(options = {}) {
   // ---- Phase 2+3: Send to backend in chunks, store results after each ----
   const BATCH_CHUNK_SIZE = CONFIG.BATCH_CHUNK_SIZE;
   let batchCards = [];
+  const affectedMerchants = new Set();
 
   if (emailsForBackend.length > 0) {
     // Split into chunks to avoid service worker timeout (~5 min limit)
@@ -746,6 +747,9 @@ async function scanPurchases(options = {}) {
           for (const card of chunkCards) {
             const order = convertReturnCardToOrder(card, user_id);
             await upsertOrder(order);
+            if (order.normalized_merchant) {
+              affectedMerchants.add(order.normalized_merchant);
+            }
           }
 
           console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_RESULT',
@@ -778,7 +782,16 @@ async function scanPurchases(options = {}) {
     }
   }
 
-  // ---- Phase 4: Post-scan local cancellation detection (safety net) ----
+  // ---- Phase 4: Post-scan dedup for legacy duplicates ----
+  if (affectedMerchants.size > 0) {
+    console.log(SCANNER_LOG_PREFIX, 'DEDUP_SWEEP', affectedMerchants.size, 'merchants to check');
+    const dedupResult = await deduplicateStoredOrders(affectedMerchants);
+    if (dedupResult.merged > 0) {
+      console.log(SCANNER_LOG_PREFIX, 'DEDUP_RESULT', dedupResult.merged, 'duplicates merged');
+    }
+  }
+
+  // ---- Phase 5: Post-scan local cancellation detection (safety net) ----
   const cancelledOrders = detectCancelledOrders(emailMetas);
   if (cancelledOrders.size > 0) {
     console.log(SCANNER_LOG_PREFIX, 'CANCELLATION_SWEEP',
