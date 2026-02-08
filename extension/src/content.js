@@ -16,6 +16,12 @@
 import * as InboxSDK from '@inboxsdk/core';
 import Kefir from 'kefir';
 import DOMPurify from 'dompurify';
+import {
+  API_BASE_URL,
+  DIGEST_REFRESH_DEBOUNCE_MS,
+  SIDEBAR_REFRESH_INTERVAL_MS,
+  LABEL_CACHE_KEY,
+} from './config.js';
 
 // Prevent multiple initializations - use a global flag
 if (window.__SHOPQ_INITIALIZED__) {
@@ -81,7 +87,6 @@ const threadRowRegistry = new Map();
 // Global function to trigger digest refresh (set by initializeDigestSidebar)
 let triggerDigestRefresh = null;
 let lastDigestRefreshTime = 0;
-const DIGEST_REFRESH_DEBOUNCE_MS = 5000;  // 5 second debounce
 
 /**
  * Create an updateable label stream using Kefir
@@ -97,18 +102,11 @@ function createLabelStream() {
 }
 
 // =============================================================================
-// API CONFIGURATION
-// =============================================================================
-
-const API_BASE_URL = 'https://reclaim-api-488078904670.us-central1.run.app';
-
-// =============================================================================
 // CONFIGURATION
 // =============================================================================
 
 // Registered InboxSDK App ID
 const SHOPQ_APP_ID = 'sdk_mailqapp_8eb273b616';
-const LABEL_CACHE_KEY = 'shopq_label_cache';
 
 // Badge display names for types
 const TYPE_DISPLAY_NAMES = {
@@ -1373,7 +1371,6 @@ async function initializeDigestSidebar(sdk) {
     let sidebarShouldBeOpen = true;  // Start open by default
     let isNavigating = false;
     let sidebarRefreshInterval = null;
-    const SIDEBAR_REFRESH_INTERVAL_MS = 60000; // 1 minute
 
     // Listen for panel visibility changes
     panelView.on('activate', () => {
