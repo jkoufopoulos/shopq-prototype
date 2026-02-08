@@ -184,44 +184,38 @@ function showRefreshBanner() {
 
   const banner = document.createElement('div');
   banner.id = 'reclaim-refresh-banner';
-  banner.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #1a73e8;
-      color: white;
-      padding: 8px 16px;
-      text-align: center;
-      font-family: 'Google Sans', Roboto, sans-serif;
-      font-size: 14px;
-      z-index: 99999;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-    ">
-      <span>Reclaim was updated. Please refresh this page to continue.</span>
-      <button onclick="location.reload()" style="
-        background: white;
-        color: #1a73e8;
-        border: none;
-        padding: 6px 16px;
-        border-radius: 4px;
-        font-weight: 500;
-        cursor: pointer;
-      ">Refresh</button>
-      <button onclick="this.parentElement.remove()" style="
-        background: transparent;
-        color: white;
-        border: 1px solid rgba(255,255,255,0.5);
-        padding: 6px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-      ">Dismiss</button>
-    </div>
-  `;
+
+  const container = document.createElement('div');
+  Object.assign(container.style, {
+    position: 'fixed', top: '0', left: '0', right: '0',
+    background: '#1a73e8', color: 'white', padding: '8px 16px',
+    textAlign: 'center', fontFamily: "'Google Sans', Roboto, sans-serif",
+    fontSize: '14px', zIndex: '99999', display: 'flex',
+    justifyContent: 'center', alignItems: 'center', gap: '12px',
+  });
+
+  const msg = document.createElement('span');
+  msg.textContent = 'Reclaim was updated. Please refresh this page to continue.';
+
+  const refreshBtn = document.createElement('button');
+  refreshBtn.textContent = 'Refresh';
+  Object.assign(refreshBtn.style, {
+    background: 'white', color: '#1a73e8', border: 'none',
+    padding: '6px 16px', borderRadius: '4px', fontWeight: '500', cursor: 'pointer',
+  });
+  refreshBtn.addEventListener('click', () => location.reload());
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.textContent = 'Dismiss';
+  Object.assign(dismissBtn.style, {
+    background: 'transparent', color: 'white',
+    border: '1px solid rgba(255,255,255,0.5)',
+    padding: '6px 12px', borderRadius: '4px', cursor: 'pointer',
+  });
+  dismissBtn.addEventListener('click', () => banner.remove());
+
+  container.append(msg, refreshBtn, dismissBtn);
+  banner.appendChild(container);
   document.body.appendChild(banner);
 }
 
