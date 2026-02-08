@@ -24,7 +24,7 @@ const POLICY_LOG_PREFIX = '[ReturnWatch:Policy]';
 /**
  * Maximum context to send to LLM (characters).
  */
-const MAX_LLM_CONTEXT = 1000;
+const MAX_LLM_CONTEXT = CONFIG.MAX_LLM_CONTEXT_CHARS;
 
 /**
  * Enrichment states for UI.
@@ -177,7 +177,7 @@ async function callLLMExtraction(context, merchant) {
 
   try {
     const token = await getAuthToken();
-    const apiUrl = CONFIG.SHOPQ_API_URL || CONFIG.API_BASE_URL;
+    const apiUrl = CONFIG.API_BASE_URL;
 
     const response = await fetch(`${apiUrl}/api/returns/extract-policy`, {
       method: 'POST',
