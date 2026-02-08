@@ -73,7 +73,8 @@
         "pageWorld.js",
         "returns-sidebar.html",
         "returns-sidebar.css",
-        "returns-sidebar-inner.js"
+        "returns-sidebar-inner.js",
+        "returns-sidebar-delivery.js"
       ],
       "matches": ["https://mail.google.com/*"]
     }

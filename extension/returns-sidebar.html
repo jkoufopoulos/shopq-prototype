@@ -49,6 +49,9 @@
     </button>
   </div>
 
+  <!-- Load order: inner.js FIRST (creates namespace + utilities),
+       then delivery.js (defines delivery modal functions using namespace) -->
   <script src="returns-sidebar-inner.js"></script>
+  <script src="returns-sidebar-delivery.js"></script>
 </body>
 </html>
