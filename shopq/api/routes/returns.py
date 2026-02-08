@@ -29,6 +29,7 @@ from shopq.returns import (
     ReturnConfidence,
     ReturnStatus,
 )
+from shopq.returns.service import ReturnsService
 from shopq.utils.error_sanitizer import sanitize_error_message
 from shopq.utils.validators import (
     validate_email_id,
@@ -194,31 +195,20 @@ async def list_returns(
     """
     try:
         user_id = user.id
-        # Refresh statuses first (update expired/expiring_soon based on current date)
-        ReturnCardRepository.refresh_statuses(user_id)
 
         # Parse status filter
         status_filter: list[ReturnStatus] | None = None
         if status:
             status_filter = [ReturnStatus(s.strip()) for s in status.split(",")]
 
-        cards = ReturnCardRepository.list_by_user(
-            user_id=user_id,
-            status=status_filter,
-            limit=limit,
-            offset=offset,
+        cards, total_count, expiring_soon_count = ReturnsService.list_returns(
+            user_id=user_id, status=status_filter, limit=limit, offset=offset
         )
-
-        # CODE-006: Get true total count for pagination (not just len of current page)
-        total_count = ReturnCardRepository.count_by_user(user_id, status_filter)
-
-        # Get expiring soon count
-        expiring = ReturnCardRepository.list_expiring_soon(user_id)
 
         return ReturnCardListResponse(
             cards=[ReturnCardResponse.from_card(c) for c in cards],
             total=total_count,
-            expiring_soon_count=len(expiring),
+            expiring_soon_count=expiring_soon_count,
         )
 
     except ValueError as e:
@@ -240,11 +230,7 @@ async def list_expiring_returns(
     Returns cards with return_by_date within threshold, ordered by urgency.
     """
     try:
-        user_id = user.id
-        # Refresh statuses first
-        ReturnCardRepository.refresh_statuses(user_id, threshold_days)
-
-        cards = ReturnCardRepository.list_expiring_soon(user_id, threshold_days)
+        cards = ReturnsService.list_expiring(user.id, threshold_days)
         return [ReturnCardResponse.from_card(c) for c in cards]
 
     except Exception as e:
@@ -262,11 +248,7 @@ async def get_status_counts(
     Useful for dashboard summary and badge counts.
     """
     try:
-        user_id = user.id
-        # Refresh statuses first
-        ReturnCardRepository.refresh_statuses(user_id)
-
-        counts = ReturnCardRepository.count_by_status(user_id)
+        counts = ReturnsService.get_counts(user.id)
 
         return StatusCountsResponse(
             active=counts.get("active", 0),
@@ -292,12 +274,8 @@ async def get_return(
 
     Only returns cards owned by the authenticated user.
     """
-    card = ReturnCardRepository.get_by_id(card_id)
+    card = ReturnsService.get_card(card_id, user.id)
     if not card:
-        raise HTTPException(status_code=404, detail="Return card not found")
-
-    # Verify ownership
-    if card.user_id != user.id:
         raise HTTPException(status_code=404, detail="Return card not found")
 
     return ReturnCardResponse.from_card(card)
@@ -341,7 +319,7 @@ async def create_return(
             evidence_snippet=request.evidence_snippet,
         )
 
-        card = ReturnCardRepository.create(card_create)
+        card = ReturnsService.create(card_create)
         logger.info("Created return card %s for merchant %s", card.id, card.merchant)
 
         return ReturnCardResponse.from_card(card)
@@ -367,11 +345,6 @@ async def update_return_status(
     Only the card owner can update status.
     """
     try:
-        # Verify ownership first
-        existing_card = ReturnCardRepository.get_by_id(card_id)
-        if not existing_card or existing_card.user_id != user.id:
-            raise HTTPException(status_code=404, detail="Return card not found")
-
         new_status = ReturnStatus(request.status)
 
         # Only allow user-initiated status changes
@@ -381,7 +354,7 @@ async def update_return_status(
                 detail="Status must be 'returned' or 'dismissed'",
             )
 
-        card = ReturnCardRepository.update_status(card_id, new_status)
+        card = ReturnsService.update_status(card_id, user.id, new_status)
         if not card:
             raise HTTPException(status_code=404, detail="Return card not found")
 
@@ -410,11 +383,6 @@ async def update_return(
     Only the card owner can update fields.
     """
     try:
-        # Verify ownership first
-        existing_card = ReturnCardRepository.get_by_id(card_id)
-        if not existing_card or existing_card.user_id != user.id:
-            raise HTTPException(status_code=404, detail="Return card not found")
-
         updates = ReturnCardUpdate(
             status=ReturnStatus(request.status) if request.status else None,
             notes=request.notes,
@@ -424,7 +392,7 @@ async def update_return(
             return_portal_link=request.return_portal_link,
         )
 
-        card = ReturnCardRepository.update(card_id, updates)
+        card = ReturnsService.update(card_id, user.id, updates)
         if not card:
             raise HTTPException(status_code=404, detail="Return card not found")
 
@@ -451,12 +419,7 @@ async def delete_return(
     Use sparingly - prefer marking as dismissed instead.
     Only the card owner can delete.
     """
-    # Verify ownership first
-    existing_card = ReturnCardRepository.get_by_id(card_id)
-    if not existing_card or existing_card.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Return card not found")
-
-    deleted = ReturnCardRepository.delete(card_id)
+    deleted = ReturnsService.delete(card_id, user.id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Return card not found")
     return Response(status_code=204)
@@ -475,11 +438,10 @@ async def refresh_statuses(
     - active/expiring_soon -> expired if past return_by_date
     """
     try:
-        user_id = user.id
-        updated_count = ReturnCardRepository.refresh_statuses(user_id, threshold_days)
+        updated_count = ReturnsService.refresh_statuses(user.id, threshold_days)
         return {
             "updated_count": updated_count,
-            "message": f"Refreshed statuses for user {user_id}",
+            "message": f"Refreshed statuses for user {user.id}",
         }
     except Exception as e:
         logger.error("Failed to refresh statuses: %s", e)
