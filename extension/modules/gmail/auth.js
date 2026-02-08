@@ -2,8 +2,8 @@
  * Gmail OAuth Authentication Module
  */
 
-// EXT-001: Token validation interval (validate every 5 minutes)
-const TOKEN_VALIDATION_INTERVAL_MS = 5 * 60 * 1000;
+// EXT-001: Token validation interval
+const TOKEN_VALIDATION_INTERVAL_MS = CONFIG.TOKEN_VALIDATION_INTERVAL_MS;
 let lastTokenValidation = 0;
 let cachedValidToken = null;
 
@@ -45,7 +45,7 @@ async function isTokenValid(token) {
 
     // Check if token will expire soon (within 5 minutes)
     const expiresIn = parseInt(tokenInfo.expires_in, 10);
-    if (expiresIn < 300) {
+    if (expiresIn < CONFIG.TOKEN_MIN_LIFETIME_SECONDS) {
       console.log('EXT-001: Token expiring soon, will refresh');
       return false;
     }
