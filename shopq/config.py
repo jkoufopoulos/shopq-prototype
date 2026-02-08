@@ -61,5 +61,3 @@ CHROME_EXTENSION_ID: str = os.getenv(
 )
 CHROME_EXTENSION_ORIGIN: str = f"chrome-extension://{CHROME_EXTENSION_ID}"
 
-# --- Feature Flags ---
-USE_SERVICE_DEDUP: bool = os.getenv("SHOPQ_USE_SERVICE_DEDUP", "true").lower() == "true"
