@@ -8,6 +8,16 @@
  */
 
 // =============================================================================
+// CONSTANTS (mirror CONFIG from modules/shared/config.js — iframe has no access)
+// =============================================================================
+
+const DATE_REFRESH_INTERVAL_MS = 60000;
+const TOAST_DURATION_MS = 3000;
+const TOAST_FADEOUT_MS = 300;
+const EXPIRING_SOON_DAYS = 7;
+const CRITICAL_DAYS = 3;
+
+// =============================================================================
 // STATE
 // =============================================================================
 
@@ -34,7 +44,6 @@ let deliveryState = {
 
 // Periodic date refresh timer
 let dateRefreshInterval = null;
-const DATE_REFRESH_INTERVAL_MS = 60000; // 1 minute
 
 function startDateRefreshTimer() {
   if (dateRefreshInterval) return;
@@ -78,7 +87,7 @@ const refreshStatus = document.getElementById('refresh-status');
  * @param {string} type - 'success' | 'error' | 'info'
  * @param {number} duration - Duration in ms (default 3000)
  */
-function showToast(message, type = 'info', duration = 3000) {
+function showToast(message, type = 'info', duration = TOAST_DURATION_MS) {
   // Remove any existing toast
   const existing = document.querySelector('.toast-notification');
   if (existing) existing.remove();
@@ -96,7 +105,7 @@ function showToast(message, type = 'info', duration = 3000) {
   // Auto-dismiss
   setTimeout(() => {
     toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(() => toast.remove(), TOAST_FADEOUT_MS);
   }, duration);
 }
 
@@ -189,7 +198,7 @@ function formatDate(dateStr) {
   if (diffDays < 0) return 'Expired';
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
-  if (diffDays <= 7) return `${diffDays} days`;
+  if (diffDays <= EXPIRING_SOON_DAYS) return `${diffDays} days`;
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -478,8 +487,8 @@ function getDeliveryBadge(orderKey) {
  */
 function renderOrderCard(order, isReturned = false) {
   const daysUntil = getDaysUntil(order.return_by_date);
-  const isExpiring = daysUntil !== null && daysUntil <= 7 && daysUntil >= 0;
-  const isCritical = daysUntil !== null && daysUntil <= 3 && daysUntil >= 0;
+  const isExpiring = daysUntil !== null && daysUntil <= EXPIRING_SOON_DAYS && daysUntil >= 0;
+  const isCritical = daysUntil !== null && daysUntil <= CRITICAL_DAYS && daysUntil >= 0;
   const isExpired = daysUntil !== null && daysUntil < 0;
 
   let dateText = 'No deadline';
@@ -496,11 +505,11 @@ function renderOrderCard(order, isReturned = false) {
       dateText = 'Due today!';
       dateClass = 'urgent';
       urgentBadge = '<span class="urgent-badge critical"><span class="dot"></span>Today!</span>';
-    } else if (daysUntil <= 3) {
+    } else if (daysUntil <= CRITICAL_DAYS) {
       dateText = `${daysUntil} day${daysUntil === 1 ? '' : 's'} left`;
       dateClass = 'urgent';
       urgentBadge = `<span class="urgent-badge critical"><span class="dot"></span>${daysUntil} day${daysUntil === 1 ? '' : 's'}</span>`;
-    } else if (daysUntil <= 7) {
+    } else if (daysUntil <= EXPIRING_SOON_DAYS) {
       dateText = `${daysUntil} days left`;
       dateClass = '';
       urgentBadge = `<span class="urgent-badge warning"><span class="dot"></span>${daysUntil} days</span>`;
@@ -623,10 +632,10 @@ function renderDetailView(order, needsEnrichment) {
         deadlineClass = 'urgent';
       } else if (daysUntil === 1) {
         daysLeftText = '(1 day left)';
-        deadlineClass = daysUntil <= 3 ? 'urgent' : '';
+        deadlineClass = daysUntil <= CRITICAL_DAYS ? 'urgent' : '';
       } else {
         daysLeftText = `(${daysUntil} days left)`;
-        deadlineClass = daysUntil <= 3 ? 'urgent' : '';
+        deadlineClass = daysUntil <= CRITICAL_DAYS ? 'urgent' : '';
       }
     }
   }
