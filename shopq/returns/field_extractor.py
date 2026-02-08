@@ -21,6 +21,15 @@ from pydantic import BaseModel
 from pydantic import Field as PydanticField
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from shopq.config import (
+    LLM_MAX_RETRIES,
+    LLM_TIMEOUT_SECONDS,
+    PIPELINE_BODY_TRUNCATION,
+    PIPELINE_DATE_WINDOW_DAYS,
+    PIPELINE_DEFAULT_RETURN_DAYS,
+    PIPELINE_ORDER_NUM_MAX_LEN,
+    PIPELINE_ORDER_NUM_MIN_LEN,
+)
 from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
@@ -36,11 +45,6 @@ def _use_llm() -> bool:
     Reads env var fresh to avoid stale cache when dotenv loads after module import.
     """
     return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
-
-
-# CODE-003/CODE-004: LLM call configuration
-LLM_TIMEOUT_SECONDS = 30  # Maximum time to wait for LLM response
-LLM_MAX_RETRIES = 3  # Number of retry attempts for transient failures
 
 
 @dataclass
@@ -257,7 +261,7 @@ Respond with ONLY the JSON."""
 
         cleaned = order_num.strip().strip("-").strip()
 
-        if not cleaned or len(cleaned) < 3 or len(cleaned) > 40:
+        if not cleaned or len(cleaned) < PIPELINE_ORDER_NUM_MIN_LEN or len(cleaned) > PIPELINE_ORDER_NUM_MAX_LEN:
             return None
 
         # Reject if it's a common word
@@ -407,8 +411,7 @@ Respond with ONLY the JSON."""
         received_at: datetime | None = None,
     ) -> dict:
         """Extract fields using LLM."""
-        # Truncate body for prompt - use 4000 chars to capture return policies at bottom
-        body_truncated = body[:4000] if body else ""
+        body_truncated = body[:PIPELINE_BODY_TRUNCATION] if body else ""
 
         # LOG: What we're sending to LLM (for validation)
         # SEC-016: Redact PII from logging
@@ -427,7 +430,7 @@ Respond with ONLY the JSON."""
             today=context_date.strftime("%Y-%m-%d"),
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
-            body=self._sanitize(body_truncated, 4000),
+            body=self._sanitize(body_truncated, PIPELINE_BODY_TRUNCATION),
         )
 
         # Call LLM with retry and timeout (CODE-003, CODE-004)
@@ -479,7 +482,7 @@ Respond with ONLY the JSON."""
         d = date.replace(tzinfo=None) if date.tzinfo else date
         r = received_at.replace(tzinfo=None) if received_at.tzinfo else received_at
         delta_days = abs((d - r).days)
-        if delta_days > 180:
+        if delta_days > PIPELINE_DATE_WINDOW_DAYS:
             logger.warning(
                 "Rejecting extracted date %s: %d days from email received %s",
                 date.isoformat(),
@@ -536,7 +539,7 @@ Respond with ONLY the JSON."""
         rule = merchants.get(merchant_domain) or merchants.get("_default")
 
         if rule:
-            days = rule.get("days", 30)
+            days = rule.get("days", PIPELINE_DEFAULT_RETURN_DAYS)
             anchor_type = rule.get("anchor", "delivery")
 
             # Get anchor date, falling back to received_at
