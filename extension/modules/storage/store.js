@@ -26,6 +26,7 @@ async function initializeStorage() {
     [STORAGE_KEYS.ORDERS_BY_KEY]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
     [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
     [STORAGE_KEYS.MERCHANT_RULES_BY_DOMAIN]: {},
@@ -158,11 +159,13 @@ async function upsertOrder(order) {
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
     STORAGE_KEYS.ORDER_KEY_BY_TRACKING,
+    STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT,
   ]);
 
   const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
+  const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
 
   // Merge with existing order if present
   const existing = orders[order.order_key];
@@ -216,11 +219,23 @@ async function upsertOrder(order) {
     trackingIndex[order.tracking_number] = order.order_key;
   }
 
+  // Maintain merchant index
+  const merchant = computeNormalizedMerchant(order);
+  if (merchant) {
+    if (!merchantIndex[merchant]) {
+      merchantIndex[merchant] = [];
+    }
+    if (!merchantIndex[merchant].includes(order.order_key)) {
+      merchantIndex[merchant].push(order.order_key);
+    }
+  }
+
   // Atomic write
   await chrome.storage.local.set({
     [STORAGE_KEYS.ORDERS_BY_KEY]: orders,
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: orderIdIndex,
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: trackingIndex,
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: merchantIndex,
   });
 
   console.log(STORE_LOG_PREFIX, 'Upserted order:', order.order_key, order.merchant_display_name);
@@ -238,6 +253,7 @@ async function clearOrders() {
     [STORAGE_KEYS.ORDERS_BY_KEY]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
   });
   console.log(STORE_LOG_PREFIX, 'Cleared all orders and indices');
 }
@@ -330,11 +346,13 @@ async function mergeOrders(target_order_key, source_order_key) {
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
     STORAGE_KEYS.ORDER_KEY_BY_TRACKING,
+    STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT,
   ]);
 
   const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
+  const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
 
   const target = orders[target_order_key];
   const source = orders[source_order_key];
@@ -382,11 +400,32 @@ async function mergeOrders(target_order_key, source_order_key) {
     trackingIndex[source.tracking_number] = target_order_key;
   }
 
+  // Remove source from merchant index
+  const sourceMerchant = computeNormalizedMerchant(source);
+  if (sourceMerchant && merchantIndex[sourceMerchant]) {
+    merchantIndex[sourceMerchant] = merchantIndex[sourceMerchant].filter(k => k !== source_order_key);
+    if (merchantIndex[sourceMerchant].length === 0) {
+      delete merchantIndex[sourceMerchant];
+    }
+  }
+
+  // Ensure target is in merchant index
+  const targetMerchant = computeNormalizedMerchant(target);
+  if (targetMerchant) {
+    if (!merchantIndex[targetMerchant]) {
+      merchantIndex[targetMerchant] = [];
+    }
+    if (!merchantIndex[targetMerchant].includes(target_order_key)) {
+      merchantIndex[targetMerchant].push(target_order_key);
+    }
+  }
+
   // Atomic write
   await chrome.storage.local.set({
     [STORAGE_KEYS.ORDERS_BY_KEY]: orders,
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: orderIdIndex,
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: trackingIndex,
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: merchantIndex,
   });
 
   console.log(STORE_LOG_PREFIX, 'Merged order', source_order_key, 'into', target_order_key);
@@ -744,6 +783,7 @@ async function resetPipelineData() {
     [STORAGE_KEYS.ORDERS_BY_KEY]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: {},
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
     [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
     [STORAGE_KEYS.TEMPLATE_CACHE]: {},
@@ -899,11 +939,13 @@ async function deleteOrder(order_key) {
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
     STORAGE_KEYS.ORDER_KEY_BY_TRACKING,
+    STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT,
   ]);
 
   const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
+  const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
 
   const order = orders[order_key];
   if (!order) {
@@ -919,6 +961,15 @@ async function deleteOrder(order_key) {
     delete trackingIndex[order.tracking_number];
   }
 
+  // Remove from merchant index
+  const merchant = computeNormalizedMerchant(order);
+  if (merchant && merchantIndex[merchant]) {
+    merchantIndex[merchant] = merchantIndex[merchant].filter(k => k !== order_key);
+    if (merchantIndex[merchant].length === 0) {
+      delete merchantIndex[merchant];
+    }
+  }
+
   // Delete the order
   delete orders[order_key];
 
@@ -927,6 +978,7 @@ async function deleteOrder(order_key) {
     [STORAGE_KEYS.ORDERS_BY_KEY]: orders,
     [STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID]: orderIdIndex,
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: trackingIndex,
+    [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: merchantIndex,
   });
 
   console.log(STORE_LOG_PREFIX, 'Deleted order:', order_key);
@@ -977,6 +1029,92 @@ async function updateTrackingIndex(tracking_number, order_key) {
   });
 
   console.log(STORE_LOG_PREFIX, 'Updated tracking index:', tracking_number, '->', order_key);
+}
+
+// ============================================================
+// ENTITY RESOLUTION HELPERS
+// ============================================================
+
+/**
+ * Compute a normalized merchant identity for an order.
+ * Uses the normalized_merchant field if present (set at scan time),
+ * otherwise derives from merchant_domain + merchant_display_name.
+ *
+ * @param {Order} order
+ * @returns {string} Canonical merchant key for indexing/matching
+ */
+function computeNormalizedMerchant(order) {
+  // Prefer pre-computed value (set by scanner in Commit 2)
+  if (order.normalized_merchant) {
+    return order.normalized_merchant;
+  }
+
+  // Derive from domain, applying same normalization as scanner
+  let domain = (order.merchant_domain || '').toLowerCase().trim();
+  domain = domain.replace(/^(www\.|shop\.|store\.|mail\.|email\.|orders?\.)/, '');
+
+  const domainAliases = {
+    'iliabeauty.com': 'ilia.com',
+    'shopifyemail.com': null,
+    'postmarkapp.com': null,
+    'sendgrid.net': null,
+    'mailchimp.com': null,
+    'klaviyo.com': null,
+  };
+
+  if (domainAliases[domain] !== undefined) {
+    domain = domainAliases[domain];
+  }
+
+  // If domain resolved to null (email service) or empty, use display name
+  if (!domain) {
+    const name = (order.merchant_display_name || 'unknown').toLowerCase().trim();
+    return name.replace(/\s*(beauty|store|shop|official|us|inc|llc|co)\s*$/i, '')
+      .replace(/[^a-z0-9]/g, '') || 'unknown';
+  }
+
+  return domain;
+}
+
+/**
+ * Tokenize an item summary for fuzzy comparison.
+ * Lowercase, split on whitespace/punctuation, remove stop words and short tokens.
+ *
+ * @param {string} summary
+ * @returns {Set<string>}
+ */
+function normalizeItemTokens(summary) {
+  if (!summary) return new Set();
+
+  const STOP_WORDS = new Set([
+    'the', 'a', 'an', 'and', 'or', 'for', 'of', 'in', 'to', 'with',
+    'by', 'on', 'at', 'from', 'is', 'it', 'its', 'your', 'my', 'this',
+    'that', 'x', 'oz', 'ct', 'pk', 'pack', 'count', 'size', 'color', 'qty',
+  ]);
+
+  const normalized = summary.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+  const tokens = normalized.split(/[\s,;/|&()\-]+/);
+  return new Set(tokens.filter(w => w.length >= 3 && !STOP_WORDS.has(w)));
+}
+
+/**
+ * Compute Jaccard similarity between two sets.
+ *
+ * @param {Set<string>} setA
+ * @param {Set<string>} setB
+ * @returns {number} Value between 0 and 1
+ */
+function jaccardSimilarity(setA, setB) {
+  if (setA.size === 0 && setB.size === 0) return 1.0;
+  if (setA.size === 0 || setB.size === 0) return 0.0;
+
+  let intersection = 0;
+  for (const item of setA) {
+    if (setB.has(item)) intersection++;
+  }
+
+  const union = setA.size + setB.size - intersection;
+  return union === 0 ? 0.0 : intersection / union;
 }
 
 /**

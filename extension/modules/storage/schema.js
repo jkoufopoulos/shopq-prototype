@@ -114,6 +114,8 @@ const STORAGE_KEYS = {
   LAST_SCAN_INTERNAL_DATE_MS: 'last_scan_internal_date_ms',
   LAST_SCAN_WINDOW_DAYS: 'last_scan_window_days',
   TEMPLATE_CACHE: 'template_cache',
+  // Merchant index for entity resolution
+  ORDER_KEYS_BY_MERCHANT: 'order_keys_by_merchant',
   // User settings for delivery
   USER_ADDRESS: 'user_address',  // Saved pickup address for Uber delivery
 };
