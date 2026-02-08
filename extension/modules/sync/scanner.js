@@ -429,7 +429,8 @@ function convertReturnCardToOrder(card, user_id) {
   if (!normalizedMerchant) {
     // Email service domain resolved to null — use display name
     normalizedMerchant = (card.merchant || 'unknown').toLowerCase().trim()
-      .replace(/\s*(beauty|store|shop|official|us|inc|llc|co)\s*$/i, '')
+      .replace(/\.(com|net|org|co\.uk)$/i, '')
+      .replace(/\s*(beauty|store|shop|official|us|inc|llc|co|ltd|limited)\s*$/i, '')
       .replace(/[^a-z0-9]/g, '') || 'unknown';
   }
 

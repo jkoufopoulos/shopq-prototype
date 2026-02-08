@@ -1198,9 +1198,11 @@ function computeNormalizedMerchant(order) {
 
   // If domain resolved to null (email service) or empty, use display name
   if (!domain) {
-    const name = (order.merchant_display_name || 'unknown').toLowerCase().trim();
-    return name.replace(/\s*(beauty|store|shop|official|us|inc|llc|co)\s*$/i, '')
-      .replace(/[^a-z0-9]/g, '') || 'unknown';
+    const name = (order.merchant_display_name || 'unknown').toLowerCase().trim()
+      .replace(/\.(com|net|org|co\.uk)$/i, '')
+      .replace(/\s*(beauty|store|shop|official|us|inc|llc|co|ltd|limited)\s*$/i, '')
+      .replace(/[^a-z0-9]/g, '');
+    return name || 'unknown';
   }
 
   return domain;
