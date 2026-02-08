@@ -12,6 +12,9 @@ import os
 
 from shopq.infrastructure.settings import *  # noqa: F401, F403  — re-export existing
 
+# --- App ---
+APP_VERSION: str = "1.0.0"
+
 # --- Database ---
 DB_POOL_SIZE: int = int(os.getenv("SHOPQ_DB_POOL_SIZE", "5"))
 DB_POOL_TIMEOUT: float = float(os.getenv("SHOPQ_DB_POOL_TIMEOUT", "5.0"))

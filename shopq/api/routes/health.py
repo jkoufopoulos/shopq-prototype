@@ -1,16 +1,19 @@
-"""Health check endpoints for ShopQ API.
+"""Health check endpoints for Reclaim API.
 
 Provides health status endpoints for monitoring and observability:
-- /health - Basic service health
+- /health - Service health including LLM credential presence
 - /health/db - Database connection pool health
 """
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter
+
+from shopq.config import APP_VERSION
 
 router = APIRouter(tags=["health"])
 
@@ -19,14 +22,23 @@ router = APIRouter(tags=["health"])
 async def health_check() -> dict[str, Any]:
     """Health check endpoint.
 
-    Side Effects:
-        None (pure function - builds local dict only)
+    Returns service status, version, and credential readiness for
+    Vertex AI / Gemini (does not make an API call, only checks presence).
     """
+    has_api_key = bool(os.getenv("GOOGLE_API_KEY"))
+    has_project = bool(os.getenv("GOOGLE_CLOUD_PROJECT"))
+    llm_ready = has_api_key or has_project
+
     return {
         "status": "healthy",
-        "service": "ShopQ API",
-        "version": "2.0.0-mvp",
+        "service": "Reclaim API",
+        "version": APP_VERSION,
         "timestamp": datetime.now(UTC).isoformat(),
+        "llm": {
+            "ready": llm_ready,
+            "google_api_key": has_api_key,
+            "google_cloud_project": has_project,
+        },
     }
 
 
@@ -37,9 +49,6 @@ async def database_health() -> dict[str, Any]:
 
     Returns connection pool health metrics for monitoring.
     Alerts if pool usage exceeds 80%.
-
-    Side Effects:
-        None (reads in-memory pool statistics only)
     """
     from shopq.infrastructure.database import get_pool_stats
 

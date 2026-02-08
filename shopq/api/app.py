@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from shopq.api.middleware.csrf import CSRFMiddleware
 from shopq.api.middleware.rate_limit import RateLimitMiddleware
 from shopq.api.middleware.security_headers import SecurityHeadersMiddleware
+from shopq.config import APP_VERSION
 from shopq.api.routes.delivery import router as delivery_router
 from shopq.api.routes.health import router as health_router
 from shopq.api.routes.returns import router as returns_router
@@ -25,7 +26,7 @@ from shopq.observability.telemetry import log_event
 # Load environment variables from .env file
 load_dotenv()
 
-app = FastAPI(title="ShopQ Return Watch API", version="1.0.0")
+app = FastAPI(title="Reclaim Return Watch API", version=APP_VERSION)
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -127,14 +128,14 @@ app.include_router(health_router)
 app.include_router(returns_router)
 app.include_router(delivery_router)
 
-log_event("api.startup", service="shopq-return-watch", version="1.0.0")
+log_event("api.startup", service="reclaim-return-watch", version=APP_VERSION)
 
 
 @app.get("/")
 def root() -> dict[str, Any]:
     return {
-        "service": "ShopQ Return Watch API",
-        "version": "1.0.0",
+        "service": "Reclaim Return Watch API",
+        "version": APP_VERSION,
         "status": "running",
         "endpoints": {
             "health": "/api/health",
