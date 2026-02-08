@@ -26,14 +26,9 @@ const REFRESH_LOG_PREFIX = '[ReturnWatch:Refresh]';
  * Refresh timing configuration (in milliseconds).
  */
 const REFRESH_CONFIG = {
-  // Minimum time between scans (10 minutes)
-  FOCUS_THRESHOLD_MS: 10 * 60 * 1000,
-
-  // Time to consider scan stale (6 hours)
-  STALE_THRESHOLD_MS: 6 * 60 * 60 * 1000,
-
-  // Periodic scan interval (45 minutes)
-  PERIODIC_INTERVAL_MS: 45 * 60 * 1000,
+  FOCUS_THRESHOLD_MS: CONFIG.FOCUS_THRESHOLD_MS,
+  STALE_THRESHOLD_MS: CONFIG.STALE_THRESHOLD_MS,
+  PERIODIC_INTERVAL_MS: CONFIG.PERIODIC_INTERVAL_MS,
 
   // Chrome alarm name for periodic scans
   PERIODIC_ALARM_NAME: 'returnwatch_periodic_scan',
@@ -43,10 +38,10 @@ const REFRESH_CONFIG = {
  * Scan window sizes (in days).
  */
 const SCAN_WINDOWS = {
-  FULL: 60,      // Full scan (on_gmail_load, first scan) - 60 days to catch most return windows
-  FOCUS: 7,      // Tab focus scan
-  PERIODIC: 3,   // Periodic background scan
-  MANUAL: 30,    // Manual refresh - 30 days
+  FULL: CONFIG.SCAN_WINDOW_FULL,
+  FOCUS: CONFIG.SCAN_WINDOW_FOCUS,
+  PERIODIC: CONFIG.SCAN_WINDOW_PERIODIC,
+  MANUAL: CONFIG.SCAN_WINDOW_MANUAL,
 };
 
 // ============================================================
