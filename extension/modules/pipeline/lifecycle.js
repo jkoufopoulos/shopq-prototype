@@ -459,6 +459,283 @@ async function getAllPurchasesForDisplay() {
 }
 
 // ============================================================
+// DISPLAY-LAYER DEDUPLICATION
+// ============================================================
+
+/**
+ * Domain aliases — same map as normalizeMerchantDomain() in scanner.js.
+ * Maps variant domains to their canonical form.
+ */
+const DOMAIN_ALIASES = {
+  'iliabeauty.com': 'ilia.com',
+  'shopifyemail.com': null,
+  'postmarkapp.com': null,
+  'sendgrid.net': null,
+  'mailchimp.com': null,
+  'klaviyo.com': null,
+};
+
+/**
+ * Suffixes to strip from merchant names for dedup grouping.
+ * e.g. "ILIA Beauty" → "ilia", "Nike Store" → "nike"
+ */
+const MERCHANT_SUFFIX_PATTERN = /\s*(beauty|store|shop|official|us|inc|llc|co)\s*$/i;
+
+/**
+ * Normalize a merchant to a canonical dedup key.
+ *
+ * Uses domain when available (stripping prefixes, applying aliases).
+ * Falls back to display name for email-service domains.
+ *
+ * @param {string} displayName - Merchant display name (e.g. "ILIA Beauty")
+ * @param {string} domain - Merchant domain (e.g. "iliabeauty.com")
+ * @returns {string} Canonical merchant key for grouping
+ */
+function normalizeMerchantForDedup(displayName, domain) {
+  let normalized = (domain || '').toLowerCase().trim();
+
+  // Strip common prefixes
+  normalized = normalized.replace(/^(www\.|shop\.|store\.|mail\.|email\.|orders?\.)/, '');
+
+  // Apply aliases
+  if (DOMAIN_ALIASES[normalized] !== undefined) {
+    normalized = DOMAIN_ALIASES[normalized];
+  }
+
+  // If domain resolved to null (email service) or was empty, use display name
+  if (!normalized) {
+    normalized = (displayName || 'unknown').toLowerCase().trim();
+    normalized = normalized.replace(MERCHANT_SUFFIX_PATTERN, '').trim();
+    normalized = normalized.replace(/[^a-z0-9]/g, '');
+    return normalized || 'unknown';
+  }
+
+  // Strip .com/.net/.org for grouping, then strip merchant suffixes
+  normalized = normalized.replace(/\.(com|net|org|co\.uk)$/, '');
+  normalized = normalized.replace(MERCHANT_SUFFIX_PATTERN, '').trim();
+
+  return normalized || 'unknown';
+}
+
+/**
+ * Stop words for item summary comparison (mirrors backend _STOP_WORDS).
+ */
+const ITEM_STOP_WORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'for', 'of', 'in', 'to', 'with',
+  'by', 'on', 'at', 'from', 'is', 'it', 'its', 'your', 'my', 'this',
+  'that', 'x', 'oz', 'ct', 'pk', 'pack', 'count', 'size', 'color', 'qty',
+]);
+
+/**
+ * Check if two item summaries describe the same product.
+ *
+ * Normalizes both strings, checks for exact match first, then does
+ * token overlap with a 60% threshold on the smaller set.
+ *
+ * @param {string} a - Item summary A
+ * @param {string} b - Item summary B
+ * @returns {boolean} True if they likely describe the same product
+ */
+function itemSummariesMatch(a, b) {
+  if (!a || !b) return true;  // can't tell — allow merge (mirrors backend)
+
+  // Normalize: lowercase, strip non-alphanumeric (keep spaces), collapse whitespace
+  const normA = a.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+  const normB = b.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+
+  if (normA === normB) return true;
+
+  // Tokenize, remove stop words and short tokens
+  const tokenize = (s) => {
+    const tokens = s.split(/[\s,;/|&()\-]+/);
+    return new Set(tokens.filter(w => w.length >= 3 && !ITEM_STOP_WORDS.has(w)));
+  };
+
+  const tokensA = tokenize(normA);
+  const tokensB = tokenize(normB);
+
+  if (tokensA.size === 0 || tokensB.size === 0) return true;  // can't tell
+
+  // Count overlap
+  let overlap = 0;
+  for (const t of tokensA) {
+    if (tokensB.has(t)) overlap++;
+  }
+
+  // 60% of the smaller set must overlap
+  const smallerSize = Math.min(tokensA.size, tokensB.size);
+  return overlap >= smallerSize * 0.6;
+}
+
+/**
+ * Count how many "richness" fields an order has populated.
+ * Used to pick the best card when merging duplicates.
+ *
+ * @param {Order} order
+ * @returns {number}
+ */
+function orderRichness(order) {
+  let score = 0;
+  if (order.delivery_date) score += 3;
+  if (order.return_by_date) score += 3;
+  if (order.order_id) score += 2;
+  if (order.ship_date) score += 1;
+  if (order.estimated_delivery_date) score += 1;
+  if (order.amount) score += 1;
+  if (order.return_portal_link) score += 1;
+  if (order.tracking_number) score += 1;
+  if (order.explicit_return_by_date) score += 2;
+  if (order.return_window_days) score += 1;
+  return score;
+}
+
+/**
+ * Merge duplicate orders within a single merchant group.
+ *
+ * Clustering rules:
+ * - Same order_id (case-insensitive) → merge
+ * - No order_id on at least one side + itemSummariesMatch → merge
+ * - Both have DIFFERENT order_ids → never merge
+ *
+ * The richest card wins; missing fields are backfilled from the loser.
+ *
+ * @param {Order[]} orders - Orders from the same merchant
+ * @returns {Order[]} Deduplicated orders
+ */
+function mergeWithinMerchant(orders) {
+  if (orders.length <= 1) return orders;
+
+  // Build clusters using union-find approach
+  const parent = orders.map((_, i) => i);
+
+  const ufFind = (idx) => {
+    while (parent[idx] !== idx) {
+      parent[idx] = parent[parent[idx]];
+      idx = parent[idx];
+    }
+    return idx;
+  };
+
+  const ufUnion = (i, j) => {
+    const ri = ufFind(i);
+    const rj = ufFind(j);
+    if (ri !== rj) parent[ri] = rj;
+  };
+
+  // Compare every pair
+  for (let i = 0; i < orders.length; i++) {
+    for (let j = i + 1; j < orders.length; j++) {
+      const a = orders[i];
+      const b = orders[j];
+
+      const idA = (a.order_id || '').trim().toUpperCase();
+      const idB = (b.order_id || '').trim().toUpperCase();
+
+      // Guard: both have different order_ids → never merge
+      if (idA && idB && idA !== idB) continue;
+
+      // Same order_id → merge
+      if (idA && idB && idA === idB) {
+        ufUnion(i, j);
+        continue;
+      }
+
+      // At least one missing order_id → check item summaries
+      if (itemSummariesMatch(a.item_summary, b.item_summary)) {
+        ufUnion(i, j);
+      }
+    }
+  }
+
+  // Group by cluster root
+  const clusters = new Map();
+  for (let i = 0; i < orders.length; i++) {
+    const root = ufFind(i);
+    if (!clusters.has(root)) clusters.set(root, []);
+    clusters.get(root).push(orders[i]);
+  }
+
+  // Merge each cluster: richest card wins, backfill from others
+  const result = [];
+  for (const cluster of clusters.values()) {
+    if (cluster.length === 1) {
+      result.push(cluster[0]);
+      continue;
+    }
+
+    // Sort by richness descending — winner is first
+    cluster.sort((a, b) => orderRichness(b) - orderRichness(a));
+    const winner = { ...cluster[0] };
+
+    // Backfill from losers
+    for (let k = 1; k < cluster.length; k++) {
+      const donor = cluster[k];
+
+      if (!winner.delivery_date && donor.delivery_date) winner.delivery_date = donor.delivery_date;
+      if (!winner.return_by_date && donor.return_by_date) winner.return_by_date = donor.return_by_date;
+      if (!winner.order_id && donor.order_id) winner.order_id = donor.order_id;
+      if (!winner.amount && donor.amount) winner.amount = donor.amount;
+      if (!winner.return_portal_link && donor.return_portal_link) winner.return_portal_link = donor.return_portal_link;
+      if (!winner.ship_date && donor.ship_date) winner.ship_date = donor.ship_date;
+      if (!winner.estimated_delivery_date && donor.estimated_delivery_date) winner.estimated_delivery_date = donor.estimated_delivery_date;
+      if (!winner.tracking_number && donor.tracking_number) winner.tracking_number = donor.tracking_number;
+      if (!winner.explicit_return_by_date && donor.explicit_return_by_date) winner.explicit_return_by_date = donor.explicit_return_by_date;
+      if (!winner.return_window_days && donor.return_window_days) winner.return_window_days = donor.return_window_days;
+
+      // Union source_email_ids
+      if (donor.source_email_ids && donor.source_email_ids.length) {
+        const existing = new Set(winner.source_email_ids || []);
+        for (const id of donor.source_email_ids) {
+          existing.add(id);
+        }
+        winner.source_email_ids = [...existing];
+      }
+    }
+
+    result.push(winner);
+  }
+
+  return result;
+}
+
+/**
+ * Deduplicate orders at display time.
+ *
+ * Groups by normalized merchant, then merges duplicates within each group.
+ * Read-only: does NOT modify stored orders — only filters the display list.
+ *
+ * @param {Order[]} orders
+ * @returns {Order[]} Deduplicated orders
+ */
+function deduplicateOrders(orders) {
+  if (!orders || orders.length <= 1) return orders;
+
+  // Group by normalized merchant
+  const groups = new Map();
+  for (const order of orders) {
+    const key = normalizeMerchantForDedup(order.merchant_display_name, order.merchant_domain);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(order);
+  }
+
+  // Merge within each group, preserve input order
+  const result = [];
+  const seen = new Set();
+
+  for (const order of orders) {
+    const key = normalizeMerchantForDedup(order.merchant_display_name, order.merchant_domain);
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const group = groups.get(key);
+    const merged = mergeWithinMerchant(group);
+    result.push(...merged);
+  }
+
+  return result;
+}
+
+// ============================================================
 // UNIFIED VISIBLE ORDERS
 // ============================================================
 
@@ -505,11 +782,14 @@ async function getVisibleOrders() {
     o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o)
   );
 
+  // Display-layer dedup: merge duplicate orders from different email scans
+  const deduped = deduplicateOrders(visible);
+
   // Split into has-deadline and no-deadline groups
   const withDeadline = [];
   const withoutDeadline = [];
 
-  for (const order of visible) {
+  for (const order of deduped) {
     if (order.return_by_date) {
       withDeadline.push(order);
     } else {
@@ -539,14 +819,18 @@ async function getVisibleOrders() {
 async function getReturnedOrders() {
   const allOrders = await getAllOrders();
 
-  // Filter to returned orders only, sorted by updated_at DESC (most recent first)
-  const returned = allOrders
-    .filter(o => o.order_status === ORDER_STATUS.RETURNED)
-    .sort((a, b) => {
-      if (!a.updated_at) return 1;
-      if (!b.updated_at) return -1;
-      return b.updated_at.localeCompare(a.updated_at);
-    });
+  // Filter to returned orders only
+  const returned = allOrders.filter(o => o.order_status === ORDER_STATUS.RETURNED);
 
-  return returned;
+  // Display-layer dedup: merge duplicate orders from different email scans
+  const deduped = deduplicateOrders(returned);
+
+  // Sort by updated_at DESC (most recent first)
+  deduped.sort((a, b) => {
+    if (!a.updated_at) return 1;
+    if (!b.updated_at) return -1;
+    return b.updated_at.localeCompare(a.updated_at);
+  });
+
+  return deduped;
 }
