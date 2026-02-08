@@ -618,43 +618,8 @@ Respond with ONLY the JSON."""
     def _sanitize(self, text: str, max_length: int) -> str:
         """Sanitize input for LLM prompt.
 
-        CODE-007: Enhanced sanitization with expanded patterns for role impersonation
-        and control character removal.
+        CODE-007: Delegates to shared sanitize_llm_input().
         """
-        if not text:
-            return ""
+        from shopq.utils.redaction import sanitize_llm_input
 
-        # Remove control characters (except newlines and tabs)
-        text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
-
-        # Remove common injection patterns - instruction override attempts
-        text = re.sub(
-            r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)",
-            "[REDACTED]",
-            text,
-        )
-        text = re.sub(r"(?i)do\s+not\s+follow.*", "[REDACTED]", text)
-        text = re.sub(r"(?i)instead\s+(of|do|output).*", "[REDACTED]", text)
-
-        # Remove role impersonation attempts
-        text = re.sub(r"(?i)(system|assistant|user|human|ai|claude|gpt)\s*:", "", text)
-        text = re.sub(r"(?i)<\s*(system|assistant|user|human)\s*>", "", text)
-        text = re.sub(r"(?i)\[\s*(system|assistant|user|human)\s*\]", "", text)
-        text = re.sub(r"(?i)you\s+are\s+(now|a|an)\s+", "", text)
-        text = re.sub(r"(?i)act\s+as\s+(a|an|if)\s+", "", text)
-        text = re.sub(r"(?i)pretend\s+(to\s+be|you)", "", text)
-        text = re.sub(r"(?i)roleplay\s+as", "", text)
-
-        # Remove XML/markdown injection attempts
-        text = re.sub(r"```.*?```", "[CODE]", text, flags=re.DOTALL)
-        text = re.sub(r"<script.*?>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
-
-        # Escape template markers
-        text = text.replace("{", "{{").replace("}", "}}")
-
-        # Log if redaction occurred (for monitoring injection attempts)
-        if "[REDACTED]" in text:
-            counter("returns.extractor.injection_attempt")
-            logger.warning("Prompt injection pattern detected and sanitized in extractor")
-
-        return text[:max_length]
+        return sanitize_llm_input(text, max_length=max_length, counter_prefix="extractor")

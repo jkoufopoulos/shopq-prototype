@@ -122,6 +122,67 @@ def redact_pii(text: str | None, max_length: int = 500) -> str:
     return text[:max_length]
 
 
+def sanitize_llm_input(text: str, max_length: int = 500, counter_prefix: str = "llm") -> str:
+    """Sanitize text before inclusion in LLM prompts (pipeline stages).
+
+    Comprehensive sanitization with control character removal, prompt injection
+    pattern detection, role impersonation blocking, and template marker escaping.
+
+    Used by ReturnabilityClassifier and ReturnFieldExtractor.
+
+    Args:
+        text: Raw text (email body, subject, etc.)
+        max_length: Maximum allowed length after sanitization
+        counter_prefix: Telemetry counter prefix for injection detection
+
+    Returns:
+        Sanitized text safe for LLM prompt inclusion
+    """
+    from shopq.observability.logging import get_logger
+    from shopq.observability.telemetry import counter as tel_counter
+
+    _logger = get_logger(__name__)
+
+    if not text:
+        return ""
+
+    # Remove control characters (except newlines and tabs)
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+
+    # Remove common injection patterns - instruction override attempts
+    text = re.sub(
+        r"(?i)(ignore|disregard|forget|skip|override).*(instruction|prompt|above|previous|rule)",
+        "[REDACTED]",
+        text,
+    )
+    text = re.sub(r"(?i)do\s+not\s+follow.*", "[REDACTED]", text)
+    text = re.sub(r"(?i)instead\s+(of|do|output).*", "[REDACTED]", text)
+
+    # Remove role impersonation attempts
+    text = re.sub(r"(?i)(system|assistant|user|human|ai|claude|gpt)\s*:", "", text)
+    text = re.sub(r"(?i)<\s*(system|assistant|user|human)\s*>", "", text)
+    text = re.sub(r"(?i)\[\s*(system|assistant|user|human)\s*\]", "", text)
+    text = re.sub(r"(?i)you\s+are\s+(now|a|an)\s+", "", text)
+    text = re.sub(r"(?i)act\s+as\s+(a|an|if)\s+", "", text)
+    text = re.sub(r"(?i)pretend\s+(to\s+be|you)", "", text)
+    text = re.sub(r"(?i)roleplay\s+as", "", text)
+
+    # Remove XML/markdown injection attempts
+    text = re.sub(r"```.*?```", "[CODE]", text, flags=re.DOTALL)
+    text = re.sub(r"<script.*?>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Escape template markers
+    text = text.replace("{", "{{").replace("}", "}}")
+
+    # Log if redaction occurred (for monitoring injection attempts)
+    if "[REDACTED]" in text:
+        tel_counter(f"returns.{counter_prefix}.injection_attempt")
+        _logger.warning("Prompt injection pattern detected and sanitized")
+
+    # Truncate
+    return text[:max_length]
+
+
 def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
     """
     Sanitize user-provided text before including in LLM prompts.
