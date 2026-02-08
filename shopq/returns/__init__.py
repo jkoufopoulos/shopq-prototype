@@ -4,6 +4,7 @@ ShopQ Returns module - Return Watch tracking and alerts.
 
 from shopq.returns.extractor import (
     ExtractionResult,
+    ExtractionStage,
     ReturnableReceiptExtractor,
     extract_return_card,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "ReturnFieldExtractor",
     # Extractor (main pipeline)
     "ExtractionResult",
+    "ExtractionStage",
     "ReturnableReceiptExtractor",
     "extract_return_card",
 ]

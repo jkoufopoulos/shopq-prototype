@@ -15,6 +15,7 @@ import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -147,6 +148,22 @@ def _items_overlap(summary_a: str | None, summary_b: str | None) -> bool:
     return bool(tokens_a & tokens_b)
 
 
+class ExtractionStage(str, Enum):
+    """Pipeline stage reached during extraction.
+
+    Extends str so JSON serialization produces raw strings (e.g. "filter"),
+    preserving the existing API contract.
+    """
+
+    NONE = "none"
+    FILTER = "filter"
+    CLASSIFIER = "classifier"
+    EXTRACTOR = "extractor"
+    CANCELLATION_CHECK = "cancellation_check"
+    COMPLETE = "complete"
+    ERROR = "error"
+
+
 @dataclass
 class ExtractionResult:
     """Result of the full extraction pipeline."""
@@ -157,7 +174,7 @@ class ExtractionResult:
     returnability_result: ReturnabilityResult | None = None
     extracted_fields: ExtractedFields | None = None
     rejection_reason: str | None = None
-    stage_reached: str = "none"  # "filter" | "classifier" | "extractor" | "complete"
+    stage_reached: ExtractionStage = ExtractionStage.NONE
 
     @classmethod
     def rejected_at_filter(cls, filter_result: FilterResult) -> ExtractionResult:
@@ -165,7 +182,7 @@ class ExtractionResult:
             success=False,
             filter_result=filter_result,
             rejection_reason=f"filter:{filter_result.reason}",
-            stage_reached="filter",
+            stage_reached=ExtractionStage.FILTER,
         )
 
     @classmethod
@@ -175,7 +192,7 @@ class ExtractionResult:
             success=False,
             filter_result=filter_result,
             rejection_reason=f"budget:{reason}",
-            stage_reached="filter",
+            stage_reached=ExtractionStage.FILTER,
         )
 
     @classmethod
@@ -189,7 +206,7 @@ class ExtractionResult:
             filter_result=filter_result,
             returnability_result=returnability,
             rejection_reason=f"classifier:{returnability.reason}",
-            stage_reached="classifier",
+            stage_reached=ExtractionStage.CLASSIFIER,
         )
 
     @classmethod
@@ -203,7 +220,7 @@ class ExtractionResult:
             returnability_result=original_result.returnability_result,
             extracted_fields=original_result.extracted_fields,
             rejection_reason=f"cancelled_order:{order_number}",
-            stage_reached="cancellation_check",
+            stage_reached=ExtractionStage.CANCELLATION_CHECK,
         )
 
     @classmethod
@@ -220,7 +237,7 @@ class ExtractionResult:
             filter_result=filter_result,
             returnability_result=returnability,
             extracted_fields=fields,
-            stage_reached="complete",
+            stage_reached=ExtractionStage.COMPLETE,
         )
 
 
@@ -490,7 +507,7 @@ class ReturnableReceiptExtractor:
                 returnability_result=returnability,
                 extracted_fields=fields,
                 rejection_reason="empty_card:no_item_or_order",
-                stage_reached="extractor",
+                stage_reached=ExtractionStage.EXTRACTOR,
             )
 
         counter("returns.extraction.completed")
@@ -669,7 +686,7 @@ class ReturnableReceiptExtractor:
                     ExtractionResult(
                         success=False,
                         rejection_reason=f"error:{str(e)[:100]}",
-                        stage_reached="error",
+                        stage_reached=ExtractionStage.ERROR,
                     )
                 )
 

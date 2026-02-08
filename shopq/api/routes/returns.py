@@ -21,6 +21,7 @@ from shopq.config import (
 )
 from shopq.observability.logging import get_logger
 from shopq.returns import (
+    ExtractionStage,
     ReturnCard,
     ReturnCardCreate,
     ReturnCardRepository,
@@ -782,11 +783,11 @@ async def process_email_batch(
             if not result.success or not result.card:
                 # Count rejection reasons
                 reason = result.rejection_reason or ""
-                if result.stage_reached == "filter":
+                if result.stage_reached == ExtractionStage.FILTER:
                     stats.rejected_filter += 1
-                elif result.stage_reached == "classifier":
+                elif result.stage_reached == ExtractionStage.CLASSIFIER:
                     stats.rejected_classifier += 1
-                elif reason.startswith("error:") or result.stage_reached == "error":
+                elif reason.startswith("error:") or result.stage_reached == ExtractionStage.ERROR:
                     stats.rejected_empty += 1
                 else:
                     stats.rejected_empty += 1
