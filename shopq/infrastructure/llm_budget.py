@@ -48,37 +48,6 @@ class BudgetStatus(NamedTuple):
     reason: str | None
 
 
-def _ensure_budget_table() -> None:
-    """Create llm_usage table if it doesn't exist."""
-    with get_db_connection() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS llm_usage (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                call_type TEXT NOT NULL,
-                call_date DATE NOT NULL,
-                call_count INTEGER DEFAULT 1,
-                estimated_cost REAL DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, call_type, call_date)
-            )
-        """)
-        conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_llm_usage_date ON llm_usage(call_date)
-        """)
-        conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_llm_usage_user_date ON llm_usage(user_id, call_date)
-        """)
-        conn.commit()
-
-
-# Ensure table exists on module load
-try:
-    _ensure_budget_table()
-except Exception as e:
-    logger.warning("Could not create llm_usage table: %s", e)
-
-
 @retry_on_db_lock()
 def check_budget(
     user_id: str,

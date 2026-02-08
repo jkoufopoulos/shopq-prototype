@@ -179,6 +179,10 @@ def init_database(db_path: Path) -> None:
         CREATE INDEX IF NOT EXISTS idx_return_cards_merchant_domain
         ON return_cards(merchant_domain);
 
+        -- Compound index for list queries with status filter + date ordering
+        CREATE INDEX IF NOT EXISTS idx_return_cards_user_status_date
+        ON return_cards(user_id, status, return_by_date);
+
         -- LLM usage tracking for budget limits (SCALE-001)
         CREATE TABLE IF NOT EXISTS llm_usage (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
