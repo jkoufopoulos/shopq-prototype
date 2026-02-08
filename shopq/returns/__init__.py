@@ -3,13 +3,12 @@ ShopQ Returns module - Return Watch tracking and alerts.
 """
 
 from shopq.returns.extractor import (
-    ExtractionResult,
-    ExtractionStage,
     ReturnableReceiptExtractor,
     extract_return_card,
 )
-from shopq.returns.field_extractor import ExtractedFields, ReturnFieldExtractor
-from shopq.returns.filters import FilterResult, MerchantDomainFilter
+from shopq.returns.field_extractor import ReturnFieldExtractor
+from shopq.returns.filters import MerchantDomainFilter
+from shopq.returns.types import ExtractionResult, ExtractionStage, ExtractedFields, FilterResult
 from shopq.returns.models import (
     ReturnCard,
     ReturnCardCreate,

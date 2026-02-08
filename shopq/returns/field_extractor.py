@@ -14,7 +14,6 @@ from __future__ import annotations
 import json
 import os
 import re
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from pydantic import BaseModel
@@ -29,6 +28,7 @@ from shopq.config import (
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
 from shopq.returns.models import ReturnConfidence
+from shopq.returns.types import ExtractedFields
 from shopq.utils.redaction import redact_pii, redact_subject
 
 logger = get_logger(__name__)
@@ -40,36 +40,6 @@ def _use_llm() -> bool:
     Reads env var fresh to avoid stale cache when dotenv loads after module import.
     """
     return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
-
-
-@dataclass
-class ExtractedFields:
-    """Fields extracted from a purchase email."""
-
-    # Core fields (from LLM)
-    merchant: str
-    merchant_domain: str
-    item_summary: str
-
-    # Dates
-    order_date: datetime | None = None
-    delivery_date: datetime | None = None
-    explicit_return_by: datetime | None = None  # If found in email
-
-    # Computed return-by
-    return_by_date: datetime | None = None
-    return_confidence: ReturnConfidence = ReturnConfidence.UNKNOWN
-
-    # Optional fields
-    order_number: str | None = None
-    amount: float | None = None
-    currency: str = "USD"
-    return_portal_link: str | None = None
-    tracking_link: str | None = None
-    evidence_snippet: str | None = None
-
-    # Metadata
-    extraction_method: str = "unknown"  # "llm" | "rules" | "hybrid"
 
 
 class LLMExtractionSchema(BaseModel):

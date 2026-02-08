@@ -13,9 +13,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -25,13 +23,14 @@ from shopq.config import PIPELINE_MIN_BODY_CHARS
 from shopq.infrastructure.llm_budget import check_budget, record_llm_call
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
-from shopq.returns.field_extractor import ExtractedFields, ReturnFieldExtractor
-from shopq.returns.filters import FilterResult, MerchantDomainFilter
+from shopq.returns.field_extractor import ReturnFieldExtractor
+from shopq.returns.filters import MerchantDomainFilter
 from shopq.returns.models import ReturnCard, ReturnConfidence
 from shopq.returns.returnability_classifier import (
     ReturnabilityClassifier,
     ReturnabilityResult,
 )
+from shopq.returns.types import ExtractionResult, ExtractionStage, ExtractedFields, FilterResult
 from shopq.utils.html import html_to_text
 from shopq.utils.redaction import redact_subject
 
@@ -146,99 +145,6 @@ def _items_overlap(summary_a: str | None, summary_b: str | None) -> bool:
         return True  # can't tell — allow merge
 
     return bool(tokens_a & tokens_b)
-
-
-class ExtractionStage(str, Enum):
-    """Pipeline stage reached during extraction.
-
-    Extends str so JSON serialization produces raw strings (e.g. "filter"),
-    preserving the existing API contract.
-    """
-
-    NONE = "none"
-    FILTER = "filter"
-    CLASSIFIER = "classifier"
-    EXTRACTOR = "extractor"
-    CANCELLATION_CHECK = "cancellation_check"
-    COMPLETE = "complete"
-    ERROR = "error"
-
-
-@dataclass
-class ExtractionResult:
-    """Result of the full extraction pipeline."""
-
-    success: bool
-    card: ReturnCard | None = None
-    filter_result: FilterResult | None = None
-    returnability_result: ReturnabilityResult | None = None
-    extracted_fields: ExtractedFields | None = None
-    rejection_reason: str | None = None
-    stage_reached: ExtractionStage = ExtractionStage.NONE
-
-    @classmethod
-    def rejected_at_filter(cls, filter_result: FilterResult) -> ExtractionResult:
-        return cls(
-            success=False,
-            filter_result=filter_result,
-            rejection_reason=f"filter:{filter_result.reason}",
-            stage_reached=ExtractionStage.FILTER,
-        )
-
-    @classmethod
-    def rejected_budget_exceeded(cls, filter_result: FilterResult, reason: str) -> ExtractionResult:
-        """SCALE-001: Rejection when LLM budget is exceeded."""
-        return cls(
-            success=False,
-            filter_result=filter_result,
-            rejection_reason=f"budget:{reason}",
-            stage_reached=ExtractionStage.FILTER,
-        )
-
-    @classmethod
-    def rejected_at_classifier(
-        cls,
-        filter_result: FilterResult,
-        returnability: ReturnabilityResult,
-    ) -> ExtractionResult:
-        return cls(
-            success=False,
-            filter_result=filter_result,
-            returnability_result=returnability,
-            rejection_reason=f"classifier:{returnability.reason}",
-            stage_reached=ExtractionStage.CLASSIFIER,
-        )
-
-    @classmethod
-    def rejected_at_cancellation_check(
-        cls, original_result: ExtractionResult, order_number: str
-    ) -> ExtractionResult:
-        """Rejection when a separate cancellation/refund email was found for the order."""
-        return cls(
-            success=False,
-            filter_result=original_result.filter_result,
-            returnability_result=original_result.returnability_result,
-            extracted_fields=original_result.extracted_fields,
-            rejection_reason=f"cancelled_order:{order_number}",
-            stage_reached=ExtractionStage.CANCELLATION_CHECK,
-        )
-
-    @classmethod
-    def completed(
-        cls,
-        card: ReturnCard,
-        filter_result: FilterResult,
-        returnability: ReturnabilityResult,
-        fields: ExtractedFields,
-    ) -> ExtractionResult:
-        return cls(
-            success=True,
-            card=card,
-            filter_result=filter_result,
-            returnability_result=returnability,
-            extracted_fields=fields,
-            stage_reached=ExtractionStage.COMPLETE,
-        )
 
 
 class ReturnableReceiptExtractor:

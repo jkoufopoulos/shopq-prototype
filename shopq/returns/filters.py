@@ -11,24 +11,14 @@ Expected pass-through rate: 30-40% of emails
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
 from shopq.observability.logging import get_logger
+from shopq.returns.types import FilterResult
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class FilterResult:
-    """Result of domain filter check."""
-
-    is_candidate: bool
-    reason: str
-    domain: str
-    match_type: str  # "allowlist" | "blocklist" | "heuristic" | "unknown"
 
 
 class MerchantDomainFilter:
