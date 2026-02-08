@@ -68,8 +68,8 @@ initializeRefreshSystem();
  * Tracks message counts per sender (by tab ID or extension URL).
  */
 const MESSAGE_RATE_LIMIT = {
-  maxMessages: 100,      // Max messages per window
-  windowMs: 1000,        // Window size in milliseconds (1 second)
+  maxMessages: CONFIG.MESSAGE_RATE_LIMIT_MAX,
+  windowMs: CONFIG.MESSAGE_RATE_LIMIT_WINDOW_MS,
   counters: new Map(),   // Map<senderId, { count: number, windowStart: number }>
   cleanupInterval: null, // Interval for cleanup
 };
