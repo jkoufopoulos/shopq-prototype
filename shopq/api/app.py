@@ -146,5 +146,6 @@ def root() -> dict[str, Any]:
             "delivery": "/api/delivery",
             "delivery_quote": "/api/delivery/quote",
             "delivery_locations": "/api/delivery/locations",
+            "debug_stats": "/debug/stats",
         },
     }
