@@ -6,8 +6,8 @@
  * getAuthToken is available globally from auth.js which is loaded first.
  */
 
-// Production Cloud Run API
-const API_BASE_URL = 'https://shopq-api-488078904670.us-central1.run.app';
+// API URL from centralized config (loaded via importScripts before this file)
+const API_BASE_URL = CONFIG.API_BASE_URL;
 
 /**
  * SEC-014: Validate that response came from expected API origin
