@@ -58,6 +58,30 @@ function sanitizeHtml(html) {
 }
 
 // =============================================================================
+// MESSAGE HELPERS
+// =============================================================================
+
+/**
+ * Send a message to the service worker with a timeout.
+ * Rejects if no response within timeoutMs (service worker may be suspended).
+ */
+function sendMessageWithTimeout(message, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Message timeout (${timeoutMs}ms): ${message.type}`));
+    }, timeoutMs);
+
+    chrome.runtime.sendMessage(message).then((response) => {
+      clearTimeout(timer);
+      resolve(response);
+    }).catch((err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+// =============================================================================
 // CLEANUP: Remove any stale Reclaim elements/styles from previous loads
 // =============================================================================
 
@@ -1234,7 +1258,7 @@ async function initializeDigestSidebar(sdk) {
   // Fetch visible orders from background (unified list)
   async function fetchVisibleOrders() {
     try {
-      const result = await chrome.runtime.sendMessage({ type: 'GET_VISIBLE_ORDERS' });
+      const result = await sendMessageWithTimeout({ type: 'GET_VISIBLE_ORDERS' });
       const orders = result.orders || [];
       if (iframeReady && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
@@ -1258,7 +1282,7 @@ async function initializeDigestSidebar(sdk) {
   // Fetch returned orders from background (for undo drawer)
   async function fetchReturnedOrders() {
     try {
-      const result = await chrome.runtime.sendMessage({ type: 'GET_RETURNED_ORDERS' });
+      const result = await sendMessageWithTimeout({ type: 'GET_RETURNED_ORDERS' });
       const orders = result.orders || [];
       if (iframeReady && iframe.contentWindow) {
         iframe.contentWindow.postMessage({
@@ -1274,7 +1298,7 @@ async function initializeDigestSidebar(sdk) {
   // v0.6.2: Update order status via background
   async function updateOrderStatus(orderKey, newStatus) {
     try {
-      await chrome.runtime.sendMessage({
+      await sendMessageWithTimeout({
         type: 'UPDATE_ORDER_STATUS',
         order_key: orderKey,
         status: newStatus
