@@ -8,56 +8,59 @@
  */
 
 // =============================================================================
-// CONSTANTS (defaults; overwritten by SHOPQ_CONFIG_INIT from parent)
+// NAMESPACE — all mutable state and overridable config live here.
+// Enables future file splits (extracted modules access window.ReclaimSidebar).
 // =============================================================================
 
-let DATE_REFRESH_INTERVAL_MS = 60000;
-let TOAST_DURATION_MS = 3000;
-let TOAST_FADEOUT_MS = 300;
-let EXPIRING_SOON_DAYS = 7;
-let CRITICAL_DAYS = 3;
-
-// =============================================================================
-// STATE
-// =============================================================================
-
-let visibleOrders = [];
-let returnedOrders = []; // Orders marked as returned (for undo drawer)
-let currentDetailOrder = null;
-let isEnriching = false;
-let hasCompletedFirstScan = false;
-let expiredAccordionOpen = false; // Controls expired orders accordion
-let returnedAccordionOpen = false; // Controls returned orders accordion
-let deliveryModal = null;
-let activeDeliveries = {}; // Map of order_key -> delivery object
-let isEditingDate = false; // Controls inline date picker visibility
-let deliveryState = {
-  step: 'address', // 'address' | 'locations' | 'quote' | 'confirmed' | 'status'
-  address: null,
-  locations: [],
-  selectedLocation: null,
-  quote: null,
-  delivery: null,
-  loading: false,
-  error: null,
+window.ReclaimSidebar = {
+  config: {
+    DATE_REFRESH_INTERVAL_MS: 60000,
+    TOAST_DURATION_MS: 3000,
+    TOAST_FADEOUT_MS: 300,
+    EXPIRING_SOON_DAYS: 7,
+    CRITICAL_DAYS: 3,
+  },
+  state: {
+    visibleOrders: [],
+    returnedOrders: [],
+    currentDetailOrder: null,
+    isEnriching: false,
+    hasCompletedFirstScan: false,
+    expiredAccordionOpen: false,
+    returnedAccordionOpen: false,
+    deliveryModal: null,
+    activeDeliveries: {},
+    isEditingDate: false,
+    deliveryState: {
+      step: 'address',
+      address: null,
+      locations: [],
+      selectedLocation: null,
+      quote: null,
+      delivery: null,
+      loading: false,
+      error: null,
+    },
+  },
+  timers: {
+    dateRefreshInterval: null,
+  },
 };
 
-// Periodic date refresh timer
-let dateRefreshInterval = null;
 
 function startDateRefreshTimer() {
-  if (dateRefreshInterval) return;
-  dateRefreshInterval = setInterval(() => {
-    if (visibleOrders.length > 0) {
+  if (ReclaimSidebar.timers.dateRefreshInterval) return;
+  ReclaimSidebar.timers.dateRefreshInterval = setInterval(() => {
+    if (ReclaimSidebar.state.visibleOrders.length > 0) {
       renderListView();
     }
-  }, DATE_REFRESH_INTERVAL_MS);
+  }, ReclaimSidebar.config.DATE_REFRESH_INTERVAL_MS);
 }
 
 function stopDateRefreshTimer() {
-  if (dateRefreshInterval) {
-    clearInterval(dateRefreshInterval);
-    dateRefreshInterval = null;
+  if (ReclaimSidebar.timers.dateRefreshInterval) {
+    clearInterval(ReclaimSidebar.timers.dateRefreshInterval);
+    ReclaimSidebar.timers.dateRefreshInterval = null;
   }
 }
 
@@ -87,7 +90,7 @@ const refreshStatus = document.getElementById('refresh-status');
  * @param {string} type - 'success' | 'error' | 'info'
  * @param {number} duration - Duration in ms (default 3000)
  */
-function showToast(message, type = 'info', duration = TOAST_DURATION_MS) {
+function showToast(message, type = 'info', duration = ReclaimSidebar.config.TOAST_DURATION_MS) {
   // Remove any existing toast
   const existing = document.querySelector('.toast-notification');
   if (existing) existing.remove();
@@ -105,7 +108,7 @@ function showToast(message, type = 'info', duration = TOAST_DURATION_MS) {
   // Auto-dismiss
   setTimeout(() => {
     toast.classList.remove('show');
-    setTimeout(() => toast.remove(), TOAST_FADEOUT_MS);
+    setTimeout(() => toast.remove(), ReclaimSidebar.config.TOAST_FADEOUT_MS);
   }, duration);
 }
 
@@ -198,7 +201,7 @@ function formatDate(dateStr) {
   if (diffDays < 0) return 'Expired';
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
-  if (diffDays <= EXPIRING_SOON_DAYS) return `${diffDays} days`;
+  if (diffDays <= ReclaimSidebar.config.EXPIRING_SOON_DAYS) return `${diffDays} days`;
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -213,17 +216,6 @@ function getDaysUntil(dateStr) {
   return Math.ceil((date - now) / (1000 * 60 * 60 * 24));
 }
 
-/**
- * Format currency amount
- */
-function formatAmount(amount, currency = 'USD') {
-  if (!amount) return null;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency
-  }).format(amount);
-}
-
 // =============================================================================
 // RENDERING
 // =============================================================================
@@ -235,7 +227,7 @@ function getOrdersByStatus() {
   const active = [];
   const expired = [];
 
-  for (const order of visibleOrders) {
+  for (const order of ReclaimSidebar.state.visibleOrders) {
     const daysUntil = getDaysUntil(order.return_by_date);
     if (daysUntil !== null && daysUntil < 0) {
       expired.push(order);
@@ -251,7 +243,7 @@ function getOrdersByStatus() {
  * Toggle expired accordion
  */
 function toggleExpiredAccordion() {
-  expiredAccordionOpen = !expiredAccordionOpen;
+  ReclaimSidebar.state.expiredAccordionOpen = !ReclaimSidebar.state.expiredAccordionOpen;
   renderListView();
 }
 
@@ -259,7 +251,7 @@ function toggleExpiredAccordion() {
  * Toggle returned accordion
  */
 function toggleReturnedAccordion() {
-  returnedAccordionOpen = !returnedAccordionOpen;
+  ReclaimSidebar.state.returnedAccordionOpen = !ReclaimSidebar.state.returnedAccordionOpen;
   renderListView();
 }
 
@@ -286,8 +278,8 @@ function renderListView() {
   const { active, expired } = getOrdersByStatus();
 
   // Empty state - no orders at all
-  if (visibleOrders.length === 0) {
-    if (!hasCompletedFirstScan) {
+  if (ReclaimSidebar.state.visibleOrders.length === 0) {
+    if (!ReclaimSidebar.state.hasCompletedFirstScan) {
       listView.innerHTML = `
         <div class="empty-state">
           <div class="icon">🔍</div>
@@ -310,8 +302,8 @@ function renderListView() {
   let html = '';
 
   // Render returned accordion at the TOP if there are returned orders
-  if (returnedOrders.length > 0) {
-    const chevronIcon = returnedAccordionOpen
+  if (ReclaimSidebar.state.returnedOrders.length > 0) {
+    const chevronIcon = ReclaimSidebar.state.returnedAccordionOpen
       ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
       : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
 
@@ -320,13 +312,13 @@ function renderListView() {
         <button class="returned-accordion-header" id="returned-accordion-toggle">
           <span class="returned-accordion-title">
             <span class="returned-icon">✓</span>
-            Returned (${returnedOrders.length})
+            Returned (${ReclaimSidebar.state.returnedOrders.length})
           </span>
           ${chevronIcon}
         </button>
-        ${returnedAccordionOpen ? `
+        ${ReclaimSidebar.state.returnedAccordionOpen ? `
           <div class="returned-accordion-content">
-            ${returnedOrders.map(o => renderOrderCard(o, true)).join('')}
+            ${ReclaimSidebar.state.returnedOrders.map(o => renderOrderCard(o, true)).join('')}
           </div>
         ` : ''}
       </div>
@@ -335,7 +327,7 @@ function renderListView() {
 
   // Render expired accordion if there are expired orders
   if (expired.length > 0) {
-    const chevronIcon = expiredAccordionOpen
+    const chevronIcon = ReclaimSidebar.state.expiredAccordionOpen
       ? `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>`
       : `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>`;
 
@@ -348,7 +340,7 @@ function renderListView() {
           </span>
           ${chevronIcon}
         </button>
-        ${expiredAccordionOpen ? `
+        ${ReclaimSidebar.state.expiredAccordionOpen ? `
           <div class="expired-accordion-content">
             ${expired.map(o => renderOrderCard(o)).join('')}
           </div>
@@ -360,7 +352,7 @@ function renderListView() {
   // Render active orders below the accordions
   if (active.length > 0) {
     html += active.map(o => renderOrderCard(o)).join('');
-  } else if (expired.length > 0 || returnedOrders.length > 0) {
+  } else if (expired.length > 0 || ReclaimSidebar.state.returnedOrders.length > 0) {
     // Only expired/returned orders exist
     html += `
       <div class="empty-state" style="padding: 24px 20px;">
@@ -386,9 +378,9 @@ function renderListView() {
       const isReturned = card.dataset.returned === 'true';
 
       // Find order in appropriate list
-      let order = visibleOrders.find(o => o.order_key === orderKey);
+      let order = ReclaimSidebar.state.visibleOrders.find(o => o.order_key === orderKey);
       if (!order && isReturned) {
-        order = returnedOrders.find(o => o.order_key === orderKey);
+        order = ReclaimSidebar.state.returnedOrders.find(o => o.order_key === orderKey);
       }
 
       if (order) {
@@ -420,7 +412,7 @@ function renderListView() {
     badge.addEventListener('click', (e) => {
       e.stopPropagation();
       const orderKey = badge.dataset.orderKey;
-      const delivery = activeDeliveries[orderKey];
+      const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
       if (delivery) {
         showDeliveryStatus(delivery);
       }
@@ -429,29 +421,10 @@ function renderListView() {
 }
 
 /**
- * Render a returned order card with undo button
- */
-function renderReturnedCard(order) {
-  const undoIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
-
-  return `
-    <div class="returned-card" data-id="${escapeHtml(order.order_key)}">
-      <div class="returned-card-content">
-        <span class="returned-merchant">${escapeHtml(order.merchant_display_name || 'Unknown')}</span>
-        <span class="returned-item">${escapeHtml(order.item_summary || 'Unknown item')}</span>
-      </div>
-      <button class="undo-btn" data-id="${escapeHtml(order.order_key)}" title="Undo - move back to active">
-        ${undoIcon}
-      </button>
-    </div>
-  `;
-}
-
-/**
  * Build delivery badge HTML for an order
  */
 function getDeliveryBadge(orderKey) {
-  const delivery = activeDeliveries[orderKey];
+  const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
   if (!delivery) return '';
 
   const statusLabels = {
@@ -487,8 +460,8 @@ function getDeliveryBadge(orderKey) {
  */
 function renderOrderCard(order, isReturned = false) {
   const daysUntil = getDaysUntil(order.return_by_date);
-  const isExpiring = daysUntil !== null && daysUntil <= EXPIRING_SOON_DAYS && daysUntil >= 0;
-  const isCritical = daysUntil !== null && daysUntil <= CRITICAL_DAYS && daysUntil >= 0;
+  const isExpiring = daysUntil !== null && daysUntil <= ReclaimSidebar.config.EXPIRING_SOON_DAYS && daysUntil >= 0;
+  const isCritical = daysUntil !== null && daysUntil <= ReclaimSidebar.config.CRITICAL_DAYS && daysUntil >= 0;
   const isExpired = daysUntil !== null && daysUntil < 0;
 
   let dateText = 'No deadline';
@@ -505,11 +478,11 @@ function renderOrderCard(order, isReturned = false) {
       dateText = 'Due today!';
       dateClass = 'urgent';
       urgentBadge = '<span class="urgent-badge critical"><span class="dot"></span>Today!</span>';
-    } else if (daysUntil <= CRITICAL_DAYS) {
+    } else if (daysUntil <= ReclaimSidebar.config.CRITICAL_DAYS) {
       dateText = `${daysUntil} day${daysUntil === 1 ? '' : 's'} left`;
       dateClass = 'urgent';
       urgentBadge = `<span class="urgent-badge critical"><span class="dot"></span>${daysUntil} day${daysUntil === 1 ? '' : 's'}</span>`;
-    } else if (daysUntil <= EXPIRING_SOON_DAYS) {
+    } else if (daysUntil <= ReclaimSidebar.config.EXPIRING_SOON_DAYS) {
       dateText = `${daysUntil} days left`;
       dateClass = '';
       urgentBadge = `<span class="urgent-badge warning"><span class="dot"></span>${daysUntil} days</span>`;
@@ -553,31 +526,16 @@ function renderOrderCard(order, isReturned = false) {
 }
 
 /**
- * Get status badge HTML
- */
-function getStatusBadge(status) {
-  const badges = {
-    'active': '<span class="status-badge active">Active</span>',
-    'expiring_soon': '<span class="status-badge expiring_soon">Expiring</span>',
-    'expired': '<span class="status-badge expired">Expired</span>',
-    'returned': '<span class="status-badge active">Returned</span>',
-    'dismissed': '<span class="status-badge">Dismissed</span>',
-    'cancelled': '<span class="status-badge">Cancelled</span>'
-  };
-  return badges[status] || '';
-}
-
-/**
  * Show the detail view for an order (v0.6.2 Order model)
  */
 function showDetailView(order) {
-  currentDetailOrder = order;
+  ReclaimSidebar.state.currentDetailOrder = order;
 
   // Check if enrichment needed
   const needsEnrichment = order.deadline_confidence === 'unknown' || !order.return_by_date;
 
   // Trigger enrichment if needed
-  if (needsEnrichment && !isEnriching) {
+  if (needsEnrichment && !ReclaimSidebar.state.isEnriching) {
     enrichOrder(order.order_key);
   }
 
@@ -593,7 +551,7 @@ function showDetailView(order) {
  * Render enriching state in detail view
  */
 function renderEnrichingState() {
-  if (!currentDetailOrder) return;
+  if (!ReclaimSidebar.state.currentDetailOrder) return;
 
   const enrichSection = document.getElementById('enrich-section');
   if (enrichSection) {
@@ -632,10 +590,10 @@ function renderDetailView(order, needsEnrichment) {
         deadlineClass = 'urgent';
       } else if (daysUntil === 1) {
         daysLeftText = '(1 day left)';
-        deadlineClass = daysUntil <= CRITICAL_DAYS ? 'urgent' : '';
+        deadlineClass = daysUntil <= ReclaimSidebar.config.CRITICAL_DAYS ? 'urgent' : '';
       } else {
         daysLeftText = `(${daysUntil} days left)`;
-        deadlineClass = daysUntil <= CRITICAL_DAYS ? 'urgent' : '';
+        deadlineClass = daysUntil <= ReclaimSidebar.config.CRITICAL_DAYS ? 'urgent' : '';
       }
     }
   }
@@ -663,7 +621,7 @@ function renderDetailView(order, needsEnrichment) {
 
   // Build editable return date section
   const currentDateValue = order.return_by_date ? order.return_by_date.split('T')[0] : '';
-  const dateEditSection = isEditingDate ? `
+  const dateEditSection = ReclaimSidebar.state.isEditingDate ? `
     <div class="date-edit-container">
       <input type="date" id="return-date-input"
              value="${currentDateValue}"
@@ -709,8 +667,8 @@ function renderDetailView(order, needsEnrichment) {
 
   // Build enrichment section (for unknown deadlines)
   let enrichSection = '';
-  if (needsEnrichment && !isEditingDate) {
-    if (isEnriching) {
+  if (needsEnrichment && !ReclaimSidebar.state.isEditingDate) {
+    if (ReclaimSidebar.state.isEnriching) {
       enrichSection = `
         <div id="enrich-section" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; margin-bottom: 20px;">
           <div class="spinner" style="margin: 0 auto 8px;"></div>
@@ -787,7 +745,7 @@ function renderDetailView(order, needsEnrichment) {
 
   if (editDateBtn) {
     editDateBtn.addEventListener('click', () => {
-      isEditingDate = true;
+      ReclaimSidebar.state.isEditingDate = true;
       renderDetailView(order, false);
     });
   }
@@ -821,7 +779,7 @@ function renderDetailView(order, needsEnrichment) {
 
   if (cancelDateBtn) {
     cancelDateBtn.addEventListener('click', () => {
-      isEditingDate = false;
+      ReclaimSidebar.state.isEditingDate = false;
       renderDetailView(order, needsEnrichment);
     });
   }
@@ -890,7 +848,7 @@ function showMerchantRuleDialog(merchantDomain, merchantName) {
  */
 function showDeliveryModal(order) {
   // Reset delivery state
-  deliveryState = {
+  ReclaimSidebar.state.deliveryState = {
     step: 'address',
     address: null,
     locations: [],
@@ -902,9 +860,9 @@ function showDeliveryModal(order) {
   };
 
   // Create modal overlay
-  deliveryModal = document.createElement('div');
-  deliveryModal.className = 'delivery-modal-overlay';
-  deliveryModal.innerHTML = `
+  ReclaimSidebar.state.deliveryModal = document.createElement('div');
+  ReclaimSidebar.state.deliveryModal.className = 'delivery-modal-overlay';
+  ReclaimSidebar.state.deliveryModal.innerHTML = `
     <div class="delivery-modal">
       <div class="delivery-modal-header">
         <h3>Schedule Return Pickup</h3>
@@ -919,12 +877,12 @@ function showDeliveryModal(order) {
     </div>
   `;
 
-  document.body.appendChild(deliveryModal);
+  document.body.appendChild(ReclaimSidebar.state.deliveryModal);
 
   // Close handlers
-  deliveryModal.querySelector('.delivery-modal-close').addEventListener('click', closeDeliveryModal);
-  deliveryModal.addEventListener('click', (e) => {
-    if (e.target === deliveryModal) closeDeliveryModal();
+  ReclaimSidebar.state.deliveryModal.querySelector('.delivery-modal-close').addEventListener('click', closeDeliveryModal);
+  ReclaimSidebar.state.deliveryModal.addEventListener('click', (e) => {
+    if (e.target === ReclaimSidebar.state.deliveryModal) closeDeliveryModal();
   });
 
   // Check for saved address
@@ -935,9 +893,9 @@ function showDeliveryModal(order) {
  * Close the delivery modal
  */
 function closeDeliveryModal() {
-  if (deliveryModal) {
-    deliveryModal.remove();
-    deliveryModal = null;
+  if (ReclaimSidebar.state.deliveryModal) {
+    ReclaimSidebar.state.deliveryModal.remove();
+    ReclaimSidebar.state.deliveryModal = null;
   }
 }
 
@@ -945,7 +903,7 @@ function closeDeliveryModal() {
  * Show delivery status modal for an existing delivery
  */
 function showDeliveryStatus(delivery) {
-  deliveryState = {
+  ReclaimSidebar.state.deliveryState = {
     step: 'status',
     address: null,
     locations: [],
@@ -956,9 +914,9 @@ function showDeliveryStatus(delivery) {
     error: null,
   };
 
-  deliveryModal = document.createElement('div');
-  deliveryModal.className = 'delivery-modal-overlay';
-  deliveryModal.innerHTML = `
+  ReclaimSidebar.state.deliveryModal = document.createElement('div');
+  ReclaimSidebar.state.deliveryModal.className = 'delivery-modal-overlay';
+  ReclaimSidebar.state.deliveryModal.innerHTML = `
     <div class="delivery-modal">
       <div class="delivery-modal-header">
         <h3>Delivery Status</h3>
@@ -968,11 +926,11 @@ function showDeliveryStatus(delivery) {
     </div>
   `;
 
-  document.body.appendChild(deliveryModal);
+  document.body.appendChild(ReclaimSidebar.state.deliveryModal);
 
-  deliveryModal.querySelector('.delivery-modal-close').addEventListener('click', closeDeliveryModal);
-  deliveryModal.addEventListener('click', (e) => {
-    if (e.target === deliveryModal) closeDeliveryModal();
+  ReclaimSidebar.state.deliveryModal.querySelector('.delivery-modal-close').addEventListener('click', closeDeliveryModal);
+  ReclaimSidebar.state.deliveryModal.addEventListener('click', (e) => {
+    if (e.target === ReclaimSidebar.state.deliveryModal) closeDeliveryModal();
   });
 
   renderDeliveryModal();
@@ -982,38 +940,38 @@ function showDeliveryStatus(delivery) {
  * Render the current delivery modal step
  */
 function renderDeliveryModal() {
-  if (!deliveryModal) return;
+  if (!ReclaimSidebar.state.deliveryModal) return;
 
-  const content = deliveryModal.querySelector('.delivery-modal-content');
+  const content = ReclaimSidebar.state.deliveryModal.querySelector('.delivery-modal-content');
   if (!content) return;
 
-  if (deliveryState.loading) {
+  if (ReclaimSidebar.state.deliveryState.loading) {
     content.innerHTML = `
       <div class="delivery-loading">
         <div class="spinner"></div>
-        <div>${deliveryState.step === 'quote' ? 'Getting quote...' : 'Loading...'}</div>
+        <div>${ReclaimSidebar.state.deliveryState.step === 'quote' ? 'Getting quote...' : 'Loading...'}</div>
       </div>
     `;
     return;
   }
 
-  if (deliveryState.error) {
+  if (ReclaimSidebar.state.deliveryState.error) {
     content.innerHTML = `
       <div class="delivery-error">
         <div class="error-icon">⚠️</div>
-        <div class="error-message">${escapeHtml(deliveryState.error)}</div>
+        <div class="error-message">${escapeHtml(ReclaimSidebar.state.deliveryState.error)}</div>
         <button class="action-btn secondary" id="delivery-retry-btn">Try Again</button>
       </div>
     `;
     content.querySelector('#delivery-retry-btn')?.addEventListener('click', () => {
-      deliveryState.error = null;
-      deliveryState.step = 'address';
+      ReclaimSidebar.state.deliveryState.error = null;
+      ReclaimSidebar.state.deliveryState.step = 'address';
       renderDeliveryModal();
     });
     return;
   }
 
-  switch (deliveryState.step) {
+  switch (ReclaimSidebar.state.deliveryState.step) {
     case 'address':
       renderAddressStep(content);
       break;
@@ -1036,7 +994,7 @@ function renderDeliveryModal() {
  * Render address input step
  */
 function renderAddressStep(content) {
-  const addr = deliveryState.address || {};
+  const addr = ReclaimSidebar.state.deliveryState.address || {};
 
   content.innerHTML = `
     <div class="delivery-step">
@@ -1083,7 +1041,7 @@ function renderAddressStep(content) {
       return;
     }
 
-    deliveryState.address = {
+    ReclaimSidebar.state.deliveryState.address = {
       street,
       city,
       state,
@@ -1094,17 +1052,17 @@ function renderAddressStep(content) {
     // Save address for future use
     window.parent.postMessage({
       type: 'SHOPQ_SET_USER_ADDRESS',
-      address: deliveryState.address,
+      address: ReclaimSidebar.state.deliveryState.address,
     }, '*');
 
     // Fetch locations
-    deliveryState.loading = true;
-    deliveryState.step = 'locations';
+    ReclaimSidebar.state.deliveryState.loading = true;
+    ReclaimSidebar.state.deliveryState.step = 'locations';
     renderDeliveryModal();
 
     window.parent.postMessage({
       type: 'SHOPQ_GET_DELIVERY_LOCATIONS',
-      address: deliveryState.address,
+      address: ReclaimSidebar.state.deliveryState.address,
     }, '*');
   });
 }
@@ -1113,7 +1071,7 @@ function renderAddressStep(content) {
  * Render carrier location selection step
  */
 function renderLocationsStep(content) {
-  if (deliveryState.locations.length === 0) {
+  if (ReclaimSidebar.state.deliveryState.locations.length === 0) {
     content.innerHTML = `
       <div class="delivery-step">
         <div class="step-title">No Locations Found</div>
@@ -1124,14 +1082,14 @@ function renderLocationsStep(content) {
       </div>
     `;
     content.querySelector('#delivery-back-btn').addEventListener('click', () => {
-      deliveryState.step = 'address';
+      ReclaimSidebar.state.deliveryState.step = 'address';
       renderDeliveryModal();
     });
     return;
   }
 
-  const locationCards = deliveryState.locations.map((loc, i) => `
-    <div class="location-card ${deliveryState.selectedLocation?.id === loc.id ? 'selected' : ''}" data-index="${i}">
+  const locationCards = ReclaimSidebar.state.deliveryState.locations.map((loc, i) => `
+    <div class="location-card ${ReclaimSidebar.state.deliveryState.selectedLocation?.id === loc.id ? 'selected' : ''}" data-index="${i}">
       <div class="location-carrier">${escapeHtml(loc.carrier)}</div>
       <div class="location-name">${escapeHtml(loc.name)}</div>
       <div class="location-address">${escapeHtml(loc.address.street)}, ${escapeHtml(loc.address.city)}</div>
@@ -1151,7 +1109,7 @@ function renderLocationsStep(content) {
 
       <div class="delivery-actions">
         <button class="action-btn secondary" id="delivery-back-btn">Back</button>
-        <button class="action-btn primary" id="delivery-quote-btn" ${!deliveryState.selectedLocation ? 'disabled' : ''}>
+        <button class="action-btn primary" id="delivery-quote-btn" ${!ReclaimSidebar.state.deliveryState.selectedLocation ? 'disabled' : ''}>
           Get Quote
         </button>
       </div>
@@ -1162,27 +1120,27 @@ function renderLocationsStep(content) {
   content.querySelectorAll('.location-card').forEach(card => {
     card.addEventListener('click', () => {
       const index = parseInt(card.dataset.index);
-      deliveryState.selectedLocation = deliveryState.locations[index];
+      ReclaimSidebar.state.deliveryState.selectedLocation = ReclaimSidebar.state.deliveryState.locations[index];
       renderDeliveryModal();
     });
   });
 
   content.querySelector('#delivery-back-btn').addEventListener('click', () => {
-    deliveryState.step = 'address';
+    ReclaimSidebar.state.deliveryState.step = 'address';
     renderDeliveryModal();
   });
 
   content.querySelector('#delivery-quote-btn').addEventListener('click', () => {
-    if (!deliveryState.selectedLocation) return;
+    if (!ReclaimSidebar.state.deliveryState.selectedLocation) return;
 
-    deliveryState.loading = true;
+    ReclaimSidebar.state.deliveryState.loading = true;
     renderDeliveryModal();
 
     window.parent.postMessage({
       type: 'SHOPQ_GET_DELIVERY_QUOTE',
-      order_key: currentDetailOrder.order_key,
-      pickup_address: deliveryState.address,
-      dropoff_location_id: deliveryState.selectedLocation.id,
+      order_key: ReclaimSidebar.state.currentDetailOrder.order_key,
+      pickup_address: ReclaimSidebar.state.deliveryState.address,
+      dropoff_location_id: ReclaimSidebar.state.deliveryState.selectedLocation.id,
     }, '*');
   });
 }
@@ -1191,9 +1149,9 @@ function renderLocationsStep(content) {
  * Render quote confirmation step
  */
 function renderQuoteStep(content) {
-  const quote = deliveryState.quote;
+  const quote = ReclaimSidebar.state.deliveryState.quote;
   if (!quote) {
-    deliveryState.error = 'Failed to get quote';
+    ReclaimSidebar.state.deliveryState.error = 'Failed to get quote';
     renderDeliveryModal();
     return;
   }
@@ -1216,7 +1174,7 @@ function renderQuoteStep(content) {
       <div class="quote-details">
         <div class="quote-row">
           <span class="quote-label">Pickup</span>
-          <span class="quote-value">${escapeHtml(deliveryState.address.street)}</span>
+          <span class="quote-value">${escapeHtml(ReclaimSidebar.state.deliveryState.address.street)}</span>
         </div>
         <div class="quote-row">
           <span class="quote-label">Drop-off</span>
@@ -1244,13 +1202,13 @@ function renderQuoteStep(content) {
   `;
 
   content.querySelector('#delivery-back-btn').addEventListener('click', () => {
-    deliveryState.step = 'locations';
-    deliveryState.quote = null;
+    ReclaimSidebar.state.deliveryState.step = 'locations';
+    ReclaimSidebar.state.deliveryState.quote = null;
     renderDeliveryModal();
   });
 
   content.querySelector('#delivery-confirm-btn').addEventListener('click', () => {
-    deliveryState.loading = true;
+    ReclaimSidebar.state.deliveryState.loading = true;
     renderDeliveryModal();
 
     window.parent.postMessage({
@@ -1264,7 +1222,7 @@ function renderQuoteStep(content) {
  * Render confirmed step
  */
 function renderConfirmedStep(content) {
-  const delivery = deliveryState.delivery;
+  const delivery = ReclaimSidebar.state.deliveryState.delivery;
 
   content.innerHTML = `
     <div class="delivery-step">
@@ -1293,8 +1251,8 @@ function renderConfirmedStep(content) {
   content.querySelector('#delivery-done-btn').addEventListener('click', () => {
     closeDeliveryModal();
     // Refresh the detail view to show delivery badge
-    if (currentDetailOrder) {
-      renderDetailView(currentDetailOrder, false);
+    if (ReclaimSidebar.state.currentDetailOrder) {
+      renderDetailView(ReclaimSidebar.state.currentDetailOrder, false);
     }
   });
 }
@@ -1303,7 +1261,7 @@ function renderConfirmedStep(content) {
  * Render status step (for viewing existing delivery)
  */
 function renderStatusStep(content) {
-  const delivery = deliveryState.delivery;
+  const delivery = ReclaimSidebar.state.deliveryState.delivery;
   if (!delivery) return;
 
   const statusLabels = {
@@ -1372,7 +1330,7 @@ function renderStatusStep(content) {
 
   content.querySelector('#delivery-cancel-btn')?.addEventListener('click', () => {
     if (confirm('Are you sure you want to cancel this delivery?')) {
-      deliveryState.loading = true;
+      ReclaimSidebar.state.deliveryState.loading = true;
       renderDeliveryModal();
       window.parent.postMessage({
         type: 'SHOPQ_CANCEL_DELIVERY',
@@ -1386,8 +1344,8 @@ function renderStatusStep(content) {
  * Show the list view (hide detail view)
  */
 function showListView() {
-  currentDetailCard = null;
-  isEditingDate = false; // Reset date editing state
+  ReclaimSidebar.state.currentDetailOrder = null;
+  ReclaimSidebar.state.isEditingDate = false; // Reset date editing state
   listView.classList.remove('hidden');
   detailView.classList.remove('active');
   backBtn.classList.add('hidden');
@@ -1414,7 +1372,7 @@ async function fetchReturns() {
  * Trigger enrichment for an order
  */
 async function enrichOrder(orderKey) {
-  isEnriching = true;
+  ReclaimSidebar.state.isEnriching = true;
   renderEnrichingState();
   window.parent.postMessage({ type: 'SHOPQ_ENRICH_ORDER', order_key: orderKey }, '*');
 }
@@ -1531,18 +1489,18 @@ window.addEventListener('message', (event) => {
   // Receive config from parent (content script) — overrides defaults
   if (event.data?.type === 'SHOPQ_CONFIG_INIT') {
     const c = event.data.config || {};
-    if (c.DATE_REFRESH_INTERVAL_MS) DATE_REFRESH_INTERVAL_MS = c.DATE_REFRESH_INTERVAL_MS;
-    if (c.TOAST_DURATION_MS) TOAST_DURATION_MS = c.TOAST_DURATION_MS;
-    if (c.TOAST_FADEOUT_MS) TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
-    if (c.EXPIRING_SOON_DAYS) EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
-    if (c.CRITICAL_DAYS) CRITICAL_DAYS = c.CRITICAL_DAYS;
+    if (c.DATE_REFRESH_INTERVAL_MS) ReclaimSidebar.config.DATE_REFRESH_INTERVAL_MS = c.DATE_REFRESH_INTERVAL_MS;
+    if (c.TOAST_DURATION_MS) ReclaimSidebar.config.TOAST_DURATION_MS = c.TOAST_DURATION_MS;
+    if (c.TOAST_FADEOUT_MS) ReclaimSidebar.config.TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
+    if (c.EXPIRING_SOON_DAYS) ReclaimSidebar.config.EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
+    if (c.CRITICAL_DAYS) ReclaimSidebar.config.CRITICAL_DAYS = c.CRITICAL_DAYS;
   }
 
   // Handle unified visible orders
   if (event.data?.type === 'SHOPQ_ORDERS_DATA') {
-    visibleOrders = event.data.orders || [];
-    if (visibleOrders.length > 0) {
-      hasCompletedFirstScan = true;
+    ReclaimSidebar.state.visibleOrders = event.data.orders || [];
+    if (ReclaimSidebar.state.visibleOrders.length > 0) {
+      ReclaimSidebar.state.hasCompletedFirstScan = true;
       startDateRefreshTimer();
     }
     renderListView();
@@ -1550,7 +1508,7 @@ window.addEventListener('message', (event) => {
 
   // Handle returned orders data (for undo drawer)
   if (event.data?.type === 'SHOPQ_RETURNED_ORDERS_DATA') {
-    returnedOrders = event.data.orders || [];
+    ReclaimSidebar.state.returnedOrders = event.data.orders || [];
     renderListView();
   }
 
@@ -1568,7 +1526,7 @@ window.addEventListener('message', (event) => {
   // Handle scan complete notification
   if (event.data?.type === 'SHOPQ_SCAN_COMPLETE') {
     console.log('Reclaim Returns: Scan complete', event.data);
-    hasCompletedFirstScan = true;
+    ReclaimSidebar.state.hasCompletedFirstScan = true;
     refreshBtn.classList.remove('scanning');
     refreshStatus.textContent = '';
 
@@ -1589,10 +1547,10 @@ window.addEventListener('message', (event) => {
 
   // Handle enrichment result (v0.6.2)
   if (event.data?.type === 'SHOPQ_ENRICH_RESULT') {
-    isEnriching = false;
-    if (event.data.order && currentDetailOrder) {
+    ReclaimSidebar.state.isEnriching = false;
+    if (event.data.order && ReclaimSidebar.state.currentDetailOrder) {
       // Update with enriched order data
-      currentDetailOrder = event.data.order;
+      ReclaimSidebar.state.currentDetailOrder = event.data.order;
       renderDetailView(event.data.order, event.data.state === 'not_found');
     }
   }
@@ -1601,11 +1559,11 @@ window.addEventListener('message', (event) => {
   if (event.data?.type === 'SHOPQ_MERCHANT_RULE_SET') {
     // Refresh to show updated deadlines
     fetchReturns();
-    if (currentDetailOrder) {
+    if (ReclaimSidebar.state.currentDetailOrder) {
       // Re-fetch the current order
       window.parent.postMessage({
         type: 'SHOPQ_GET_ORDER',
-        order_key: currentDetailOrder.order_key
+        order_key: ReclaimSidebar.state.currentDetailOrder.order_key
       }, '*');
     }
   }
@@ -1628,16 +1586,16 @@ window.addEventListener('message', (event) => {
       }
     } else {
       // Success - close editor and show confirmation
-      isEditingDate = false;
+      ReclaimSidebar.state.isEditingDate = false;
       showToast('Return date updated', 'success');
 
       // Refresh to show updated date
       fetchReturns();
-      if (currentDetailOrder && event.data.order_key === currentDetailOrder.order_key) {
+      if (ReclaimSidebar.state.currentDetailOrder && event.data.order_key === ReclaimSidebar.state.currentDetailOrder.order_key) {
         // Re-fetch the current order to get updated data
         window.parent.postMessage({
           type: 'SHOPQ_GET_ORDER',
-          order_key: currentDetailOrder.order_key
+          order_key: ReclaimSidebar.state.currentDetailOrder.order_key
         }, '*');
       }
     }
@@ -1645,9 +1603,9 @@ window.addEventListener('message', (event) => {
 
   // Handle order data (for refreshing detail view)
   if (event.data?.type === 'SHOPQ_ORDER_DATA') {
-    if (event.data.order && currentDetailOrder &&
-        event.data.order.order_key === currentDetailOrder.order_key) {
-      currentDetailOrder = event.data.order;
+    if (event.data.order && ReclaimSidebar.state.currentDetailOrder &&
+        event.data.order.order_key === ReclaimSidebar.state.currentDetailOrder.order_key) {
+      ReclaimSidebar.state.currentDetailOrder = event.data.order;
       renderDetailView(event.data.order, !event.data.order.return_by_date);
     }
   }
@@ -1658,32 +1616,32 @@ window.addEventListener('message', (event) => {
 
   // Handle user address response
   if (event.data?.type === 'SHOPQ_USER_ADDRESS') {
-    if (deliveryModal) {
-      deliveryState.address = event.data.address || null;
-      deliveryState.loading = false;
+    if (ReclaimSidebar.state.deliveryModal) {
+      ReclaimSidebar.state.deliveryState.address = event.data.address || null;
+      ReclaimSidebar.state.deliveryState.loading = false;
       renderDeliveryModal();
     }
   }
 
   // Handle delivery locations response
   if (event.data?.type === 'SHOPQ_DELIVERY_LOCATIONS') {
-    if (deliveryModal) {
-      deliveryState.locations = event.data.locations || [];
-      deliveryState.loading = false;
+    if (ReclaimSidebar.state.deliveryModal) {
+      ReclaimSidebar.state.deliveryState.locations = event.data.locations || [];
+      ReclaimSidebar.state.deliveryState.loading = false;
       renderDeliveryModal();
     }
   }
 
   // Handle delivery quote response
   if (event.data?.type === 'SHOPQ_DELIVERY_QUOTE') {
-    if (deliveryModal) {
+    if (ReclaimSidebar.state.deliveryModal) {
       if (event.data.error) {
-        deliveryState.error = event.data.error;
-        deliveryState.loading = false;
+        ReclaimSidebar.state.deliveryState.error = event.data.error;
+        ReclaimSidebar.state.deliveryState.loading = false;
       } else {
-        deliveryState.quote = event.data.quote;
-        deliveryState.step = 'quote';
-        deliveryState.loading = false;
+        ReclaimSidebar.state.deliveryState.quote = event.data.quote;
+        ReclaimSidebar.state.deliveryState.step = 'quote';
+        ReclaimSidebar.state.deliveryState.loading = false;
       }
       renderDeliveryModal();
     }
@@ -1691,14 +1649,14 @@ window.addEventListener('message', (event) => {
 
   // Handle delivery confirmation response
   if (event.data?.type === 'SHOPQ_DELIVERY_CONFIRMED') {
-    if (deliveryModal) {
+    if (ReclaimSidebar.state.deliveryModal) {
       if (event.data.error) {
-        deliveryState.error = event.data.error;
-        deliveryState.loading = false;
+        ReclaimSidebar.state.deliveryState.error = event.data.error;
+        ReclaimSidebar.state.deliveryState.loading = false;
       } else {
-        deliveryState.delivery = event.data.delivery;
-        deliveryState.step = 'confirmed';
-        deliveryState.loading = false;
+        ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
+        ReclaimSidebar.state.deliveryState.step = 'confirmed';
+        ReclaimSidebar.state.deliveryState.loading = false;
       }
       renderDeliveryModal();
     }
@@ -1706,24 +1664,24 @@ window.addEventListener('message', (event) => {
 
   // Handle delivery status response
   if (event.data?.type === 'SHOPQ_DELIVERY_STATUS') {
-    if (deliveryModal) {
-      deliveryState.delivery = event.data.delivery;
-      deliveryState.step = 'status';
-      deliveryState.loading = false;
+    if (ReclaimSidebar.state.deliveryModal) {
+      ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
+      ReclaimSidebar.state.deliveryState.step = 'status';
+      ReclaimSidebar.state.deliveryState.loading = false;
       renderDeliveryModal();
     }
   }
 
   // Handle delivery cancel response
   if (event.data?.type === 'SHOPQ_DELIVERY_CANCELED') {
-    if (deliveryModal) {
-      deliveryState.loading = false;
+    if (ReclaimSidebar.state.deliveryModal) {
+      ReclaimSidebar.state.deliveryState.loading = false;
       if (event.data.error) {
-        deliveryState.error = event.data.error;
+        ReclaimSidebar.state.deliveryState.error = event.data.error;
       } else {
         // Remove from active deliveries
-        if (deliveryState.delivery) {
-          delete activeDeliveries[deliveryState.delivery.order_key];
+        if (ReclaimSidebar.state.deliveryState.delivery) {
+          delete ReclaimSidebar.state.activeDeliveries[ReclaimSidebar.state.deliveryState.delivery.order_key];
         }
         closeDeliveryModal();
         renderListView();
@@ -1735,10 +1693,10 @@ window.addEventListener('message', (event) => {
   // Handle active deliveries response
   if (event.data?.type === 'SHOPQ_ACTIVE_DELIVERIES') {
     const deliveries = event.data.deliveries || [];
-    activeDeliveries = {};
+    ReclaimSidebar.state.activeDeliveries = {};
     for (const delivery of deliveries) {
       if (delivery.order_key) {
-        activeDeliveries[delivery.order_key] = delivery;
+        ReclaimSidebar.state.activeDeliveries[delivery.order_key] = delivery;
       }
     }
     renderListView();
@@ -1789,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Refresh when tab becomes visible (user switches back to Gmail)
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && visibleOrders.length > 0) {
+  if (!document.hidden && ReclaimSidebar.state.visibleOrders.length > 0) {
     renderListView();  // Refresh date displays
     fetchReturns();    // Also fetch fresh data
   }
