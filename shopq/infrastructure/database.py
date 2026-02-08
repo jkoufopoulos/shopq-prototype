@@ -32,6 +32,16 @@ from queue import Empty, Full, Queue
 from threading import Lock
 from typing import Any, TypeVar
 
+from shopq.config import (
+    DB_CONNECT_TIMEOUT,
+    DB_POOL_SIZE,
+    DB_POOL_TIMEOUT,
+    DB_RETRY_BASE_DELAY,
+    DB_RETRY_JITTER,
+    DB_RETRY_MAX,
+    DB_RETRY_MAX_DELAY,
+    DB_TEMP_CONN_MAX,
+)
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter
 
@@ -45,7 +55,9 @@ logger = get_logger(__name__)
 
 
 def retry_on_db_lock(
-    max_retries: int = 5, base_delay: float = 0.1, max_delay: float = 2.0
+    max_retries: int = DB_RETRY_MAX,
+    base_delay: float = DB_RETRY_BASE_DELAY,
+    max_delay: float = DB_RETRY_MAX_DELAY,
 ) -> Callable[[F], F]:
     """
     Decorator to retry database operations on SQLITE_BUSY errors
@@ -99,7 +111,7 @@ def retry_on_db_lock(
 
                     # Exponential backoff with jitter
                     delay = min(base_delay * (2**attempt), max_delay)
-                    jitter = random.uniform(0, delay * 0.1)  # Add 10% jitter
+                    jitter = random.uniform(0, delay * DB_RETRY_JITTER)
                     sleep_time = delay + jitter
 
                     logger.warning(
@@ -128,7 +140,7 @@ class DatabaseConnectionPool:
     Connections are configured with optimal SQLite settings (WAL mode, etc.)
     """
 
-    def __init__(self, db_path, pool_size=5):
+    def __init__(self, db_path, pool_size=DB_POOL_SIZE):
         """
         Initialize connection pool
 
@@ -142,7 +154,7 @@ class DatabaseConnectionPool:
         self.lock = Lock()
         self.closed = False
         self.temp_conn_count = 0
-        self.temp_conn_max = 10  # Maximum temporary connections allowed
+        self.temp_conn_max = DB_TEMP_CONN_MAX
         self._initialize_pool()
 
         # Register cleanup on program exit
@@ -165,7 +177,7 @@ class DatabaseConnectionPool:
         """
         conn = sqlite3.connect(
             str(self.db_path),
-            timeout=30.0,
+            timeout=DB_CONNECT_TIMEOUT,
             check_same_thread=False,  # Allow use across threads
         )
 
@@ -234,8 +246,8 @@ class DatabaseConnectionPool:
             raise RuntimeError("Connection pool has been closed")
 
         try:
-            # Try to get from pool (wait up to 5 seconds)
-            return self.pool.get(block=True, timeout=5.0)
+            # Try to get from pool (wait up to DB_POOL_TIMEOUT seconds)
+            return self.pool.get(block=True, timeout=DB_POOL_TIMEOUT)
         except Empty:
             # Pool exhausted - check if we can create temporary connection
             with self.lock:
@@ -356,7 +368,7 @@ def get_pool() -> DatabaseConnectionPool:
         - Registers atexit cleanup handler
     """
     db_path = get_db_path()
-    return DatabaseConnectionPool(db_path, pool_size=5)
+    return DatabaseConnectionPool(db_path, pool_size=DB_POOL_SIZE)
 
 
 def get_db_path() -> Path:
