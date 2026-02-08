@@ -1,17 +1,15 @@
 """Rate limiting middleware for ShopQ API
 
-Provides request-based and email-based rate limiting to prevent abuse and cost DoS attacks.
+Provides request-based rate limiting to prevent abuse.
 
 Security features:
 - IP spoofing protection (only trusts X-Forwarded-For from Cloud Run)
-- Email-count rate limiting for /api/organize endpoint
 - Memory leak prevention via periodic bucket cleanup
 """
 
 from __future__ import annotations
 
 import ipaddress
-import json
 import os
 import secrets
 import time
@@ -24,8 +22,6 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from shopq.config import (
-    RATE_LIMIT_EMAILS_PH,
-    RATE_LIMIT_EMAILS_PM,
     RATE_LIMIT_MAX_IPS,
     RATE_LIMIT_RPH,
     RATE_LIMIT_RPM,
@@ -35,11 +31,10 @@ from shopq.observability.telemetry import log_event
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
-    Rate limiting middleware with email-count awareness.
+    Rate limiting middleware.
 
-    Limits both requests and email throughput per IP address to prevent:
+    Limits requests per IP address to prevent:
     - Request flooding (60 req/min, 1000 req/hour)
-    - Cost DoS via large batches (100 emails/min, 2000 emails/hour)
 
     For production, consider using Redis-backed rate limiting for multi-instance deployments.
     """
@@ -49,14 +44,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         app: Any,
         requests_per_minute: int = RATE_LIMIT_RPM,
         requests_per_hour: int = RATE_LIMIT_RPH,
-        emails_per_minute: int = RATE_LIMIT_EMAILS_PM,
-        emails_per_hour: int = RATE_LIMIT_EMAILS_PH,
     ) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.requests_per_hour = requests_per_hour
-        self.emails_per_minute = emails_per_minute
-        self.emails_per_hour = emails_per_hour
 
         # EXT-002: Use TTLCache to prevent unbounded memory growth
         _max_ips = RATE_LIMIT_MAX_IPS
@@ -65,14 +56,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # TTLCache auto-evicts entries after ttl seconds
         self.minute_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=_max_ips, ttl=120)
         self.hour_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=_max_ips, ttl=7200)
-
-        # Email count tracking: {ip: [(timestamp, email_count), ...]}
-        self.email_minute_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(
-            maxsize=_max_ips, ttl=120
-        )
-        self.email_hour_buckets: TTLCache[str, list[tuple[float, int]]] = TTLCache(
-            maxsize=_max_ips, ttl=7200
-        )
 
         # Cloud Run sets this header - only trust X-Forwarded-For when present
         self._trusted_proxy_header = "X-Cloud-Trace-Context"
@@ -152,39 +135,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self.minute_buckets.pop(ip, None)
             self.hour_buckets.pop(ip, None)
 
-    def _clean_old_email_counts(
-        self, bucket: list[tuple[float, int]], max_age_seconds: int
-    ) -> list[tuple[float, int]]:
-        """Remove email count entries older than max_age_seconds"""
-        now = time.time()
-        return [(ts, count) for ts, count in bucket if now - ts < max_age_seconds]
-
-    def _get_email_count(self, bucket: list[tuple[float, int]]) -> int:
-        """Sum email counts in bucket"""
-        return sum(count for _, count in bucket)
-
-    async def _extract_email_count_from_body(self, body: bytes) -> int:
-        """Extract email count from request body bytes.
-
-        Returns 0 if parsing fails (fail-open to not break legitimate requests).
-        """
-        try:
-            if not body:
-                return 0
-            data = json.loads(body)
-            emails = data.get("emails", [])
-            if isinstance(emails, list):
-                return len(emails)
-        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
-            # Fail-open: don't block on parse errors
-            pass
-        return 0
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Check rate limits before processing request.
-
-        For /api/organize, also enforces email-count limits to prevent cost DoS.
-        """
+        """Check rate limits before processing request."""
 
         # Skip rate limiting for health checks
         if request.url.path in ["/health", "/health/db", "/"]:
@@ -260,78 +212,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 headers={"Retry-After": "3600", **cors_headers},
             )
 
-        # Email-based rate limiting for /api/organize endpoint
-        email_count = 0
-        body_bytes = b""
-        if request.url.path == "/api/organize" and request.method == "POST":
-            # Read body once and store for replay
-            body_bytes = await request.body()
-            email_count = await self._extract_email_count_from_body(body_bytes)
-
-            # CRITICAL: Wrap receive to replay body for downstream handlers
-            # (reading body() consumes the stream, causing hangs if read again)
-            async def receive_wrapper():
-                return {"type": "http.request", "body": body_bytes}
-
-            request._receive = receive_wrapper
-
-            if email_count > 0:
-                # Clean old email counts
-                self.email_minute_buckets[client_ip] = self._clean_old_email_counts(
-                    self.email_minute_buckets.get(client_ip, []), 60
-                )
-                self.email_hour_buckets[client_ip] = self._clean_old_email_counts(
-                    self.email_hour_buckets.get(client_ip, []), 3600
-                )
-
-                # Check email minute limit
-                minute_emails = self._get_email_count(self.email_minute_buckets.get(client_ip, []))
-                if minute_emails + email_count > self.emails_per_minute:
-                    log_event(
-                        "api.rate_limit.email_exceeded",
-                        ip=client_ip,
-                        limit="minute",
-                        current=minute_emails,
-                        requested=email_count,
-                        max=self.emails_per_minute,
-                    )
-                    return JSONResponse(
-                        status_code=429,
-                        content={
-                            "detail": (
-                                f"Email rate limit exceeded. Maximum "
-                                f"{self.emails_per_minute} emails per minute. "
-                                f"Current: {minute_emails}, Requested: {email_count}"
-                            ),
-                            "retry_after": 60,
-                        },
-                        headers={"Retry-After": "60"},
-                    )
-
-                # Check email hour limit
-                hour_emails = self._get_email_count(self.email_hour_buckets.get(client_ip, []))
-                if hour_emails + email_count > self.emails_per_hour:
-                    log_event(
-                        "api.rate_limit.email_exceeded",
-                        ip=client_ip,
-                        limit="hour",
-                        current=hour_emails,
-                        requested=email_count,
-                        max=self.emails_per_hour,
-                    )
-                    return JSONResponse(
-                        status_code=429,
-                        content={
-                            "detail": (
-                                f"Email rate limit exceeded. Maximum "
-                                f"{self.emails_per_hour} emails per hour. "
-                                f"Current: {hour_emails}, Requested: {email_count}"
-                            ),
-                            "retry_after": 3600,
-                        },
-                        headers={"Retry-After": "3600"},
-                    )
-
         # Record this request (initialize bucket if needed for TTLCache)
         minute_bucket = self.minute_buckets.get(client_ip, [])
         minute_bucket.append(now)
@@ -340,16 +220,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         hour_bucket = self.hour_buckets.get(client_ip, [])
         hour_bucket.append(now)
         self.hour_buckets[client_ip] = hour_bucket
-
-        # Record email count for /api/organize
-        if email_count > 0:
-            email_min_bucket = self.email_minute_buckets.get(client_ip, [])
-            email_min_bucket.append((now, email_count))
-            self.email_minute_buckets[client_ip] = email_min_bucket
-
-            email_hour_bucket = self.email_hour_buckets.get(client_ip, [])
-            email_hour_bucket.append((now, email_count))
-            self.email_hour_buckets[client_ip] = email_hour_bucket
 
         # Process request
         response = await call_next(request)
@@ -363,18 +233,5 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response.headers["X-RateLimit-Remaining-Hour"] = str(
             self.requests_per_hour - hour_requests - 1
         )
-
-        # Add email rate limit headers for /api/organize
-        if request.url.path == "/api/organize" and request.method == "POST":
-            minute_emails = self._get_email_count(self.email_minute_buckets.get(client_ip, []))
-            hour_emails = self._get_email_count(self.email_hour_buckets.get(client_ip, []))
-            response.headers["X-RateLimit-Emails-Minute"] = str(self.emails_per_minute)
-            response.headers["X-RateLimit-Emails-Remaining-Minute"] = str(
-                max(0, self.emails_per_minute - minute_emails)
-            )
-            response.headers["X-RateLimit-Emails-Hour"] = str(self.emails_per_hour)
-            response.headers["X-RateLimit-Emails-Remaining-Hour"] = str(
-                max(0, self.emails_per_hour - hour_emails)
-            )
 
         return response

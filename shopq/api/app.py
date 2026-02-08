@@ -101,8 +101,6 @@ app.add_middleware(
     RateLimitMiddleware,
     requests_per_minute=60,
     requests_per_hour=1000,
-    emails_per_minute=100,
-    emails_per_hour=500,
 )
 
 # Security headers
