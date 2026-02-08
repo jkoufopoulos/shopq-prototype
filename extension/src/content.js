@@ -1246,6 +1246,12 @@ async function initializeDigestSidebar(sdk) {
       updateExpiringIndicator(orders);
     } catch (err) {
       console.error('Reclaim: Failed to fetch visible orders:', err);
+      if (iframeReady && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'SHOPQ_RETURNS_ERROR',
+          message: 'Could not load returns. Check your connection.'
+        }, EXTENSION_ORIGIN);
+      }
     }
   }
 
