@@ -423,11 +423,22 @@ function generateOrderKey(card) {
  */
 function convertReturnCardToOrder(card, user_id) {
   const now = new Date().toISOString();
+
+  // Compute normalized merchant identity for entity resolution
+  let normalizedMerchant = normalizeMerchantDomain(card.merchant_domain);
+  if (!normalizedMerchant) {
+    // Email service domain resolved to null — use display name
+    normalizedMerchant = (card.merchant || 'unknown').toLowerCase().trim()
+      .replace(/\s*(beauty|store|shop|official|us|inc|llc|co)\s*$/i, '')
+      .replace(/[^a-z0-9]/g, '') || 'unknown';
+  }
+
   return {
     order_key: generateOrderKey(card),
     user_id,
     merchant_domain: card.merchant_domain || '',
     merchant_display_name: card.merchant || '',
+    normalized_merchant: normalizedMerchant,
     order_id: card.order_number || undefined,
     purchase_date: card.order_date || now,
     delivery_date: card.delivery_date || undefined,

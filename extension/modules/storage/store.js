@@ -148,8 +148,128 @@ async function findOrderByTracking(tracking_number) {
 }
 
 /**
+ * Resolve whether a new order matches an existing stored order.
+ *
+ * Matching hierarchy:
+ * 1. Identity match: order_id index → tracking_number index (O(1))
+ * 2. Fuzzy match: merchant-scoped Jaccard similarity (O(k) where k is small)
+ *
+ * Guards against bad merges:
+ * - Order ID conflict: both have different order_ids → REJECT
+ * - Time window: created_at must be within 14 days
+ * - Jaccard threshold: item tokens must have ≥ 0.60 similarity
+ *
+ * @param {Order} newOrder - Incoming order to match
+ * @param {Object} orders - Current orders map
+ * @param {Object} orderIdIndex - order_id → order_key index
+ * @param {Object} trackingIndex - tracking_number → order_key index
+ * @param {Object} merchantIndex - normalized_merchant → [order_key, ...] index
+ * @returns {string|null} Matched order_key, or null if no match
+ */
+function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, merchantIndex) {
+  const FUZZY_TIME_WINDOW_DAYS = 14;
+  const JACCARD_THRESHOLD = 0.60;
+
+  // --- Match 1: Identity match (O(1) index lookups) ---
+  if (newOrder.order_id) {
+    const matchKey = orderIdIndex[newOrder.order_id];
+    if (matchKey && orders[matchKey]) {
+      console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
+        'order_id:', newOrder.order_id, 'matched:', matchKey);
+      return matchKey;
+    }
+  }
+
+  if (newOrder.tracking_number) {
+    const matchKey = trackingIndex[newOrder.tracking_number];
+    if (matchKey && orders[matchKey]) {
+      console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
+        'tracking:', newOrder.tracking_number, 'matched:', matchKey);
+      return matchKey;
+    }
+  }
+
+  // --- Match 2: Fuzzy match (merchant-scoped) ---
+  const merchant = computeNormalizedMerchant(newOrder);
+  if (!merchant) {
+    console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH', 'no merchant for fuzzy');
+    return null;
+  }
+
+  const candidateKeys = merchantIndex[merchant];
+  if (!candidateKeys || candidateKeys.length === 0) {
+    console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH', 'no candidates for merchant:', merchant);
+    return null;
+  }
+
+  const newTokens = normalizeItemTokens(newOrder.item_summary);
+  const newCreatedAt = newOrder.created_at ? new Date(newOrder.created_at).getTime() : Date.now();
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const candidateKey of candidateKeys) {
+    // Skip self
+    if (candidateKey === newOrder.order_key) continue;
+
+    const candidate = orders[candidateKey];
+    if (!candidate) continue;
+
+    // Order ID conflict guard: both have different order_ids → REJECT
+    const newId = (newOrder.order_id || '').trim().toUpperCase();
+    const candId = (candidate.order_id || '').trim().toUpperCase();
+    if (newId && candId && newId !== candId) {
+      console.log(STORE_LOG_PREFIX, 'RESOLVE_CONFLICT_REJECT',
+        'order_id conflict:', newId, 'vs', candId);
+      continue;
+    }
+
+    // Time window check
+    const candCreatedAt = candidate.created_at ? new Date(candidate.created_at).getTime() : 0;
+    const daysDiff = Math.abs(newCreatedAt - candCreatedAt) / (1000 * 60 * 60 * 24);
+    if (daysDiff > FUZZY_TIME_WINDOW_DAYS) {
+      continue;
+    }
+
+    // Jaccard similarity on item tokens
+    const candTokens = normalizeItemTokens(candidate.item_summary);
+
+    // If both have empty tokens, we can't determine similarity — skip
+    if (newTokens.size === 0 && candTokens.size === 0) {
+      // Both empty summaries from same merchant within time window — match
+      console.log(STORE_LOG_PREFIX, 'RESOLVE_FUZZY_MATCH',
+        'both empty summaries, merchant:', merchant, 'matched:', candidateKey);
+      return candidateKey;
+    }
+
+    // If only one has tokens, skip (can't compare)
+    if (newTokens.size === 0 || candTokens.size === 0) {
+      continue;
+    }
+
+    const score = jaccardSimilarity(newTokens, candTokens);
+    if (score >= JACCARD_THRESHOLD && score > bestScore) {
+      bestScore = score;
+      bestMatch = candidateKey;
+    }
+  }
+
+  if (bestMatch) {
+    console.log(STORE_LOG_PREFIX, 'RESOLVE_FUZZY_MATCH',
+      'merchant:', merchant, 'score:', bestScore.toFixed(2), 'matched:', bestMatch);
+    return bestMatch;
+  }
+
+  console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH',
+    'merchant:', merchant, 'candidates:', candidateKeys.length);
+  return null;
+}
+
+/**
  * Upsert (create or update) an Order.
  * Automatically maintains indices and updates timestamps.
+ * For new orders (key not yet in storage), runs entity resolution
+ * to find and merge with an existing matching order.
  *
  * @param {Order} order
  * @returns {Promise<Order>}
@@ -166,6 +286,16 @@ async function upsertOrder(order) {
   const orderIdIndex = result[STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID] || {};
   const trackingIndex = result[STORAGE_KEYS.ORDER_KEY_BY_TRACKING] || {};
   const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
+
+  // Entity resolution: if this order_key doesn't exist in storage,
+  // check if it matches an existing order under a different key
+  if (!orders[order.order_key]) {
+    const matchedKey = resolveMatchingOrder(order, orders, orderIdIndex, trackingIndex, merchantIndex);
+    if (matchedKey) {
+      // Re-key the incoming order to merge with the existing one
+      order.order_key = matchedKey;
+    }
+  }
 
   // Merge with existing order if present
   const existing = orders[order.order_key];
