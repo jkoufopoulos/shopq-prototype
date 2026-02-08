@@ -1,4 +1,7 @@
 /**
+ * Module: pipeline/extractor
+ * Loading: importScripts (service worker)
+ *
  * P5: Rules Extraction (FREE)
  *
  * Regex-based extraction of structured data from emails:

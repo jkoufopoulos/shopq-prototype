@@ -1,4 +1,7 @@
 /**
+ * Module: pipeline/resolver
+ * Loading: importScripts (service worker)
+ *
  * P6: Order Keying & Upsert + P7: Safe Merge Escalation
  *
  * P6: Creates or updates Orders with stable order_key generation:

@@ -1,4 +1,7 @@
 /**
+ * Module: pipeline/lifecycle
+ * Loading: importScripts (service worker)
+ *
  * P8: Apply Event & Compute Deadline (FREE)
  *
  * Applies email events to Orders and computes return_by_date:

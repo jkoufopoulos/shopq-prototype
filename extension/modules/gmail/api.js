@@ -1,5 +1,10 @@
 /**
- * Gmail API Operations Module
+ * Module: gmail/api
+ * Purpose: Gmail API operations — label CRUD, thread/message fetching, email parsing
+ * Loading: importScripts (service worker)
+ * Key functions: sanitizeLabelName, getOrCreateLabel, fetchGmailThreads,
+ *   fetchEmail, parseGmailMessage, batchModifyMessages
+ * Dependencies: auth.js (getAuthToken), shared/config.js (CONFIG)
  */
 
 /**
