@@ -22,11 +22,7 @@ const HINTS_LOG_PREFIX = '[ReturnWatch:Hints]';
 // CONSTANTS
 // ============================================================
 
-/**
- * Maximum age of orders to consider for thread matching.
- * Orders older than this won't be linked via thread hints.
- */
-const THREAD_MATCH_WINDOW_DAYS = 30;
+const THREAD_MATCH_WINDOW_DAYS = CONFIG.THREAD_MATCH_WINDOW_DAYS;
 
 // ============================================================
 // THREAD HINT FUNCTIONS
