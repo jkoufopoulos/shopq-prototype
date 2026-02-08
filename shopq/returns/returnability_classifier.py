@@ -19,6 +19,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from shopq.config import LLM_MAX_RETRIES, LLM_TIMEOUT_SECONDS
 from shopq.infrastructure.settings import GEMINI_MODEL
 from shopq.llm.gemini import get_gemini_model
 from shopq.observability.logging import get_logger
@@ -34,11 +35,6 @@ def _use_llm() -> bool:
     Reads env var fresh to avoid stale cache when dotenv loads after module import.
     """
     return os.getenv("SHOPQ_USE_LLM", "false").lower() == "true"
-
-
-# CODE-003/CODE-004: LLM call configuration
-LLM_TIMEOUT_SECONDS = 30  # Maximum time to wait for LLM response
-LLM_MAX_RETRIES = 3  # Number of retry attempts for transient failures
 
 
 class ReceiptType(str, Enum):

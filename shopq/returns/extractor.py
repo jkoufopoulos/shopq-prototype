@@ -20,6 +20,7 @@ from typing import Any
 
 import yaml
 
+from shopq.config import PIPELINE_MIN_BODY_CHARS
 from shopq.infrastructure.llm_budget import check_budget, record_llm_call
 from shopq.observability.logging import get_logger
 from shopq.observability.telemetry import counter, log_event
@@ -38,7 +39,7 @@ logger = get_logger(__name__)
 # Minimum useful characters in body_text before preferring HTML conversion.
 # Some merchants (e.g., Best Buy) send body_text that is just "View as a Web page"
 # links with no actual content — all real content is in the HTML.
-_MIN_USEFUL_BODY_CHARS = 100
+_MIN_USEFUL_BODY_CHARS = PIPELINE_MIN_BODY_CHARS
 
 
 def _is_body_boilerplate(body: str) -> bool:
