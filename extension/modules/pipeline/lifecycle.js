@@ -497,15 +497,9 @@ function isStaleOrder(order) {
 async function getVisibleOrders() {
   const allOrders = await getAllOrders();
 
-  // DEMO: Hide specific items from sidebar
-  const DEMO_HIDDEN_ITEMS = [
-    'e.l.f. wow brow gel',
-  ];
-
-  // Filter: active only, exclude stale, exclude demo-hidden
+  // Filter: active only, exclude stale
   const visible = allOrders.filter(o =>
-    o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o) &&
-    !DEMO_HIDDEN_ITEMS.some(h => (o.item_summary || '').toLowerCase().includes(h))
+    o.order_status === ORDER_STATUS.ACTIVE && !isStaleOrder(o)
   );
 
   // Split into has-deadline and no-deadline groups

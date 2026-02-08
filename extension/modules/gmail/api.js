@@ -256,11 +256,7 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
     console.log('='.repeat(80) + '\n');
   }
 
-  // NOTE: We no longer need to filter by checking label IDs because the search query
-  // explicitly excludes all ShopQ labels. This avoids Gmail API caching issues where
-  // labelIds arrays contain stale data. The search query is the source of truth.
-  // DISABLED: const filteredEmails = await filterAlreadyLabeledThreads(allEmails, token);
-  const filteredEmails = allEmails; // Trust the search query
+  const filteredEmails = allEmails;
 
   console.log(`✅ After filtering: ${filteredEmails.length} messages from ${new Set(filteredEmails.map(e => e.threadId)).size} unlabeled threads`);
 
@@ -292,132 +288,6 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   }
 
   return finalFiltered;
-}
-
-/**
- * Filter out entire threads that already have ShopQ labels on any message
- */
-async function filterAlreadyLabeledThreads(emails, token) {
-  // Get unique thread IDs
-  const uniqueThreadIds = [...new Set(emails.map(e => e.threadId))];
-
-  logVerbose(`   🔍 Checking ${uniqueThreadIds.length} threads for existing ShopQ labels...`);
-
-  // Check each thread (in batches for performance)
-  const threadsToKeep = [];
-  const threadsToSkip = [];
-
-  // Batch check threads (do 5 at a time to avoid Gmail API rate limits)
-  const batchSize = 5;
-  for (let i = 0; i < uniqueThreadIds.length; i += batchSize) {
-    const batch = uniqueThreadIds.slice(i, Math.min(i + batchSize, uniqueThreadIds.length));
-
-    const results = await Promise.all(
-      batch.map(threadId => checkThreadForShopQLabels(threadId, token))
-    );
-
-    batch.forEach((threadId, index) => {
-      if (results[index]) {
-        threadsToSkip.push(threadId);
-      } else {
-        threadsToKeep.push(threadId);
-      }
-    });
-  }
-
-  if (threadsToSkip.length > 0) {
-    logVerbose(`   ⏭️  Skipping ${threadsToSkip.length} threads that already have ShopQ labels:`, threadsToSkip);
-  }
-  if (threadsToKeep.length > 0) {
-    logVerbose(`   ✅ Keeping ${threadsToKeep.length} unlabeled threads:`, threadsToKeep);
-  }
-
-  // Return only emails from unlabeled threads
-  return emails.filter(email => threadsToKeep.includes(email.threadId));
-}
-
-/**
- * Check if a thread has any ShopQ labels on any of its messages
- */
-async function checkThreadForShopQLabels(threadId, token) {
-  try {
-    const response = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/threads/${threadId}?format=minimal`,
-      {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }
-    );
-
-    if (!response.ok) {
-      console.warn(`⚠️ Failed to fetch thread ${threadId}: ${response.status}`);
-      return false; // Assume unlabeled if we can't check
-    }
-
-    const thread = await response.json();
-
-    // Check if any message in the thread has a ShopQ label
-    // ShopQ labels are stored with names like "ShopQ/Receipts", "ShopQ/Finance", etc.
-    if (thread.messages) {
-      for (const message of thread.messages) {
-        if (message.labelIds && message.labelIds.length > 0) {
-          // Fetch label names to check if any are ShopQ labels
-          // This is cached so it's fast after first call
-          const hasShopQ = await hasShopQLabels(message.labelIds, token);
-          if (hasShopQ) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  } catch (error) {
-    console.error(`❌ Error checking thread ${threadId}:`, error);
-    return false; // Assume unlabeled if error
-  }
-}
-
-// Cache for label IDs -> names mapping (separate from labelCache which maps names -> IDs)
-const labelIdToNameCache = new Map();
-
-/**
- * Check if any of the given label IDs are ShopQ labels
- */
-async function hasShopQLabels(labelIds, token) {
-  for (const labelId of labelIds) {
-    // Check cache first
-    if (labelIdToNameCache.has(labelId)) {
-      const labelName = labelIdToNameCache.get(labelId);
-      if (labelName && labelName.startsWith('ShopQ')) {
-        return true;
-      }
-      continue;
-    }
-
-    // Fetch label name if not cached
-    try {
-      const response = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/labels/${labelId}`,
-        {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      );
-
-      if (response.ok) {
-        const label = await response.json();
-        labelIdToNameCache.set(labelId, label.name);
-
-        if (label.name && label.name.startsWith('ShopQ')) {
-          return true;
-        }
-      }
-    } catch (error) {
-      // Skip if we can't fetch label
-      console.warn(`⚠️ Failed to fetch label ${labelId}`);
-    }
-  }
-
-  return false;
 }
 
 async function fetchThreadBatch(token, threads) {
@@ -798,8 +668,6 @@ async function applyLabels(token, emailsWithLabels, removeFromInbox = false) {
     labelsUsed: uniqueLabels
   };
 }
-
-      // cleanupOldLabels function intentionally removed to avoid unused code and syntax errors
 
 // Functions are available globally when loaded via importScripts() in background.js
 // No export statement needed for Manifest V3 service workers
