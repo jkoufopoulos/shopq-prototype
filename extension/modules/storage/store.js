@@ -168,7 +168,10 @@ async function findOrderByTracking(tracking_number) {
  */
 function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, merchantIndex) {
   const FUZZY_TIME_WINDOW_DAYS = 14;
-  const JACCARD_THRESHOLD = 0.60;
+  const MIN_TOKENS_FOR_FUZZY = 2;
+  const JACCARD_THRESHOLD_HIGH = 0.60;  // 4+ tokens on smaller side
+  const JACCARD_THRESHOLD_LOW = 0.75;   // 2-3 tokens on smaller side
+  const LOW_TOKEN_CEILING = 3;
 
   // --- Match 1: Identity match (O(1) index lookups) ---
   if (newOrder.order_id) {
@@ -231,24 +234,17 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
       continue;
     }
 
-    // Jaccard similarity on item tokens
+    // Jaccard similarity on item tokens — require minimum tokens on both sides
     const candTokens = normalizeItemTokens(candidate.item_summary);
 
-    // If both have empty tokens, we can't determine similarity — skip
-    if (newTokens.size === 0 && candTokens.size === 0) {
-      // Both empty summaries from same merchant within time window — match
-      console.log(STORE_LOG_PREFIX, 'RESOLVE_FUZZY_MATCH',
-        'both empty summaries, merchant:', merchant, 'matched:', candidateKey);
-      return candidateKey;
-    }
-
-    // If only one has tokens, skip (can't compare)
-    if (newTokens.size === 0 || candTokens.size === 0) {
+    if (newTokens.size < MIN_TOKENS_FOR_FUZZY || candTokens.size < MIN_TOKENS_FOR_FUZZY) {
       continue;
     }
 
     const score = jaccardSimilarity(newTokens, candTokens);
-    if (score >= JACCARD_THRESHOLD && score > bestScore) {
+    const minTokens = Math.min(newTokens.size, candTokens.size);
+    const threshold = minTokens <= LOW_TOKEN_CEILING ? JACCARD_THRESHOLD_LOW : JACCARD_THRESHOLD_HIGH;
+    if (score >= threshold && score > bestScore) {
       bestScore = score;
       bestMatch = candidateKey;
     }
@@ -1283,7 +1279,10 @@ async function deduplicateStoredOrders(merchantKeys) {
   if (!merchantKeys || merchantKeys.size === 0) return { merged: 0 };
 
   const FUZZY_TIME_WINDOW_DAYS = 14;
-  const JACCARD_THRESHOLD = 0.60;
+  const MIN_TOKENS_FOR_FUZZY = 2;
+  const JACCARD_THRESHOLD_HIGH = 0.60;
+  const JACCARD_THRESHOLD_LOW = 0.75;
+  const LOW_TOKEN_CEILING = 3;
 
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.ORDERS_BY_KEY,
@@ -1348,20 +1347,16 @@ async function deduplicateStoredOrders(merchantKeys) {
           if (daysDiff > FUZZY_TIME_WINDOW_DAYS) continue;
         }
 
-        // Jaccard similarity on item tokens
+        // Jaccard similarity on item tokens — require minimum tokens on both sides
         const tokensA = normalizeItemTokens(a.item_summary);
         const tokensB = normalizeItemTokens(b.item_summary);
 
-        if (tokensA.size === 0 && tokensB.size === 0) {
-          // Both empty summaries — match
-          ufUnion(i, j);
-          continue;
-        }
-
-        if (tokensA.size === 0 || tokensB.size === 0) continue;
+        if (tokensA.size < MIN_TOKENS_FOR_FUZZY || tokensB.size < MIN_TOKENS_FOR_FUZZY) continue;
 
         const score = jaccardSimilarity(tokensA, tokensB);
-        if (score >= JACCARD_THRESHOLD) {
+        const minTokens = Math.min(tokensA.size, tokensB.size);
+        const threshold = minTokens <= LOW_TOKEN_CEILING ? JACCARD_THRESHOLD_LOW : JACCARD_THRESHOLD_HIGH;
+        if (score >= threshold) {
           ufUnion(i, j);
         }
       }
