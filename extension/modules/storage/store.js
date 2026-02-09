@@ -488,6 +488,13 @@ async function mergeOrders(target_order_key, source_order_key) {
     return null;
   }
 
+  // Propagate terminal status: if source has a terminal status and target doesn't,
+  // the merged result inherits it (cancellation/returned signals are sticky)
+  const TERMINAL_STATUSES = ['cancelled', 'returned', 'dismissed'];
+  if (TERMINAL_STATUSES.includes(source.order_status) && !TERMINAL_STATUSES.includes(target.order_status)) {
+    target.order_status = source.order_status;
+  }
+
   // Merge source_email_ids
   for (const email_id of source.source_email_ids) {
     if (!target.source_email_ids.includes(email_id)) {
