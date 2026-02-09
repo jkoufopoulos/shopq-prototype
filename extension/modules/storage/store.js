@@ -12,6 +12,23 @@
 const STORE_LOG_PREFIX = '[ReturnWatch:Store]';
 
 // ============================================================
+// STORAGE MUTEX
+// ============================================================
+
+/**
+ * Promise-chain serializer for mutating storage operations.
+ * Prevents read-modify-write races when multiple upserts overlap.
+ * Zero overhead in the normal sequential case (promise resolves immediately).
+ */
+let _storageMutex = Promise.resolve();
+
+function withStorageLock(fn) {
+  const next = _storageMutex.then(fn, fn);
+  _storageMutex = next.catch(() => {});
+  return next;
+}
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 
@@ -271,6 +288,7 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
  * @returns {Promise<Order>}
  */
 async function upsertOrder(order) {
+  return withStorageLock(async () => {
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
@@ -367,6 +385,7 @@ async function upsertOrder(order) {
 
   console.log(STORE_LOG_PREFIX, 'Upserted order:', order.order_key, order.merchant_display_name);
   return order;
+  }); // end withStorageLock
 }
 
 /**
@@ -415,6 +434,7 @@ async function linkEmailToOrder(email_id, order_key) {
  * @returns {Promise<Order|null>}
  */
 async function updateOrderStatus(order_key, status) {
+  return withStorageLock(async () => {
   const result = await chrome.storage.local.get(STORAGE_KEYS.ORDERS_BY_KEY);
   const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
 
@@ -431,6 +451,7 @@ async function updateOrderStatus(order_key, status) {
 
   console.log(STORE_LOG_PREFIX, 'Updated order status:', order_key, '->', status);
   return order;
+  }); // end withStorageLock
 }
 
 /**
@@ -469,6 +490,7 @@ async function cancelOrderByOrderId(order_id) {
  * @returns {Promise<Order|null>}
  */
 async function mergeOrders(target_order_key, source_order_key) {
+  return withStorageLock(async () => {
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
@@ -564,6 +586,7 @@ async function mergeOrders(target_order_key, source_order_key) {
 
   console.log(STORE_LOG_PREFIX, 'Merged order', source_order_key, 'into', target_order_key);
   return target;
+  }); // end withStorageLock
 }
 
 // ============================================================
@@ -1069,6 +1092,7 @@ async function findExistingOrder(order_id, tracking_number) {
  * @returns {Promise<boolean>} True if deleted, false if not found
  */
 async function deleteOrder(order_key) {
+  return withStorageLock(async () => {
   const result = await chrome.storage.local.get([
     STORAGE_KEYS.ORDERS_BY_KEY,
     STORAGE_KEYS.ORDER_KEY_BY_ORDER_ID,
@@ -1117,6 +1141,7 @@ async function deleteOrder(order_key) {
 
   console.log(STORE_LOG_PREFIX, 'Deleted order:', order_key);
   return true;
+  }); // end withStorageLock
 }
 
 /**
