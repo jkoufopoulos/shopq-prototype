@@ -22,6 +22,44 @@ const STORE_LOG_PREFIX = '[ReturnWatch:Store]';
  */
 let _storageMutex = Promise.resolve();
 
+/**
+ * Module-level resolution stats. Set via setResolutionStats() before a scan,
+ * read via getResolutionStats() after. Accumulates counters across upserts.
+ * @type {Object|null}
+ */
+let _resolutionStats = null;
+
+/**
+ * Begin tracking resolution stats for a scan cycle.
+ * @returns {Object} The stats object (also accessible via getResolutionStats)
+ */
+function beginResolutionStats() {
+  _resolutionStats = {
+    identity_order_id: 0,
+    identity_tracking: 0,
+    fuzzy_match: 0,
+    conflict_reject: 0,
+    no_match: 0,
+    merchant_from_display_name: 0,
+  };
+  return _resolutionStats;
+}
+
+/**
+ * Get the current resolution stats (or null if not tracking).
+ * @returns {Object|null}
+ */
+function getResolutionStats() {
+  return _resolutionStats;
+}
+
+/**
+ * Stop tracking resolution stats.
+ */
+function endResolutionStats() {
+  _resolutionStats = null;
+}
+
 function withStorageLock(fn) {
   const next = _storageMutex.then(fn, fn);
   _storageMutex = next.catch(() => {});
@@ -215,9 +253,10 @@ async function findOrderByTracking(tracking_number) {
  * @param {Object} orderIdIndex - order_id → order_key index
  * @param {Object} trackingIndex - tracking_number → order_key index
  * @param {Object} merchantIndex - normalized_merchant → [order_key, ...] index
+ * @param {Object} [stats] - Optional stats counters to increment
  * @returns {string|null} Matched order_key, or null if no match
  */
-function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, merchantIndex) {
+function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, merchantIndex, stats) {
   const FUZZY_TIME_WINDOW_DAYS = 14;
   const MIN_TOKENS_FOR_FUZZY = 2;
   const JACCARD_THRESHOLD_HIGH = 0.60;  // 4+ tokens on smaller side
@@ -228,6 +267,7 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
   if (newOrder.order_id) {
     const matchKey = orderIdIndex[newOrder.order_id];
     if (matchKey && orders[matchKey]) {
+      if (stats) stats.identity_order_id = (stats.identity_order_id || 0) + 1;
       console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
         'order_id:', newOrder.order_id, 'matched:', matchKey);
       return matchKey;
@@ -237,6 +277,7 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
   if (newOrder.tracking_number) {
     const matchKey = trackingIndex[newOrder.tracking_number];
     if (matchKey && orders[matchKey]) {
+      if (stats) stats.identity_tracking = (stats.identity_tracking || 0) + 1;
       console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
         'tracking:', newOrder.tracking_number, 'matched:', matchKey);
       return matchKey;
@@ -273,6 +314,7 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
     const newId = (newOrder.order_id || '').trim().toUpperCase();
     const candId = (candidate.order_id || '').trim().toUpperCase();
     if (newId && candId && newId !== candId) {
+      if (stats) stats.conflict_reject = (stats.conflict_reject || 0) + 1;
       console.log(STORE_LOG_PREFIX, 'RESOLVE_CONFLICT_REJECT',
         'order_id conflict:', newId, 'vs', candId);
       continue;
@@ -302,11 +344,13 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
   }
 
   if (bestMatch) {
+    if (stats) stats.fuzzy_match = (stats.fuzzy_match || 0) + 1;
     console.log(STORE_LOG_PREFIX, 'RESOLVE_FUZZY_MATCH',
       'merchant:', merchant, 'score:', bestScore.toFixed(2), 'matched:', bestMatch);
     return bestMatch;
   }
 
+  if (stats) stats.no_match = (stats.no_match || 0) + 1;
   console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH',
     'merchant:', merchant, 'candidates:', candidateKeys.length);
   return null;
@@ -338,7 +382,7 @@ async function upsertOrder(order) {
   // Entity resolution: if this order_key doesn't exist in storage,
   // check if it matches an existing order under a different key
   if (!orders[order.order_key]) {
-    const matchedKey = resolveMatchingOrder(order, orders, orderIdIndex, trackingIndex, merchantIndex);
+    const matchedKey = resolveMatchingOrder(order, orders, orderIdIndex, trackingIndex, merchantIndex, _resolutionStats);
     if (matchedKey) {
       // Re-key the incoming order to merge with the existing one
       order.order_key = matchedKey;
@@ -1274,6 +1318,7 @@ function computeNormalizedMerchant(order) {
 
   // If domain resolved to null (email service) or empty, use display name
   if (!domain) {
+    if (_resolutionStats) _resolutionStats.merchant_from_display_name = (_resolutionStats.merchant_from_display_name || 0) + 1;
     const name = (order.merchant_display_name || 'unknown').toLowerCase().trim()
       .replace(/\.(com|net|org|co\.uk)$/i, '')
       .replace(/\s*(beauty|store|shop|official|us|inc|llc|co|ltd|limited)\s*$/i, '')

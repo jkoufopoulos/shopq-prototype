@@ -583,6 +583,7 @@ async function scanPurchases(options = {}) {
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
 
   const startTime = Date.now();
+  beginResolutionStats();
 
   // Get auth token
   const token = await getAuthToken();
@@ -785,9 +786,10 @@ async function scanPurchases(options = {}) {
   }
 
   // ---- Phase 4: Post-scan dedup for legacy duplicates ----
+  let dedupResult = null;
   if (affectedMerchants.size > 0) {
     console.log(SCANNER_LOG_PREFIX, 'DEDUP_SWEEP', affectedMerchants.size, 'merchants to check');
-    const dedupResult = await deduplicateStoredOrders(affectedMerchants);
+    dedupResult = await deduplicateStoredOrders(affectedMerchants);
     if (dedupResult.merged > 0) {
       console.log(SCANNER_LOG_PREFIX, 'DEDUP_RESULT', dedupResult.merged, 'duplicates merged');
     }
@@ -806,6 +808,14 @@ async function scanPurchases(options = {}) {
   await updateLastScanState(now, now, window_days);
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  // Log resolution stats summary (non-PII counters)
+  const resolutionStats = getResolutionStats();
+  if (resolutionStats) {
+    resolutionStats.dedup_merged = dedupResult ? dedupResult.merged : 0;
+    console.log(SCANNER_LOG_PREFIX, 'RESOLUTION_STATS', JSON.stringify(resolutionStats));
+  }
+  endResolutionStats();
 
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
   console.log(SCANNER_LOG_PREFIX, 'SCAN_COMPLETE', `${duration}s`);
