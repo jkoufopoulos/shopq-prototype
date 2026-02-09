@@ -690,16 +690,18 @@ async function getOrderEmail(email_id) {
  * @returns {Promise<OrderEmail>}
  */
 async function storeOrderEmail(orderEmail) {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.ORDER_EMAILS_BY_ID);
-  const emails = result[STORAGE_KEYS.ORDER_EMAILS_BY_ID] || {};
+  return withStorageLock(async () => {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.ORDER_EMAILS_BY_ID);
+    const emails = result[STORAGE_KEYS.ORDER_EMAILS_BY_ID] || {};
 
-  emails[orderEmail.email_id] = orderEmail;
+    emails[orderEmail.email_id] = orderEmail;
 
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: emails,
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: emails,
+    });
+
+    return orderEmail;
   });
-
-  return orderEmail;
 }
 
 /**
@@ -758,15 +760,17 @@ async function isEmailProcessed(email_id) {
  * @returns {Promise<void>}
  */
 async function markEmailProcessed(email_id) {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
+  return withStorageLock(async () => {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
+    const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
 
-  if (!processed.includes(email_id)) {
-    processed.push(email_id);
-    await chrome.storage.local.set({
-      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
-    });
-  }
+    if (!processed.includes(email_id)) {
+      processed.push(email_id);
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
+      });
+    }
+  });
 }
 
 /**
@@ -776,15 +780,17 @@ async function markEmailProcessed(email_id) {
  * @returns {Promise<void>}
  */
 async function markEmailsProcessed(email_ids) {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-  const processed = new Set(result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || []);
+  return withStorageLock(async () => {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
+    const processed = new Set(result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || []);
 
-  for (const id of email_ids) {
-    processed.add(id);
-  }
+    for (const id of email_ids) {
+      processed.add(id);
+    }
 
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: Array.from(processed),
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: Array.from(processed),
+    });
   });
 }
 
@@ -1495,16 +1501,49 @@ async function deduplicateStoredOrders(merchantKeys) {
       clusters.get(root).push(candidates[i]);
     }
 
-    // Merge each cluster with >1 member
+    // Merge each cluster with >1 member.
+    // Guard against transitive merges: verify each member directly matches
+    // the winner (not just transitively via another member).
     for (const cluster of clusters.values()) {
       if (cluster.length <= 1) continue;
 
       // Pick richest order as winner
       cluster.sort((a, b) => orderRichness(b.order) - orderRichness(a.order));
       const winner = cluster[0];
+      const winnerTokens = normalizeItemTokens(winner.order.item_summary);
+      const winnerTime = getEffectiveMatchTime(winner.order);
 
       for (let k = 1; k < cluster.length; k++) {
         const loser = cluster[k];
+
+        // Direct match verification against winner to prevent transitive chains
+        const loserId = (loser.order.order_id || '').trim().toUpperCase();
+        const winnerId = (winner.order.order_id || '').trim().toUpperCase();
+
+        // If both have order_ids, they must match
+        if (loserId && winnerId && loserId !== winnerId) continue;
+
+        // Same order_id = safe to merge (skip fuzzy check)
+        if (!(loserId && winnerId && loserId === winnerId)) {
+          // Verify time window
+          const loserTime = getEffectiveMatchTime(loser.order);
+          const daysDiff = Math.abs(winnerTime - loserTime) / (1000 * 60 * 60 * 24);
+          if (daysDiff > FUZZY_TIME_WINDOW_DAYS) continue;
+
+          // Verify Jaccard similarity directly with winner
+          const loserTokens = normalizeItemTokens(loser.order.item_summary);
+          if (winnerTokens.size < MIN_TOKENS_FOR_FUZZY || loserTokens.size < MIN_TOKENS_FOR_FUZZY) continue;
+          const score = jaccardSimilarity(winnerTokens, loserTokens);
+          const minTokens = Math.min(winnerTokens.size, loserTokens.size);
+          const threshold = minTokens <= LOW_TOKEN_CEILING ? JACCARD_THRESHOLD_LOW : JACCARD_THRESHOLD_HIGH;
+          if (score < threshold) {
+            console.log(STORE_LOG_PREFIX, 'DEDUP_TRANSITIVE_REJECT',
+              'merchant:', merchant, 'winner:', winner.key, 'loser:', loser.key,
+              'score:', score.toFixed(2), '<', threshold);
+            continue;
+          }
+        }
+
         console.log(STORE_LOG_PREFIX, 'DEDUP_MERGED',
           'merchant:', merchant, 'winner:', winner.key, 'loser:', loser.key);
         await mergeOrders(winner.key, loser.key);
