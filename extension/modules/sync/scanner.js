@@ -424,15 +424,13 @@ function generateOrderKey(card) {
 function convertReturnCardToOrder(card, user_id) {
   const now = new Date().toISOString();
 
-  // Compute normalized merchant identity for entity resolution
-  let normalizedMerchant = normalizeMerchantDomain(card.merchant_domain);
-  if (!normalizedMerchant) {
-    // Email service domain resolved to null — use display name
-    normalizedMerchant = (card.merchant || 'unknown').toLowerCase().trim()
-      .replace(/\.(com|net|org|co\.uk)$/i, '')
-      .replace(/\s*(beauty|store|shop|official|us|inc|llc|co|ltd|limited)\s*$/i, '')
-      .replace(/[^a-z0-9]/g, '') || 'unknown';
-  }
+  // Compute normalized merchant identity for entity resolution.
+  // Delegates to computeNormalizedMerchant() (store.js) — single source of truth.
+  const tempOrder = {
+    merchant_domain: card.merchant_domain,
+    merchant_display_name: card.merchant,
+  };
+  const normalizedMerchant = computeNormalizedMerchant(tempOrder) || 'unknown';
 
   return {
     order_key: generateOrderKey(card),
@@ -585,6 +583,7 @@ async function scanPurchases(options = {}) {
   const startTime = Date.now();
   beginResolutionStats();
 
+  try {
   // Get auth token
   const token = await getAuthToken();
   if (!token) {
@@ -755,21 +754,21 @@ async function scanPurchases(options = {}) {
             }
           }
 
+          // Only mark emails as processed on success (retry on failure)
+          for (const email of chunk) {
+            await markEmailProcessed(email.email_id);
+          }
+          stats.processed += chunk.length;
+
           console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_RESULT',
             `${ci + 1}/${chunks.length}`,
             'cards:', chunkCards.length,
             'total:', batchCards.length);
         } else {
           console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_FAILED',
-            `${ci + 1}/${chunks.length}`, 'success=false');
+            `${ci + 1}/${chunks.length}`, 'success=false — emails will retry next scan');
           stats.errors += chunk.length;
         }
-
-        // Mark chunk emails as processed
-        for (const email of chunk) {
-          await markEmailProcessed(email.email_id);
-        }
-        stats.processed += chunk.length;
 
       } catch (error) {
         console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_ERROR',
@@ -815,7 +814,6 @@ async function scanPurchases(options = {}) {
     resolutionStats.dedup_merged = dedupResult ? dedupResult.merged : 0;
     console.log(SCANNER_LOG_PREFIX, 'RESOLUTION_STATS', JSON.stringify(resolutionStats));
   }
-  endResolutionStats();
 
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
   console.log(SCANNER_LOG_PREFIX, 'SCAN_COMPLETE', `${duration}s`);
@@ -827,6 +825,11 @@ async function scanPurchases(options = {}) {
     duration_seconds: parseFloat(duration),
     stats,
   };
+
+  } finally {
+    // Always clean up resolution stats, even on exception
+    endResolutionStats();
+  }
 }
 
 /**
