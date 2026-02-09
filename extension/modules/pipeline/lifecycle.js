@@ -53,6 +53,8 @@ const DEFAULT_RETURN_WINDOWS = {
   'ikea.com': 365,
   'gap.com': 30,
   'oldnavy.com': 30,
+  'bananarepublic.com': 30,
+  'athleta.com': 60,
   'nike.com': 60,
   'adidas.com': 60,
 };
