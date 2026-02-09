@@ -426,6 +426,21 @@ async function upsertOrder(order) {
       order.deadline_confidence = existing.deadline_confidence;
       order.return_by_date = existing.return_by_date;
     }
+
+    // Recalculate return_by_date when anchor date improves (delivery date obtained).
+    // This ensures the deadline shifts from estimated_delivery → actual delivery anchor.
+    const anchorImproved =
+      (!existing.delivery_date && order.delivery_date) ||
+      (!existing.delivery_date && !existing.estimated_delivery_date && order.estimated_delivery_date);
+
+    if (anchorImproved && order.deadline_confidence !== DEADLINE_CONFIDENCE.EXACT) {
+      const recomputed = await computeReturnByDate(order);
+      order.return_by_date = recomputed.return_by_date;
+      order.deadline_confidence = recomputed.deadline_confidence;
+      console.log(STORE_LOG_PREFIX, 'DEADLINE_REANCHORED', order.order_key,
+        'new anchor:', order.delivery_date || order.estimated_delivery_date,
+        'new deadline:', order.return_by_date);
+    }
   }
 
   // Update timestamp
@@ -1312,6 +1327,7 @@ function computeNormalizedMerchant(order) {
   const domainAliases = {
     'iliabeauty.com': 'ilia.com',
     'shopifyemail.com': null,
+    'optiturn.com': null,    // Gap Inc transactional emails
     'postmarkapp.com': null,
     'sendgrid.net': null,
     'mailchimp.com': null,
