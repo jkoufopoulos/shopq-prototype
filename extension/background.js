@@ -56,9 +56,22 @@ importScripts(
 
 console.log(`🛒 Reclaim: Background service worker loaded v${CONFIG.VERSION}`);
 
+// Top-level storage initialization — runs on every service worker wake.
+// Safe to call multiple times (only fills missing defaults).
+// Wrapped in try/catch so a backfill failure doesn't block all scans.
+const storageReady = (async () => {
+  await initializeStorage();
+  try {
+    await backfillMerchantIndex();
+  } catch (e) {
+    console.error('❌ Reclaim: Merchant index backfill failed (non-fatal):', e);
+  }
+})();
+
 // Promise that resolves once onInstalled processing (including pipeline reset) is complete.
 // Scans await this to avoid reading stale data during extension reload.
-let pipelineResetComplete = Promise.resolve();
+// Defaults to storageReady so scans on cold restart still wait for init.
+let pipelineResetComplete = storageReady;
 
 // Initialize refresh system (sets up tab listeners and periodic alarm)
 initializeRefreshSystem();
@@ -439,9 +452,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 chrome.runtime.onInstalled.addListener((details) => {
   pipelineResetComplete = (async () => {
-    // Initialize storage schema on install or update
-    await initializeStorage();
-    await backfillMerchantIndex();
+    // Wait for top-level storage init (idempotent, already running)
+    await storageReady;
 
     if (details.reason === 'install') {
       console.log('🎉 Reclaim installed');
