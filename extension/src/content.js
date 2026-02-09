@@ -704,6 +704,18 @@ async function initializeVisualLayer() {
     const router = new SidebarMessageRouter(extensionOrigin);
     sidebarController = new SidebarController(router);
     await sidebarController.init(sdk);
+
+    // Listen for background scan completion notifications (auto-scans)
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.type === 'SCAN_COMPLETE_NOTIFICATION' && sidebarController) {
+        console.log('Reclaim: Auto-scan complete, refreshing sidebar');
+        sidebarController.postToSidebar({
+          type: 'SHOPQ_SCAN_COMPLETE',
+          result: { stats: message.stats },
+        });
+        sidebarController._fetchVisibleOrders();
+      }
+    });
   } catch (error) {
     console.error('Reclaim: Failed to load InboxSDK:', error.message);
     if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {

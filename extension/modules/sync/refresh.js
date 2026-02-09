@@ -134,6 +134,15 @@ async function triggerScan(window_days, trigger) {
     refreshState.lastScanEnd = Date.now();
     console.log(REFRESH_LOG_PREFIX, 'SCAN_SUCCESS', trigger, result.stats);
 
+    // Notify Gmail tab so sidebar can refresh (auto-scans are otherwise invisible to UI)
+    if (refreshState.gmailTabId) {
+      chrome.tabs.sendMessage(refreshState.gmailTabId, {
+        type: 'SCAN_COMPLETE_NOTIFICATION',
+        stats: result.stats,
+        trigger,
+      }).catch(() => {}); // Tab may not exist anymore
+    }
+
     return result;
 
   } catch (error) {
