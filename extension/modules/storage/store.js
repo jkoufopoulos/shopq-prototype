@@ -206,7 +206,7 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
   }
 
   const newTokens = normalizeItemTokens(newOrder.item_summary);
-  const newCreatedAt = newOrder.created_at ? new Date(newOrder.created_at).getTime() : Date.now();
+  const newMatchTime = getEffectiveMatchTime(newOrder);
 
   let bestMatch = null;
   let bestScore = 0;
@@ -227,9 +227,9 @@ function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, mer
       continue;
     }
 
-    // Time window check
-    const candCreatedAt = candidate.created_at ? new Date(candidate.created_at).getTime() : 0;
-    const daysDiff = Math.abs(newCreatedAt - candCreatedAt) / (1000 * 60 * 60 * 24);
+    // Time window check (using stable match_time, not scan wall-clock)
+    const candMatchTime = getEffectiveMatchTime(candidate);
+    const daysDiff = Math.abs(newMatchTime - candMatchTime) / (1000 * 60 * 60 * 24);
     if (daysDiff > FUZZY_TIME_WINDOW_DAYS) {
       continue;
     }
@@ -312,8 +312,9 @@ async function upsertOrder(order) {
       order.purchase_date = existing.purchase_date;
     }
 
-    // Keep existing created_at
+    // Keep existing created_at and match_time (never rewrite history)
     order.created_at = existing.created_at;
+    order.match_time = existing.match_time || existing.purchase_date || existing.created_at;
 
     // Prefer non-empty values from either source
     order.delivery_date = order.delivery_date || existing.delivery_date;
@@ -1169,6 +1170,19 @@ async function updateTrackingIndex(tracking_number, order_key) {
 // ============================================================
 
 /**
+ * Get the effective match time for an order (stable across rescans).
+ * Fallback chain: match_time → purchase_date → created_at → now.
+ *
+ * @param {Order} order
+ * @returns {number} Timestamp in milliseconds
+ */
+function getEffectiveMatchTime(order) {
+  const raw = order.match_time || order.purchase_date || order.created_at;
+  if (!raw) return Date.now();
+  return new Date(raw).getTime() || Date.now();
+}
+
+/**
  * Compute a normalized merchant identity for an order.
  * Uses the normalized_merchant field if present (set at scan time),
  * otherwise derives from merchant_domain + merchant_display_name.
@@ -1346,9 +1360,9 @@ async function deduplicateStoredOrders(merchantKeys) {
           continue;
         }
 
-        // Time window check
-        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        // Time window check (using stable match_time, not scan wall-clock)
+        const timeA = getEffectiveMatchTime(a);
+        const timeB = getEffectiveMatchTime(b);
         if (timeA && timeB) {
           const daysDiff = Math.abs(timeA - timeB) / (1000 * 60 * 60 * 24);
           if (daysDiff > FUZZY_TIME_WINDOW_DAYS) continue;

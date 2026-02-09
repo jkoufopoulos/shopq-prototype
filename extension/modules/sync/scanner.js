@@ -454,6 +454,7 @@ function convertReturnCardToOrder(card, user_id) {
       : card.status === 'dismissed' ? 'dismissed'
       : 'active',
     source_email_ids: card.source_email_ids || [],
+    match_time: card.order_date || now,
     created_at: card.created_at || now,
     updated_at: card.updated_at || now,
   };
