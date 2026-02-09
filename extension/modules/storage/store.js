@@ -68,6 +68,40 @@ async function initializeStorage() {
   }
 }
 
+/**
+ * Backfill merchant index for orders that existed before the index was added.
+ * Idempotent — safe to call on every startup, no-ops if index is already complete.
+ *
+ * @returns {Promise<{added: number}>}
+ */
+async function backfillMerchantIndex() {
+  const result = await chrome.storage.local.get([
+    STORAGE_KEYS.ORDERS_BY_KEY,
+    STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT,
+  ]);
+
+  const orders = result[STORAGE_KEYS.ORDERS_BY_KEY] || {};
+  const merchantIndex = result[STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT] || {};
+  let added = 0;
+
+  for (const [key, order] of Object.entries(orders)) {
+    const merchant = computeNormalizedMerchant(order);
+    if (!merchant) continue;
+    if (!merchantIndex[merchant]) merchantIndex[merchant] = [];
+    if (!merchantIndex[merchant].includes(key)) {
+      merchantIndex[merchant].push(key);
+      added++;
+    }
+  }
+
+  if (added > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: merchantIndex });
+    console.log(STORE_LOG_PREFIX, 'BACKFILL_MERCHANT_INDEX', added, 'orders indexed');
+  }
+
+  return { added };
+}
+
 // ============================================================
 // ORDER OPERATIONS
 // ============================================================

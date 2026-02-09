@@ -441,6 +441,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   pipelineResetComplete = (async () => {
     // Initialize storage schema on install or update
     await initializeStorage();
+    await backfillMerchantIndex();
 
     if (details.reason === 'install') {
       console.log('🎉 Reclaim installed');
