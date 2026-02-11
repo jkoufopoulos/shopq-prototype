@@ -95,9 +95,25 @@ function showToast(message, type = 'info', duration = ReclaimSidebar.config.TOAS
   const existing = document.querySelector('.toast-notification');
   if (existing) existing.remove();
 
+  const TOAST_ICONS = {
+    success: '<svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="9" fill="currentColor" opacity="0.12"/><path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    error: '<svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="9" fill="currentColor" opacity="0.12"/><path d="M6.5 6.5L11.5 11.5M11.5 6.5L6.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    info: '<svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="9" fill="currentColor" opacity="0.12"/><path d="M9 8V12M9 6.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  };
+
   const toast = document.createElement('div');
   toast.className = `toast-notification toast-${type}`;
-  toast.textContent = message;
+
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.innerHTML = TOAST_ICONS[type] || TOAST_ICONS.info;
+
+  const msg = document.createElement('span');
+  msg.className = 'toast-message';
+  msg.textContent = message;
+
+  toast.appendChild(icon);
+  toast.appendChild(msg);
   document.body.appendChild(toast);
 
   // Trigger animation
@@ -956,6 +972,7 @@ async function updateOrderStatus(orderKey, newStatus) {
  */
 function dismissOrder(orderKey) {
   updateOrderStatus(orderKey, 'dismissed');
+  showToast('Order dismissed', 'success');
 }
 
 
