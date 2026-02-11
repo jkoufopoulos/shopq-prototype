@@ -46,6 +46,12 @@
       "js": ["dist/content.bundle.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["demo-mode.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
     }
   ],
 
