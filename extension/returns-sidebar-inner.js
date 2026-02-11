@@ -26,6 +26,7 @@ window.ReclaimSidebar = {
     currentDetailOrder: null,
     isEnriching: false,
     hasCompletedFirstScan: false,
+    demoMode: false,
     expiredAccordionOpen: false,
     returnedAccordionOpen: false,
     deliveryModal: null,
@@ -47,6 +48,36 @@ window.ReclaimSidebar = {
   },
 };
 
+
+// =============================================================================
+// DEMO MODE — masks PII (order IDs) for screen recordings
+// Toggle via DevTools console: toggleDemoMode()
+// =============================================================================
+
+const _demoMaskCache = new Map();
+
+function maskOrderId(value) {
+  if (!value) return value;
+  if (_demoMaskCache.has(value)) return _demoMaskCache.get(value);
+  const masked = value.replace(/[A-Za-z0-9]/g, (ch) => {
+    if (ch >= '0' && ch <= '9') return String(Math.floor(Math.random() * 10));
+    const base = ch >= 'a' ? 'a'.charCodeAt(0) : 'A'.charCodeAt(0);
+    return String.fromCharCode(base + Math.floor(Math.random() * 26));
+  });
+  _demoMaskCache.set(value, masked);
+  return masked;
+}
+
+window.toggleDemoMode = function () {
+  ReclaimSidebar.state.demoMode = !ReclaimSidebar.state.demoMode;
+  ReclaimSidebar.state.currentDetailOrder = null;
+  _demoMaskCache.clear();
+  renderListView();
+  console.log(
+    `%c[Reclaim] Demo mode ${ReclaimSidebar.state.demoMode ? 'ON — order IDs masked' : 'OFF — real data'}`,
+    'color: #7c3aed; font-weight: bold'
+  );
+};
 
 function startDateRefreshTimer() {
   if (ReclaimSidebar.timers.dateRefreshInterval) return;
@@ -668,7 +699,7 @@ function renderDetailView(order, needsEnrichment) {
         ${order.order_id ? `
         <div class="order-info-item">
           <span class="order-info-label">Order ID</span>
-          <span class="order-info-value">${escapeHtml(order.order_id)}</span>
+          <span class="order-info-value">${escapeHtml(ReclaimSidebar.state.demoMode ? maskOrderId(order.order_id) : order.order_id)}</span>
         </div>
         ` : ''}
         ${order.purchase_date ? `
