@@ -272,6 +272,13 @@ class SidebarController {
     `;
     this._panelEl.appendChild(this._iframe);
 
+    // Expose toggleDemoMode() in the main-world console for screen recordings
+    const iframeId = this._iframe.id;
+    const s = document.createElement('script');
+    s.textContent = `window.toggleDemoMode=function(){document.getElementById('${iframeId}').contentWindow.postMessage({type:'SHOPQ_TOGGLE_DEMO_MODE'},'*')}`;
+    document.documentElement.appendChild(s);
+    s.remove();
+
     this._registerMessageHandlers();
     this._router.start();
 

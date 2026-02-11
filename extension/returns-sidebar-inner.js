@@ -1046,6 +1046,11 @@ window.addEventListener('message', (event) => {
     if (c.CRITICAL_DAYS) ReclaimSidebar.config.CRITICAL_DAYS = c.CRITICAL_DAYS;
   }
 
+  // Handle demo mode toggle from parent (main console)
+  if (event.data?.type === 'SHOPQ_TOGGLE_DEMO_MODE') {
+    window.toggleDemoMode();
+  }
+
   // Handle unified visible orders
   if (event.data?.type === 'SHOPQ_ORDERS_DATA') {
     ReclaimSidebar.state.visibleOrders = event.data.orders || [];
