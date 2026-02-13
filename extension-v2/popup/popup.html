@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reclaim</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header-title">Reclaim</h1>
+    <button id="add-test-btn" class="header-btn" title="Add test order">+</button>
+  </header>
+
+  <main id="order-list" class="order-list">
+    <!-- Orders rendered here by popup.js -->
+  </main>
+
+  <div id="empty-state" class="empty-state hidden">
+    <p class="empty-icon">📦</p>
+    <p class="empty-title">No orders tracked yet</p>
+    <p class="empty-desc">Visit a retailer and complete a purchase to start tracking return deadlines.</p>
+    <button id="empty-test-btn" class="test-btn">Add Test Order</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "reclaim-v2",
+  "version": "0.1.0",
+  "description": "Reclaim v2 - Local-first return deadline tracker",
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production",
+    "watch": "webpack --mode development --watch"
+  },
+  "devDependencies": {
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
