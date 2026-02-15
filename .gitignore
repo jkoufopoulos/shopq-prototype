@@ -42,10 +42,10 @@ service-account-key.json
 *.sqlite3
 
 # Keep test fixtures
-!shopq/tests/fixtures/*.db
+!reclaim/tests/fixtures/*.db
 
 # Keep structure (empty directories)
-!shopq/data/.gitkeep
+!reclaim/data/.gitkeep
 !data/.gitkeep
 
 # Ignore backups
@@ -58,8 +58,8 @@ service-account-key.json
 *.log
 logs/
 !logs/.gitkeep
-shopq/logs/*.log
-!shopq/logs/.gitkeep
+reclaim/logs/*.log
+!reclaim/logs/.gitkeep
 validation_success.log
 
 # ============================================
@@ -72,8 +72,8 @@ label_schema.json
 *.jsonl
 
 # Keep test data
-!shopq/tests/fixtures/*.json
-!shopq/tests/fixtures/*.csv
+!reclaim/tests/fixtures/*.json
+!reclaim/tests/fixtures/*.csv
 
 # Keep eval ground truth data (anonymized only)
 !data/evals/classification/gds-2.0.csv
@@ -156,11 +156,11 @@ playwright-report/
 
 # Keep test structure
 !tests/
-!shopq/tests/
+!reclaim/tests/
 tests/__pycache__/
 tests/*.pyc
-shopq/tests/__pycache__/
-shopq/tests/*.pyc
+reclaim/tests/__pycache__/
+reclaim/tests/*.pyc
 
 # ============================================
 # Documentation

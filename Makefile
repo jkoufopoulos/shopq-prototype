@@ -10,7 +10,7 @@ cinit:
 
 # Auto-detect Python directories (add more here if needed)
 PY_DIRS := $(strip \
-  $(if $(wildcard shopq),shopq,) \
+  $(if $(wildcard reclaim),reclaim,) \
   $(if $(wildcard backend),backend,) \
   $(if $(wildcard shared),shared,) \
 )
@@ -39,11 +39,11 @@ lint:
 	$(call maybe_run, [ -f "$(EXT_PKG)" ] && (pnpm --prefix $(EXT_DIR) lint || npm --prefix $(EXT_DIR) run lint) || true,extension:lint)
 
 typecheck:
-	@mypy shopq
+	@mypy reclaim
 
 test:
 	# Python tests (pytest via uv)
-	$(call maybe_run, test -n "$(PY_DIRS)" && PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest -q,pytest)
+	$(call maybe_run, test -n "$(PY_DIRS)" && PYTHONPATH=. RECLAIM_USE_LLM=false uv run pytest -q,pytest)
 	# Extension tests
 	$(call maybe_run, [ -f "$(EXT_PKG)" ] && (pnpm --prefix $(EXT_DIR) test || npm --prefix $(EXT_DIR) test) || true,extension:test)
 

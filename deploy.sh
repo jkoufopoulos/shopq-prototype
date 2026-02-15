@@ -4,9 +4,9 @@ set -e
 
 PROJECT_ID="mailq-467118"
 REGION="us-central1"
-SERVICE_NAME="shopq-api"
+SERVICE_NAME="reclaim-api"
 
-echo "🚀 Deploying ShopQ API to Cloud Run..."
+echo "🚀 Deploying Reclaim API to Cloud Run..."
 
 # Set project
 gcloud config set project $PROJECT_ID
@@ -57,5 +57,5 @@ echo ""
 echo "🧪 Testing health endpoint..."
 curl -s "$SERVICE_URL/health" | jq .
 echo ""
-echo "⚙️  Update your extension/config.js with:"
-echo "  SHOPQ_API_URL: '$SERVICE_URL'"
+echo "⚙️  Update your extension config with:"
+echo "  API_BASE_URL: '$SERVICE_URL'"
