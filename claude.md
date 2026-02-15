@@ -19,7 +19,7 @@ Help users track and act on return windows before they expire. Every feature sho
 ## Critical Rules
 
 ### Single Database Principle
-All features use ONE centralized SQLite database at `shopq/data/reclaim.db`. Creating new databases is forbidden without architectural review. Use `shopq/infrastructure/database.py` for all database access.
+All features use ONE centralized SQLite database at `reclaim/data/reclaim.db`. Creating new databases is forbidden without architectural review. Use `reclaim/infrastructure/database.py` for all database access.
 
 ### Three-Stage Extraction Pipeline
 Email processing follows a fixed cost-optimization pattern:
@@ -27,7 +27,7 @@ Email processing follows a fixed cost-optimization pattern:
 2. **Classifier (Stage 2)**: LLM returnability check - ~$0.0001 per email
 3. **Extractor (Stage 3)**: Field extraction + date calculation - ~$0.0002 per email
 
-Never bypass stages. See `shopq/returns/extractor.py` for orchestration.
+Never bypass stages. See `reclaim/returns/extractor.py` for orchestration.
 
 ### Module Import Convention
 Always use explicit `reclaim.*` imports for Docker compatibility:
@@ -43,7 +43,7 @@ from returns.models import ReturnCard
 ## Key Directories
 
 ```
-shopq/                      # Python backend
+reclaim/                    # Python backend
 ├── api/                    # FastAPI routes and middleware
 ├── returns/                # Core return tracking domain
 │   ├── models.py           # ReturnCard, ReturnStatus, ReturnConfidence
@@ -101,7 +101,7 @@ uv sync
 uv run uvicorn reclaim.api.app:app --reload
 
 # Run tests
-PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest tests/ -v
+PYTHONPATH=. RECLAIM_USE_LLM=false uv run pytest tests/ -v
 
 # Code quality
 make fmt        # Auto-format with ruff
@@ -127,8 +127,8 @@ Required in `.env`:
 ```bash
 GOOGLE_API_KEY              # Gemini API key
 GOOGLE_CLOUD_PROJECT        # GCP project ID
-SHOPQ_ENV                   # development | production
-SHOPQ_USE_LLM               # true | false (disable for tests)
+RECLAIM_ENV                 # development | production
+RECLAIM_USE_LLM             # true | false (disable for tests)
 ```
 
 ## Code Style
@@ -148,7 +148,7 @@ SHOPQ_USE_LLM               # true | false (disable for tests)
 
 ```bash
 # Integration tests (mock LLM)
-SHOPQ_USE_LLM=false pytest tests/integration/ -v
+RECLAIM_USE_LLM=false pytest tests/integration/ -v
 
 # Specific test file
 pytest tests/integration/test_extraction_pipeline.py -v
