@@ -179,7 +179,7 @@ async function callLLMExtraction(context, merchant) {
     const token = await getAuthToken();
     const apiUrl = CONFIG.API_BASE_URL;
 
-    const response = await fetch(`${apiUrl}/api/returns/extract-policy`, {
+    const response = await fetch(`${apiUrl}/api/extract-policy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

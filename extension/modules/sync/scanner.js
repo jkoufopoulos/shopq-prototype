@@ -458,97 +458,7 @@ function convertReturnCardToOrder(card, user_id) {
   };
 }
 
-/**
- * Process a single email through the backend LLM pipeline.
- *
- * Sends the email to POST /api/returns/process which runs the
- * validated 3-stage pipeline (filter → classifier → extractor).
- * Converts the resulting ReturnCard to a local Order for storage.
- *
- * @param {Object} params
- * @param {string} params.user_id
- * @param {Object} params.message - Gmail message metadata object
- * @param {string} params.token - OAuth token for fetching body
- * @returns {Promise<{processed: boolean, order: Order|null, action: string}>}
- */
-async function processEmailThroughPipeline({ user_id, message, token }) {
-  const email_id = message.id;
-
-  // Check if already processed
-  if (await isEmailProcessed(email_id)) {
-    console.log(SCANNER_LOG_PREFIX, 'SKIP_ALREADY_PROCESSED', email_id);
-    return { processed: false, order: null, action: 'skip_processed' };
-  }
-
-  // Extract metadata
-  const from_address = getHeader(message, 'From');
-  const subject = getHeader(message, 'Subject');
-  const snippet = message.snippet || '';
-
-  console.log(SCANNER_LOG_PREFIX, 'PROCESSING', email_id, subject.substring(0, 50));
-
-  // P1: Local domain filter (free, avoids unnecessary API calls)
-  const filterResult = filterEmail(from_address, subject, snippet);
-  if (filterResult.blocked) {
-    console.log(SCANNER_LOG_PREFIX, 'FILTER_BLOCKED', email_id, filterResult.reason);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'blocked' };
-  }
-
-  // Fetch full email body (backend pipeline needs it)
-  let body = '';
-  try {
-    const fullMessage = await getFullMessage(token, email_id);
-    body = extractBodyFromPayload(fullMessage.payload);
-  } catch (error) {
-    console.warn(SCANNER_LOG_PREFIX, 'Failed to fetch body:', email_id, error.message);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'body_fetch_failed' };
-  }
-
-  if (!body) {
-    console.log(SCANNER_LOG_PREFIX, 'SKIP_EMPTY_BODY', email_id);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'empty_body' };
-  }
-
-  // Send to backend LLM pipeline
-  console.log(SCANNER_LOG_PREFIX, 'BACKEND_PROCESS', email_id);
-  let response;
-  try {
-    response = await processEmail({
-      id: email_id,
-      from: from_address,
-      subject,
-      body,
-    });
-  } catch (error) {
-    console.error(SCANNER_LOG_PREFIX, 'BACKEND_API_ERROR', email_id, error.message);
-    // Don't mark as processed so it can be retried on next scan
-    return { processed: false, order: null, action: 'backend_api_error' };
-  }
-
-  await markEmailProcessed(email_id);
-
-  // Backend rejected the email (not a returnable purchase)
-  if (!response.success || !response.card) {
-    console.log(SCANNER_LOG_PREFIX, 'BACKEND_REJECTED', email_id,
-      'stage:', response.stage_reached,
-      'reason:', response.rejection_reason);
-    return { processed: true, order: null, action: 'backend_rejected' };
-  }
-
-  // Convert backend ReturnCard to local Order and store
-  const order = convertReturnCardToOrder(response.card, user_id);
-  await upsertOrder(order);
-
-  console.log(SCANNER_LOG_PREFIX, 'PIPELINE_COMPLETE', email_id,
-    'order:', order.order_key,
-    'merchant:', order.merchant_display_name,
-    'deadline:', order.return_by_date || 'unknown');
-
-  return { processed: true, order, action: 'backend_created' };
-}
+// Single-email processing removed — all extraction goes through batch endpoint.
 
 // ============================================================
 // MAIN SCANNER
@@ -566,14 +476,12 @@ async function processEmailThroughPipeline({ user_id, message, token }) {
  * @param {Object} options
  * @param {number} [options.window_days=14] - How many days back to scan
  * @param {boolean} [options.incremental=true] - Use incremental scanning
- * @param {boolean} [options.skipPersistence=false] - Skip backend DB save/dedup
  * @returns {Promise<ScanResult>}
  */
 async function scanPurchases(options = {}) {
   const {
     window_days = 14,
     incremental = true,
-    skipPersistence = false,
   } = options;
 
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
@@ -737,7 +645,7 @@ async function scanPurchases(options = {}) {
         console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK',
           `${ci + 1}/${chunks.length}`, chunk.length, 'emails');
 
-        const batchResponse = await processEmailBatch(chunk, { skipPersistence });
+        const batchResponse = await processEmailBatch(chunk);
 
         if (batchResponse.success) {
           const chunkCards = batchResponse.cards || [];

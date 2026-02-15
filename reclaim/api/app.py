@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sqlite3
 from typing import Any
 
 from dotenv import load_dotenv
@@ -15,11 +14,9 @@ from fastapi.responses import JSONResponse
 from reclaim.api.middleware.csrf import CSRFMiddleware
 from reclaim.api.middleware.rate_limit import RateLimitMiddleware
 from reclaim.api.middleware.security_headers import SecurityHeadersMiddleware
-from reclaim.config import APP_VERSION, CHROME_EXTENSION_ORIGIN
-from reclaim.api.routes.delivery import router as delivery_router
+from reclaim.api.routes.extract import router as extract_router
 from reclaim.api.routes.health import router as health_router
-from reclaim.api.routes.returns import router as returns_router
-from reclaim.infrastructure.database import init_database
+from reclaim.config import APP_VERSION, CHROME_EXTENSION_ORIGIN
 from reclaim.observability.logging import get_logger
 from reclaim.observability.telemetry import log_event
 
@@ -83,7 +80,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
 
@@ -100,25 +97,9 @@ app.add_middleware(
 # Security headers
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Initialize database schema
-try:
-    logger.info("Initializing database schema...")
-    init_database()
-    logger.info("Database initialization complete")
-except FileNotFoundError as e:
-    logger.critical("Database file not found: %s", e)
-    raise RuntimeError(f"Database initialization failed: {e}") from e
-except sqlite3.OperationalError as e:
-    logger.critical("Database schema error: %s", e)
-    raise RuntimeError(f"Database initialization failed: {e}") from e
-except Exception as e:
-    logger.critical("Unexpected database initialization error: %s", e)
-    raise RuntimeError(f"Database initialization failed: {e}") from e
-
-# Include routers
+# Include routers (stateless — no database initialization needed)
 app.include_router(health_router)
-app.include_router(returns_router)
-app.include_router(delivery_router)
+app.include_router(extract_router)
 
 log_event("api.startup", service="reclaim-return-watch", version=APP_VERSION)
 
@@ -130,14 +111,9 @@ def root() -> dict[str, Any]:
         "version": APP_VERSION,
         "status": "running",
         "endpoints": {
-            "health": "/api/health",
-            "returns": "/api/returns",
-            "process": "/api/returns/process",
-            "expiring": "/api/returns/expiring",
-            "counts": "/api/returns/counts",
-            "delivery": "/api/delivery",
-            "delivery_quote": "/api/delivery/quote",
-            "delivery_locations": "/api/delivery/locations",
-            "debug_stats": "/debug/stats",
+            "health": "/health",
+            "extract": "/api/extract",
+            "extract_policy": "/api/extract-policy",
+            "merchant_rules": "/api/config/merchant-rules",
         },
     }

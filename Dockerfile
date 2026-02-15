@@ -12,9 +12,6 @@ COPY reclaim/ ./reclaim/
 # Copy config for runtime policy
 COPY config/ ./config/
 
-# Create data directory for SQLite
-RUN mkdir -p /app/reclaim/data
-
 # Set Python path
 ENV PYTHONPATH=/app
 
