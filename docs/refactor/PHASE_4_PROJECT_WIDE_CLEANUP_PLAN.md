@@ -39,9 +39,9 @@
 | R1 | Sidebar delivery extraction breaks event wiring | Medium | Sidebar unusable | Namespace seam first (Step 4.2). Delivery file defines functions only — no top-level execution. Load order: delivery.js before inner.js. Tier 0 catches immediately. |
 | R2 | Missing file in `web_accessible_resources` | Medium | Sidebar blank (404) | Explicit manifest.json checklist in every step that adds a file. Tier 0 includes sidebar-renders check. |
 | R3 | CSS extraction breaks sidebar styling | Low | Visual regression | Pure cut-paste from `<style>` block to `.css` file. No selector changes. Visual diff in Tier 0. |
-| R4 | Backend types.py creates circular import | Low | Server won't start | types.py imports only stdlib + Pydantic. Original modules re-export from types.py. Verify with `python -c "from shopq.api.app import app"`. |
+| R4 | Backend types.py creates circular import | Low | Server won't start | types.py imports only stdlib + Pydantic. Original modules re-export from types.py. Verify with `python -c "from reclaim.api.app import app"`. |
 | R5 | Dead code deletion removes dynamically-referenced function | Medium | Runtime crash | Proof gate: grep for function name, string-based references (`getattr`, `globals()`, string dispatch), and message handler keys. |
-| R6 | Filter data extraction changes import resolution | Low | Pipeline rejects wrongly | `filter_data.py` is pure constants. `filters.py` does `from shopq.returns.filter_data import *`. All downstream behavior identical. |
+| R6 | Filter data extraction changes import resolution | Low | Pipeline rejects wrongly | `filter_data.py` is pure constants. `filters.py` does `from reclaim.returns.filter_data import *`. All downstream behavior identical. |
 | R7 | `importScripts` load order violated | Low | Service worker crash | Phase 4 does NOT add files to service worker `importScripts`. Sidebar files are loaded via `<script>` tags in iframe HTML — independent. |
 
 ---
@@ -78,7 +78,7 @@
 
 ```bash
 # 1. Backend boots
-uv run python -c "from shopq.api.app import app; print('OK')"
+uv run python -c "from reclaim.api.app import app; print('OK')"
 
 # 2. Extension builds (content script unchanged, but verify)
 cd extension && npm run build && cd ..
@@ -116,7 +116,7 @@ Run after **every commit**.
 
 | # | Check | Command / Action | Expected |
 |---|-------|-----------------|----------|
-| T0.1 | Backend imports | `uv run python -c "from shopq.api.app import app; print('OK')"` | Prints `OK` |
+| T0.1 | Backend imports | `uv run python -c "from reclaim.api.app import app; print('OK')"` | Prints `OK` |
 | T0.2 | Backend health | `curl -s localhost:8000/health \| jq .status` | `"healthy"` |
 | T0.3 | Extension build | `cd extension && npm run build` | Exit 0, no errors |
 | T0.4 | Extension loads | Load unpacked at `chrome://extensions` | No error badge |
@@ -178,8 +178,8 @@ Phase 4 creates exactly **6 new files** (4 code + 2 docs). Each justified below.
 
 | New File | Lines | Justification |
 |----------|-------|---------------|
-| `shopq/returns/types.py` | ~80 | Stable import boundary for shared types (ExtractionStage, ExtractionResult). Prevents circular imports when future phases split extractor.py. |
-| `shopq/returns/filter_data.py` | ~320 | Pure data (5 frozensets, 310+ lines of keywords/domains). Separates policy data from filter logic. High cohesion: all keyword lists in one place. |
+| `reclaim/returns/types.py` | ~80 | Stable import boundary for shared types (ExtractionStage, ExtractionResult). Prevents circular imports when future phases split extractor.py. |
+| `reclaim/returns/filter_data.py` | ~320 | Pure data (5 frozensets, 310+ lines of keywords/domains). Separates policy data from filter logic. High cohesion: all keyword lists in one place. |
 | `extension/returns-sidebar.css` | ~1400 | CSS extracted from inline `<style>` in HTML. The HTML file drops from 1458 to ~50 lines. Standard web practice. |
 | `extension/returns-sidebar-delivery.js` | ~490 | Self-contained delivery modal UI. 9 functions, 0 shared state mutations (reads state, sends postMessages). Clean extraction boundary. |
 | `docs/FILE_MAP.md` | ~150 | File inventory with purpose, loading mechanism, and size. |
@@ -219,28 +219,28 @@ means each step can update them incrementally.
 
 #### Step 4.1: Backend shared types seam
 
-**Goal**: Create `shopq/returns/types.py` as a stable import boundary for types shared
+**Goal**: Create `reclaim/returns/types.py` as a stable import boundary for types shared
 across the returns domain (extractor, service, routes).
 
 **This is a SEAM step** — types are defined in `types.py` and re-exported from their
 original locations. No downstream imports change.
 
 **Changes**:
-1. Create `shopq/returns/types.py` containing:
+1. Create `reclaim/returns/types.py` containing:
    - `ExtractionStage` (str Enum) — moved from `extractor.py`
    - `ExtractionResult` (dataclass) — moved from `extractor.py`
    - `FilterResult` (dataclass) — moved from `filters.py`
    - `ExtractedFields` (dataclass) — moved from `field_extractor.py`
 2. In `extractor.py`: replace class definitions with
-   `from shopq.returns.types import ExtractionStage, ExtractionResult`
+   `from reclaim.returns.types import ExtractionStage, ExtractionResult`
 3. In `filters.py`: replace class definition with
-   `from shopq.returns.types import FilterResult`
+   `from reclaim.returns.types import FilterResult`
 4. In `field_extractor.py`: replace class definition with
-   `from shopq.returns.types import ExtractedFields`
+   `from reclaim.returns.types import ExtractedFields`
 5. Verify all existing imports still resolve (they import from the original modules,
    which now re-export from types.py).
 
-**New files**: `shopq/returns/types.py` (~80 lines)
+**New files**: `reclaim/returns/types.py` (~80 lines)
 **Justification**: Shared types boundary. Currently `ExtractionStage` and
 `ExtractionResult` are imported by routes, service, and extractor. Having them in a
 leaf module with zero internal dependencies prevents circular imports if we ever split
@@ -251,7 +251,7 @@ extractor.py.
 **Rollback**: `git revert`
 **Smoke**: T0.1, T0.2
 
-**Commit**: `refactor: extract shared types to shopq/returns/types.py (seam)`
+**Commit**: `refactor: extract shared types to reclaim/returns/types.py (seam)`
 
 ---
 
@@ -309,7 +309,7 @@ Function signatures and behavior are unchanged. No file splits.
    - `DATE_REFRESH_INTERVAL_MS` → `ReclaimSidebar.config.DATE_REFRESH_INTERVAL_MS`
    - `TOAST_DURATION_MS` → `ReclaimSidebar.config.TOAST_DURATION_MS`
    - (etc. for all 5 config constants)
-4. Update `SHOPQ_CONFIG_INIT` handler to write into `ReclaimSidebar.config.*`
+4. Update `RECLAIM_CONFIG_INIT` handler to write into `ReclaimSidebar.config.*`
 5. Remove the 13 top-level `let` declarations (now in namespace)
 6. Remove the 5 top-level config `let` declarations (now in namespace)
 
@@ -451,7 +451,7 @@ drops from 1458 to ~50 lines. CSS can be independently cached by the browser.
 `filter_data.py` module.
 
 **Changes**:
-1. Create `shopq/returns/filter_data.py` containing:
+1. Create `reclaim/returns/filter_data.py` containing:
    - `DEFAULT_BLOCKLIST` (frozenset, ~95 lines — was `_DEFAULT_BLOCKLIST`)
    - `PURCHASE_CONFIRMATION_KEYWORDS` (set, ~25 lines)
    - `DELIVERY_KEYWORDS` (set, ~15 lines)
@@ -460,13 +460,13 @@ drops from 1458 to ~50 lines. CSS can be independently cached by the browser.
    - `SHIPPING_SERVICE_DOMAINS` (set, ~5 lines)
    - `SURVEY_SUBJECT_KEYWORDS` (list, ~5 lines)
 2. In `filters.py`: replace all constant definitions with
-   `from shopq.returns.filter_data import *`
+   `from reclaim.returns.filter_data import *`
 3. Make previously private `_DEFAULT_BLOCKLIST` public as `DEFAULT_BLOCKLIST`
    (it's now in a data module — the underscore prefix was an implementation detail)
 4. Update any direct references to `_DEFAULT_BLOCKLIST` in `filters.py` to
    `DEFAULT_BLOCKLIST`
 
-**New files**: `shopq/returns/filter_data.py` (~320 lines)
+**New files**: `reclaim/returns/filter_data.py` (~320 lines)
 **Justification**: Pure data with zero logic. Separates "what to filter" from "how to
 filter." `filters.py` drops from 589 to ~280 lines, focused entirely on filtering logic.
 Adding a new keyword to the blocklist means editing `filter_data.py` — no risk of
@@ -477,7 +477,7 @@ accidentally changing filter logic.
 **Rollback**: `git revert`
 **Smoke**: T0.1, T0.2
 
-**Commit**: `refactor: extract filter constants to shopq/returns/filter_data.py`
+**Commit**: `refactor: extract filter constants to reclaim/returns/filter_data.py`
 
 ---
 
@@ -720,19 +720,19 @@ These items were considered for Phase 4 and explicitly deferred. Each has a reas
 |------|---------|-------|-----------|
 | **store.js split** | `modules/storage/store.js` | 1,023 | High cohesion — all Chrome Storage operations. Functions are stateless wrappers. Splitting would scatter related operations across files with no cognitive benefit. Add section headers in Step 4.10 instead. |
 | **scanner.js split** | `modules/sync/scanner.js` | 808 | Gmail helpers are used exclusively by scan orchestration. Moving them to `gmail/` would create a false abstraction boundary. The file reads linearly. |
-| **extractor.py split** | `shopq/returns/extractor.py` | 956 | Pipeline orchestrator. Dedup and cancellation detection are batch-specific but called from the same entry point (`process_email_batch`). types.py seam (Step 4.1) enables a future split without circular imports. |
-| **repository.py split** | `shopq/returns/repository.py` | 722 | Pure CRUD. All methods are `@staticmethod` on one class. Splitting "finders" from "writers" would halve the file but double the imports needed everywhere. |
-| **returns.py schema extraction** | `shopq/api/routes/returns.py` | 680 | Pydantic models are used only by this router. Moving them to `schemas.py` is cosmetic — no cognitive benefit since you always read routes and schemas together. |
-| **database.py pool extraction** | `shopq/infrastructure/database.py` | 615 | Connection pool + helpers are cohesive. The pool class has clear internal boundaries (init, acquire, release, cleanup). Section headers suffice. |
-| **field_extractor.py prompt extraction** | `shopq/returns/field_extractor.py` | 594 | The 47-line LLM prompt is a constant inside the file. Extracting to a separate template file creates a new file for 47 lines of text. Not worth the indirection. |
+| **extractor.py split** | `reclaim/returns/extractor.py` | 956 | Pipeline orchestrator. Dedup and cancellation detection are batch-specific but called from the same entry point (`process_email_batch`). types.py seam (Step 4.1) enables a future split without circular imports. |
+| **repository.py split** | `reclaim/returns/repository.py` | 722 | Pure CRUD. All methods are `@staticmethod` on one class. Splitting "finders" from "writers" would halve the file but double the imports needed everywhere. |
+| **returns.py schema extraction** | `reclaim/api/routes/returns.py` | 680 | Pydantic models are used only by this router. Moving them to `schemas.py` is cosmetic — no cognitive benefit since you always read routes and schemas together. |
+| **database.py pool extraction** | `reclaim/infrastructure/database.py` | 615 | Connection pool + helpers are cohesive. The pool class has clear internal boundaries (init, acquire, release, cleanup). Section headers suffice. |
+| **field_extractor.py prompt extraction** | `reclaim/returns/field_extractor.py` | 594 | The 47-line LLM prompt is a constant inside the file. Extracting to a separate template file creates a new file for 47 lines of text. Not worth the indirection. |
 | **content.js further refactoring** | `extension/src/content.js` | 727 | Phase 3 already performed class extraction. Webpack bundles this file. Further splits require webpack config changes — higher risk than reward. |
 | **gmail/api.js refactoring** | `extension/modules/gmail/api.js` | ~770 (post dead code) | Label management + email fetching are both Gmail API operations. Splitting by "labels" vs "messages" is arbitrary. Dead code removal (Step 4.3) is sufficient. |
 | **Service worker module index** | `extension/background.js` | 459 | A `modules/index.js` barrel file would centralize the `importScripts` list, but Phase 4 doesn't split any SW modules. Create this seam at the start of a future phase that splits service worker modules. |
 | **Webpack migration for sidebar** | sidebar files | — | Converting the sidebar to a webpack bundle would solve load-order issues and enable ES module imports. But it changes the build pipeline and the CSP. Save for a dedicated modernization phase. |
 | **ES modules for service worker** | `background.js` | — | Chrome MV3 does not support `"type": "module"` for service workers reliably across all Chrome versions. `importScripts` is the stable path. |
-| **Naming: shopq → reclaim** | Cross-cutting | — | Module paths use `shopq.*`, config uses `SHOPQ_*`, but the product is "Reclaim." This is a cross-cutting rename affecting imports, env vars, database paths, and deployment config. Needs its own dedicated phase. |
+| **Naming: shopq → reclaim** | Cross-cutting | — | Module paths used `shopq.*`, config used `SHOPQ_*`, but the product is "Reclaim." Rename completed in a dedicated phase. |
 | **Test infrastructure** | — | — | The extension has no automated tests. Adding them is important but orthogonal to cleanup. |
-| **Manifest URL mismatch** | `manifest.json` | — | `host_permissions` and CSP reference `shopq-api-488078904670` but the production API may be at `reclaim-api-488078904670`. Verify and fix in a dedicated config audit, not during structural cleanup. |
+| **Manifest URL mismatch** | `manifest.json` | — | `host_permissions` and CSP reference `reclaim-api-488078904670`. Verify in a dedicated config audit if URL has changed. |
 
 ---
 

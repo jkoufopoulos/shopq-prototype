@@ -4,10 +4,10 @@
 
 ### What it is
 
-`USE_SERVICE_DEDUP` is a boolean feature flag defined in `shopq/config.py:65`:
+`USE_SERVICE_DEDUP` is a boolean feature flag defined in `reclaim/config.py:65`:
 
 ```python
-USE_SERVICE_DEDUP: bool = os.getenv("SHOPQ_USE_SERVICE_DEDUP", "true").lower() == "true"
+USE_SERVICE_DEDUP: bool = os.getenv("RECLAIM_USE_SERVICE_DEDUP", "true").lower() == "true"
 ```
 
 ### Finding
@@ -16,7 +16,7 @@ The flag is **never checked anywhere in the codebase**. It was added in commit `
 
 **Evidence:**
 - `grep -r "USE_SERVICE_DEDUP" --include="*.py"` returns only the definition in `config.py`
-- `shopq/api/routes/returns.py` unconditionally calls `ReturnsService.dedup_and_persist()`
+- `reclaim/api/routes/returns.py` unconditionally calls `ReturnsService.dedup_and_persist()`
 - There is no fallback to inline dedup logic (it was deleted)
 
 ### Why it's safe to remove
@@ -31,7 +31,7 @@ The flag is **never checked anywhere in the codebase**. It was added in commit `
 **Remove in the first Phase 2 commit** (or as a standalone housekeeping commit before Phase 2 starts).
 
 Change required:
-- Delete the `USE_SERVICE_DEDUP` line from `shopq/config.py`
+- Delete the `USE_SERVICE_DEDUP` line from `reclaim/config.py`
 - Delete the re-export reference if any (there isn't one currently)
 
 This is a 1-line deletion with zero behavioral impact.

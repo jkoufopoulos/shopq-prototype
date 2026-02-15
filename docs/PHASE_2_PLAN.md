@@ -27,7 +27,7 @@ Phase 0 centralized config into `extension/modules/shared/config.js`. Phase 1 co
 
 ### Step 2.0: Remove dead USE_SERVICE_DEDUP flag
 
-**Action:** Delete the `USE_SERVICE_DEDUP` line from `shopq/config.py` (1-line deletion, zero runtime impact).
+**Action:** Delete the `USE_SERVICE_DEDUP` line from `reclaim/config.py` (1-line deletion, zero runtime impact).
 
 **Smoke test:** Backend starts, `curl localhost:8000/health` returns 200.
 

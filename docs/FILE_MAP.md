@@ -89,7 +89,7 @@
 
 ---
 
-## Backend (shopq/)
+## Backend (reclaim/)
 
 ### returns/ (Core Domain)
 
@@ -158,7 +158,7 @@
 
 | Path | Purpose | Lines |
 |------|---------|-------|
-| `shopq/tests/test_extraction_pipeline.py` | Backend pipeline integration tests | 701 |
+| `reclaim/tests/test_extraction_pipeline.py` | Backend pipeline integration tests | 701 |
 | `extension/tests/integration/pipeline_test.js` | Extension pipeline integration tests | 310 |
 | `extension/tests/unit/lifecycle.test.js` | Lifecycle module unit tests | 293 |
 | `extension/tests/unit/filter.test.js` | Filter module unit tests | 292 |

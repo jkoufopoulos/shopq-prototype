@@ -103,7 +103,7 @@ shopq-prototype/
 │   │   └── gmail/             # Gmail API + OAuth
 │   └── dist/                  # Built bundles
 │
-├── shopq/                     # Python backend (already hosted, for contributors)
+├── reclaim/                   # Python backend (already hosted, for contributors)
 │   ├── api/                   # FastAPI routes
 │   ├── delivery/              # Uber Direct integration
 │   └── returns/               # LLM-based extraction
@@ -151,7 +151,7 @@ The backend is already hosted. Only run locally if you're contributing to backen
 
 ```bash
 uv sync
-uv run uvicorn shopq.api.app:app --reload
+uv run uvicorn reclaim.api.app:app --reload
 ```
 
 ### Testing
@@ -161,7 +161,7 @@ uv run uvicorn shopq.api.app:app --reload
 cd extension && npm test
 
 # Backend tests
-PYTHONPATH=. SHOPQ_USE_LLM=false uv run pytest shopq/tests/ -v
+PYTHONPATH=. RECLAIM_USE_LLM=false uv run pytest reclaim/tests/ -v
 ```
 
 ---

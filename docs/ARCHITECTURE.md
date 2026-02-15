@@ -90,7 +90,7 @@ Single source: `extension/modules/shared/config.js`
 - Service worker: `importScripts` → global `CONFIG`
 - Content script: `src/config.js` re-exports via webpack `require()`
 - Popup: `<script src="modules/shared/config.js">` → global `CONFIG`
-- Sidebar iframe: parent sends `SHOPQ_CONFIG_INIT` postMessage → `ReclaimSidebar.config`
+- Sidebar iframe: parent sends `RECLAIM_CONFIG_INIT` postMessage → `ReclaimSidebar.config`
 
 ## Backend Architecture
 
@@ -148,7 +148,7 @@ returns/
 ```
 
 `types.py` uses `TYPE_CHECKING` to prevent circular imports while maintaining type safety.
-All downstream code imports shared types from `shopq.returns.types`.
+All downstream code imports shared types from `reclaim.returns.types`.
 
 ### Layer Responsibilities
 
@@ -176,7 +176,7 @@ Only `src/content.js` is webpack-bundled. All other files are loaded directly.
 
 ```bash
 uv sync                              # Install dependencies
-uv run uvicorn shopq.api.app:app     # Run server
+uv run uvicorn reclaim.api.app:app   # Run server
 ```
 
 ### Deployment

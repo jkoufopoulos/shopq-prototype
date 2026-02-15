@@ -10,21 +10,21 @@ Defines the boundaries and responsibilities of the three layers that handle retu
 HTTP Request
     |
     v
-[Routes]           shopq/api/routes/returns.py
+[Routes]           reclaim/api/routes/returns.py
     |               - Request/response models (Pydantic)
     |               - HTTP status codes
     |               - Input parsing (date strings -> datetime)
     |               - Error sanitization
     |
     v
-[Service]           shopq/returns/service.py
+[Service]           reclaim/returns/service.py
     |               - Ownership enforcement (card.user_id == caller)
     |               - Dedup strategy (order_number -> item_summary -> email_id)
     |               - Merge policy (_compute_merge_updates)
     |               - Status auto-refresh before reads
     |
     v
-[Repository]        shopq/returns/repository.py
+[Repository]        reclaim/returns/repository.py
                     - SQL generation and execution
                     - Transaction boundaries (db_transaction)
                     - Retry on SQLite lock (@retry_on_db_lock)
@@ -35,7 +35,7 @@ HTTP Request
 
 ## Layer Responsibilities
 
-### Routes (`shopq/api/routes/returns.py`)
+### Routes (`reclaim/api/routes/returns.py`)
 
 **Owns:**
 - Pydantic request/response models (`CreateReturnCardRequest`, `ReturnCardResponse`, etc.)
@@ -56,7 +56,7 @@ HTTP Request
 - Calls `ReturnsService.*` static methods, never `ReturnCardRepository.*` directly
 - Trusts Service to return `None` for not-found/not-owned cards, translates to HTTP 404
 
-### Service (`shopq/returns/service.py`)
+### Service (`reclaim/returns/service.py`)
 
 **Owns:**
 - **Ownership enforcement:** Every method that takes `card_id + user_id` checks `card.user_id == user_id` before acting. Returns `None` (or `False` for delete) when not owned.
@@ -84,7 +84,7 @@ HTTP Request
 - For merges: computes field updates dict, then calls `add_email_and_update(card_id, email_id, field_updates)` — Repository does not interpret merge policy
 - For creates: constructs `ReturnCardCreate` and calls `Repository.create()`
 
-### Repository (`shopq/returns/repository.py`)
+### Repository (`reclaim/returns/repository.py`)
 
 **Owns:**
 - All SQL generation and execution

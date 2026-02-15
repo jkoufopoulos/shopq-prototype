@@ -10,7 +10,7 @@
 ```bash
 # Terminal 1: Start backend (if not already running)
 cd shopq-prototype
-uv run uvicorn shopq.api.app:app --port 8000
+uv run uvicorn reclaim.api.app:app --port 8000
 
 # Verify it's up
 curl -s http://localhost:8000/health | python3 -m json.tool
@@ -22,7 +22,7 @@ Expected: `"status": "healthy"`, `"version": "1.0.0"`
 In development mode, `http://localhost:8000` is in the CSRF allowlist. All curl commands
 below include `-H "Origin: http://localhost:8000"` where needed.
 
-**Auth note:** In development mode (`SHOPQ_ENV=development`, the default), the API returns
+**Auth note:** In development mode (`RECLAIM_ENV=development`, the default), the API returns
 a default user when no `Authorization` header is provided. In production, all endpoints
 require a valid Google OAuth Bearer token.
 
