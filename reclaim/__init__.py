@@ -10,19 +10,11 @@ def __getattr__(name: str):
     """
     Lazy imports to avoid loading heavy dependencies when only importing lightweight modules.
     """
-    if name in ("ReturnCard", "ReturnCardCreate", "ReturnCardUpdate"):
+    if name in ("ReturnCard", "ReturnConfidence", "ReturnStatus"):
         from reclaim.returns import models
 
         if name == "ReturnCard":
             return models.ReturnCard
-        if name == "ReturnCardCreate":
-            return models.ReturnCardCreate
-        if name == "ReturnCardUpdate":
-            return models.ReturnCardUpdate
-
-    if name in ("ReturnConfidence", "ReturnStatus"):
-        from reclaim.returns import models
-
         if name == "ReturnConfidence":
             return models.ReturnConfidence
         if name == "ReturnStatus":
@@ -39,8 +31,6 @@ def __getattr__(name: str):
 
 __all__ = [
     "ReturnCard",
-    "ReturnCardCreate",
-    "ReturnCardUpdate",
     "ReturnConfidence",
     "ReturnStatus",
     "ReturnableReceiptExtractor",

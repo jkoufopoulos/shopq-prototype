@@ -10,8 +10,6 @@ from reclaim.returns.field_extractor import ReturnFieldExtractor
 from reclaim.returns.filters import MerchantDomainFilter
 from reclaim.returns.models import (
     ReturnCard,
-    ReturnCardCreate,
-    ReturnCardUpdate,
     ReturnConfidence,
     ReturnStatus,
 )
@@ -25,8 +23,6 @@ from reclaim.returns.types import ExtractedFields, ExtractionResult, ExtractionS
 __all__ = [
     # Models
     "ReturnCard",
-    "ReturnCardCreate",
-    "ReturnCardUpdate",
     "ReturnConfidence",
     "ReturnStatus",
     # Filters

@@ -31,10 +31,10 @@ class ExtractEmail(BaseModel):
     """A single email in an extraction request."""
 
     email_id: str
-    from_address: str
-    subject: str
-    body: str
-    body_html: str | None = None
+    from_address: str = Field(..., max_length=500)
+    subject: str = Field(..., max_length=2000)
+    body: str = Field(..., max_length=50000)
+    body_html: str | None = Field(None, max_length=100000)
     received_at: str | None = None  # ISO format
 
     @field_validator("email_id")
@@ -158,10 +158,7 @@ async def extract_emails(
 
         result_items: list[ExtractResultItem] = []
 
-        # Map results back to email IDs
-        email_id_list = [e.email_id for e in request.emails]
-
-        for result_idx, result in enumerate(results):
+        for result in results:
             if not result.success or not result.card:
                 # Count rejection reasons
                 if result.stage_reached == ExtractionStage.FILTER:
@@ -171,12 +168,10 @@ async def extract_emails(
                 else:
                     stats.rejected_empty += 1
 
-                # Find the email_id for this result
+                # Get email_id from the result's card if available
                 email_id = ""
                 if result.card and result.card.source_email_ids:
                     email_id = result.card.source_email_ids[0]
-                elif result_idx < len(email_id_list):
-                    email_id = email_id_list[result_idx]
 
                 result_items.append(
                     ExtractResultItem(
@@ -237,8 +232,8 @@ async def extract_emails(
         return ExtractResponse(results=result_items, stats=stats)
 
     except Exception as e:
-        logger.error("Failed to extract email batch: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to extract email batch") from None
+        logger.error("Failed to extract email batch: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to extract email batch") from e
 
 
 # ============================================================================

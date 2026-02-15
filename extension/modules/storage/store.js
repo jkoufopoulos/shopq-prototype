@@ -83,7 +83,7 @@ async function initializeStorage() {
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
     [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.MERCHANT_RULES_BY_DOMAIN]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
@@ -757,15 +757,33 @@ async function updateOrderEmailLLM(email_id, llm_extraction) {
 // ============================================================
 
 /**
- * Check if an email has already been processed.
+ * Read processed email IDs as an object map.
+ * Handles backward compat: migrates legacy array format to object on read.
+ *
+ * @returns {Promise<Object>} Map of email_id -> true
+ */
+async function _getProcessedMap() {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
+  const raw = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS];
+  if (!raw) return {};
+  // Backward compat: migrate array to object
+  if (Array.isArray(raw)) {
+    const obj = {};
+    for (const id of raw) obj[id] = 1;
+    return obj;
+  }
+  return raw;
+}
+
+/**
+ * Check if an email has already been processed. O(1) lookup.
  *
  * @param {string} email_id
  * @returns {Promise<boolean>}
  */
 async function isEmailProcessed(email_id) {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
-  return processed.includes(email_id);
+  const processed = await _getProcessedMap();
+  return email_id in processed;
 }
 
 /**
@@ -776,11 +794,9 @@ async function isEmailProcessed(email_id) {
  */
 async function markEmailProcessed(email_id) {
   return withStorageLock(async () => {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-    const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
-
-    if (!processed.includes(email_id)) {
-      processed.push(email_id);
+    const processed = await _getProcessedMap();
+    if (!(email_id in processed)) {
+      processed[email_id] = 1;
       await chrome.storage.local.set({
         [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
       });
@@ -796,15 +812,12 @@ async function markEmailProcessed(email_id) {
  */
 async function markEmailsProcessed(email_ids) {
   return withStorageLock(async () => {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-    const processed = new Set(result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || []);
-
+    const processed = await _getProcessedMap();
     for (const id of email_ids) {
-      processed.add(id);
+      processed[id] = 1;
     }
-
     await chrome.storage.local.set({
-      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: Array.from(processed),
+      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
     });
   });
 }
@@ -1041,7 +1054,7 @@ async function resetPipelineData() {
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
     [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.TEMPLATE_CACHE]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
@@ -1061,7 +1074,7 @@ async function resetPipelineData() {
  */
 async function resetScanState() {
   await chrome.storage.local.set({
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
     [STORAGE_KEYS.TEMPLATE_CACHE]: {},
@@ -1148,14 +1161,15 @@ async function getStorageStats() {
 
   const orders = Object.values(result[STORAGE_KEYS.ORDERS_BY_KEY] || {});
   const emails = Object.keys(result[STORAGE_KEYS.ORDER_EMAILS_BY_ID] || {});
-  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
+  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || {};
+  const processedCount = Array.isArray(processed) ? processed.length : Object.keys(processed).length;
 
   return {
     order_count: orders.length,
     active_orders: orders.filter(o => o.order_status === ORDER_STATUS.ACTIVE).length,
     deadline_known: orders.filter(o => o.deadline_confidence !== DEADLINE_CONFIDENCE.UNKNOWN).length,
     email_count: emails.length,
-    processed_count: processed.length,
+    processed_count: processedCount,
     last_scan: new Date(result[STORAGE_KEYS.LAST_SCAN_EPOCH_MS] || 0).toISOString(),
   };
 }
