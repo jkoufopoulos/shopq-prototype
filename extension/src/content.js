@@ -457,6 +457,11 @@ class SidebarController {
       }
     });
 
+    this._router.register('RECLAIM_RELOAD_PAGE', () => {
+      console.log('Reclaim: Reloading page (retry from sidebar)');
+      window.location.reload();
+    });
+
     this._router.register('RECLAIM_CLOSE_SIDEBAR', () => {
       console.log('Reclaim: Closing sidebar');
       const reclaimIcon = document.querySelector('[data-tooltip="Reclaim"]');

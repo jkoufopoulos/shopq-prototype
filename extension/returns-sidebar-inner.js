@@ -1032,7 +1032,9 @@ function renderError(message) {
     </div>
   `;
 
-  document.getElementById('retry-btn')?.addEventListener('click', fetchReturns);
+  document.getElementById('retry-btn')?.addEventListener('click', () => {
+    window.parent.postMessage({ type: 'RECLAIM_RELOAD_PAGE' }, '*');
+  });
 }
 
 // =============================================================================
