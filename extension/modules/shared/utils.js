@@ -1,5 +1,5 @@
 /**
- * Shared Utility Functions for ShopQ Return Watch
+ * Shared Utility Functions for Reclaim Return Watch
  */
 
 /**

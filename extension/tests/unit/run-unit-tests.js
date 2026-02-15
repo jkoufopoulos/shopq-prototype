@@ -1,5 +1,5 @@
 /**
- * Unit Test Runner for ShopQ Return Watch
+ * Unit Test Runner for Reclaim Return Watch
  *
  * Runs pure function tests in Node.js without Chrome APIs.
  *
@@ -241,7 +241,7 @@ global.colors = colors;
  */
 async function runAllTests() {
   console.log(`${colors.bold}╔══════════════════════════════════════════╗${colors.reset}`);
-  console.log(`${colors.bold}║   ShopQ Return Watch - Unit Tests        ║${colors.reset}`);
+  console.log(`${colors.bold}║   Reclaim Return Watch - Unit Tests        ║${colors.reset}`);
   console.log(`${colors.bold}╚══════════════════════════════════════════╝${colors.reset}`);
 
   const testFiles = [

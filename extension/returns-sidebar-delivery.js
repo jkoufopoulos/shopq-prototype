@@ -66,7 +66,7 @@ function showDeliveryModal(order) {
   });
 
   // Check for saved address
-  window.parent.postMessage({ type: 'SHOPQ_GET_USER_ADDRESS' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_GET_USER_ADDRESS' }, '*');
 }
 
 /**
@@ -231,7 +231,7 @@ function renderAddressStep(content) {
 
     // Save address for future use
     window.parent.postMessage({
-      type: 'SHOPQ_SET_USER_ADDRESS',
+      type: 'RECLAIM_SET_USER_ADDRESS',
       address: ReclaimSidebar.state.deliveryState.address,
     }, '*');
 
@@ -241,7 +241,7 @@ function renderAddressStep(content) {
     renderDeliveryModal();
 
     window.parent.postMessage({
-      type: 'SHOPQ_GET_DELIVERY_LOCATIONS',
+      type: 'RECLAIM_GET_DELIVERY_LOCATIONS',
       address: ReclaimSidebar.state.deliveryState.address,
     }, '*');
   });
@@ -317,7 +317,7 @@ function renderLocationsStep(content) {
     renderDeliveryModal();
 
     window.parent.postMessage({
-      type: 'SHOPQ_GET_DELIVERY_QUOTE',
+      type: 'RECLAIM_GET_DELIVERY_QUOTE',
       order_key: ReclaimSidebar.state.currentDetailOrder.order_key,
       pickup_address: ReclaimSidebar.state.deliveryState.address,
       dropoff_location_id: ReclaimSidebar.state.deliveryState.selectedLocation.id,
@@ -392,7 +392,7 @@ function renderQuoteStep(content) {
     renderDeliveryModal();
 
     window.parent.postMessage({
-      type: 'SHOPQ_CONFIRM_DELIVERY',
+      type: 'RECLAIM_CONFIRM_DELIVERY',
       delivery_id: quote.delivery_id,
     }, '*');
   });
@@ -513,7 +513,7 @@ function renderStatusStep(content) {
       ReclaimSidebar.state.deliveryState.loading = true;
       renderDeliveryModal();
       window.parent.postMessage({
-        type: 'SHOPQ_CANCEL_DELIVERY',
+        type: 'RECLAIM_CANCEL_DELIVERY',
         delivery_id: delivery.id,
       }, '*');
     }

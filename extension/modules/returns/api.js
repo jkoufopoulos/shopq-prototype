@@ -1,5 +1,5 @@
 /**
- * ShopQ Returns API Client
+ * Reclaim Returns API Client
  * Handles communication with the backend API for return card operations
  *
  * Note: This file is loaded via importScripts in the service worker.

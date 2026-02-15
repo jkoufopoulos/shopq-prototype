@@ -307,7 +307,7 @@ function toggleReturnedAccordion() {
  */
 function undoReturnOrder(orderKey) {
   window.parent.postMessage({
-    type: 'SHOPQ_UPDATE_ORDER_STATUS',
+    type: 'RECLAIM_UPDATE_ORDER_STATUS',
     order_key: orderKey,
     status: 'active'
   }, '*');
@@ -315,7 +315,7 @@ function undoReturnOrder(orderKey) {
 
   // Refresh both lists to update UI immediately
   fetchReturns();
-  window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_GET_RETURNED_ORDERS' }, '*');
 }
 
 /**
@@ -849,7 +849,7 @@ function renderDetailView(order, needsEnrichment) {
       updateOrderStatus(order.order_key, 'active');
       showToast('Moved back to active returns', 'success');
       // Also refresh returned orders list
-      window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
+      window.parent.postMessage({ type: 'RECLAIM_GET_RETURNED_ORDERS' }, '*');
     });
   }
 
@@ -910,7 +910,7 @@ function showListView() {
  */
 async function fetchReturns() {
   try {
-    window.parent.postMessage({ type: 'SHOPQ_GET_ORDERS' }, '*');
+    window.parent.postMessage({ type: 'RECLAIM_GET_ORDERS' }, '*');
   } catch (error) {
     console.error('Reclaim Returns: Failed to request orders:', error);
     renderError('Failed to load returns');
@@ -923,7 +923,7 @@ async function fetchReturns() {
 async function enrichOrder(orderKey) {
   ReclaimSidebar.state.isEnriching = true;
   renderEnrichingState();
-  window.parent.postMessage({ type: 'SHOPQ_ENRICH_ORDER', order_key: orderKey }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_ENRICH_ORDER', order_key: orderKey }, '*');
 }
 
 /**
@@ -931,7 +931,7 @@ async function enrichOrder(orderKey) {
  */
 async function setMerchantRule(merchantDomain, windowDays) {
   window.parent.postMessage({
-    type: 'SHOPQ_SET_MERCHANT_RULE',
+    type: 'RECLAIM_SET_MERCHANT_RULE',
     merchant_domain: merchantDomain,
     window_days: windowDays
   }, '*');
@@ -973,7 +973,7 @@ function validateReturnDate(dateStr) {
  */
 function updateOrderReturnDate(orderKey, returnByDate) {
   window.parent.postMessage({
-    type: 'SHOPQ_UPDATE_ORDER_RETURN_DATE',
+    type: 'RECLAIM_UPDATE_ORDER_RETURN_DATE',
     order_key: orderKey,
     return_by_date: returnByDate
   }, '*');
@@ -985,7 +985,7 @@ function updateOrderReturnDate(orderKey, returnByDate) {
 async function updateOrderStatus(orderKey, newStatus) {
   try {
     window.parent.postMessage({
-      type: 'SHOPQ_UPDATE_ORDER_STATUS',
+      type: 'RECLAIM_UPDATE_ORDER_STATUS',
       order_key: orderKey,
       status: newStatus
     }, '*');
@@ -1037,7 +1037,7 @@ function renderError(message) {
 
 window.addEventListener('message', (event) => {
   // Receive config from parent (content script) — overrides defaults
-  if (event.data?.type === 'SHOPQ_CONFIG_INIT') {
+  if (event.data?.type === 'RECLAIM_CONFIG_INIT') {
     const c = event.data.config || {};
     if (c.DATE_REFRESH_INTERVAL_MS) ReclaimSidebar.config.DATE_REFRESH_INTERVAL_MS = c.DATE_REFRESH_INTERVAL_MS;
     if (c.TOAST_DURATION_MS) ReclaimSidebar.config.TOAST_DURATION_MS = c.TOAST_DURATION_MS;
@@ -1047,12 +1047,12 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle demo mode toggle from parent (main console)
-  if (event.data?.type === 'SHOPQ_TOGGLE_DEMO_MODE') {
+  if (event.data?.type === 'RECLAIM_TOGGLE_DEMO_MODE') {
     window.toggleDemoMode();
   }
 
   // Handle unified visible orders
-  if (event.data?.type === 'SHOPQ_ORDERS_DATA') {
+  if (event.data?.type === 'RECLAIM_ORDERS_DATA') {
     ReclaimSidebar.state.visibleOrders = event.data.orders || [];
     if (ReclaimSidebar.state.visibleOrders.length > 0) {
       ReclaimSidebar.state.hasCompletedFirstScan = true;
@@ -1062,24 +1062,24 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle returned orders data (for undo drawer)
-  if (event.data?.type === 'SHOPQ_RETURNED_ORDERS_DATA') {
+  if (event.data?.type === 'RECLAIM_RETURNED_ORDERS_DATA') {
     ReclaimSidebar.state.returnedOrders = event.data.orders || [];
     renderListView();
   }
 
   // Handle API error
-  if (event.data?.type === 'SHOPQ_RETURNS_ERROR') {
+  if (event.data?.type === 'RECLAIM_RETURNS_ERROR') {
     renderError(event.data.message || 'Unknown error');
   }
 
   // Handle status update confirmation
-  if (event.data?.type === 'SHOPQ_STATUS_UPDATED') {
+  if (event.data?.type === 'RECLAIM_STATUS_UPDATED') {
     // Refresh the list
     fetchReturns();
   }
 
   // Handle scan complete notification
-  if (event.data?.type === 'SHOPQ_SCAN_COMPLETE') {
+  if (event.data?.type === 'RECLAIM_SCAN_COMPLETE') {
     console.log('Reclaim Returns: Scan complete', event.data);
     ReclaimSidebar.state.hasCompletedFirstScan = true;
     refreshBtn.classList.remove('scanning');
@@ -1101,7 +1101,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle enrichment result (v0.6.2)
-  if (event.data?.type === 'SHOPQ_ENRICH_RESULT') {
+  if (event.data?.type === 'RECLAIM_ENRICH_RESULT') {
     ReclaimSidebar.state.isEnriching = false;
     if (event.data.order && ReclaimSidebar.state.currentDetailOrder) {
       // Update with enriched order data
@@ -1111,20 +1111,20 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle merchant rule set confirmation
-  if (event.data?.type === 'SHOPQ_MERCHANT_RULE_SET') {
+  if (event.data?.type === 'RECLAIM_MERCHANT_RULE_SET') {
     // Refresh to show updated deadlines
     fetchReturns();
     if (ReclaimSidebar.state.currentDetailOrder) {
       // Re-fetch the current order
       window.parent.postMessage({
-        type: 'SHOPQ_GET_ORDER',
+        type: 'RECLAIM_GET_ORDER',
         order_key: ReclaimSidebar.state.currentDetailOrder.order_key
       }, '*');
     }
   }
 
   // Handle order return date update confirmation
-  if (event.data?.type === 'SHOPQ_ORDER_RETURN_DATE_UPDATED') {
+  if (event.data?.type === 'RECLAIM_ORDER_RETURN_DATE_UPDATED') {
     if (event.data.error) {
       // Show error but keep editing mode open so user can retry
       const errorEl = document.getElementById('date-error');
@@ -1149,7 +1149,7 @@ window.addEventListener('message', (event) => {
       if (ReclaimSidebar.state.currentDetailOrder && event.data.order_key === ReclaimSidebar.state.currentDetailOrder.order_key) {
         // Re-fetch the current order to get updated data
         window.parent.postMessage({
-          type: 'SHOPQ_GET_ORDER',
+          type: 'RECLAIM_GET_ORDER',
           order_key: ReclaimSidebar.state.currentDetailOrder.order_key
         }, '*');
       }
@@ -1157,7 +1157,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle order data (for refreshing detail view)
-  if (event.data?.type === 'SHOPQ_ORDER_DATA') {
+  if (event.data?.type === 'RECLAIM_ORDER_DATA') {
     if (event.data.order && ReclaimSidebar.state.currentDetailOrder &&
         event.data.order.order_key === ReclaimSidebar.state.currentDetailOrder.order_key) {
       ReclaimSidebar.state.currentDetailOrder = event.data.order;
@@ -1170,7 +1170,7 @@ window.addEventListener('message', (event) => {
   // =========================================================================
 
   // Handle user address response
-  if (event.data?.type === 'SHOPQ_USER_ADDRESS') {
+  if (event.data?.type === 'RECLAIM_USER_ADDRESS') {
     if (ReclaimSidebar.state.deliveryModal) {
       ReclaimSidebar.state.deliveryState.address = event.data.address || null;
       ReclaimSidebar.state.deliveryState.loading = false;
@@ -1179,7 +1179,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle delivery locations response
-  if (event.data?.type === 'SHOPQ_DELIVERY_LOCATIONS') {
+  if (event.data?.type === 'RECLAIM_DELIVERY_LOCATIONS') {
     if (ReclaimSidebar.state.deliveryModal) {
       ReclaimSidebar.state.deliveryState.locations = event.data.locations || [];
       ReclaimSidebar.state.deliveryState.loading = false;
@@ -1188,7 +1188,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle delivery quote response
-  if (event.data?.type === 'SHOPQ_DELIVERY_QUOTE') {
+  if (event.data?.type === 'RECLAIM_DELIVERY_QUOTE') {
     if (ReclaimSidebar.state.deliveryModal) {
       if (event.data.error) {
         ReclaimSidebar.state.deliveryState.error = event.data.error;
@@ -1203,7 +1203,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle delivery confirmation response
-  if (event.data?.type === 'SHOPQ_DELIVERY_CONFIRMED') {
+  if (event.data?.type === 'RECLAIM_DELIVERY_CONFIRMED') {
     if (ReclaimSidebar.state.deliveryModal) {
       if (event.data.error) {
         ReclaimSidebar.state.deliveryState.error = event.data.error;
@@ -1218,7 +1218,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle delivery status response
-  if (event.data?.type === 'SHOPQ_DELIVERY_STATUS') {
+  if (event.data?.type === 'RECLAIM_DELIVERY_STATUS') {
     if (ReclaimSidebar.state.deliveryModal) {
       ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
       ReclaimSidebar.state.deliveryState.step = 'status';
@@ -1228,7 +1228,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle delivery cancel response
-  if (event.data?.type === 'SHOPQ_DELIVERY_CANCELED') {
+  if (event.data?.type === 'RECLAIM_DELIVERY_CANCELED') {
     if (ReclaimSidebar.state.deliveryModal) {
       ReclaimSidebar.state.deliveryState.loading = false;
       if (event.data.error) {
@@ -1246,7 +1246,7 @@ window.addEventListener('message', (event) => {
   }
 
   // Handle active deliveries response
-  if (event.data?.type === 'SHOPQ_ACTIVE_DELIVERIES') {
+  if (event.data?.type === 'RECLAIM_ACTIVE_DELIVERIES') {
     const deliveries = event.data.deliveries || [];
     ReclaimSidebar.state.activeDeliveries = {};
     for (const delivery of deliveries) {
@@ -1264,7 +1264,7 @@ window.addEventListener('message', (event) => {
 
 // Close button
 closeBtn.addEventListener('click', () => {
-  window.parent.postMessage({ type: 'SHOPQ_CLOSE_SIDEBAR' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_CLOSE_SIDEBAR' }, '*');
 });
 
 // Back button
@@ -1277,7 +1277,7 @@ refreshBtn.addEventListener('click', () => {
   refreshBtn.classList.add('scanning');
   refreshStatus.textContent = 'Scanning...';
   // Request rescan from parent (content script)
-  window.parent.postMessage({ type: 'SHOPQ_RESCAN_EMAILS' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_RESCAN_EMAILS' }, '*');
 });
 
 // Expired orders now shown in accordion at top of list
@@ -1288,16 +1288,16 @@ refreshBtn.addEventListener('click', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Signal ready to parent
-  window.parent.postMessage({ type: 'SHOPQ_RETURNS_SIDEBAR_READY' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_RETURNS_SIDEBAR_READY' }, '*');
 
   // Fetch initial data
   fetchReturns();
 
   // Fetch returned orders for undo drawer
-  window.parent.postMessage({ type: 'SHOPQ_GET_RETURNED_ORDERS' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_GET_RETURNED_ORDERS' }, '*');
 
   // Fetch active deliveries
-  window.parent.postMessage({ type: 'SHOPQ_GET_ACTIVE_DELIVERIES' }, '*');
+  window.parent.postMessage({ type: 'RECLAIM_GET_ACTIVE_DELIVERIES' }, '*');
 });
 
 // Refresh when tab becomes visible (user switches back to Gmail)

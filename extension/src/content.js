@@ -21,10 +21,10 @@ import {
 } from './config.js';
 
 // Prevent multiple initializations - use a global flag
-if (window.__SHOPQ_INITIALIZED__) {
+if (window.__RECLAIM_INITIALIZED__) {
   console.log('Reclaim: Already initialized, skipping duplicate');
 } else {
-  window.__SHOPQ_INITIALIZED__ = true;
+  window.__RECLAIM_INITIALIZED__ = true;
   initReclaim();
 }
 
@@ -364,11 +364,11 @@ class SidebarController {
   _registerMessageHandlers() {
     const ctrl = this;
 
-    this._router.register('SHOPQ_RETURNS_SIDEBAR_READY', async () => {
+    this._router.register('RECLAIM_RETURNS_SIDEBAR_READY', async () => {
       console.log('Reclaim: Returns sidebar iframe ready');
       ctrl._iframeReady = true;
       ctrl.postToSidebar({
-        type: 'SHOPQ_CONFIG_INIT',
+        type: 'RECLAIM_CONFIG_INIT',
         config: {
           DATE_REFRESH_INTERVAL_MS: SIDEBAR_REFRESH_INTERVAL_MS,
           TOAST_DURATION_MS,
@@ -380,36 +380,36 @@ class SidebarController {
       await ctrl._fetchVisibleOrders();
     });
 
-    this._router.register('SHOPQ_GET_ORDERS', async () => {
+    this._router.register('RECLAIM_GET_ORDERS', async () => {
       console.log('Reclaim: Fetching visible orders...');
       await ctrl._fetchVisibleOrders();
     });
 
-    this._router.register('SHOPQ_GET_RETURNED_ORDERS', async () => {
+    this._router.register('RECLAIM_GET_RETURNED_ORDERS', async () => {
       console.log('Reclaim: Fetching returned orders...');
       await ctrl._fetchReturnedOrders();
     });
 
-    this._router.register('SHOPQ_UPDATE_ORDER_STATUS', async (data) => {
+    this._router.register('RECLAIM_UPDATE_ORDER_STATUS', async (data) => {
       console.log('Reclaim: Updating order status:', data.order_key, data.status);
       await ctrl._updateOrderStatus(data.order_key, data.status);
     });
 
-    this._router.register('SHOPQ_ENRICH_ORDER', async (data) => {
+    this._router.register('RECLAIM_ENRICH_ORDER', async (data) => {
       console.log('Reclaim: Enriching order:', data.order_key);
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'ENRICH_ORDER',
           order_key: data.order_key
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_ENRICH_RESULT', ...result });
+        ctrl.postToSidebar({ type: 'RECLAIM_ENRICH_RESULT', ...result });
       } catch (err) {
         console.error('Reclaim: Enrichment failed:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_ENRICH_RESULT', state: 'error', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_ENRICH_RESULT', state: 'error', error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_SET_MERCHANT_RULE', async (data) => {
+    this._router.register('RECLAIM_SET_MERCHANT_RULE', async (data) => {
       console.log('Reclaim: Setting merchant rule:', data.merchant_domain, data.window_days);
       try {
         await chrome.runtime.sendMessage({
@@ -421,27 +421,27 @@ class SidebarController {
           type: 'RECOMPUTE_MERCHANT_DEADLINES',
           merchant_domain: data.merchant_domain
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_MERCHANT_RULE_SET', merchant_domain: data.merchant_domain });
+        ctrl.postToSidebar({ type: 'RECLAIM_MERCHANT_RULE_SET', merchant_domain: data.merchant_domain });
         await ctrl._fetchVisibleOrders();
       } catch (err) {
         console.error('Reclaim: Set merchant rule failed:', err);
       }
     });
 
-    this._router.register('SHOPQ_GET_ORDER', async (data) => {
+    this._router.register('RECLAIM_GET_ORDER', async (data) => {
       console.log('Reclaim: Getting order:', data.order_key);
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'GET_ORDER',
           order_key: data.order_key
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_ORDER_DATA', order: result.order });
+        ctrl.postToSidebar({ type: 'RECLAIM_ORDER_DATA', order: result.order });
       } catch (err) {
         console.error('Reclaim: Get order failed:', err);
       }
     });
 
-    this._router.register('SHOPQ_UPDATE_ORDER_RETURN_DATE', async (data) => {
+    this._router.register('RECLAIM_UPDATE_ORDER_RETURN_DATE', async (data) => {
       console.log('Reclaim: Updating order return date:', data.order_key, data.return_by_date);
       try {
         const result = await chrome.runtime.sendMessage({
@@ -449,47 +449,47 @@ class SidebarController {
           order_key: data.order_key,
           return_by_date: data.return_by_date
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_ORDER_RETURN_DATE_UPDATED', order_key: data.order_key, ...result });
+        ctrl.postToSidebar({ type: 'RECLAIM_ORDER_RETURN_DATE_UPDATED', order_key: data.order_key, ...result });
         await ctrl._fetchVisibleOrders();
       } catch (err) {
         console.error('Reclaim: Failed to update return date:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_ORDER_RETURN_DATE_UPDATED', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_ORDER_RETURN_DATE_UPDATED', error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_CLOSE_SIDEBAR', () => {
+    this._router.register('RECLAIM_CLOSE_SIDEBAR', () => {
       console.log('Reclaim: Closing sidebar');
-      const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
-      if (shopqIcon) {
-        shopqIcon.click();
+      const reclaimIcon = document.querySelector('[data-tooltip="Reclaim"]');
+      if (reclaimIcon) {
+        reclaimIcon.click();
       }
     });
 
-    this._router.register('SHOPQ_RESCAN_EMAILS', async () => {
+    this._router.register('RECLAIM_RESCAN_EMAILS', async () => {
       console.log('Reclaim: Manual rescan requested...');
       try {
         const result = await chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' });
         console.log('Reclaim: Rescan complete:', result);
-        ctrl.postToSidebar({ type: 'SHOPQ_SCAN_COMPLETE', result });
+        ctrl.postToSidebar({ type: 'RECLAIM_SCAN_COMPLETE', result });
         await ctrl._fetchVisibleOrders();
       } catch (err) {
         console.error('Reclaim: Rescan failed:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_SCAN_COMPLETE', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_SCAN_COMPLETE', error: err.message });
       }
     });
 
     // Delivery modal message handlers
-    this._router.register('SHOPQ_GET_USER_ADDRESS', async () => {
+    this._router.register('RECLAIM_GET_USER_ADDRESS', async () => {
       try {
         const result = await chrome.runtime.sendMessage({ type: 'GET_USER_ADDRESS' });
-        ctrl.postToSidebar({ type: 'SHOPQ_USER_ADDRESS', address: result?.address || null });
+        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: result?.address || null });
       } catch (err) {
         console.error('Reclaim: Failed to get user address:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_USER_ADDRESS', address: null });
+        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: null });
       }
     });
 
-    this._router.register('SHOPQ_SET_USER_ADDRESS', async (data) => {
+    this._router.register('RECLAIM_SET_USER_ADDRESS', async (data) => {
       try {
         await chrome.runtime.sendMessage({ type: 'SET_USER_ADDRESS', address: data.address });
       } catch (err) {
@@ -497,20 +497,20 @@ class SidebarController {
       }
     });
 
-    this._router.register('SHOPQ_GET_DELIVERY_LOCATIONS', async (data) => {
+    this._router.register('RECLAIM_GET_DELIVERY_LOCATIONS', async (data) => {
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'GET_DELIVERY_LOCATIONS',
           address: data.address
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_LOCATIONS', locations: result?.locations || [] });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: result?.locations || [] });
       } catch (err) {
         console.error('Reclaim: Failed to get delivery locations:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_LOCATIONS', locations: [], error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: [], error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_GET_DELIVERY_QUOTE', async (data) => {
+    this._router.register('RECLAIM_GET_DELIVERY_QUOTE', async (data) => {
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'GET_DELIVERY_QUOTE',
@@ -518,46 +518,46 @@ class SidebarController {
           pickup_address: data.pickup_address,
           dropoff_location_id: data.dropoff_location_id
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_QUOTE', quote: result?.quote || result, error: result?.error });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', quote: result?.quote || result, error: result?.error });
       } catch (err) {
         console.error('Reclaim: Failed to get delivery quote:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_QUOTE', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_CONFIRM_DELIVERY', async (data) => {
+    this._router.register('RECLAIM_CONFIRM_DELIVERY', async (data) => {
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'CONFIRM_DELIVERY',
           delivery_id: data.delivery_id
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_CONFIRMED', delivery: result?.delivery || result, error: result?.error });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', delivery: result?.delivery || result, error: result?.error });
       } catch (err) {
         console.error('Reclaim: Failed to confirm delivery:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_CONFIRMED', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_CANCEL_DELIVERY', async (data) => {
+    this._router.register('RECLAIM_CANCEL_DELIVERY', async (data) => {
       try {
         const result = await chrome.runtime.sendMessage({
           type: 'CANCEL_DELIVERY',
           delivery_id: data.delivery_id
         });
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_CANCELED', error: result?.error });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: result?.error });
       } catch (err) {
         console.error('Reclaim: Failed to cancel delivery:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_DELIVERY_CANCELED', error: err.message });
+        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: err.message });
       }
     });
 
-    this._router.register('SHOPQ_GET_ACTIVE_DELIVERIES', async () => {
+    this._router.register('RECLAIM_GET_ACTIVE_DELIVERIES', async () => {
       try {
         const result = await chrome.runtime.sendMessage({ type: 'GET_ACTIVE_DELIVERIES' });
-        ctrl.postToSidebar({ type: 'SHOPQ_ACTIVE_DELIVERIES', deliveries: result?.deliveries || [] });
+        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: result?.deliveries || [] });
       } catch (err) {
         console.error('Reclaim: Failed to get active deliveries:', err);
-        ctrl.postToSidebar({ type: 'SHOPQ_ACTIVE_DELIVERIES', deliveries: [] });
+        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: [] });
       }
     });
   }
@@ -566,12 +566,12 @@ class SidebarController {
     try {
       const result = await sendMessageWithTimeout({ type: 'GET_VISIBLE_ORDERS' });
       const orders = result.orders || [];
-      this.postToSidebar({ type: 'SHOPQ_ORDERS_DATA', orders });
+      this.postToSidebar({ type: 'RECLAIM_ORDERS_DATA', orders });
       this._updateExpiringIndicator(orders);
     } catch (err) {
       console.error('Reclaim: Failed to fetch visible orders:', err);
       this.postToSidebar({
-        type: 'SHOPQ_RETURNS_ERROR',
+        type: 'RECLAIM_RETURNS_ERROR',
         message: 'Could not load returns. Check your connection.'
       });
     }
@@ -581,7 +581,7 @@ class SidebarController {
     try {
       const result = await sendMessageWithTimeout({ type: 'GET_RETURNED_ORDERS' });
       const orders = result.orders || [];
-      this.postToSidebar({ type: 'SHOPQ_RETURNED_ORDERS_DATA', orders });
+      this.postToSidebar({ type: 'RECLAIM_RETURNED_ORDERS_DATA', orders });
     } catch (err) {
       console.error('Reclaim: Failed to fetch returned orders:', err);
     }
@@ -594,7 +594,7 @@ class SidebarController {
         order_key: orderKey,
         status: newStatus
       });
-      this.postToSidebar({ type: 'SHOPQ_STATUS_UPDATED', order_key: orderKey, status: newStatus });
+      this.postToSidebar({ type: 'RECLAIM_STATUS_UPDATED', order_key: orderKey, status: newStatus });
       await this._fetchVisibleOrders();
       await this._fetchReturnedOrders();
     } catch (err) {
@@ -603,8 +603,8 @@ class SidebarController {
   }
 
   _updateExpiringIndicator(orders) {
-    const shopqIcon = document.querySelector('[data-tooltip="Reclaim"]');
-    if (!shopqIcon) {
+    const reclaimIcon = document.querySelector('[data-tooltip="Reclaim"]');
+    if (!reclaimIcon) {
       console.log('Reclaim: Could not find sidebar icon for expiring indicator');
       return;
     }
@@ -622,25 +622,25 @@ class SidebarController {
 
     console.log('Reclaim: Expiring returns count:', expiringCount);
 
-    const existingDot = shopqIcon.querySelector('.reclaim-expiring-dot');
+    const existingDot = reclaimIcon.querySelector('.reclaim-expiring-dot');
 
     if (expiringCount > 0) {
-      shopqIcon.classList.add('reclaim-has-expiring');
-      shopqIcon.style.position = 'relative';
+      reclaimIcon.classList.add('reclaim-has-expiring');
+      reclaimIcon.style.position = 'relative';
 
       if (!existingDot) {
         const dot = document.createElement('div');
         dot.className = 'reclaim-expiring-dot';
         dot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         dot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
-        shopqIcon.appendChild(dot);
+        reclaimIcon.appendChild(dot);
         console.log('Reclaim: Added expiring returns indicator');
       } else {
         existingDot.textContent = expiringCount > 9 ? '9+' : expiringCount;
         existingDot.title = `${expiringCount} return${expiringCount > 1 ? 's' : ''} expiring soon`;
       }
     } else {
-      shopqIcon.classList.remove('reclaim-has-expiring');
+      reclaimIcon.classList.remove('reclaim-has-expiring');
       if (existingDot) {
         existingDot.remove();
         console.log('Reclaim: Removed expiring returns indicator');
@@ -710,7 +710,7 @@ async function initializeVisualLayer() {
       if (message.type === 'SCAN_COMPLETE_NOTIFICATION' && sidebarController) {
         console.log('Reclaim: Auto-scan complete, refreshing sidebar');
         sidebarController.postToSidebar({
-          type: 'SHOPQ_SCAN_COMPLETE',
+          type: 'RECLAIM_SCAN_COMPLETE',
           result: { stats: message.stats },
         });
         sidebarController._fetchVisibleOrders();

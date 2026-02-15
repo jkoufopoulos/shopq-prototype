@@ -3,5 +3,5 @@
 window.toggleDemoMode = function () {
   var iframe = document.getElementById('reclaim-returns-iframe');
   if (!iframe) { console.warn('[Reclaim] Sidebar iframe not found'); return; }
-  iframe.contentWindow.postMessage({ type: 'SHOPQ_TOGGLE_DEMO_MODE' }, '*');
+  iframe.contentWindow.postMessage({ type: 'RECLAIM_TOGGLE_DEMO_MODE' }, '*');
 };

@@ -128,7 +128,7 @@ async function resetStats() {
 async function showStats() {
   const stats = await getStats();
 
-  console.log(`📊 ShopQ Stats (v${stats.version || 'unknown'})`);
+  console.log(`📊 Reclaim Stats (v${stats.version || 'unknown'})`);
   console.log(`Total Classified: ${stats.totalClassified}`);
 
   // Phase 3: Show decider breakdown

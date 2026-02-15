@@ -78,37 +78,37 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
  */
 async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATCH) {
   // Search for emails in inbox only
-  // Explicitly exclude each ShopQ label to avoid Gmail API caching issues
+  // Explicitly exclude each Reclaim label to avoid Gmail API caching issues
   // Note: We use explicit label names instead of wildcards because wildcards don't work reliably
-  // This ensures we get ONLY emails that don't have ShopQ labels (Gmail search is source of truth)
-  const shopqLabels = [
-    'ShopQ/Receipts',
-    'ShopQ/Shopping',
-    'ShopQ/Messages',
-    'ShopQ/Work',
-    'ShopQ/Newsletters',
-    'ShopQ/Notifications',
-    'ShopQ/Events',
-    'ShopQ/Finance',
-    'ShopQ/Action-Required',
-    'ShopQ/Digest',
-    'ShopQ/Professional',
-    'ShopQ/Personal'
+  // This ensures we get ONLY emails that don't have Reclaim labels (Gmail search is source of truth)
+  const reclaimLabels = [
+    'Reclaim/Receipts',
+    'Reclaim/Shopping',
+    'Reclaim/Messages',
+    'Reclaim/Work',
+    'Reclaim/Newsletters',
+    'Reclaim/Notifications',
+    'Reclaim/Events',
+    'Reclaim/Finance',
+    'Reclaim/Action-Required',
+    'Reclaim/Digest',
+    'Reclaim/Professional',
+    'Reclaim/Personal'
   ];
 
-  const excludeLabels = shopqLabels.map(l => `-label:${l}`).join(' ');
+  const excludeLabels = reclaimLabels.map(l => `-label:${l}`).join(' ');
   const query = `in:inbox ${excludeLabels}`;
   const encodedQuery = encodeURIComponent(query);
 
   const scopeDescription = maxResults === 0 ? 'all unlabeled messages' : `up to ${maxResults} unlabeled threads`;
-  console.log(`🔍 ShopQ scanning ${scopeDescription} in inbox...`);
+  console.log(`🔍 Reclaim scanning ${scopeDescription} in inbox...`);
 
   if (CONFIG.VERBOSE_LOGGING) {
     console.log('\n' + '='.repeat(80));
     console.log('🔍 GMAIL SEARCH QUERY:');
     console.log('='.repeat(80));
     console.log(`Query: "${query}"`);
-    console.log(`Purpose: Find ALL emails in inbox WITHOUT any ShopQ labels`);
+    console.log(`Purpose: Find ALL emails in inbox WITHOUT any Reclaim labels`);
     console.log(`Strategy: Use messages endpoint to catch new replies to old threads`);
     console.log('='.repeat(80) + '\n');
   }
@@ -240,10 +240,10 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
 
   // Enforce maxResults limit (batch processing may overshoot)
   if (targetThreads > 0 && allEmails.length > targetThreads) {
-    console.log(`📋 ShopQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads, trimming to ${targetThreads}`);
+    console.log(`📋 Reclaim fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads, trimming to ${targetThreads}`);
     allEmails = allEmails.slice(0, targetThreads);
   } else {
-    console.log(`📋 ShopQ fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads`);
+    console.log(`📋 Reclaim fetched ${totalMessagesFetched} messages, deduplicated to ${allEmails.length} threads`);
   }
 
   // DETAILED LOGGING: Show what emails were fetched and what labels they have
@@ -251,9 +251,9 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
     console.log('\n📧 DETAILED EMAIL LIST:');
     console.log('='.repeat(80));
     allEmails.forEach((email, i) => {
-      const hasShopQLabel = (email.labels || []).some(l => l.startsWith('Label_2'));
+      const hasReclaimLabel = (email.labels || []).some(l => l.startsWith('Label_2'));
       const labelStr = (email.labels || []).join(', ');
-      console.log(`[${i+1}/${allEmails.length}] ${hasShopQLabel ? '⚠️  HAS ShopQ?' : '✅'} ${email.from}`);
+      console.log(`[${i+1}/${allEmails.length}] ${hasReclaimLabel ? '⚠️  HAS Reclaim?' : '✅'} ${email.from}`);
       console.log(`        Subject: ${email.subject.substring(0, 60)}...`);
       console.log(`        Labels: ${labelStr || 'NONE'}`);
       console.log(`        ThreadID: ${email.threadId}`);
@@ -270,8 +270,8 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   // Fallback detection: from yourself + "Your Inbox --" subject (old digests)
   const finalFiltered = filteredEmails.filter(email => {
     // Check custom header first (most reliable for new digests)
-    if (email.isShopQDigest) {
-      logVerbose(`🚫 Skipping ShopQ digest (X-ShopQ-Digest header): ${email.subject}`);
+    if (email.isReclaimDigest) {
+      logVerbose(`🚫 Skipping Reclaim digest (X-ShopQ-Digest header): ${email.subject}`);
       return false;
     }
 
@@ -366,7 +366,7 @@ function parseEmailMessage(message) {
   const headers = message.payload.headers;
   const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
   const from = headers.find(h => h.name === 'From')?.value || 'unknown';
-  const isShopQDigest = headers.find(h => h.name === 'X-ShopQ-Digest')?.value === 'true';
+  const isReclaimDigest = headers.find(h => h.name === 'X-ShopQ-Digest')?.value === 'true';
 
   // Extract attachment information
   const attachments = extractAttachments(message.payload);
@@ -378,7 +378,7 @@ function parseEmailMessage(message) {
     from,
     snippet: message.snippet || '',
     labelIds: message.labelIds || [],
-    isShopQDigest,  // Flag to identify digest emails
+    isReclaimDigest,  // Flag to identify digest emails
     timestamp: message.internalDate,  // Gmail's timestamp in milliseconds since epoch
     attachments  // { hasPdf: boolean, pdfFilenames: string[], hasImages: boolean, count: number }
   };
