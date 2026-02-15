@@ -268,7 +268,7 @@ class SidebarController {
       height: 100%;
       border: none;
       display: block;
-      background: #fff;
+      background: transparent;
     `;
     this._panelEl.appendChild(this._iframe);
 

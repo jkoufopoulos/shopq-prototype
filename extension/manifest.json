@@ -77,6 +77,8 @@
         "icons/icon128.png",
         "styles.css",
         "pageWorld.js",
+        "theme.css",
+        "modules/shared/theme.js",
         "returns-sidebar.html",
         "returns-sidebar.css",
         "returns-sidebar-inner.js",

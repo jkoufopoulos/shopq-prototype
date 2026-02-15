@@ -96,6 +96,18 @@ function stopDateRefreshTimer() {
 }
 
 // =============================================================================
+// THEME TOGGLE
+// =============================================================================
+
+async function updateThemeToggle() {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+  const state = await getThemeToggleState();
+  btn.innerHTML = state.icon;
+  btn.title = state.label;
+}
+
+// =============================================================================
 // DOM ELEMENTS
 // =============================================================================
 
@@ -603,9 +615,9 @@ function renderEnrichingState() {
   const enrichSection = document.getElementById('enrich-section');
   if (enrichSection) {
     enrichSection.innerHTML = `
-      <div class="detail-section" style="text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+      <div class="enrich-section enrich-section--loading">
         <div class="spinner" style="margin: 0 auto 8px;"></div>
-        <div style="color: #5f6368;">Checking return policy...</div>
+        <div class="enrich-text">Checking return policy...</div>
       </div>
     `;
   }
@@ -717,15 +729,15 @@ function renderDetailView(order, needsEnrichment) {
   if (needsEnrichment && !ReclaimSidebar.state.isEditingDate) {
     if (ReclaimSidebar.state.isEnriching) {
       enrichSection = `
-        <div id="enrich-section" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; margin-bottom: 20px;">
+        <div id="enrich-section" class="enrich-section enrich-section--loading">
           <div class="spinner" style="margin: 0 auto 8px;"></div>
-          <div style="color: #5f6368; font-size: 13px;">Checking return policy...</div>
+          <div class="enrich-text">Checking return policy...</div>
         </div>
       `;
     } else {
       enrichSection = `
-        <div id="enrich-section" style="text-align: center; padding: 20px; background: #fff3e0; border-radius: 12px; margin-bottom: 20px;">
-          <div style="color: #e65100; margin-bottom: 12px; font-size: 14px;">No return deadline found</div>
+        <div id="enrich-section" class="enrich-section enrich-section--not-found">
+          <div class="enrich-text">No return deadline found</div>
           <button id="set-rule-btn" class="action-btn secondary" style="width: auto; padding: 10px 20px;">
             Set Return Window
           </button>
@@ -1016,15 +1028,7 @@ function renderError(message) {
       <div class="icon">⚠️</div>
       <p><strong>Error</strong></p>
       <p style="font-size: 13px;">${escapeHtml(message)}</p>
-      <button id="retry-btn" style="
-        margin-top: 16px;
-        padding: 8px 16px;
-        background: #1a73e8;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      ">Retry</button>
+      <button id="retry-btn" class="retry-btn">Retry</button>
     </div>
   `;
 
@@ -1286,7 +1290,20 @@ refreshBtn.addEventListener('click', () => {
 // INITIALIZATION
 // =============================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize theme before rendering
+  await initTheme();
+  updateThemeToggle();
+
+  // Theme toggle handler
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', async () => {
+      await cycleTheme();
+      updateThemeToggle();
+    });
+  }
+
   // Signal ready to parent
   window.parent.postMessage({ type: 'RECLAIM_RETURNS_SIDEBAR_READY' }, '*');
 

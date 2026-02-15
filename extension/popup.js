@@ -55,7 +55,7 @@ document.getElementById('scanEmails').addEventListener('click', async () => {
 
     btn.textContent = 'Scanning...';
     status.textContent = 'Checking recent emails for purchases';
-    status.style.color = '#1a73e8';
+    status.style.color = 'var(--rc-accent-primary)';
 
     // Wait a moment then refresh counts
     setTimeout(async () => {
@@ -68,7 +68,7 @@ document.getElementById('scanEmails').addEventListener('click', async () => {
   } catch (error) {
     btn.textContent = 'Error';
     status.textContent = error.message;
-    status.style.color = '#c5221f';
+    status.style.color = 'var(--rc-status-critical-text)';
 
     setTimeout(() => {
       btn.textContent = 'Scan for Purchases';
@@ -93,6 +93,22 @@ document.getElementById('openSidebar').addEventListener('click', async () => {
 
   // Close popup
   window.close();
+});
+
+// Initialize theme
+initTheme().then(async () => {
+  const toggleBtn = document.getElementById('theme-toggle');
+  if (toggleBtn) {
+    const state = await getThemeToggleState();
+    toggleBtn.innerHTML = state.icon;
+    toggleBtn.title = state.label;
+    toggleBtn.addEventListener('click', async () => {
+      await cycleTheme();
+      const newState = await getThemeToggleState();
+      toggleBtn.innerHTML = newState.icon;
+      toggleBtn.title = newState.label;
+    });
+  }
 });
 
 // Initialize

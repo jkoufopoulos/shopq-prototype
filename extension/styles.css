@@ -92,6 +92,40 @@ tr.zA.reclaim-critical-row,
 }
 
 /* =============================================================================
+ * DARK MODE — follows system preference (no manual toggle in Gmail context)
+ * ============================================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .reclaim-badge-type {
+    background-color: #1e3a5f;
+    color: #8ab4f8;
+    border-color: #2d5a8e;
+  }
+
+  .reclaim-badge-critical {
+    background-color: #3c2020;
+    color: #f28b82;
+    border-color: #5a2d2d;
+  }
+
+  tr.zA.reclaim-critical-row,
+  .zA.reclaim-critical-row {
+    border-left: 3px solid #f28b82 !important;
+    background-color: rgba(242, 139, 130, 0.08);
+  }
+
+  /* Sidebar panel backgrounds */
+  .inboxsdk__sidebar_content_panel:has(#reclaim-sidebar-iframe),
+  .inboxsdk__sidebar_content_panel:has(#reclaim-sidebar-iframe) > * {
+    background: #1f1f1f !important;
+  }
+
+  .reclaim-expiring-dot {
+    border-color: #1f1f1f;
+  }
+}
+
+/* =============================================================================
  * EXPIRING RETURNS ALERT - Flashing red indicator on sidebar icon
  * Applied when there are returns expiring soon
  * ============================================================================= */

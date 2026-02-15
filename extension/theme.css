@@ -1,0 +1,153 @@
+/* =============================================================================
+   RECLAIM THEME — CSS Custom Properties
+   Light theme is default (:root). Dark via [data-theme="dark"].
+   ============================================================================= */
+
+:root {
+  /* Surfaces */
+  --rc-bg-primary: #fff;
+  --rc-bg-secondary: #f8f9fa;
+  --rc-bg-tertiary: #f1f3f4;
+
+  /* Text */
+  --rc-text-primary: #202124;
+  --rc-text-secondary: #5f6368;
+  --rc-text-tertiary: #9aa0a6;
+
+  /* Borders */
+  --rc-border-primary: #e0e0e0;
+  --rc-border-medium: #dadce0;
+  --rc-border-focus: #1a73e8;
+
+  /* Hover */
+  --rc-hover-bg: #e8eaed;
+
+  /* Accent */
+  --rc-accent-primary: #1a73e8;
+  --rc-accent-primary-hover: #1557b0;
+  --rc-accent-primary-bg: #e8f0fe;
+  --rc-accent-btn: #4285f4;
+  --rc-accent-btn-hover: #3367d6;
+  --rc-accent-btn-text: white;
+  --rc-accent-btn-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+  --rc-accent-btn-shadow-hover: 0 4px 12px rgba(66, 133, 244, 0.4);
+
+  /* Status — success */
+  --rc-status-success-text: #1e8e3e;
+  --rc-status-success-bg: #e8f5e9;
+
+  /* Status — warning */
+  --rc-status-warning-text: #ea8600;
+  --rc-status-warning-bg: #fef7e0;
+  --rc-status-warning-light-bg: #fff3e0;
+  --rc-status-warning-strong-text: #e65100;
+
+  /* Status — critical */
+  --rc-status-critical-text: #c5221f;
+  --rc-status-critical-bg: #fce8e6;
+  --rc-status-critical-card-bg: #fef7f6;
+
+  /* Urgent badge text (on colored backgrounds) */
+  --rc-urgent-badge-text: white;
+
+  /* Spinner */
+  --rc-spinner-track: #e8eaed;
+  --rc-spinner-active: #1a73e8;
+
+  /* Shadows */
+  --rc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --rc-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --rc-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  /* Toast */
+  --rc-toast-bg: #fff;
+  --rc-toast-text: #1a1a1a;
+  --rc-toast-border: rgba(0, 0, 0, 0.08);
+  --rc-toast-success: #16a34a;
+  --rc-toast-error: #dc2626;
+  --rc-toast-info: #6b7280;
+
+  /* Overlay */
+  --rc-overlay-bg: rgba(0, 0, 0, 0.5);
+
+  /* Secondary button border hover */
+  --rc-border-secondary-hover: #c4c7c9;
+}
+
+/* =============================================================================
+   DARK THEME
+   ============================================================================= */
+
+[data-theme="dark"] {
+  /* Surfaces */
+  --rc-bg-primary: #1f1f1f;
+  --rc-bg-secondary: #292929;
+  --rc-bg-tertiary: #333333;
+
+  /* Text */
+  --rc-text-primary: #e3e3e3;
+  --rc-text-secondary: #9aa0a6;
+  --rc-text-tertiary: #80868b;
+
+  /* Borders */
+  --rc-border-primary: #3c4043;
+  --rc-border-medium: #5f6368;
+  --rc-border-focus: #8ab4f8;
+
+  /* Hover */
+  --rc-hover-bg: #3c4043;
+
+  /* Accent */
+  --rc-accent-primary: #8ab4f8;
+  --rc-accent-primary-hover: #aecbfa;
+  --rc-accent-primary-bg: rgba(138, 180, 248, 0.12);
+  --rc-accent-btn: #8ab4f8;
+  --rc-accent-btn-hover: #aecbfa;
+  --rc-accent-btn-text: #1f1f1f;
+  --rc-accent-btn-shadow: 0 2px 8px rgba(138, 180, 248, 0.2);
+  --rc-accent-btn-shadow-hover: 0 4px 12px rgba(138, 180, 248, 0.3);
+
+  /* Status — success */
+  --rc-status-success-text: #81c995;
+  --rc-status-success-bg: rgba(129, 201, 149, 0.12);
+
+  /* Status — warning */
+  --rc-status-warning-text: #fdd663;
+  --rc-status-warning-bg: rgba(253, 214, 99, 0.12);
+  --rc-status-warning-light-bg: rgba(253, 214, 99, 0.1);
+  --rc-status-warning-strong-text: #fdd663;
+
+  /* Status — critical */
+  --rc-status-critical-text: #f28b82;
+  --rc-status-critical-bg: rgba(242, 139, 130, 0.12);
+  --rc-status-critical-card-bg: rgba(242, 139, 130, 0.08);
+
+  /* Urgent badge text (on colored backgrounds — needs dark text for contrast) */
+  --rc-urgent-badge-text: #1f1f1f;
+
+  /* Spinner */
+  --rc-spinner-track: #3c4043;
+  --rc-spinner-active: #8ab4f8;
+
+  /* Shadows */
+  --rc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --rc-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --rc-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* Toast */
+  --rc-toast-bg: #292929;
+  --rc-toast-text: #e3e3e3;
+  --rc-toast-border: rgba(255, 255, 255, 0.08);
+  --rc-toast-success: #34d399;
+  --rc-toast-error: #f87171;
+  --rc-toast-info: #9ca3af;
+
+  /* Overlay */
+  --rc-overlay-bg: rgba(0, 0, 0, 0.7);
+
+  /* Secondary button border hover */
+  --rc-border-secondary-hover: #5f6368;
+
+  /* Color scheme hint for native elements (inputs, scrollbars) */
+  color-scheme: dark;
+}

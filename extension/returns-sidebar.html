@@ -3,7 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="returns-sidebar.css">
+  <script>
+    // Sync theme before first paint to prevent FOUC.
+    // Sets system preference immediately, then corrects from storage.
+    (function() {
+      var d = document.documentElement;
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        d.setAttribute('data-theme', 'dark');
+      }
+      try {
+        chrome.storage.local.get('reclaim_theme_preference', function(r) {
+          var p = r && r.reclaim_theme_preference;
+          if (p === 'light') d.setAttribute('data-theme', 'light');
+          else if (p === 'dark') d.setAttribute('data-theme', 'dark');
+          // 'system' or absent: already handled by matchMedia above
+        });
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body>
   <!-- Navigation bar -->
@@ -15,6 +34,11 @@
     </button>
     <span class="nav-title">Reclaim</span>
     <div class="nav-actions">
+      <button id="theme-toggle-btn" class="nav-btn" title="Theme: System">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2V4a8 8 0 1 0 0 16z"/>
+        </svg>
+      </button>
       <button id="close-btn" class="nav-btn" title="Close">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -51,6 +75,7 @@
 
   <!-- Load order: inner.js FIRST (creates namespace + utilities),
        then delivery.js (defines delivery modal functions using namespace) -->
+  <script src="modules/shared/theme.js"></script>
   <script src="returns-sidebar-inner.js"></script>
   <script src="returns-sidebar-delivery.js"></script>
 </body>
