@@ -234,6 +234,7 @@ class SidebarController {
     this._panelEl = null;
     this._iframe = null;
     this._iframeReady = false;
+    this._pendingMessages = [];  // Queue for messages sent before iframe is ready
     this._refreshInterval = null;
     this._shouldBeOpen = true;
     this._isNavigating = false;
@@ -243,6 +244,17 @@ class SidebarController {
   postToSidebar(message) {
     if (this._iframeReady && this._iframe?.contentWindow) {
       this._iframe.contentWindow.postMessage(message, this._extensionOrigin);
+    } else {
+      // Queue messages until iframe is ready — prevents lost scan notifications
+      this._pendingMessages.push(message);
+    }
+  }
+
+  _flushPendingMessages() {
+    if (!this._iframeReady || !this._iframe?.contentWindow) return;
+    const pending = this._pendingMessages.splice(0);
+    for (const msg of pending) {
+      this._iframe.contentWindow.postMessage(msg, this._extensionOrigin);
     }
   }
 
@@ -377,6 +389,8 @@ class SidebarController {
           CRITICAL_DAYS,
         }
       });
+      // Flush any scan notifications that arrived before iframe was ready
+      ctrl._flushPendingMessages();
       await ctrl._fetchVisibleOrders();
     });
 
@@ -616,6 +630,48 @@ async function initializeVisualLayer() {
   }, 30000);
   globalDisposeBag.addInterval(contextCheckInterval);
 
+  // Register background scan listener BEFORE InboxSDK loads — the scan can
+  // complete while InboxSDK is still initializing. Messages are queued by
+  // postToSidebar() and flushed when the iframe becomes ready.
+  // If sidebarController doesn't exist yet, we queue the raw messages and
+  // replay them once the controller is initialized.
+  const pendingBackgroundMessages = [];
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type !== 'SCAN_COMPLETE_NOTIFICATION' &&
+        message.type !== 'SCAN_PROGRESS_NOTIFICATION') return;
+
+    if (!sidebarController) {
+      // Controller not ready yet — queue for replay after init
+      pendingBackgroundMessages.push(message);
+      return;
+    }
+
+    handleBackgroundScanMessage(message);
+  });
+
+  function handleBackgroundScanMessage(message) {
+    if (message.type === 'SCAN_COMPLETE_NOTIFICATION') {
+      console.log('Reclaim: Auto-scan complete, refreshing sidebar');
+      sidebarController.postToSidebar({
+        type: 'RECLAIM_SCAN_COMPLETE',
+        result: { stats: message.stats },
+      });
+      sidebarController._fetchVisibleOrders();
+    }
+
+    if (message.type === 'SCAN_PROGRESS_NOTIFICATION') {
+      sidebarController.postToSidebar({
+        type: 'RECLAIM_SCAN_PROGRESS',
+        phase: message.phase,
+        checked: message.checked,
+        processed: message.processed,
+        pending: message.pending,
+        found: message.found,
+      });
+    }
+  }
+
   console.log('Reclaim: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
 
   try {
@@ -628,30 +684,14 @@ async function initializeVisualLayer() {
     sidebarController = new SidebarController(router);
     await sidebarController.init(sdk);
 
-    // Listen for background scan notifications (auto-scans)
-    chrome.runtime.onMessage.addListener((message) => {
-      if (!sidebarController) return;
-
-      if (message.type === 'SCAN_COMPLETE_NOTIFICATION') {
-        console.log('Reclaim: Auto-scan complete, refreshing sidebar');
-        sidebarController.postToSidebar({
-          type: 'RECLAIM_SCAN_COMPLETE',
-          result: { stats: message.stats },
-        });
-        sidebarController._fetchVisibleOrders();
+    // Replay any scan messages that arrived while InboxSDK was loading
+    if (pendingBackgroundMessages.length > 0) {
+      console.log('Reclaim: Replaying', pendingBackgroundMessages.length, 'queued scan messages');
+      for (const msg of pendingBackgroundMessages) {
+        handleBackgroundScanMessage(msg);
       }
-
-      if (message.type === 'SCAN_PROGRESS_NOTIFICATION') {
-        sidebarController.postToSidebar({
-          type: 'RECLAIM_SCAN_PROGRESS',
-          phase: message.phase,
-          checked: message.checked,
-          processed: message.processed,
-          pending: message.pending,
-          found: message.found,
-        });
-      }
-    });
+      pendingBackgroundMessages.length = 0;
+    }
   } catch (error) {
     console.error('Reclaim: Failed to load InboxSDK:', error.message);
     if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {
