@@ -79,7 +79,7 @@ async function runHintsTests() {
   await initializeStorage();
 
   // Create a base order with all lifecycle fields set
-  const order_key = generateOrderKey('test_user', 'amazon.com', 'HINT_TEST_001');
+  const order_key = hashOrderKey('test_user', 'amazon.com', 'HINT_TEST_001');
   const baseOrder = createOrder({
     order_key,
     user_id: 'test_user',
@@ -144,7 +144,7 @@ async function runHintsTests() {
   console.log(HINTS_TEST_PREFIX, '\n--- H-12: Ambiguous Thread ---');
 
   // Create a second order in the same thread (simulating ambiguity)
-  const order_key2 = generateOrderKey('test_user', 'amazon.com', 'HINT_TEST_002');
+  const order_key2 = hashOrderKey('test_user', 'amazon.com', 'HINT_TEST_002');
   const order2 = createOrder({
     order_key: order_key2,
     user_id: 'test_user',

@@ -23,22 +23,6 @@ def _env(new_key: str, old_key: str, default: str) -> str:
 # --- App ---
 APP_VERSION: str = "1.0.0"
 
-# --- Database ---
-DB_POOL_SIZE: int = int(_env("RECLAIM_DB_POOL_SIZE", "SHOPQ_DB_POOL_SIZE", "5"))
-DB_POOL_TIMEOUT: float = float(_env("RECLAIM_DB_POOL_TIMEOUT", "SHOPQ_DB_POOL_TIMEOUT", "5.0"))
-DB_CONNECT_TIMEOUT: float = float(
-    _env("RECLAIM_DB_CONNECT_TIMEOUT", "SHOPQ_DB_CONNECT_TIMEOUT", "30.0")
-)
-DB_TEMP_CONN_MAX: int = int(_env("RECLAIM_DB_TEMP_CONN_MAX", "SHOPQ_DB_TEMP_CONN_MAX", "10"))
-DB_RETRY_MAX: int = int(_env("RECLAIM_DB_RETRY_MAX", "SHOPQ_DB_RETRY_MAX", "5"))
-DB_RETRY_BASE_DELAY: float = float(
-    _env("RECLAIM_DB_RETRY_BASE_DELAY", "SHOPQ_DB_RETRY_BASE_DELAY", "0.1")
-)
-DB_RETRY_MAX_DELAY: float = float(
-    _env("RECLAIM_DB_RETRY_MAX_DELAY", "SHOPQ_DB_RETRY_MAX_DELAY", "2.0")
-)
-DB_RETRY_JITTER: float = float(_env("RECLAIM_DB_RETRY_JITTER", "SHOPQ_DB_RETRY_JITTER", "0.1"))
-
 # --- Extraction Pipeline ---
 PIPELINE_MIN_BODY_CHARS: int = 100
 PIPELINE_BODY_TRUNCATION: int = 4000

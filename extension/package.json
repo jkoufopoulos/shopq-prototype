@@ -2,7 +2,7 @@
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "watch": "webpack --config webpack.config.js --watch",
-    "test": "node tests/utils.test.js && node tests/verifier.test.js && node tests/network.test.js",
+    "test": "node tests/unit/run-unit-tests.js",
     "test:e2e": "node tests/e2e-live.js"
   },
   "devDependencies": {

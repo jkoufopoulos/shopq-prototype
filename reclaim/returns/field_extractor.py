@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
+
 from reclaim.config import (
     PIPELINE_BODY_TRUNCATION,
     PIPELINE_DATE_WINDOW_DAYS,
@@ -362,6 +363,9 @@ Respond with ONLY the JSON."""
         )
         # NOTE: Body content not logged to prevent PII exposure
 
+        # Privacy: Redact PII from body before sending to Gemini
+        body_redacted = redact_pii(body_truncated, max_length=PIPELINE_BODY_TRUNCATION)
+
         # Use the email's received date as "today" so the LLM correctly interprets
         # relative dates like "Delivered today" or "Arriving tomorrow"
         context_date = received_at or datetime.now()
@@ -369,7 +373,7 @@ Respond with ONLY the JSON."""
             today=context_date.strftime("%Y-%m-%d"),
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
-            body=self._sanitize(body_truncated, PIPELINE_BODY_TRUNCATION),
+            body=self._sanitize(body_redacted, PIPELINE_BODY_TRUNCATION),
         )
 
         # Call LLM with retry and timeout (CODE-003, CODE-004)

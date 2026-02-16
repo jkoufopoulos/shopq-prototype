@@ -12,14 +12,16 @@ COPY reclaim/ ./reclaim/
 # Copy config for runtime policy
 COPY config/ ./config/
 
-# Create data directory for SQLite
-RUN mkdir -p /app/reclaim/data
-
 # Set Python path
 ENV PYTHONPATH=/app
 
 # Environment variables (overridden at deploy time)
 ENV RECLAIM_USE_LLM=true
+ENV RECLAIM_ENV=production
+
+# Create non-root user for security
+RUN adduser --disabled-password --no-create-home appuser
+USER appuser
 
 # Expose port
 EXPOSE 8080

@@ -28,11 +28,10 @@ from reclaim.returns.filters import MerchantDomainFilter
 from reclaim.returns.models import ReturnCard, ReturnConfidence
 from reclaim.returns.returnability_classifier import (
     ReturnabilityClassifier,
-    ReturnabilityResult,
 )
-from reclaim.returns.types import ExtractionResult, ExtractionStage, ExtractedFields, FilterResult
+from reclaim.returns.types import ExtractedFields, ExtractionResult, ExtractionStage
 from reclaim.utils.html import html_to_text
-from reclaim.utils.redaction import redact_subject
+from reclaim.utils.redaction import redact, redact_subject
 
 logger = get_logger(__name__)
 
@@ -255,7 +254,9 @@ class ReturnableReceiptExtractor:
         counter("returns.extraction.started")
         # SEC-016: Redact PII from logging
         logger.info(
-            "EXTRACTION START: subject='%s' from='%s'", redact_subject(subject), from_address
+            "EXTRACTION START: subject='%s' from='%s'",
+            redact_subject(subject),
+            redact(from_address),
         )
 
         # =========================================================

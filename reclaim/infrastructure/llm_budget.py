@@ -1,26 +1,27 @@
 """
-LLM Budget Tracking for Reclaim API.
+LLM Budget Tracking for Reclaim API (in-memory, stateless).
 
 SCALE-001: Tracks LLM API usage per user and globally to prevent cost overruns.
+Uses in-memory TTLCache — resets on instance restart (acceptable for abuse prevention).
 
 Budget limits:
-- Per user: 100 LLM calls per day
+- Per user: 500 LLM calls per day
 - Global: 10,000 LLM calls per day
 
 Cost estimates (Gemini Flash):
 - Classifier: ~$0.0001 per call
 - Extractor: ~$0.0002 per call
-- Daily per-user max: ~$0.03
+- Daily per-user max: ~$0.15
 - Daily global max: ~$3.00
 """
 
 from __future__ import annotations
 
-from datetime import date
 from typing import NamedTuple
 
+from cachetools import TTLCache
+
 from reclaim.config import LLM_GLOBAL_DAILY_LIMIT, LLM_USER_DAILY_LIMIT
-from reclaim.infrastructure.database import get_db_connection, retry_on_db_lock
 from reclaim.observability.logging import get_logger
 from reclaim.observability.telemetry import counter
 
@@ -36,6 +37,12 @@ COST_ESTIMATES = {
     "extractor": 0.0002,
 }
 
+# In-memory counters with 24-hour TTL (reset daily)
+_DAY_SECONDS = 86400
+_user_calls: TTLCache[str, int] = TTLCache(maxsize=10000, ttl=_DAY_SECONDS)
+_global_counter: TTLCache[str, int] = TTLCache(maxsize=1, ttl=_DAY_SECONDS)
+_GLOBAL_KEY = "__global__"
+
 
 class BudgetStatus(NamedTuple):
     """Current budget status for a user."""
@@ -48,7 +55,6 @@ class BudgetStatus(NamedTuple):
     reason: str | None
 
 
-@retry_on_db_lock()
 def check_budget(
     user_id: str,
     user_limit: int = DEFAULT_USER_DAILY_LIMIT,
@@ -65,32 +71,9 @@ def check_budget(
     Returns:
         BudgetStatus with current usage and whether call is allowed
     """
-    today = date.today().isoformat()
+    user_calls = _user_calls.get(user_id, 0)
+    global_calls = _global_counter.get(_GLOBAL_KEY, 0)
 
-    with get_db_connection() as conn:
-        # Get user's usage today
-        cursor = conn.execute(
-            """
-            SELECT COALESCE(SUM(call_count), 0) as total
-            FROM llm_usage
-            WHERE user_id = ? AND call_date = ?
-            """,
-            (user_id, today),
-        )
-        user_calls = cursor.fetchone()[0]
-
-        # Get global usage today
-        cursor = conn.execute(
-            """
-            SELECT COALESCE(SUM(call_count), 0) as total
-            FROM llm_usage
-            WHERE call_date = ?
-            """,
-            (today,),
-        )
-        global_calls = cursor.fetchone()[0]
-
-    # Check limits
     if user_calls >= user_limit:
         return BudgetStatus(
             user_calls_today=user_calls,
@@ -121,7 +104,6 @@ def check_budget(
     )
 
 
-@retry_on_db_lock()
 def record_llm_call(
     user_id: str,
     call_type: str = "classifier",
@@ -133,85 +115,11 @@ def record_llm_call(
         user_id: User who made the call
         call_type: Type of call (classifier, extractor)
     """
-    today = date.today().isoformat()
-    estimated_cost = COST_ESTIMATES.get(call_type, 0.0001)
+    # Increment user counter
+    _user_calls[user_id] = _user_calls.get(user_id, 0) + 1
 
-    with get_db_connection() as conn:
-        # Upsert: increment if exists, insert if not
-        conn.execute(
-            """
-            INSERT INTO llm_usage (user_id, call_type, call_date, call_count, estimated_cost)
-            VALUES (?, ?, ?, 1, ?)
-            ON CONFLICT(user_id, call_type, call_date)
-            DO UPDATE SET
-                call_count = call_count + 1,
-                estimated_cost = estimated_cost + ?
-            """,
-            (user_id, call_type, today, estimated_cost, estimated_cost),
-        )
-        conn.commit()
+    # Increment global counter
+    _global_counter[_GLOBAL_KEY] = _global_counter.get(_GLOBAL_KEY, 0) + 1
 
     counter(f"llm.budget.call.{call_type}")
     logger.debug("Recorded LLM call: user=%s, type=%s", user_id, call_type)
-
-
-def get_daily_usage_report(for_date: date | None = None) -> dict:
-    """
-    Get usage report for a specific date.
-
-    Args:
-        for_date: Date to report on (defaults to today)
-
-    Returns:
-        Dict with usage statistics
-    """
-    report_date = (for_date or date.today()).isoformat()
-
-    with get_db_connection() as conn:
-        # Total calls and cost
-        cursor = conn.execute(
-            """
-            SELECT
-                COALESCE(SUM(call_count), 0) as total_calls,
-                COALESCE(SUM(estimated_cost), 0) as total_cost
-            FROM llm_usage
-            WHERE call_date = ?
-            """,
-            (report_date,),
-        )
-        row = cursor.fetchone()
-        total_calls = row[0]
-        total_cost = row[1]
-
-        # Breakdown by call type
-        cursor = conn.execute(
-            """
-            SELECT call_type, SUM(call_count) as calls, SUM(estimated_cost) as cost
-            FROM llm_usage
-            WHERE call_date = ?
-            GROUP BY call_type
-            """,
-            (report_date,),
-        )
-        by_type = {row[0]: {"calls": row[1], "cost": row[2]} for row in cursor.fetchall()}
-
-        # Unique users
-        cursor = conn.execute(
-            """
-            SELECT COUNT(DISTINCT user_id) FROM llm_usage WHERE call_date = ?
-            """,
-            (report_date,),
-        )
-        unique_users = cursor.fetchone()[0]
-
-    return {
-        "date": report_date,
-        "total_calls": total_calls,
-        "total_estimated_cost": round(total_cost, 4),
-        "unique_users": unique_users,
-        "by_type": by_type,
-        "limits": {
-            "user_daily": DEFAULT_USER_DAILY_LIMIT,
-            "global_daily": DEFAULT_GLOBAL_DAILY_LIMIT,
-        },
-    }

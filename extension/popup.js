@@ -50,30 +50,27 @@ document.getElementById('scanEmails').addEventListener('click', async () => {
   status.textContent = '';
 
   try {
-    // Trigger background to scan for purchase emails
-    await chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' });
-
-    btn.textContent = 'Scanning...';
     status.textContent = 'Checking recent emails for purchases';
     status.style.color = 'var(--rc-accent-primary)';
 
-    // Wait a moment then refresh counts
-    setTimeout(async () => {
-      await updateReturnCounts();
-      btn.textContent = 'Scan for Purchases';
-      btn.disabled = false;
+    // Wait for scan to actually complete
+    const result = await chrome.runtime.sendMessage({ type: 'SCAN_FOR_PURCHASES' });
+
+    await updateReturnCounts();
+    btn.textContent = 'Scan for Purchases';
+    btn.disabled = false;
+
+    if (result && result.success === false) {
+      status.textContent = result.error || 'Scan failed';
+      status.style.color = 'var(--rc-status-critical-text)';
+    } else {
       status.textContent = 'Scan complete';
-    }, 3000);
-
+    }
   } catch (error) {
-    btn.textContent = 'Error';
-    status.textContent = error.message;
+    btn.textContent = 'Scan for Purchases';
+    btn.disabled = false;
+    status.textContent = error.message || 'Scan failed';
     status.style.color = 'var(--rc-status-critical-text)';
-
-    setTimeout(() => {
-      btn.textContent = 'Scan for Purchases';
-      btn.disabled = false;
-    }, 2000);
   }
 });
 
@@ -114,11 +111,3 @@ initTheme().then(async () => {
 // Initialize
 updateReturnCounts();
 
-// Close popup when mouse leaves (with small delay)
-let closeTimeout;
-document.body.addEventListener('mouseleave', () => {
-  closeTimeout = setTimeout(() => window.close(), 500);
-});
-document.body.addEventListener('mouseenter', () => {
-  clearTimeout(closeTimeout);
-});

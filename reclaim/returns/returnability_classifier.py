@@ -271,10 +271,15 @@ Respond with ONLY the JSON, no other text."""
 
     def _build_prompt(self, from_address: str, subject: str, snippet: str) -> str:
         """Build classification prompt with sanitized inputs."""
+        from reclaim.utils.redaction import redact_pii
+
         # Sanitize inputs to prevent prompt injection
         subject = self._sanitize(subject, max_length=200)
         from_address = self._sanitize(from_address, max_length=100)
         snippet = self._sanitize(snippet, max_length=2000)
+
+        # Privacy: Redact PII from snippet before sending to Gemini
+        snippet = redact_pii(snippet, max_length=2000)
 
         return self.PROMPT_TEMPLATE.format(
             subject=subject,

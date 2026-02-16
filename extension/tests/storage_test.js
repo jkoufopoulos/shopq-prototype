@@ -42,7 +42,7 @@ async function runStorageTests() {
 
   // Test 2: Create an Order
   console.log(TEST_PREFIX, '\n--- Test 2: Create Order ---');
-  const order_key = generateOrderKey('test_user', 'amazon.com', 'ORDER-123');
+  const order_key = hashOrderKey('test_user', 'amazon.com', 'ORDER-123');
   const order1 = createOrder({
     order_key,
     user_id: 'test_user',
@@ -92,7 +92,7 @@ async function runStorageTests() {
 
   // Test 7: Create second order (for merge test)
   console.log(TEST_PREFIX, '\n--- Test 7: Create Second Order ---');
-  const order_key2 = generateOrderKey('test_user', 'amazon.com', '1Z999AA10123456799');
+  const order_key2 = hashOrderKey('test_user', 'amazon.com', '1Z999AA10123456799');
   const order2 = createOrder({
     order_key: order_key2,
     user_id: 'test_user',

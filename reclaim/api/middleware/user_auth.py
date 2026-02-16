@@ -86,7 +86,7 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
             ) from e
 
         if token_response.status_code != 200:
-            logger.warning("Invalid token: %s", token_response.text)
+            logger.warning("Invalid token (HTTP %d)", token_response.status_code)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired token",
@@ -139,7 +139,7 @@ async def verify_google_token(token: str) -> AuthenticatedUser:
             ) from e
 
         if userinfo_response.status_code != 200:
-            logger.warning("Failed to get user info: %s", userinfo_response.text)
+            logger.warning("Failed to get user info (HTTP %d)", userinfo_response.status_code)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Failed to retrieve user information",

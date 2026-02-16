@@ -168,12 +168,13 @@ function containsAmount(text) {
 }
 
 /**
- * Extract amount from text if present.
+ * Extract a dollar amount from subject/snippet text.
+ * Used by classifier for quick purchase confirmation heuristic.
  *
  * @param {string} text
  * @returns {number|null}
  */
-function extractAmount(text) {
+function classifierExtractAmount(text) {
   if (!text) return null;
 
   // Try to match dollar amounts
@@ -270,7 +271,7 @@ function isPurchaseConfirmed(subject, snippet, has_order_id = false) {
 function classifyEmail(subject, snippet, has_order_id = false) {
   const email_type = classifyEmailType(subject, snippet);
   const purchase_confirmed = isPurchaseConfirmed(subject, snippet, has_order_id);
-  const amount = extractAmount(`${subject || ''} ${snippet || ''}`);
+  const amount = classifierExtractAmount(`${subject || ''} ${snippet || ''}`);
 
   console.log(CLASSIFIER_LOG_PREFIX, 'Classified:',
     'type=', email_type,

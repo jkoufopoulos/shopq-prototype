@@ -5,24 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="returns-sidebar.css">
-  <script>
-    // Sync theme before first paint to prevent FOUC.
-    // Sets system preference immediately, then corrects from storage.
-    (function() {
-      var d = document.documentElement;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        d.setAttribute('data-theme', 'dark');
-      }
-      try {
-        chrome.storage.local.get('reclaim_theme_preference', function(r) {
-          var p = r && r.reclaim_theme_preference;
-          if (p === 'light') d.setAttribute('data-theme', 'light');
-          else if (p === 'dark') d.setAttribute('data-theme', 'dark');
-          // 'system' or absent: already handled by matchMedia above
-        });
-      } catch(e) {}
-    })();
-  </script>
+  <script src="theme-sync.js"></script>
 </head>
 <body>
   <!-- Navigation bar -->
@@ -73,10 +56,7 @@
     </button>
   </div>
 
-  <!-- Load order: inner.js FIRST (creates namespace + utilities),
-       then delivery.js (defines delivery modal functions using namespace) -->
   <script src="modules/shared/theme.js"></script>
   <script src="returns-sidebar-inner.js"></script>
-  <script src="returns-sidebar-delivery.js"></script>
 </body>
 </html>
