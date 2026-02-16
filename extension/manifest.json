@@ -4,10 +4,12 @@
   "version": "1.0.0",
   "description": "Track return windows on your online purchases. Never miss a return deadline again.",
 
+  "minimum_chrome_version": "116",
+  "homepage_url": "https://github.com/jkoufopoulos/shopq-prototype",
+
   "permissions": [
     "identity",
     "storage",
-    "unlimitedStorage",
     "tabs",
     "scripting",
     "notifications",

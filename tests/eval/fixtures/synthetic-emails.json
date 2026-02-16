@@ -1,0 +1,1137 @@
+[
+  {
+    "id": "syn-amazon-001",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order #112-1000001-2000001",
+    "body": "Thank you for your order!\n\nOrder #112-1000001-2000001\nItem: Wireless Bluetooth Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Amazon.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000001-2000001",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-002",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #112-1000002-2000002\nItem: Wireless Bluetooth Headphones\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at amazon.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000002-2000002",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-003",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #112-1000003-2000003\nItem: Wireless Bluetooth Headphones\nDelivered: January 20, 2026\n\nThank you for shopping with Amazon.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000003-2000003",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-target-004",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order #101000004",
+    "body": "Thank you for your order!\n\nOrder #101000004\nItem: KitchenAid Stand Mixer\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Target.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": true,
+      "order_number": "101000004",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-target-005",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #101000005\nItem: KitchenAid Stand Mixer\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at target.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": true,
+      "order_number": "101000005",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-target-006",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #101000006\nItem: KitchenAid Stand Mixer\nDelivered: January 20, 2026\n\nThank you for shopping with Target.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": true,
+      "order_number": "101000006",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-walmart-007",
+    "from_address": "help@walmart.com",
+    "subject": "Your Walmart order #2001000007-2000007",
+    "body": "Thank you for your order!\n\nOrder #2001000007-2000007\nItem: Samsung 55\" 4K TV\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Walmart.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "walmart.com",
+      "has_order_number": true,
+      "order_number": "2001000007-2000007",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-walmart-008",
+    "from_address": "help@walmart.com",
+    "subject": "Your Walmart order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #2001000008-2000008\nItem: Samsung 55\" 4K TV\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at walmart.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "walmart.com",
+      "has_order_number": true,
+      "order_number": "2001000008-2000008",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-walmart-009",
+    "from_address": "help@walmart.com",
+    "subject": "Your Walmart order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #2001000009-2000009\nItem: Samsung 55\" 4K TV\nDelivered: January 20, 2026\n\nThank you for shopping with Walmart.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "walmart.com",
+      "has_order_number": true,
+      "order_number": "2001000009-2000009",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nike-010",
+    "from_address": "info@nike.com",
+    "subject": "Your Nike order #C1000010",
+    "body": "Thank you for your order!\n\nOrder #C1000010\nItem: Air Max 90 Running Shoes\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nike.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": true,
+      "order_number": "C1000010",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nike-011",
+    "from_address": "info@nike.com",
+    "subject": "Your Nike order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #C1000011\nItem: Air Max 90 Running Shoes\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at nike.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": true,
+      "order_number": "C1000011",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nike-012",
+    "from_address": "info@nike.com",
+    "subject": "Your Nike order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #C1000012\nItem: Air Max 90 Running Shoes\nDelivered: January 20, 2026\n\nThank you for shopping with Nike.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": true,
+      "order_number": "C1000012",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-apple-013",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your Apple order #W1000013",
+    "body": "Thank you for your order!\n\nOrder #W1000013\nItem: AirPods Pro (2nd gen)\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Apple.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "apple.com",
+      "has_order_number": true,
+      "order_number": "W1000013",
+      "has_return_date": true,
+      "return_window_days": 14,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "apple",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-apple-014",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your Apple order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #W1000014\nItem: AirPods Pro (2nd gen)\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at apple.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "apple.com",
+      "has_order_number": true,
+      "order_number": "W1000014",
+      "has_return_date": true,
+      "return_window_days": 14,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "apple",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-apple-015",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your Apple order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #W1000015\nItem: AirPods Pro (2nd gen)\nDelivered: January 20, 2026\n\nThank you for shopping with Apple.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "apple.com",
+      "has_order_number": true,
+      "order_number": "W1000015",
+      "has_return_date": true,
+      "return_window_days": 14,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "apple",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-zappos-016",
+    "from_address": "cs@zappos.com",
+    "subject": "Your Zappos order #114-1000016",
+    "body": "Thank you for your order!\n\nOrder #114-1000016\nItem: New Balance 990v5 Sneakers\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Zappos.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zappos.com",
+      "has_order_number": true,
+      "order_number": "114-1000016",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "zappos",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-zappos-017",
+    "from_address": "cs@zappos.com",
+    "subject": "Your Zappos order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #114-1000017\nItem: New Balance 990v5 Sneakers\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at zappos.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zappos.com",
+      "has_order_number": true,
+      "order_number": "114-1000017",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "zappos",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-zappos-018",
+    "from_address": "cs@zappos.com",
+    "subject": "Your Zappos order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #114-1000018\nItem: New Balance 990v5 Sneakers\nDelivered: January 20, 2026\n\nThank you for shopping with Zappos.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zappos.com",
+      "has_order_number": true,
+      "order_number": "114-1000018",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "zappos",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nordstrom-019",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Your Nordstrom order #31000019",
+    "body": "Thank you for your order!\n\nOrder #31000019\nItem: Cashmere Sweater - Navy\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nordstrom.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000019",
+      "has_return_date": true,
+      "return_window_days": 40,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nordstrom-020",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Your Nordstrom order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #31000020\nItem: Cashmere Sweater - Navy\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at nordstrom.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000020",
+      "has_return_date": true,
+      "return_window_days": 40,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nordstrom-021",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Your Nordstrom order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #31000021\nItem: Cashmere Sweater - Navy\nDelivered: January 20, 2026\n\nThank you for shopping with Nordstrom.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000021",
+      "has_return_date": true,
+      "return_window_days": 40,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-bestbuy-022",
+    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
+    "subject": "Your Best Buy order #BBY01-1000022",
+    "body": "Thank you for your order!\n\nOrder #BBY01-1000022\nItem: Sony WH-1000XM5 Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Best Buy.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "bestbuy.com",
+      "has_order_number": true,
+      "order_number": "BBY01-1000022",
+      "has_return_date": true,
+      "return_window_days": 15,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "bestbuy",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-bestbuy-023",
+    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
+    "subject": "Your Best Buy order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #BBY01-1000023\nItem: Sony WH-1000XM5 Headphones\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at best buy.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "bestbuy.com",
+      "has_order_number": true,
+      "order_number": "BBY01-1000023",
+      "has_return_date": true,
+      "return_window_days": 15,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "bestbuy",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-bestbuy-024",
+    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
+    "subject": "Your Best Buy order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #BBY01-1000024\nItem: Sony WH-1000XM5 Headphones\nDelivered: January 20, 2026\n\nThank you for shopping with Best Buy.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "bestbuy.com",
+      "has_order_number": true,
+      "order_number": "BBY01-1000024",
+      "has_return_date": true,
+      "return_window_days": 15,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "bestbuy",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-etsy-025",
+    "from_address": "transaction@etsy.com",
+    "subject": "Your Etsy order #1000025",
+    "body": "Thank you for your order!\n\nOrder #1000025\nItem: Handmade Ceramic Vase\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Etsy.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "etsy.com",
+      "has_order_number": true,
+      "order_number": "1000025",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "etsy",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-etsy-026",
+    "from_address": "transaction@etsy.com",
+    "subject": "Your Etsy order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #1000026\nItem: Handmade Ceramic Vase\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at etsy.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "etsy.com",
+      "has_order_number": true,
+      "order_number": "1000026",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "etsy",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-etsy-027",
+    "from_address": "transaction@etsy.com",
+    "subject": "Your Etsy order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #1000027\nItem: Handmade Ceramic Vase\nDelivered: January 20, 2026\n\nThank you for shopping with Etsy.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "etsy.com",
+      "has_order_number": true,
+      "order_number": "1000027",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "etsy",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-allbirds-028",
+    "from_address": "hello@allbirds.com",
+    "subject": "Your Allbirds order #AB-1000028",
+    "body": "Thank you for your order!\n\nOrder #AB-1000028\nItem: Tree Runners - Natural White\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Allbirds.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "allbirds.com",
+      "has_order_number": true,
+      "order_number": "AB-1000028",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "allbirds",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-allbirds-029",
+    "from_address": "hello@allbirds.com",
+    "subject": "Your Allbirds order has shipped",
+    "body": "Great news! Your order has shipped.\n\nOrder #AB-1000029\nItem: Tree Runners - Natural White\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at allbirds.com/track",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "allbirds.com",
+      "has_order_number": true,
+      "order_number": "AB-1000029",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "allbirds",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-allbirds-030",
+    "from_address": "hello@allbirds.com",
+    "subject": "Your Allbirds order has been delivered",
+    "body": "Your package has been delivered!\n\nOrder #AB-1000030\nItem: Tree Runners - Natural White\nDelivered: January 20, 2026\n\nThank you for shopping with Allbirds.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "allbirds.com",
+      "has_order_number": true,
+      "order_number": "AB-1000030",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "allbirds",
+      "delivery_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-031",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order",
+    "body": "Thank you for your order!\n\nItem: Wireless Bluetooth Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Amazon.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "order_confirmation",
+      "without_order_number"
+    ]
+  },
+  {
+    "id": "syn-target-032",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order",
+    "body": "Thank you for your order!\n\nItem: KitchenAid Stand Mixer\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Target.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "order_confirmation",
+      "without_order_number"
+    ]
+  },
+  {
+    "id": "syn-nike-033",
+    "from_address": "info@nike.com",
+    "subject": "Your Nike order",
+    "body": "Thank you for your order!\n\nItem: Air Max 90 Running Shoes\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nike.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "order_confirmation",
+      "without_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-034",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order #112-1000034-2000034",
+    "body": "Thank you for your order!\n\nOrder #112-1000034-2000034\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by February 19, 2026.\nTo start a return, visit amazon.com/returns",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000034-2000034",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "exact",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "order_confirmation",
+      "explicit_return_date",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-zappos-035",
+    "from_address": "cs@zappos.com",
+    "subject": "Your Zappos order #114-1000035",
+    "body": "Thank you for your order!\n\nOrder #114-1000035\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by January 20, 2027.\nTo start a return, visit zappos.com/returns",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zappos.com",
+      "has_order_number": true,
+      "order_number": "114-1000035",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "exact",
+      "must_not": []
+    },
+    "tags": [
+      "zappos",
+      "order_confirmation",
+      "explicit_return_date",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-nordstrom-036",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Your Nordstrom order #31000036",
+    "body": "Thank you for your order!\n\nOrder #31000036\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by March 01, 2026.\nTo start a return, visit nordstrom.com/returns",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000036",
+      "has_return_date": true,
+      "return_window_days": 40,
+      "confidence": "exact",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "order_confirmation",
+      "explicit_return_date",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-bestbuy-037",
+    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
+    "subject": "Your Best Buy order #BBY01-1000037",
+    "body": "",
+    "body_html": "<html><body><h1>Order Confirmation</h1><p>Thank you for your order!</p><table><tr><td>Order</td><td>#BBY01-1000037</td></tr><tr><td>Item</td><td>Cotton T-Shirt - Blue, Large</td></tr><tr><td>Date</td><td>January 15, 2026</td></tr><tr><td>Total</td><td>$34.99</td></tr></table><p>Estimated delivery: January 20, 2026</p></body></html>",
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "bestbuy.com",
+      "has_order_number": true,
+      "order_number": "BBY01-1000037",
+      "has_return_date": true,
+      "return_window_days": 15,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "bestbuy",
+      "html_only",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-walmart-038",
+    "from_address": "help@walmart.com",
+    "subject": "Your Walmart order #2001000038-2000038",
+    "body": "",
+    "body_html": "<html><body><h1>Order Confirmation</h1><p>Thank you for your order!</p><table><tr><td>Order</td><td>#2001000038-2000038</td></tr><tr><td>Item</td><td>Cotton T-Shirt - Blue, Large</td></tr><tr><td>Date</td><td>January 15, 2026</td></tr><tr><td>Total</td><td>$34.99</td></tr></table><p>Estimated delivery: January 20, 2026</p></body></html>",
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "walmart.com",
+      "has_order_number": true,
+      "order_number": "2001000038-2000038",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "html_only",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-039",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order #112-1000039-2000039 - 3 items",
+    "body": "Thank you for your order!\n\nOrder #112-1000039-2000039\n\nItems:\n  1. Wireless Mouse - Black ($29.99)\n  2. USB-C Hub Adapter ($49.99)\n  3. Laptop Stand - Silver ($39.99)\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nSubtotal: $119.97\nTax: $9.60\nTotal: $129.57\n\nThank you for shopping with Amazon.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000039-2000039",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "order_confirmation",
+      "multi_item",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-target-040",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order #101000040 - 3 items",
+    "body": "Thank you for your order!\n\nOrder #101000040\n\nItems:\n  1. Wireless Mouse - Black ($29.99)\n  2. USB-C Hub Adapter ($49.99)\n  3. Laptop Stand - Silver ($39.99)\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nSubtotal: $119.97\nTax: $9.60\nTotal: $129.57\n\nThank you for shopping with Target.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": true,
+      "order_number": "101000040",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "order_confirmation",
+      "multi_item",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-edge-newsletter-041",
+    "from_address": "deals@amazon.com",
+    "subject": "This week's deals you don't want to miss!",
+    "body": "SALE! Up to 50% off selected items.\n\nShop now at our biggest sale of the year.\nFree shipping on orders over $50.\n\nUnsubscribe | View in browser",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "newsletter",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-newsletter-042",
+    "from_address": "deals@target.com",
+    "subject": "This week's deals you don't want to miss!",
+    "body": "SALE! Up to 50% off selected items.\n\nShop now at our biggest sale of the year.\nFree shipping on orders over $50.\n\nUnsubscribe | View in browser",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "newsletter",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-marketing-043",
+    "from_address": "hello@shopify.com",
+    "subject": "Grow your business with Shopify",
+    "body": "Start your free trial today.\n\nJoin millions of entrepreneurs who trust Shopify.\nNo credit card required.\n\nStart Free Trial",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "shopify.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "marketing",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-subscription-044",
+    "from_address": "no-reply@netflix.com",
+    "subject": "Your Netflix payment receipt",
+    "body": "Payment Confirmation\n\nAmount: $15.49\nPlan: Standard\nBilling Date: January 15, 2026\nNext Billing Date: February 15, 2026\n\nManage your subscription at netflix.com/account",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "netflix.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-digital-045",
+    "from_address": "noreply@steampowered.com",
+    "subject": "Thank you for your purchase!",
+    "body": "Thank you for your purchase on Steam!\n\nGame: Cyberpunk 2077\nPrice: $59.99\nDate: January 15, 2026\n\nDownload now from your Steam library.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "steampowered.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "digital",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-cancellation-046",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your order #112-1234567-7654321 has been cancelled",
+    "body": "Your order has been cancelled.\n\nOrder #112-1234567-7654321\nItem: Wireless Bluetooth Headphones\n\nYour order was cancelled as requested. If you were charged, a refund will be issued within 3-5 business days.\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1234567-7654321",
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "cancellation",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-ride-047",
+    "from_address": "no-reply@uber.com",
+    "subject": "Your trip receipt from Uber",
+    "body": "Thanks for riding with Uber\n\nTrip: Downtown to Airport\nDate: January 15, 2026\nTotal: $32.45\nPayment: Visa ending in 4242\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "uber.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "service",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-food-048",
+    "from_address": "no-reply@doordash.com",
+    "subject": "Your DoorDash order is confirmed",
+    "body": "Your order from Chipotle is confirmed!\n\nItems:\n  Burrito Bowl ($11.50)\n  Chips and Guac ($4.25)\n\nTotal: $15.75\nEstimated Delivery: 30-40 minutes\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "doordash.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "food_delivery",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-international-049",
+    "from_address": "order@asos.com",
+    "subject": "Your ASOS order #987654321 has been dispatched",
+    "body": "Your order has been dispatched!\n\nOrder #987654321\nItem: Oversized Denim Jacket - Size M\nDispatched: January 17, 2026\nEstimated Delivery: January 24, 2026\nTotal: $89.00\n\nFree returns within 28 days of delivery.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "asos.com",
+      "has_order_number": true,
+      "order_number": "987654321",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "international",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-amazon-050",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon order has been placed",
+    "body": "Thanks for your order!\n\nYour order has been placed. We'll send tracking info once it ships.\n\nThank you for shopping with Amazon.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "empty_card",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-target-051",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target order has been placed",
+    "body": "Thanks for your order!\n\nYour order has been placed. We'll send tracking info once it ships.\n\nThank you for shopping with Target.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "edge_case",
+      "empty_card",
+      "should_reject"
+    ]
+  }
+]

@@ -1,6 +1,6 @@
 # Privacy Policy for Reclaim
 
-**Last Updated:** February 7, 2026
+**Last Updated:** February 15, 2026
 
 Reclaim ("we", "our", or "the extension") is a browser extension that helps you track return windows on online purchases. This privacy policy explains what data we collect, how we use it, and your rights.
 
@@ -8,7 +8,8 @@ Reclaim ("we", "our", or "the extension") is a browser extension that helps you 
 
 - We read your Gmail to find order confirmation emails
 - We extract order details (merchant, items, dates) to calculate return deadlines
-- Data is stored locally on your device and on our secure servers
+- **All order data is stored locally in your browser** — nothing is saved on any server
+- Email content from purchase-related emails is sent to Google's Gemini AI for analysis. Content is processed in real-time and not stored on any server.
 - We never sell your data or show you ads
 - You can delete your data at any time
 
@@ -30,7 +31,7 @@ We do **NOT** collect:
 - Emails you send
 
 ### Account Information
-- Your Google account email address (for user identification)
+- Your Google account email address (for authentication)
 - No passwords are ever collected or stored
 
 ### Usage Data
@@ -41,9 +42,9 @@ We do **NOT** collect:
 
 ## How We Use Your Data
 
-1. **Calculate return deadlines** - We analyze order emails to determine when return windows expire
-2. **Send reminders** - We notify you before return deadlines pass
-3. **Improve the service** - Anonymized usage data helps us fix bugs and add features
+1. **Calculate return deadlines** — We analyze order emails to determine when return windows expire
+2. **Send reminders** — We notify you before return deadlines pass
+3. **Improve the service** — Anonymized usage data helps us fix bugs and add features
 
 We do **NOT**:
 - Sell your data to third parties
@@ -55,30 +56,30 @@ We do **NOT**:
 
 ## Where Data Is Stored
 
-### On Your Device
-- Order information is cached locally in your browser's storage
-- This data never leaves your device unless you use our sync features
+### On Your Device (Primary Storage)
+All extracted order data — return cards, merchant details, deadlines, and order metadata — is stored locally in your browser using `chrome.storage.local`. This data never leaves your device except during email processing (described below).
 
-### On Our Servers
-- Order metadata is stored on Google Cloud Run (US region)
-- Data is encrypted in transit (TLS 1.3) and at rest
-- Servers are secured with Google Cloud's enterprise security
+### Transient Server Processing
+When scanning emails, the extension sends email content to our backend server for AI-powered extraction. The server:
+- Receives email content, processes it through the extraction pipeline, and returns structured order data
+- **Does not store any email content or order data** — processing is entirely transient
+- Runs on Google Cloud Run (US region) with TLS 1.3 encryption in transit
 
 ### Third-Party Services
 
-| Service | Purpose | Data Shared |
-|---------|---------|-------------|
-| Google Gmail API | Read order emails | Email content (read-only) |
-| Google Gemini API | Extract order details | Email text for processing |
-| Google Cloud Run | Store order data | Order metadata |
+| Service | Purpose | Data Shared | Retention |
+|---------|---------|-------------|-----------|
+| Google Gmail API | Read order emails | Email content (read-only access) | None — read in real-time |
+| Google Gemini AI | Extract order details from email text | Email text sent for processing | None — processed transiently, not stored |
+| Google Cloud Run | Host extraction API | Email text passed through for processing | None — stateless, no data persisted |
 
 ---
 
 ## Data Retention
 
-- **Active orders**: Kept until 90 days after return window expires
-- **Expired orders**: Automatically deleted after 90 days
-- **Account deletion**: All data deleted within 30 days of request
+- **Local data**: Kept in your browser until you clear it or uninstall the extension
+- **Server-side**: No data is retained — all processing is transient
+- **Account deletion**: Clear all local data from Settings > Clear Data, then revoke Gmail access
 
 ---
 
@@ -86,10 +87,9 @@ We do **NOT**:
 
 You have the right to:
 
-1. **Access your data** - View all data we have about you in the extension
-2. **Delete your data** - Remove all stored data from Settings > Clear Data
-3. **Export your data** - Download your order history (coming soon)
-4. **Revoke access** - Disconnect Gmail access from your Google Account settings
+1. **Access your data** — View all data we have about you in the extension sidebar
+2. **Delete your data** — Remove all stored data from Settings > Clear Data
+3. **Revoke access** — Disconnect Gmail access from your Google Account settings
 
 ### How to Delete Your Data
 
@@ -113,7 +113,7 @@ Reclaim is not intended for users under 13 years of age. We do not knowingly col
 
 ## Changes to This Policy
 
-We may update this privacy policy from time to time. We will notify you of significant changes through the extension or by email.
+We may update this privacy policy from time to time. We will notify you of significant changes through the extension.
 
 ---
 
@@ -121,8 +121,7 @@ We may update this privacy policy from time to time. We will notify you of signi
 
 For privacy questions or data requests:
 
-- **Email**: privacy@[your-domain].com
-- **GitHub**: https://github.com/jkoufopoulos/shopq-prototype/issues
+- **GitHub Issues**: https://github.com/jkoufopoulos/shopq-prototype/issues
 
 ---
 
@@ -147,5 +146,5 @@ EU residents have additional rights under GDPR:
 
 **Legal Basis for Processing**: Legitimate interest (providing the service you requested)
 
-**Data Controller**: [Your name/company]
-**Contact**: privacy@[your-domain].com
+**Data Controller**: Justin Koufopoulos
+**Contact**: https://github.com/jkoufopoulos/shopq-prototype/issues

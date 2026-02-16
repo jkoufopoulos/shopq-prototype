@@ -157,6 +157,13 @@ playwright-report/
 # Keep test structure
 !tests/
 !reclaim/tests/
+
+# Eval reports (generated per run, not committed)
+tests/eval/reports/*.json
+
+# Keep eval fixtures and report directory
+!tests/eval/fixtures/*.json
+!tests/eval/reports/.gitkeep
 tests/__pycache__/
 tests/*.pyc
 reclaim/tests/__pycache__/

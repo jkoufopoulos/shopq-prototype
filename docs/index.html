@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reclaim - Privacy Policy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fafafa;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+    .updated {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 36px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    p, li { font-size: 15px; color: #333; }
+    p { margin-bottom: 12px; }
+    ul, ol { margin-left: 24px; margin-bottom: 12px; }
+    li { margin-bottom: 4px; }
+    strong { color: #1a1a1a; }
+    a { color: #1a73e8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .summary {
+      background: #e8f0fe;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .summary ul { margin-bottom: 0; }
+    .summary li { color: #1a1a1a; }
+    .gemini-notice {
+      background: #fef7e0;
+      border-left: 4px solid #f9ab00;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      border-radius: 0 6px 6px 0;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+    }
+    th { background: #f5f5f5; font-weight: 600; }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 32px 0; }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy for Reclaim</h1>
+    <p class="updated">Last Updated: February 15, 2026</p>
+
+    <p>Reclaim is a browser extension that helps you track return windows on online purchases. This privacy policy explains what data we collect, how we use it, and your rights.</p>
+
+    <div class="summary">
+      <ul>
+        <li>We read your Gmail to find order confirmation emails</li>
+        <li>We extract order details (merchant, items, dates) to calculate return deadlines</li>
+        <li><strong>All order data is stored locally in your browser</strong> &mdash; nothing is saved on any server</li>
+        <li>We never sell your data or show you ads</li>
+        <li>You can delete your data at any time</li>
+      </ul>
+    </div>
+
+    <div class="gemini-notice">
+      <strong>AI Processing Disclosure:</strong> Email content from purchase-related emails is sent to Google's Gemini AI for analysis. Content is processed in real-time and not stored on any server.
+    </div>
+
+    <hr>
+
+    <h2>What Data We Collect</h2>
+
+    <h3>Email Data</h3>
+    <p>When you use Reclaim, we access your Gmail to find purchase-related emails. We collect:</p>
+    <ul>
+      <li><strong>Email metadata:</strong> Subject line, sender, date received</li>
+      <li><strong>Order information:</strong> Merchant name, items purchased, order numbers, delivery dates</li>
+      <li><strong>Return policy details:</strong> Return deadlines extracted from emails</li>
+    </ul>
+    <p>We do <strong>NOT</strong> collect:</p>
+    <ul>
+      <li>Email content unrelated to purchases</li>
+      <li>Attachments</li>
+      <li>Your contacts or address book</li>
+      <li>Emails you send</li>
+    </ul>
+
+    <h3>Account Information</h3>
+    <ul>
+      <li>Your Google account email address (for authentication)</li>
+      <li>No passwords are ever collected or stored</li>
+    </ul>
+
+    <h3>Usage Data</h3>
+    <ul>
+      <li>Extension feature usage (anonymized)</li>
+      <li>Error logs for debugging (no personal data)</li>
+    </ul>
+
+    <hr>
+
+    <h2>How We Use Your Data</h2>
+    <ol>
+      <li><strong>Calculate return deadlines</strong> &mdash; We analyze order emails to determine when return windows expire</li>
+      <li><strong>Send reminders</strong> &mdash; We notify you before return deadlines pass</li>
+      <li><strong>Improve the service</strong> &mdash; Anonymized usage data helps us fix bugs and add features</li>
+    </ol>
+    <p>We do <strong>NOT</strong>:</p>
+    <ul>
+      <li>Sell your data to third parties</li>
+      <li>Use your data for advertising</li>
+      <li>Share your data with marketers</li>
+      <li>Train AI models on your personal data</li>
+    </ul>
+
+    <hr>
+
+    <h2>Where Data Is Stored</h2>
+
+    <h3>On Your Device (Primary Storage)</h3>
+    <p>All extracted order data &mdash; return cards, merchant details, deadlines, and order metadata &mdash; is stored locally in your browser using <code>chrome.storage.local</code>. This data never leaves your device except during email processing (described below).</p>
+
+    <h3>Transient Server Processing</h3>
+    <p>When scanning emails, the extension sends email content to our backend server for AI-powered extraction. The server:</p>
+    <ul>
+      <li>Receives email content, processes it through the extraction pipeline, and returns structured order data</li>
+      <li><strong>Does not store any email content or order data</strong> &mdash; processing is entirely transient</li>
+      <li>Runs on Google Cloud Run (US region) with TLS 1.3 encryption in transit</li>
+    </ul>
+
+    <h3>Third-Party Services</h3>
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Purpose</th><th>Data Shared</th><th>Retention</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Google Gmail API</td><td>Read order emails</td><td>Email content (read-only)</td><td>None &mdash; read in real-time</td></tr>
+        <tr><td>Google Gemini AI</td><td>Extract order details</td><td>Email text for processing</td><td>None &mdash; processed transiently</td></tr>
+        <tr><td>Google Cloud Run</td><td>Host extraction API</td><td>Email text passed through</td><td>None &mdash; stateless</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Data Retention</h2>
+    <ul>
+      <li><strong>Local data:</strong> Kept in your browser until you clear it or uninstall the extension</li>
+      <li><strong>Server-side:</strong> No data is retained &mdash; all processing is transient</li>
+      <li><strong>Account deletion:</strong> Clear all local data from Settings &gt; Clear Data, then revoke Gmail access</li>
+    </ul>
+
+    <hr>
+
+    <h2>Your Rights</h2>
+    <p>You have the right to:</p>
+    <ol>
+      <li><strong>Access your data</strong> &mdash; View all data in the extension sidebar</li>
+      <li><strong>Delete your data</strong> &mdash; Remove all stored data from Settings &gt; Clear Data</li>
+      <li><strong>Revoke access</strong> &mdash; Disconnect Gmail access from your Google Account settings</li>
+    </ol>
+
+    <h3>How to Delete Your Data</h3>
+    <ol>
+      <li>Open the Reclaim extension</li>
+      <li>Click Settings (gear icon)</li>
+      <li>Click "Clear All Data"</li>
+      <li>Confirm deletion</li>
+    </ol>
+    <p>To also revoke Gmail access:</p>
+    <ol>
+      <li>Go to <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a></li>
+      <li>Find "Reclaim" in the list</li>
+      <li>Click "Remove Access"</li>
+    </ol>
+
+    <hr>
+
+    <h2>Children's Privacy</h2>
+    <p>Reclaim is not intended for users under 13 years of age. We do not knowingly collect data from children.</p>
+
+    <hr>
+
+    <h2>Changes to This Policy</h2>
+    <p>We may update this privacy policy from time to time. We will notify you of significant changes through the extension.</p>
+
+    <hr>
+
+    <h2>Contact Us</h2>
+    <p>For privacy questions or data requests:</p>
+    <ul>
+      <li><strong>GitHub Issues:</strong> <a href="https://github.com/jkoufopoulos/shopq-prototype/issues">github.com/jkoufopoulos/shopq-prototype/issues</a></li>
+    </ul>
+
+    <hr>
+
+    <h2>California Privacy Rights (CCPA)</h2>
+    <ul>
+      <li>Right to know what data is collected</li>
+      <li>Right to delete personal information</li>
+      <li>Right to opt-out of data sales (we don't sell data)</li>
+      <li>Right to non-discrimination for exercising privacy rights</li>
+    </ul>
+
+    <hr>
+
+    <h2>European Privacy Rights (GDPR)</h2>
+    <p>EU residents have additional rights under GDPR:</p>
+    <ul>
+      <li>Right to access, rectification, and erasure</li>
+      <li>Right to restrict processing</li>
+      <li>Right to data portability</li>
+      <li>Right to object to processing</li>
+      <li>Right to lodge a complaint with a supervisory authority</li>
+    </ul>
+    <p><strong>Legal Basis for Processing:</strong> Legitimate interest (providing the service you requested)</p>
+    <p><strong>Data Controller:</strong> Justin Koufopoulos</p>
+    <p><strong>Contact:</strong> <a href="https://github.com/jkoufopoulos/shopq-prototype/issues">github.com/jkoufopoulos/shopq-prototype/issues</a></p>
+  </div>
+</body>
+</html>
