@@ -90,21 +90,7 @@ function daysBetween(startDate, endDate) {
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
-/**
- * Get today's date as ISO string in user's local timezone.
- *
- * Note: We use local timezone for "today" to match user expectations.
- * If it's 11pm local time, the user expects "today" to be today, not tomorrow (UTC).
- *
- * @returns {string} Today in YYYY-MM-DD format (local timezone)
- */
-function getToday() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+// getToday() is provided by utils.js (shared module, loaded earlier via importScripts)
 
 // ============================================================
 // DEADLINE COMPUTATION

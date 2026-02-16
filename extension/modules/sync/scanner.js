@@ -624,6 +624,7 @@ async function scanPurchases(options = {}) {
         body,
         body_html,
         received_at: receivedAt,
+        _internal_date_ms: parseInt(message.internalDate || '0'),
       });
 
       // Rate limiting between Gmail API calls
@@ -651,6 +652,10 @@ async function scanPurchases(options = {}) {
   const affectedMerchants = new Set();
 
   if (emailsForBackend.length > 0) {
+    // Sort by internalDate ascending so progressive checkpoints can safely
+    // advance the date cursor after each chunk (oldest emails processed first)
+    emailsForBackend.sort((a, b) => (a._internal_date_ms || 0) - (b._internal_date_ms || 0));
+
     // Split into chunks to avoid service worker timeout (~5 min limit)
     const chunks = [];
     for (let i = 0; i < emailsForBackend.length; i += BATCH_CHUNK_SIZE) {
@@ -700,6 +705,26 @@ async function scanPurchases(options = {}) {
             processed: stats.processed,
             found: batchCards.length,
           });
+
+          // Progressive checkpoint: advance internal_date_ms cursor so a
+          // restart skips emails we've already fully processed. Since emails
+          // are sorted by date, remaining chunks contain only newer emails.
+          if (ci < chunks.length - 1) {
+            // Find the lowest date in the next unprocessed chunk
+            const nextChunk = chunks[ci + 1];
+            let minPending = Infinity;
+            for (const email of nextChunk) {
+              if (email._internal_date_ms > 0 && email._internal_date_ms < minPending) {
+                minPending = email._internal_date_ms;
+              }
+            }
+            if (minPending < Infinity) {
+              await updateLastScanState(Date.now(), minPending - 1, window_days);
+              console.log(SCANNER_LOG_PREFIX, 'CHECKPOINT',
+                `chunk ${ci + 1}/${chunks.length}`,
+                'cursor:', new Date(minPending - 1).toISOString());
+            }
+          }
         } else {
           console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_FAILED',
             `${ci + 1}/${chunks.length}`, 'success=false — emails will retry next scan');

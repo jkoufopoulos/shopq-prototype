@@ -322,23 +322,6 @@ function extractEstimatedDeliveryDate(text) {
 }
 
 /**
- * Extract delivery date from email.
- * Returns actual delivery date if found, otherwise estimated.
- *
- * @deprecated Use extractActualDeliveryDate and extractEstimatedDeliveryDate separately
- * @param {string} text
- * @returns {string|null} ISO date or null
- */
-function extractDeliveryDate(text) {
-  // First try actual delivery date
-  const actual = extractActualDeliveryDate(text);
-  if (actual) return actual;
-
-  // Fall back to estimated
-  return extractEstimatedDeliveryDate(text);
-}
-
-/**
  * Extract explicit return-by date from email.
  *
  * @param {string} text

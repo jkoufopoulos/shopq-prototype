@@ -830,9 +830,6 @@ function showMerchantRuleDialog(merchantDomain, merchantName) {
   }
 }
 
-// Delivery modal functions: see returns-sidebar-delivery.js
-// (loaded after this file via <script> tag in returns-sidebar.html)
-
 /**
  * Show the list view (hide detail view)
  */

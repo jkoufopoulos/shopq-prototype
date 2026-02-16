@@ -27,21 +27,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Load dependencies - only modules that exist for Reclaim
+// Load dependencies — order matters (later files can shadow earlier globals)
 importScripts(
   'modules/shared/config.js',
   'modules/shared/utils.js',
   'modules/gmail/auth.js',
   'modules/storage/schema.js',
+  'modules/storage/resolution.js',
   'modules/storage/store.js',
-  // Pipeline P1-P4: Core
+  // Pipeline: Domain filter (P1) + Lifecycle/deadline computation (P8)
   'modules/pipeline/filter.js',
-  'modules/pipeline/linker.js',
-  'modules/pipeline/hints.js',
-  'modules/pipeline/classifier.js',
-  // Pipeline P5-P8: Resolution
-  'modules/pipeline/extractor.js',
-  'modules/pipeline/resolver.js',
   'modules/pipeline/lifecycle.js',
   // Sync: Scanner & Refresh
   'modules/sync/scanner.js',
@@ -52,6 +47,9 @@ importScripts(
   // Diagnostics
   'modules/diagnostics/logger.js',
   'modules/returns/api.js'
+  // NOTE: linker.js, hints.js, classifier.js, extractor.js are NOT loaded.
+  // They define the old local extraction pipeline (P2-P5), superseded by
+  // the stateless backend API. Files are preserved for tests and reference.
 );
 
 console.log(`🛒 Reclaim: Background service worker loaded v${CONFIG.VERSION}`);

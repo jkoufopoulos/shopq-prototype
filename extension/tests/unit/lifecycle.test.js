@@ -7,6 +7,9 @@
 // Load the lifecycle module
 const lifecycle = loadModuleFunctions('modules/pipeline/lifecycle.js');
 
+// Load utils for shared helpers (getToday moved from lifecycle to utils)
+const utils = loadModuleFunctions('modules/shared/utils.js');
+
 // Mock constants for testing
 const ORDER_STATUS = { ACTIVE: 'active', RETURNED: 'returned', DISMISSED: 'dismissed' };
 const DEADLINE_CONFIDENCE = { EXACT: 'exact', ESTIMATED: 'estimated', UNKNOWN: 'unknown' };
@@ -120,7 +123,7 @@ describe('P8: Lifecycle - getAnchorDate', () => {
 
 describe('P8: Lifecycle - getDaysRemaining', () => {
   it('calculates days remaining', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 10);
     const order = { return_by_date: futureDate };
 
@@ -129,7 +132,7 @@ describe('P8: Lifecycle - getDaysRemaining', () => {
   });
 
   it('returns negative for expired', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const pastDate = lifecycle.addDays(today, -5);
     const order = { return_by_date: pastDate };
 
@@ -145,7 +148,7 @@ describe('P8: Lifecycle - getDaysRemaining', () => {
 
 describe('P8: Lifecycle - getUrgencyLevel', () => {
   it('returns expired for negative days', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const pastDate = lifecycle.addDays(today, -1);
     const order = { return_by_date: pastDate };
 
@@ -153,7 +156,7 @@ describe('P8: Lifecycle - getUrgencyLevel', () => {
   });
 
   it('returns urgent for 0-3 days', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const urgentDate = lifecycle.addDays(today, 2);
     const order = { return_by_date: urgentDate };
 
@@ -161,7 +164,7 @@ describe('P8: Lifecycle - getUrgencyLevel', () => {
   });
 
   it('returns soon for 4-7 days', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const soonDate = lifecycle.addDays(today, 5);
     const order = { return_by_date: soonDate };
 
@@ -169,7 +172,7 @@ describe('P8: Lifecycle - getUrgencyLevel', () => {
   });
 
   it('returns normal for 8+ days', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const normalDate = lifecycle.addDays(today, 20);
     const order = { return_by_date: normalDate };
 
@@ -184,7 +187,7 @@ describe('P8: Lifecycle - getUrgencyLevel', () => {
 
 describe('P8: Lifecycle - shouldShowInReturnWatch', () => {
   it('shows active orders with known deadline', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 10);
     const order = {
       order_status: 'active',
@@ -206,7 +209,7 @@ describe('P8: Lifecycle - shouldShowInReturnWatch', () => {
   });
 
   it('hides returned orders', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 10);
     const order = {
       order_status: 'returned',
@@ -218,7 +221,7 @@ describe('P8: Lifecycle - shouldShowInReturnWatch', () => {
   });
 
   it('hides expired orders', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const pastDate = lifecycle.addDays(today, -5);
     const order = {
       order_status: 'active',
@@ -232,7 +235,7 @@ describe('P8: Lifecycle - shouldShowInReturnWatch', () => {
 
 describe('P8: Lifecycle - shouldAlert', () => {
   it('alerts for exact deadline', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 5);
     const order = {
       order_status: 'active',
@@ -244,7 +247,7 @@ describe('P8: Lifecycle - shouldAlert', () => {
   });
 
   it('alerts for estimated deadline with delivery_date', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 5);
     const order = {
       order_status: 'active',
@@ -257,7 +260,7 @@ describe('P8: Lifecycle - shouldAlert', () => {
   });
 
   it('does not alert for estimated without delivery_date', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const futureDate = lifecycle.addDays(today, 5);
     const order = {
       order_status: 'active',
@@ -278,14 +281,14 @@ describe('P8: Lifecycle - shouldAlert', () => {
   });
 });
 
-describe('P8: Lifecycle - getToday', () => {
+describe('Utils - getToday', () => {
   it('returns ISO formatted date', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     assert(/^\d{4}-\d{2}-\d{2}$/.test(today), 'Returns YYYY-MM-DD format');
   });
 
   it('returns current date', () => {
-    const today = lifecycle.getToday();
+    const today = utils.getToday();
     const jsDate = new Date();
     const year = jsDate.getFullYear();
     assert(today.startsWith(String(year)), 'Year matches current year');

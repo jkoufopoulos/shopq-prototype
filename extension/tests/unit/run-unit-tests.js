@@ -158,12 +158,23 @@ function initSharedContext() {
     },
   };
 
+  // Load utils.js to get shared helpers (getToday, etc.)
+  const utilsPath = path.resolve(__dirname, '../../modules/shared/utils.js');
+  const utilsCode = fs.readFileSync(utilsPath, 'utf-8');
+  const utilsWrapped = `
+    ${utilsCode}
+    return { getToday, extractDomain, redactForLog, sleep, logVerbose };
+  `;
+  const utilsFn = new Function(...Object.keys(baseContext), utilsWrapped);
+  const utilsExports = utilsFn(...Object.values(baseContext));
+  Object.assign(baseContext, utilsExports);
+
   // Load schema.js to get constants
   const schemaPath = path.resolve(__dirname, '../../modules/storage/schema.js');
   const schemaCode = fs.readFileSync(schemaPath, 'utf-8');
   const schemaWrapped = `
     ${schemaCode}
-    return { STORAGE_KEYS, ORDER_STATUS, DEADLINE_CONFIDENCE, EMAIL_TYPE, generateOrderKey, createOrder, createOrderEmail };
+    return { STORAGE_KEYS, ORDER_STATUS, DEADLINE_CONFIDENCE, EMAIL_TYPE, generateOrderKey: hashOrderKey, createOrder, createOrderEmail };
   `;
   const schemaFn = new Function(...Object.keys(baseContext), schemaWrapped);
   const schemaExports = schemaFn(...Object.values(baseContext));
