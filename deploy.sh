@@ -2,7 +2,7 @@
 
 set -e
 
-PROJECT_ID="mailq-467118"
+PROJECT_ID="shopq-467118"
 REGION="us-central1"
 SERVICE_NAME="reclaim-api"
 
@@ -42,7 +42,8 @@ gcloud run deploy $SERVICE_NAME \
   --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID,\
 GOOGLE_API_KEY=${GOOGLE_API_KEY},\
 GEMINI_MODEL=gemini-2.0-flash,\
-GEMINI_LOCATION=us-central1 \
+GEMINI_LOCATION=us-central1,\
+RECLAIM_ENV=production \
   --memory 512Mi \
   --timeout 300s \
   --cpu 1 \

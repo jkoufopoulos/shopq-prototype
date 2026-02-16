@@ -13,6 +13,20 @@
 
 const SCANNER_LOG_PREFIX = '[ReturnWatch:Scanner]';
 
+/**
+ * Broadcast scan progress to active Gmail tabs so the sidebar can display it.
+ * Non-blocking — silently ignores errors if no tab is listening.
+ */
+function broadcastScanProgress(progress) {
+  // refreshState is defined in refresh.js (loaded in same service worker)
+  if (typeof refreshState !== 'undefined' && refreshState.gmailTabId) {
+    chrome.tabs.sendMessage(refreshState.gmailTabId, {
+      type: 'SCAN_PROGRESS_NOTIFICATION',
+      ...progress,
+    }).catch(() => {});
+  }
+}
+
 // ============================================================
 // CONSTANTS
 // ============================================================
@@ -624,6 +638,13 @@ async function scanPurchases(options = {}) {
   console.log(SCANNER_LOG_PREFIX, 'COLLECT_COMPLETE',
     emailsForBackend.length, 'emails ready for batch processing');
 
+  broadcastScanProgress({
+    phase: 'processing',
+    checked: stats.total,
+    pending: emailsForBackend.length,
+    found: 0,
+  });
+
   // ---- Phase 2+3: Send to backend in chunks, store results after each ----
   const BATCH_CHUNK_SIZE = CONFIG.BATCH_CHUNK_SIZE;
   let batchCards = [];
@@ -672,6 +693,13 @@ async function scanPurchases(options = {}) {
             `${ci + 1}/${chunks.length}`,
             'cards:', chunkCards.length,
             'total:', batchCards.length);
+
+          broadcastScanProgress({
+            phase: 'processing',
+            checked: stats.total,
+            processed: stats.processed,
+            found: batchCards.length,
+          });
         } else {
           console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_FAILED',
             `${ci + 1}/${chunks.length}`, 'success=false — emails will retry next scan');

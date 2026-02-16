@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
@@ -105,15 +104,8 @@ log_event("api.startup", service="reclaim-return-watch", version=APP_VERSION)
 
 
 @app.get("/")
-def root() -> dict[str, Any]:
+def root() -> dict[str, str]:
     return {
-        "service": "Reclaim Return Watch API",
-        "version": APP_VERSION,
+        "service": "Reclaim API",
         "status": "running",
-        "endpoints": {
-            "health": "/health",
-            "extract": "/api/extract",
-            "extract_policy": "/api/extract-policy",
-            "merchant_rules": "/api/config/merchant-rules",
-        },
     }

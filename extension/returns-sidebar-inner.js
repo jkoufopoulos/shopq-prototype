@@ -29,19 +29,7 @@ window.ReclaimSidebar = {
     demoMode: false,
     expiredAccordionOpen: false,
     returnedAccordionOpen: false,
-    deliveryModal: null,
-    activeDeliveries: {},
     isEditingDate: false,
-    deliveryState: {
-      step: 'address',
-      address: null,
-      locations: [],
-      selectedLocation: null,
-      quote: null,
-      delivery: null,
-      loading: false,
-      error: null,
-    },
   },
   timers: {
     dateRefreshInterval: null,
@@ -51,7 +39,7 @@ window.ReclaimSidebar = {
 
 // =============================================================================
 // DEMO MODE — masks PII (order IDs) for screen recordings
-// Toggle via DevTools console: toggleDemoMode()
+// Toggle via DevTools console in the sidebar iframe: toggleDemoMode()
 // =============================================================================
 
 const _demoMaskCache = new Map();
@@ -466,50 +454,6 @@ function renderListView() {
     });
   });
 
-  // Add delivery badge click handlers
-  listView.querySelectorAll('.delivery-badge').forEach(badge => {
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const orderKey = badge.dataset.orderKey;
-      const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
-      if (delivery) {
-        showDeliveryStatus(delivery);
-      }
-    });
-  });
-}
-
-/**
- * Build delivery badge HTML for an order
- */
-function getDeliveryBadge(orderKey) {
-  const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
-  if (!delivery) return '';
-
-  const statusLabels = {
-    'quote_pending': 'Getting quote',
-    'quoted': 'Quote ready',
-    'pending': 'Finding driver',
-    'pickup': 'Driver en route',
-    'pickup_complete': 'Picked up',
-    'dropoff': 'In transit',
-    'delivered': 'Delivered',
-    'canceled': 'Canceled',
-    'failed': 'Failed',
-  };
-
-  const statusClasses = {
-    'delivered': 'delivery-badge-success',
-    'canceled': 'delivery-badge-error',
-    'failed': 'delivery-badge-error',
-  };
-
-  const statusClass = statusClasses[delivery.status] || 'delivery-badge-active';
-  const label = statusLabels[delivery.status] || delivery.status;
-
-  const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
-
-  return `<span class="delivery-badge ${statusClass}" data-order-key="${escapeHtml(orderKey)}">${truckIcon} ${escapeHtml(label)}</span>`;
 }
 
 /**
@@ -526,7 +470,6 @@ function renderOrderCard(order, isReturned = false) {
   let dateText = 'No deadline';
   let dateClass = '';
   let urgentBadge = '';
-  const deliveryBadge = getDeliveryBadge(order.order_key);
 
   if (order.return_by_date) {
     if (daysUntil < 0) {
@@ -573,7 +516,7 @@ function renderOrderCard(order, isReturned = false) {
     <div class="return-card ${cardClass} ${isReturned ? 'returned' : ''}" data-id="${escapeHtml(order.order_key)}" data-returned="${isReturned}">
       <div class="card-header">
         <span class="merchant">${escapeHtml(order.merchant_display_name)}</span>
-        ${statusBadge || deliveryBadge || urgentBadge}
+        ${statusBadge || urgentBadge}
       </div>
       <div class="item-summary">${escapeHtml(order.item_summary)}</div>
       <div class="card-footer">
@@ -659,7 +602,6 @@ function renderDetailView(order, needsEnrichment) {
 
   // Icons
   const externalLinkIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>`;
-  const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
   const editIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
 
   // Determine deadline basis text (what date the deadline is calculated from)
@@ -769,10 +711,6 @@ function renderDetailView(order, needsEnrichment) {
 
     ${order.order_status === 'active' ? `
     <div class="detail-actions">
-      <button class="action-btn uber" id="deliver-carrier-btn">
-        ${truckIcon}
-        Courier Pickup with Uber
-      </button>
       <button class="action-btn secondary" id="mark-returned-btn">
         Mark as Returned
       </button>
@@ -795,7 +733,6 @@ function renderDetailView(order, needsEnrichment) {
   const markActiveBtn = document.getElementById('mark-active-btn');
   const setRuleBtn = document.getElementById('set-rule-btn');
   const dismissOrderBtn = document.getElementById('dismiss-order-btn');
-  const deliverCarrierBtn = document.getElementById('deliver-carrier-btn');
 
   // Date editing handlers
   const editDateBtn = document.getElementById('edit-date-btn');
@@ -877,11 +814,6 @@ function renderDetailView(order, needsEnrichment) {
     });
   }
 
-  if (deliverCarrierBtn) {
-    deliverCarrierBtn.addEventListener('click', () => {
-      showDeliveryModal(order);
-    });
-  }
 }
 
 /**
@@ -1041,7 +973,20 @@ function renderError(message) {
 // MESSAGE HANDLING
 // =============================================================================
 
+// SEC: Expected parent origin — set from config init or derived from document.referrer
+let _trustedParentOrigin = null;
+
 window.addEventListener('message', (event) => {
+  // SEC: Only accept messages from Gmail (where our content script runs).
+  // First message sets the trusted origin; subsequent messages must match.
+  const origin = event.origin;
+  if (origin !== 'https://mail.google.com') {
+    return;
+  }
+  if (!_trustedParentOrigin) {
+    _trustedParentOrigin = origin;
+  }
+
   // Receive config from parent (content script) — overrides defaults
   if (event.data?.type === 'RECLAIM_CONFIG_INIT') {
     const c = event.data.config || {};
@@ -1050,11 +995,6 @@ window.addEventListener('message', (event) => {
     if (c.TOAST_FADEOUT_MS) ReclaimSidebar.config.TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
     if (c.EXPIRING_SOON_DAYS) ReclaimSidebar.config.EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
     if (c.CRITICAL_DAYS) ReclaimSidebar.config.CRITICAL_DAYS = c.CRITICAL_DAYS;
-  }
-
-  // Handle demo mode toggle from parent (main console)
-  if (event.data?.type === 'RECLAIM_TOGGLE_DEMO_MODE') {
-    window.toggleDemoMode();
   }
 
   // Handle unified visible orders
@@ -1082,6 +1022,21 @@ window.addEventListener('message', (event) => {
   if (event.data?.type === 'RECLAIM_STATUS_UPDATED') {
     // Refresh the list
     fetchReturns();
+  }
+
+  // Handle scan progress updates
+  if (event.data?.type === 'RECLAIM_SCAN_PROGRESS') {
+    const { checked, processed, found, pending } = event.data;
+    let progressText = 'Scanning...';
+    if (typeof checked === 'number' && typeof found === 'number') {
+      progressText = `Scanning... checked ${checked} emails, found ${found} purchase${found === 1 ? '' : 's'}`;
+    } else if (typeof pending === 'number') {
+      progressText = `Processing ${pending} email${pending === 1 ? '' : 's'}...`;
+    }
+    refreshStatus.textContent = progressText;
+    if (!refreshBtn.classList.contains('scanning')) {
+      refreshBtn.classList.add('scanning');
+    }
   }
 
   // Handle scan complete notification
@@ -1171,97 +1126,6 @@ window.addEventListener('message', (event) => {
     }
   }
 
-  // =========================================================================
-  // DELIVERY MODAL MESSAGE HANDLERS
-  // =========================================================================
-
-  // Handle user address response
-  if (event.data?.type === 'RECLAIM_USER_ADDRESS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.address = event.data.address || null;
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery locations response
-  if (event.data?.type === 'RECLAIM_DELIVERY_LOCATIONS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.locations = event.data.locations || [];
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery quote response
-  if (event.data?.type === 'RECLAIM_DELIVERY_QUOTE') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-        ReclaimSidebar.state.deliveryState.loading = false;
-      } else {
-        ReclaimSidebar.state.deliveryState.quote = event.data.quote;
-        ReclaimSidebar.state.deliveryState.step = 'quote';
-        ReclaimSidebar.state.deliveryState.loading = false;
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery confirmation response
-  if (event.data?.type === 'RECLAIM_DELIVERY_CONFIRMED') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-        ReclaimSidebar.state.deliveryState.loading = false;
-      } else {
-        ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
-        ReclaimSidebar.state.deliveryState.step = 'confirmed';
-        ReclaimSidebar.state.deliveryState.loading = false;
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery status response
-  if (event.data?.type === 'RECLAIM_DELIVERY_STATUS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
-      ReclaimSidebar.state.deliveryState.step = 'status';
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery cancel response
-  if (event.data?.type === 'RECLAIM_DELIVERY_CANCELED') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.loading = false;
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-      } else {
-        // Remove from active deliveries
-        if (ReclaimSidebar.state.deliveryState.delivery) {
-          delete ReclaimSidebar.state.activeDeliveries[ReclaimSidebar.state.deliveryState.delivery.order_key];
-        }
-        closeDeliveryModal();
-        renderListView();
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle active deliveries response
-  if (event.data?.type === 'RECLAIM_ACTIVE_DELIVERIES') {
-    const deliveries = event.data.deliveries || [];
-    ReclaimSidebar.state.activeDeliveries = {};
-    for (const delivery of deliveries) {
-      if (delivery.order_key) {
-        ReclaimSidebar.state.activeDeliveries[delivery.order_key] = delivery;
-      }
-    }
-    renderListView();
-  }
 });
 
 // =============================================================================
@@ -1314,9 +1178,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Fetch returned orders for undo drawer
   window.parent.postMessage({ type: 'RECLAIM_GET_RETURNED_ORDERS' }, '*');
-
-  // Fetch active deliveries
-  window.parent.postMessage({ type: 'RECLAIM_GET_ACTIVE_DELIVERIES' }, '*');
 });
 
 // Refresh when tab becomes visible (user switches back to Gmail)

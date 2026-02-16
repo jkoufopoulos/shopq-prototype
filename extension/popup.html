@@ -3,22 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="theme.css">
-  <script>
-    // Sync theme before first paint to prevent FOUC.
-    (function() {
-      var d = document.documentElement;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        d.setAttribute('data-theme', 'dark');
-      }
-      try {
-        chrome.storage.local.get('reclaim_theme_preference', function(r) {
-          var p = r && r.reclaim_theme_preference;
-          if (p === 'light') d.setAttribute('data-theme', 'light');
-          else if (p === 'dark') d.setAttribute('data-theme', 'dark');
-        });
-      } catch(e) {}
-    })();
-  </script>
+  <script src="theme-sync.js"></script>
   <style>
     body {
       width: 240px;
@@ -121,6 +106,19 @@
       margin-top: 6px;
       font-weight: 500;
     }
+    .privacy-footer {
+      font-size: 11px;
+      color: var(--rc-text-tertiary);
+      margin-top: 12px;
+      text-align: center;
+    }
+    .privacy-footer a {
+      color: var(--rc-text-secondary);
+      text-decoration: none;
+    }
+    .privacy-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -150,6 +148,9 @@
 
   <div class="status">
     <div id="statusMessage"></div>
+  </div>
+  <div class="privacy-footer">
+    Your data stays in your browser. <a href="onboarding.html#privacy" target="_blank">Privacy info</a>
   </div>
   <script src="modules/shared/config.js"></script>
   <script src="modules/shared/theme.js"></script>

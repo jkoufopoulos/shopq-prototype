@@ -483,88 +483,6 @@ class SidebarController {
       }
     });
 
-    // Delivery modal message handlers
-    this._router.register('RECLAIM_GET_USER_ADDRESS', async () => {
-      try {
-        const result = await chrome.runtime.sendMessage({ type: 'GET_USER_ADDRESS' });
-        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: result?.address || null });
-      } catch (err) {
-        console.error('Reclaim: Failed to get user address:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: null });
-      }
-    });
-
-    this._router.register('RECLAIM_SET_USER_ADDRESS', async (data) => {
-      try {
-        await chrome.runtime.sendMessage({ type: 'SET_USER_ADDRESS', address: data.address });
-      } catch (err) {
-        console.error('Reclaim: Failed to save address:', err);
-      }
-    });
-
-    this._router.register('RECLAIM_GET_DELIVERY_LOCATIONS', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'GET_DELIVERY_LOCATIONS',
-          address: data.address
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: result?.locations || [] });
-      } catch (err) {
-        console.error('Reclaim: Failed to get delivery locations:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: [], error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_GET_DELIVERY_QUOTE', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'GET_DELIVERY_QUOTE',
-          order_key: data.order_key,
-          pickup_address: data.pickup_address,
-          dropoff_location_id: data.dropoff_location_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', quote: result?.quote || result, error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to get delivery quote:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_CONFIRM_DELIVERY', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'CONFIRM_DELIVERY',
-          delivery_id: data.delivery_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', delivery: result?.delivery || result, error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to confirm delivery:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_CANCEL_DELIVERY', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'CANCEL_DELIVERY',
-          delivery_id: data.delivery_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to cancel delivery:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_GET_ACTIVE_DELIVERIES', async () => {
-      try {
-        const result = await chrome.runtime.sendMessage({ type: 'GET_ACTIVE_DELIVERIES' });
-        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: result?.deliveries || [] });
-      } catch (err) {
-        console.error('Reclaim: Failed to get active deliveries:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: [] });
-      }
-    });
   }
 
   async _fetchVisibleOrders() {
@@ -710,15 +628,28 @@ async function initializeVisualLayer() {
     sidebarController = new SidebarController(router);
     await sidebarController.init(sdk);
 
-    // Listen for background scan completion notifications (auto-scans)
+    // Listen for background scan notifications (auto-scans)
     chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === 'SCAN_COMPLETE_NOTIFICATION' && sidebarController) {
+      if (!sidebarController) return;
+
+      if (message.type === 'SCAN_COMPLETE_NOTIFICATION') {
         console.log('Reclaim: Auto-scan complete, refreshing sidebar');
         sidebarController.postToSidebar({
           type: 'RECLAIM_SCAN_COMPLETE',
           result: { stats: message.stats },
         });
         sidebarController._fetchVisibleOrders();
+      }
+
+      if (message.type === 'SCAN_PROGRESS_NOTIFICATION') {
+        sidebarController.postToSidebar({
+          type: 'RECLAIM_SCAN_PROGRESS',
+          phase: message.phase,
+          checked: message.checked,
+          processed: message.processed,
+          pending: message.pending,
+          found: message.found,
+        });
       }
     });
   } catch (error) {

@@ -17,6 +17,11 @@ ENV PYTHONPATH=/app
 
 # Environment variables (overridden at deploy time)
 ENV RECLAIM_USE_LLM=true
+ENV RECLAIM_ENV=production
+
+# Create non-root user for security
+RUN adduser --disabled-password --no-create-home appuser
+USER appuser
 
 # Expose port
 EXPOSE 8080

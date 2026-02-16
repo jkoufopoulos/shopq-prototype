@@ -159,13 +159,6 @@ function isTrustedSender(sender) {
     }
   }
 
-  // Allow InboxSDK pageWorld injection message (has sender.tab but no url check needed)
-  // This is the initial injection message that happens once per page load
-  if (sender.tab && sender.frameId !== undefined) {
-    // Content script context - allow if it's from a tab
-    return true;
-  }
-
   return false;
 }
 
@@ -232,19 +225,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, orders });
       }
       else if (message.type === 'RECOMPUTE_ORDER_DEADLINE') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await recomputeOrderDeadline(message.order_key);
         sendResponse({ success: true, order });
       }
       else if (message.type === 'RECOMPUTE_MERCHANT_DEADLINES') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         const count = await recomputeMerchantDeadlines(message.merchant_domain);
         sendResponse({ success: true, updated_count: count });
       }
       // On-demand enrichment
       else if (message.type === 'ENRICH_ORDER') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const result = await enrichOrder(message.order_key);
         sendResponse({ success: true, ...result });
       }
       else if (message.type === 'NEEDS_ENRICHMENT') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await getOrder(message.order_key);
         const needs = order ? needsEnrichment(order) : false;
         sendResponse({ success: true, needs_enrichment: needs });
@@ -264,14 +273,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true, hasToken: !!token });
         } catch (error) {
           sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_AUTH_TOKEN') {
-        try {
-          const token = await getAuthToken();
-          sendResponse({ token });
-        } catch (error) {
-          sendResponse({ error: error.message });
         }
       }
       else if (message.type === 'SHOW_NOTIFICATION') {
@@ -294,10 +295,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, orders });
       }
       else if (message.type === 'GET_ORDER') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await getOrder(message.order_key);
         sendResponse({ success: true, order });
       }
       else if (message.type === 'UPDATE_ORDER_STATUS') {
+        const VALID_STATUSES = ['active', 'returned', 'dismissed'];
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
+        if (!VALID_STATUSES.includes(message.status)) {
+          sendResponse({ success: false, error: 'Invalid status. Must be one of: ' + VALID_STATUSES.join(', ') });
+          return;
+        }
         const order = await updateOrderStatus(message.order_key, message.status);
         sendResponse({ success: true, order });
       }
@@ -307,11 +321,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       // Merchant rules operations
       else if (message.type === 'GET_MERCHANT_RULE') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         const rule = await getMerchantRule(message.merchant_domain);
         sendResponse({ success: true, window_days: rule });
       }
       else if (message.type === 'SET_MERCHANT_RULE') {
-        await setMerchantRule(message.merchant_domain, message.window_days);
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
+        const days = parseInt(message.window_days, 10);
+        if (isNaN(days) || days < 1 || days > 365) {
+          sendResponse({ success: false, error: 'Invalid window_days. Must be 1-365.' });
+          return;
+        }
+        await setMerchantRule(message.merchant_domain, days);
         sendResponse({ success: true });
       }
       else if (message.type === 'GET_ALL_MERCHANT_RULES') {
@@ -319,6 +346,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, rules });
       }
       else if (message.type === 'DELETE_MERCHANT_RULE') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         await deleteMerchantRule(message.merchant_domain);
         sendResponse({ success: true });
       }
@@ -340,6 +371,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Update a single order's return date directly (local storage)
       else if (message.type === 'UPDATE_ORDER_RETURN_DATE') {
         try {
+          if (!message.order_key || typeof message.order_key !== 'string') {
+            sendResponse({ success: false, error: 'Invalid order_key' });
+            return;
+          }
+          // Validate date format (YYYY-MM-DD)
+          if (!message.return_by_date || !/^\d{4}-\d{2}-\d{2}$/.test(message.return_by_date)) {
+            sendResponse({ success: false, error: 'Invalid return_by_date. Must be YYYY-MM-DD.' });
+            return;
+          }
+          const parsedDate = new Date(message.return_by_date + 'T00:00:00');
+          if (isNaN(parsedDate.getTime())) {
+            sendResponse({ success: false, error: 'Invalid date value' });
+            return;
+          }
           const order = await getOrder(message.order_key);
           if (!order) {
             throw new Error('Order not found');
@@ -350,10 +395,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           order.deadline_confidence = 'exact';
           // Save the updated order
           const updatedOrder = await upsertOrder(order);
-          console.log('✅ Updated order return date:', message.order_key, '->', message.return_by_date);
           sendResponse({ success: true, order: updatedOrder });
         } catch (error) {
-          console.error('❌ Failed to update order return date:', error);
+          console.error('Failed to update order return date:', error);
           sendResponse({ success: false, error: error.message });
         }
       }
@@ -376,6 +420,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 
     if (details.reason === 'install') {
       console.log('🎉 Reclaim installed');
+      // Open onboarding page for new users
+      chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
       // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
       // Don't set default_user - proper user isolation requires real Google user ID
       // Initial scan will be triggered by refresh system when Gmail is opened

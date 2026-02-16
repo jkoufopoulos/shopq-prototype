@@ -111,11 +111,3 @@ initTheme().then(async () => {
 // Initialize
 updateReturnCounts();
 
-// Close popup when mouse leaves (with small delay)
-let closeTimeout;
-document.body.addEventListener('mouseleave', () => {
-  closeTimeout = setTimeout(() => window.close(), 500);
-});
-document.body.addEventListener('mouseenter', () => {
-  clearTimeout(closeTimeout);
-});
