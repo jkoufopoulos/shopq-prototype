@@ -56,6 +56,26 @@ const PURCHASE_SEARCH_QUERIES = [
 // ============================================================
 
 /**
+ * Cancellation signal keywords — moved here from classifier.js since the
+ * classifier is no longer loaded at runtime (stateless migration).
+ */
+const CANCELLATION_SUBJECT_KEYWORDS = [
+  'cancelled',
+  'cancellation',
+  'advance refund issued',
+  'refund issued',
+];
+
+const CANCELLATION_BODY_KEYWORDS = [
+  'your order was cancelled',
+  'has been cancelled',
+  'item cancelled successfully',
+  'being returned to us by the carrier',
+  'we\'ve issued your refund',
+  'we have issued your refund',
+];
+
+/**
  * Amazon order number pattern: 3-7-7 digits.
  */
 const AMAZON_ORDER_RE = /\b\d{3}-\d{7}-\d{7}\b/g;
