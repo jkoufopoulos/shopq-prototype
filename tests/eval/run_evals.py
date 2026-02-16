@@ -16,13 +16,13 @@ Usage:
     python tests/eval/run_evals.py --judges
 
     # Target production
-    python tests/eval/run_evals.py --url https://reclaim-api-488078904670.us-central1.run.app
+    python tests/eval/run_evals.py --url https://reclaim-api-142227390702.us-central1.run.app
 
     # With auth token (required for production)
     python tests/eval/run_evals.py --url https://... --token <google-oauth-token>
 
-    # Send emails one at a time (default is batch)
-    python tests/eval/run_evals.py --single
+    # Send all emails as a single batch (faster)
+    python tests/eval/run_evals.py --batch
 
     # Dry run — just show which cases would run
     python tests/eval/run_evals.py --dry-run
@@ -81,7 +81,14 @@ def send_single(client: "httpx.Client", url: str, case: dict) -> dict:
         }],
     }
 
-    resp = client.post(f"{url}/api/extract", json=payload, timeout=30.0)
+    try:
+        resp = client.post(f"{url}/api/extract", json=payload, timeout=60.0)
+    except Exception as e:
+        return {
+            "success": False,
+            "rejection_reason": f"connection_error:{type(e).__name__}:{str(e)[:100]}",
+            "stage_reached": "error",
+        }
 
     if resp.status_code != 200:
         return {
@@ -147,7 +154,7 @@ def send_batch(client: "httpx.Client", url: str, cases: list[dict]) -> dict[str,
             out[case["id"]] = {
                 "success": False,
                 "rejection_reason": "not_in_response",
-                "stage_reached": "unknown",
+                "stage_reached": "none",
             }
 
     return out
@@ -270,7 +277,7 @@ def main():
     parser.add_argument("--url", default=DEFAULT_URL, help="Base URL of the API")
     parser.add_argument("--tag", help="Filter cases by tag")
     parser.add_argument("--judges", action="store_true", help="Include LLM judge evals")
-    parser.add_argument("--single", action="store_true", help="Send emails one at a time (slower)")
+    parser.add_argument("--batch", action="store_true", help="Send all emails as a single batch (faster but may hit dedup)")
     parser.add_argument("--token", help="Google OAuth token for authenticated endpoints")
     parser.add_argument("--dry-run", action="store_true", help="Show cases without running")
     parser.add_argument("--output", help="Output report file path (default: auto-generated)")
@@ -293,7 +300,11 @@ def main():
         sys.exit(1)
 
     # Set up HTTP client
-    headers = {"Content-Type": "application/json"}
+    # Origin header required for CSRF middleware
+    headers = {
+        "Content-Type": "application/json",
+        "Origin": args.url,
+    }
     if args.token:
         headers["Authorization"] = f"Bearer {args.token}"
 
@@ -302,7 +313,19 @@ def main():
     # Execute
     start = time.monotonic()
 
-    if args.single:
+    if args.batch:
+        print(f"Sending batch of {len(cases)} emails...")
+        results_by_id = send_batch(client, args.url, cases)
+        case_results = []
+        for case in cases:
+            result = results_by_id.get(case["id"], {
+                "success": False,
+                "rejection_reason": "missing_from_batch",
+                "stage_reached": "none",
+            })
+            evaluation = evaluate_case(result, case, include_judges=args.judges)
+            case_results.append(evaluation)
+    else:
         print(f"Sending {len(cases)} emails individually...")
         case_results = []
         for i, case in enumerate(cases):
@@ -311,18 +334,9 @@ def main():
             case_results.append(evaluation)
             status = "PASS" if evaluation["passed"] else "FAIL"
             print(f"  [{i + 1}/{len(cases)}] {case['id']}: {status}")
-    else:
-        print(f"Sending batch of {len(cases)} emails...")
-        results_by_id = send_batch(client, args.url, cases)
-        case_results = []
-        for case in cases:
-            result = results_by_id.get(case["id"], {
-                "success": False,
-                "rejection_reason": "missing_from_batch",
-                "stage_reached": "error",
-            })
-            evaluation = evaluate_case(result, case, include_judges=args.judges)
-            case_results.append(evaluation)
+            # Small delay to avoid rate limiting on large test suites
+            if len(cases) > 50:
+                time.sleep(0.5)
 
     elapsed = time.monotonic() - start
     client.close()

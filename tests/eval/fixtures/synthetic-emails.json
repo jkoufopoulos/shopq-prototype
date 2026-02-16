@@ -1,9 +1,9 @@
 [
   {
-    "id": "syn-amazon-001",
+    "id": "syn-amz-order-001",
     "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order #112-1000001-2000001",
-    "body": "Thank you for your order!\n\nOrder #112-1000001-2000001\nItem: Wireless Bluetooth Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Amazon.",
+    "subject": "Your Amazon.com order of Sony WH-1000XM5 Wireless Noise Cancellin... and target delivery date",
+    "body": "Hello,\n\nThank you for your order. We'll send a confirmation when your item ships.\n\nOrder Confirmed\nOrder# 112-1000001-2000001\n\nArriving January 20, 2026\n\nSony WH-1000XM5 Wireless Noise Cancelling Headphones, Black\nQty: 1\n$348.00\n\nShipping Address:\nJohn D.\nNew York, NY\n\nOrder Total: $348.00\nPayment: Visa ending in 4242\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
@@ -18,14 +18,15 @@
     "tags": [
       "amazon",
       "order_confirmation",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-amazon-002",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #112-1000002-2000002\nItem: Wireless Bluetooth Headphones\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at amazon.com/track",
+    "id": "syn-amz-ship-002",
+    "from_address": "shipment-tracking@amazon.com",
+    "subject": "Your Amazon.com order #112-1000002-2000002 has shipped",
+    "body": "Hello,\n\nYour package is on the way.\n\nTrack your package:\nhttps://www.amazon.com/gp/css/shipment-tracking/ref=pe_385040_121528400_TE_SIMP_typ?ie=UTF8\n\nSony WH-1000XM5 Wireless Noise Cancelling Headphones, Black\n\nShipped with USPS Tracking\nTracking ID: 9400111899223033005282\n\nArriving January 20, 2026\n\nOrder #112-1000002-2000002\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
@@ -40,14 +41,15 @@
     "tags": [
       "amazon",
       "shipping_notification",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-amazon-003",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #112-1000003-2000003\nItem: Wireless Bluetooth Headphones\nDelivered: January 20, 2026\n\nThank you for shopping with Amazon.",
+    "id": "syn-amz-deliv-003",
+    "from_address": "shipment-tracking@amazon.com",
+    "subject": "Delivered: Your Amazon.com order #112-1000003-2000003",
+    "body": "Hello,\n\nYour package was delivered.\n\nDelivered January 20, 2026\nYour package was left near the front door.\n\nSony WH-1000XM5 Wireless Noise Cancelling Headphones, Black\n\nOrder #112-1000003-2000003\n\nHow was your delivery experience? Rate your delivery\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
@@ -62,58 +64,62 @@
     "tags": [
       "amazon",
       "delivery_confirmation",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-target-004",
-    "from_address": "no-reply@target.com",
-    "subject": "Your Target order #101000004",
-    "body": "Thank you for your order!\n\nOrder #101000004\nItem: KitchenAid Stand Mixer\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Target.",
+    "id": "syn-amz-multi-004",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order of Anker USB C Charger... and 2 more items",
+    "body": "Hello,\n\nThank you for your order. We'll send a confirmation when your items ship.\n\nOrder# 112-1000004-2000004\n\nArriving January 20, 2026\n\nAnker USB C Charger, 65W (2 pack)\nQty: 1\n$23.99\n\nLogitech MX Master 3S Wireless Mouse - Graphite\nQty: 1\n$89.99\n\nRain-X Latitude Water Repellency 2-in-1 Wiper Blades, 24\" and 18\"\nQty: 1\n$47.98\n\nOrder Total: $161.96\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
-      "merchant_domain": "target.com",
+      "merchant_domain": "amazon.com",
       "has_order_number": true,
-      "order_number": "101000004",
+      "order_number": "112-1000004-2000004",
       "has_return_date": true,
-      "return_window_days": 90,
+      "return_window_days": 30,
       "confidence": "estimated",
       "must_not": []
     },
     "tags": [
-      "target",
+      "amazon",
       "order_confirmation",
-      "with_order_number"
+      "multi_item",
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-target-005",
-    "from_address": "no-reply@target.com",
-    "subject": "Your Target order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #101000005\nItem: KitchenAid Stand Mixer\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at target.com/track",
+    "id": "syn-amz-nonum-005",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order has been confirmed",
+    "body": "Hi there,\n\nYour order is confirmed!\n\nSony WH-1000XM5 Wireless Headphones\nArriving January 20, 2026\n\nTotal: $348.00\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
-      "merchant_domain": "target.com",
-      "has_order_number": true,
-      "order_number": "101000005",
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
       "has_return_date": true,
-      "return_window_days": 90,
+      "return_window_days": 30,
       "confidence": "estimated",
       "must_not": []
     },
     "tags": [
-      "target",
-      "shipping_notification",
-      "with_order_number"
+      "amazon",
+      "order_confirmation",
+      "without_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-target-006",
+    "id": "syn-tgt-order-006",
     "from_address": "no-reply@target.com",
-    "subject": "Your Target order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #101000006\nItem: KitchenAid Stand Mixer\nDelivered: January 20, 2026\n\nThank you for shopping with Target.",
+    "subject": "Thanks for your order, #101000006",
+    "body": "Thanks for your Target.com order!\n\nOrder number: 101000006\nPlaced on January 15, 2026\n\nShipping to store\nEstimated arrival: January 20, 2026\n\n1x KitchenAid Artisan Series 5-Qt Stand Mixer - Empire Red\n$349.99\n\nSubtotal: $349.99\nEstimated tax: $31.50\nOrder total: $381.49\n\nNeed to make changes? You can cancel this order within 1 hour of placing it.\n\n---\nTarget Corporation | 1000 Nicollet Mall, Minneapolis, MN 55403\nManage your communication preferences | Unsubscribe\nPrivacy Policy | CA Privacy Rights | Terms & Conditions\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
@@ -127,571 +133,22 @@
     },
     "tags": [
       "target",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-walmart-007",
-    "from_address": "help@walmart.com",
-    "subject": "Your Walmart order #2001000007-2000007",
-    "body": "Thank you for your order!\n\nOrder #2001000007-2000007\nItem: Samsung 55\" 4K TV\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Walmart.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "walmart.com",
-      "has_order_number": true,
-      "order_number": "2001000007-2000007",
-      "has_return_date": true,
-      "return_window_days": 90,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "walmart",
       "order_confirmation",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-walmart-008",
-    "from_address": "help@walmart.com",
-    "subject": "Your Walmart order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #2001000008-2000008\nItem: Samsung 55\" 4K TV\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at walmart.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "walmart.com",
-      "has_order_number": true,
-      "order_number": "2001000008-2000008",
-      "has_return_date": true,
-      "return_window_days": 90,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "walmart",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-walmart-009",
-    "from_address": "help@walmart.com",
-    "subject": "Your Walmart order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #2001000009-2000009\nItem: Samsung 55\" 4K TV\nDelivered: January 20, 2026\n\nThank you for shopping with Walmart.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "walmart.com",
-      "has_order_number": true,
-      "order_number": "2001000009-2000009",
-      "has_return_date": true,
-      "return_window_days": 90,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "walmart",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nike-010",
-    "from_address": "info@nike.com",
-    "subject": "Your Nike order #C1000010",
-    "body": "Thank you for your order!\n\nOrder #C1000010\nItem: Air Max 90 Running Shoes\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nike.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nike.com",
-      "has_order_number": true,
-      "order_number": "C1000010",
-      "has_return_date": true,
-      "return_window_days": 60,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nike",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nike-011",
-    "from_address": "info@nike.com",
-    "subject": "Your Nike order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #C1000011\nItem: Air Max 90 Running Shoes\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at nike.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nike.com",
-      "has_order_number": true,
-      "order_number": "C1000011",
-      "has_return_date": true,
-      "return_window_days": 60,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nike",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nike-012",
-    "from_address": "info@nike.com",
-    "subject": "Your Nike order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #C1000012\nItem: Air Max 90 Running Shoes\nDelivered: January 20, 2026\n\nThank you for shopping with Nike.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nike.com",
-      "has_order_number": true,
-      "order_number": "C1000012",
-      "has_return_date": true,
-      "return_window_days": 60,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nike",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-apple-013",
-    "from_address": "no_reply@email.apple.com",
-    "subject": "Your Apple order #W1000013",
-    "body": "Thank you for your order!\n\nOrder #W1000013\nItem: AirPods Pro (2nd gen)\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Apple.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "apple.com",
-      "has_order_number": true,
-      "order_number": "W1000013",
-      "has_return_date": true,
-      "return_window_days": 14,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "apple",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-apple-014",
-    "from_address": "no_reply@email.apple.com",
-    "subject": "Your Apple order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #W1000014\nItem: AirPods Pro (2nd gen)\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at apple.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "apple.com",
-      "has_order_number": true,
-      "order_number": "W1000014",
-      "has_return_date": true,
-      "return_window_days": 14,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "apple",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-apple-015",
-    "from_address": "no_reply@email.apple.com",
-    "subject": "Your Apple order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #W1000015\nItem: AirPods Pro (2nd gen)\nDelivered: January 20, 2026\n\nThank you for shopping with Apple.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "apple.com",
-      "has_order_number": true,
-      "order_number": "W1000015",
-      "has_return_date": true,
-      "return_window_days": 14,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "apple",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-zappos-016",
-    "from_address": "cs@zappos.com",
-    "subject": "Your Zappos order #114-1000016",
-    "body": "Thank you for your order!\n\nOrder #114-1000016\nItem: New Balance 990v5 Sneakers\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Zappos.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "zappos.com",
-      "has_order_number": true,
-      "order_number": "114-1000016",
-      "has_return_date": true,
-      "return_window_days": 365,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "zappos",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-zappos-017",
-    "from_address": "cs@zappos.com",
-    "subject": "Your Zappos order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #114-1000017\nItem: New Balance 990v5 Sneakers\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at zappos.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "zappos.com",
-      "has_order_number": true,
-      "order_number": "114-1000017",
-      "has_return_date": true,
-      "return_window_days": 365,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "zappos",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-zappos-018",
-    "from_address": "cs@zappos.com",
-    "subject": "Your Zappos order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #114-1000018\nItem: New Balance 990v5 Sneakers\nDelivered: January 20, 2026\n\nThank you for shopping with Zappos.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "zappos.com",
-      "has_order_number": true,
-      "order_number": "114-1000018",
-      "has_return_date": true,
-      "return_window_days": 365,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "zappos",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nordstrom-019",
-    "from_address": "nordstrom@e.nordstrom.com",
-    "subject": "Your Nordstrom order #31000019",
-    "body": "Thank you for your order!\n\nOrder #31000019\nItem: Cashmere Sweater - Navy\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nordstrom.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nordstrom.com",
-      "has_order_number": true,
-      "order_number": "31000019",
-      "has_return_date": true,
-      "return_window_days": 40,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nordstrom",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nordstrom-020",
-    "from_address": "nordstrom@e.nordstrom.com",
-    "subject": "Your Nordstrom order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #31000020\nItem: Cashmere Sweater - Navy\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at nordstrom.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nordstrom.com",
-      "has_order_number": true,
-      "order_number": "31000020",
-      "has_return_date": true,
-      "return_window_days": 40,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nordstrom",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nordstrom-021",
-    "from_address": "nordstrom@e.nordstrom.com",
-    "subject": "Your Nordstrom order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #31000021\nItem: Cashmere Sweater - Navy\nDelivered: January 20, 2026\n\nThank you for shopping with Nordstrom.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nordstrom.com",
-      "has_order_number": true,
-      "order_number": "31000021",
-      "has_return_date": true,
-      "return_window_days": 40,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nordstrom",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-bestbuy-022",
-    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
-    "subject": "Your Best Buy order #BBY01-1000022",
-    "body": "Thank you for your order!\n\nOrder #BBY01-1000022\nItem: Sony WH-1000XM5 Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Best Buy.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "bestbuy.com",
-      "has_order_number": true,
-      "order_number": "BBY01-1000022",
-      "has_return_date": true,
-      "return_window_days": 15,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "bestbuy",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-bestbuy-023",
-    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
-    "subject": "Your Best Buy order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #BBY01-1000023\nItem: Sony WH-1000XM5 Headphones\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at best buy.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "bestbuy.com",
-      "has_order_number": true,
-      "order_number": "BBY01-1000023",
-      "has_return_date": true,
-      "return_window_days": 15,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "bestbuy",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-bestbuy-024",
-    "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
-    "subject": "Your Best Buy order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #BBY01-1000024\nItem: Sony WH-1000XM5 Headphones\nDelivered: January 20, 2026\n\nThank you for shopping with Best Buy.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "bestbuy.com",
-      "has_order_number": true,
-      "order_number": "BBY01-1000024",
-      "has_return_date": true,
-      "return_window_days": 15,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "bestbuy",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-etsy-025",
-    "from_address": "transaction@etsy.com",
-    "subject": "Your Etsy order #1000025",
-    "body": "Thank you for your order!\n\nOrder #1000025\nItem: Handmade Ceramic Vase\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Etsy.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "etsy.com",
-      "has_order_number": true,
-      "order_number": "1000025",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "etsy",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-etsy-026",
-    "from_address": "transaction@etsy.com",
-    "subject": "Your Etsy order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #1000026\nItem: Handmade Ceramic Vase\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at etsy.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "etsy.com",
-      "has_order_number": true,
-      "order_number": "1000026",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "etsy",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-etsy-027",
-    "from_address": "transaction@etsy.com",
-    "subject": "Your Etsy order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #1000027\nItem: Handmade Ceramic Vase\nDelivered: January 20, 2026\n\nThank you for shopping with Etsy.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "etsy.com",
-      "has_order_number": true,
-      "order_number": "1000027",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "etsy",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-allbirds-028",
-    "from_address": "hello@allbirds.com",
-    "subject": "Your Allbirds order #AB-1000028",
-    "body": "Thank you for your order!\n\nOrder #AB-1000028\nItem: Tree Runners - Natural White\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Allbirds.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "allbirds.com",
-      "has_order_number": true,
-      "order_number": "AB-1000028",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "allbirds",
-      "order_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-allbirds-029",
-    "from_address": "hello@allbirds.com",
-    "subject": "Your Allbirds order has shipped",
-    "body": "Great news! Your order has shipped.\n\nOrder #AB-1000029\nItem: Tree Runners - Natural White\nShipped: January 17, 2026\nEstimated Delivery: January 20, 2026\nTracking: 1Z999AA10123456784\n\nTrack your package at allbirds.com/track",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "allbirds.com",
-      "has_order_number": true,
-      "order_number": "AB-1000029",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "allbirds",
-      "shipping_notification",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-allbirds-030",
-    "from_address": "hello@allbirds.com",
-    "subject": "Your Allbirds order has been delivered",
-    "body": "Your package has been delivered!\n\nOrder #AB-1000030\nItem: Tree Runners - Natural White\nDelivered: January 20, 2026\n\nThank you for shopping with Allbirds.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "allbirds.com",
-      "has_order_number": true,
-      "order_number": "AB-1000030",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "allbirds",
-      "delivery_confirmation",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-amazon-031",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order",
-    "body": "Thank you for your order!\n\nItem: Wireless Bluetooth Headphones\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Amazon.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "amazon.com",
-      "has_order_number": false,
-      "order_number": null,
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "amazon",
-      "order_confirmation",
-      "without_order_number"
-    ]
-  },
-  {
-    "id": "syn-target-032",
+    "id": "syn-tgt-ship-007",
     "from_address": "no-reply@target.com",
-    "subject": "Your Target order",
-    "body": "Thank you for your order!\n\nItem: KitchenAid Stand Mixer\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Target.",
+    "subject": "Your Target.com order #101000007 has shipped!",
+    "body": "Great news \u2014 your order is on the way!\n\nOrder number: 101000007\n\nYour items\nKitchenAid Artisan Series 5-Qt Stand Mixer - Empire Red\nShipped via UPS\nTracking: 1Z12345E0205271688\n\nEstimated delivery: January 20, 2026\n\n---\nTarget Corporation | 1000 Nicollet Mall, Minneapolis, MN 55403\nManage your communication preferences | Unsubscribe\nPrivacy Policy | CA Privacy Rights | Terms & Conditions\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
       "merchant_domain": "target.com",
-      "has_order_number": false,
-      "order_number": null,
+      "has_order_number": true,
+      "order_number": "101000007",
       "has_return_date": true,
       "return_window_days": 90,
       "confidence": "estimated",
@@ -699,112 +156,22 @@
     },
     "tags": [
       "target",
-      "order_confirmation",
-      "without_order_number"
+      "shipping_notification",
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-nike-033",
-    "from_address": "info@nike.com",
-    "subject": "Your Nike order",
-    "body": "Thank you for your order!\n\nItem: Air Max 90 Running Shoes\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nTotal: $79.99\n\nThank you for shopping with Nike.",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nike.com",
-      "has_order_number": false,
-      "order_number": null,
-      "has_return_date": true,
-      "return_window_days": 60,
-      "confidence": "estimated",
-      "must_not": []
-    },
-    "tags": [
-      "nike",
-      "order_confirmation",
-      "without_order_number"
-    ]
-  },
-  {
-    "id": "syn-amazon-034",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order #112-1000034-2000034",
-    "body": "Thank you for your order!\n\nOrder #112-1000034-2000034\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by February 19, 2026.\nTo start a return, visit amazon.com/returns",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "amazon.com",
-      "has_order_number": true,
-      "order_number": "112-1000034-2000034",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "exact",
-      "must_not": []
-    },
-    "tags": [
-      "amazon",
-      "order_confirmation",
-      "explicit_return_date",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-zappos-035",
-    "from_address": "cs@zappos.com",
-    "subject": "Your Zappos order #114-1000035",
-    "body": "Thank you for your order!\n\nOrder #114-1000035\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by January 20, 2027.\nTo start a return, visit zappos.com/returns",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "zappos.com",
-      "has_order_number": true,
-      "order_number": "114-1000035",
-      "has_return_date": true,
-      "return_window_days": 365,
-      "confidence": "exact",
-      "must_not": []
-    },
-    "tags": [
-      "zappos",
-      "order_confirmation",
-      "explicit_return_date",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-nordstrom-036",
-    "from_address": "nordstrom@e.nordstrom.com",
-    "subject": "Your Nordstrom order #31000036",
-    "body": "Thank you for your order!\n\nOrder #31000036\nItem: Running Shoes - Size 10\nOrder Date: January 15, 2026\nTotal: $129.99\n\nReturn Policy: You may return this item by March 01, 2026.\nTo start a return, visit nordstrom.com/returns",
-    "body_html": null,
-    "expected": {
-      "should_extract": true,
-      "merchant_domain": "nordstrom.com",
-      "has_order_number": true,
-      "order_number": "31000036",
-      "has_return_date": true,
-      "return_window_days": 40,
-      "confidence": "exact",
-      "must_not": []
-    },
-    "tags": [
-      "nordstrom",
-      "order_confirmation",
-      "explicit_return_date",
-      "with_order_number"
-    ]
-  },
-  {
-    "id": "syn-bestbuy-037",
+    "id": "syn-bby-html-008",
     "from_address": "BestBuyInfo@emailinfo.bestbuy.com",
-    "subject": "Your Best Buy order #BBY01-1000037",
-    "body": "",
-    "body_html": "<html><body><h1>Order Confirmation</h1><p>Thank you for your order!</p><table><tr><td>Order</td><td>#BBY01-1000037</td></tr><tr><td>Item</td><td>Cotton T-Shirt - Blue, Large</td></tr><tr><td>Date</td><td>January 15, 2026</td></tr><tr><td>Total</td><td>$34.99</td></tr></table><p>Estimated delivery: January 20, 2026</p></body></html>",
+    "subject": "Order Confirmation - #BBY01-1000008",
+    "body": "Having trouble viewing this email? View as a Web page: https://emailinfo.bestbuy.com/...",
+    "body_html": "<html><body style='font-family:Arial,sans-serif;'><div style='max-width:600px;margin:0 auto;'><div style='background:#0046be;padding:20px;color:white;text-align:center;'><h1 style='margin:0;'>Best Buy</h1></div><div style='padding:20px;'><h2>Thanks for your order!</h2><p>Order Number: <strong>BBY01-1000008</strong></p><p>Ordered: January 15, 2026</p><table style='width:100%;border-collapse:collapse;'><tr style='border-bottom:1px solid #eee;'><td style='padding:10px;'><strong>LG C3 65\" 4K OLED evo Smart TV - OLED65C3PUA</strong><br>Qty: 1<br>$1,296.99</td></tr></table><p><strong>Estimated Delivery:</strong> January 20, 2026</p><p style='margin-top:20px;'><a href='https://www.bestbuy.com/orders/BBY01-1000008' style='background:#0046be;color:white;padding:10px 20px;text-decoration:none;'>Track Your Order</a></p></div><div style='padding:20px;font-size:11px;color:#666;'>Best Buy Co., Inc. | 7601 Penn Ave S, Richfield, MN 55423<br>Contact Us | Returns &amp; Exchanges | Unsubscribe</div></div></body></html>",
     "expected": {
       "should_extract": true,
       "merchant_domain": "bestbuy.com",
       "has_order_number": true,
-      "order_number": "BBY01-1000037",
+      "order_number": "BBY01-1000008",
       "has_return_date": true,
       "return_window_days": 15,
       "confidence": "estimated",
@@ -814,20 +181,137 @@
       "bestbuy",
       "html_only",
       "order_confirmation",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-walmart-038",
+    "id": "syn-nike-order-009",
+    "from_address": "info@nike.com",
+    "subject": "We've Got Your Order C1000009",
+    "body": "WE'VE GOT YOUR ORDER.\n\nHi there,\n\nWe've received your order and are getting it ready.\n\nORDER NUMBER: C1000009\nORDER DATE: 01/15/2026\n\nNike Air Max 90 - Men's - White/Black - Size 10.5\n$130.00\n\nESTIMATED DELIVERY\nJanuary 20, 2026\n\nSHIPPING TO\nJohn D.\n123 Main St, New York, NY 10001\n\nORDER TOTAL: $138.45\n\nNeed help? Visit nike.com/help or call 1-800-344-6453\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": true,
+      "order_number": "C1000009",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-nord-order-010",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "We got your order #31000010!",
+    "body": "Thank you for your order.\n\nOrder #31000010\nDate: January 15, 2026\n\nVince Cashmere Crewneck Sweater - Navy - Size L\n$198.00\n\nEstimated arrival: January 20, 2026\n\nFree shipping and free returns, always.\n\nQuestions? Contact us anytime at 1.888.282.6060 or nordstrom.com/contact.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000010",
+      "has_return_date": true,
+      "return_window_days": 45,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-etsy-order-011",
+    "from_address": "transaction@etsy.com",
+    "subject": "You made a purchase from CeramicStudioNY",
+    "body": "You made a purchase from CeramicStudioNY!\n\nOrder #1000011\n\n1x Handmade Ceramic Pour-Over Coffee Dripper - Speckled White\n$45.00\nShipping: $6.99\n\nEstimated delivery: January 20, 2026\n\nThis order is sold by CeramicStudioNY. If you need help, you can contact the seller directly.\n\nView your order: https://www.etsy.com/your/purchases/1000011\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "etsy.com",
+      "has_order_number": true,
+      "order_number": "1000011",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "etsy",
+      "order_confirmation",
+      "with_order_number",
+      "marketplace",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-apple-order-012",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your order W1000012 has been placed.",
+    "body": "Your order has been placed.\n\nOrder W1000012\nPlaced January 15, 2026\n\nAirPods Pro (2nd generation) with MagSafe Charging Case\n$249.00\n\nDelivers: January 20, 2026\nShips to: John D.\n\nView or manage your order:\nhttps://store.apple.com/xc/track/W1000012\n\nApple Online Store | 1-800-MY-APPLE",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "apple.com",
+      "has_order_number": true,
+      "order_number": "W1000012",
+      "has_return_date": true,
+      "return_window_days": 14,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "apple",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-zappos-order-013",
+    "from_address": "cs@zappos.com",
+    "subject": "Zappos.com Order Confirmation #114-1000013",
+    "body": "Woo-hoo! Your order is confirmed!\n\nOrder Number: 114-1000013\n\nNew Balance Fresh Foam 990v5 - Grey/Castlerock - Size 11 D\n$174.95\n\nEstimated Delivery: January 20, 2026\n\nRemember \u2014 Zappos offers FREE 365-day returns!\nNot the right fit? No worries, send it back anytime.\n\nCustomer Loyalty Team\n1-800-927-7671\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zappos.com",
+      "has_order_number": true,
+      "order_number": "114-1000013",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "zappos",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-wmt-order-014",
     "from_address": "help@walmart.com",
-    "subject": "Your Walmart order #2001000038-2000038",
-    "body": "",
-    "body_html": "<html><body><h1>Order Confirmation</h1><p>Thank you for your order!</p><table><tr><td>Order</td><td>#2001000038-2000038</td></tr><tr><td>Item</td><td>Cotton T-Shirt - Blue, Large</td></tr><tr><td>Date</td><td>January 15, 2026</td></tr><tr><td>Total</td><td>$34.99</td></tr></table><p>Estimated delivery: January 20, 2026</p></body></html>",
+    "subject": "Your Walmart.com order confirmation #2001000014-2000014",
+    "body": "Your order's been placed.\n\nOrder # 2001000014-2000014\n\nShipping\nArriving by January 20, 2026\n\n1 x Samsung 55\" Class 4K UHD Smart LED TV (UN55AU8000)\n$397.99\n\nPayment method: Visa ****4242\nOrder total: $432.67\n\nTrack your order at walmart.com/orders\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
     "expected": {
       "should_extract": true,
       "merchant_domain": "walmart.com",
       "has_order_number": true,
-      "order_number": "2001000038-2000038",
+      "order_number": "2001000014-2000014",
       "has_return_date": true,
       "return_window_days": 90,
       "confidence": "estimated",
@@ -835,62 +319,160 @@
     },
     "tags": [
       "walmart",
-      "html_only",
       "order_confirmation",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-amazon-039",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order #112-1000039-2000039 - 3 items",
-    "body": "Thank you for your order!\n\nOrder #112-1000039-2000039\n\nItems:\n  1. Wireless Mouse - Black ($29.99)\n  2. USB-C Hub Adapter ($49.99)\n  3. Laptop Stand - Silver ($39.99)\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nSubtotal: $119.97\nTax: $9.60\nTotal: $129.57\n\nThank you for shopping with Amazon.",
+    "id": "syn-allb-order-015",
+    "from_address": "hello@allbirds.com",
+    "subject": "Order confirmed #AB-1000015",
+    "body": "Order Confirmed\n\nHi there, thanks for your purchase!\n\nOrder AB-1000015\n\nMen's Tree Runners - Natural White/Natural White - Size 10\n$98.00\n\nEstimated delivery: January 20, 2026\n\nMade from natural materials, designed for everyday.\n\nQuestions? hello@allbirds.com\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
-      "merchant_domain": "amazon.com",
+      "merchant_domain": "allbirds.com",
       "has_order_number": true,
-      "order_number": "112-1000039-2000039",
+      "order_number": "AB-1000015",
       "has_return_date": true,
       "return_window_days": 30,
       "confidence": "estimated",
       "must_not": []
     },
     "tags": [
-      "amazon",
+      "allbirds",
       "order_confirmation",
-      "multi_item",
-      "with_order_number"
+      "with_order_number",
+      "realistic"
     ]
   },
   {
-    "id": "syn-target-040",
-    "from_address": "no-reply@target.com",
-    "subject": "Your Target order #101000040 - 3 items",
-    "body": "Thank you for your order!\n\nOrder #101000040\n\nItems:\n  1. Wireless Mouse - Black ($29.99)\n  2. USB-C Hub Adapter ($49.99)\n  3. Laptop Stand - Silver ($39.99)\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\nSubtotal: $119.97\nTax: $9.60\nTotal: $129.57\n\nThank you for shopping with Target.",
+    "id": "syn-nike-explicit-016",
+    "from_address": "info@nike.com",
+    "subject": "Your Nike order #C1000016",
+    "body": "Order Confirmation\n\nOrder #C1000016\n\nNike Air Max 90 - Men's - White/Black - Size 10.5\n$130.00\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\n\nRETURN POLICY\nYou can return this item for a full refund by March 21, 2026.\nStart a return at nike.com/returns\n\nOrder Total: $138.45\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
     "body_html": null,
     "expected": {
       "should_extract": true,
-      "merchant_domain": "target.com",
+      "merchant_domain": "nike.com",
       "has_order_number": true,
-      "order_number": "101000040",
+      "order_number": "C1000016",
       "has_return_date": true,
-      "return_window_days": 90,
+      "return_window_days": 60,
+      "confidence": "exact",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "order_confirmation",
+      "explicit_return_date",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-amaz-explicit-017",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order #112-1000017-2000017",
+    "body": "Order Confirmation\n\nOrder #112-1000017-2000017\n\nNike Air Max 90 - Men's - White/Black - Size 10.5\n$130.00\n\nOrder Date: January 15, 2026\nEstimated Delivery: January 20, 2026\n\nRETURN POLICY\nYou can return this item for a full refund by February 19, 2026.\nStart a return at amazon.com.com/returns\n\nOrder Total: $138.45\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000017-2000017",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "exact",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "order_confirmation",
+      "explicit_return_date",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-unk-ov-018",
+    "from_address": "hello@outdoorvoices.com",
+    "subject": "Your Outdoor Voices order is confirmed! #OV-87654",
+    "body": "Order Confirmation\n\nThank you for your purchase from Outdoor Voices!\n\nOrder #OV-87654\n\n1x CloudKnit Sweatpant - Charcoal - M\n$98.00\n\nEstimated delivery: January 20, 2026\nOrder total: $106.82\n\nNeed help? support@outdoorvoices.com\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "outdoorvoices.com",
+      "has_order_number": true,
+      "order_number": "OV-87654",
+      "has_return_date": true,
+      "return_window_days": 30,
       "confidence": "estimated",
       "must_not": []
     },
     "tags": [
-      "target",
+      "unknown_merchant",
       "order_confirmation",
-      "multi_item",
-      "with_order_number"
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
     ]
   },
   {
-    "id": "syn-edge-newsletter-041",
+    "id": "syn-unk-shopify-019",
+    "from_address": "no-reply@iliabeauty.com",
+    "subject": "Order #1042 confirmed",
+    "body": "Thank you for your purchase!\n\nOrder #1042\n\nILIA Super Serum Skin Tint SPF 40\nShade: Balos ST3\n$48.00\n\nShipping address:\nJane D., New York, NY\n\nEstimated delivery: January 20, 2026\nSubtotal: $48.00\nShipping: Free\nTotal: $51.12\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "iliabeauty.com",
+      "has_order_number": true,
+      "order_number": "1042",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "unknown_merchant",
+      "shopify",
+      "order_confirmation",
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-intl-asos-020",
+    "from_address": "order@asos.com",
+    "subject": "Your ASOS order no. 987654321 has been dispatched",
+    "body": "Your order has been dispatched!\n\nOrder No: 987654321\n\nASOS DESIGN Oversized Denim Jacket\nColour: Blue\nSize: M\n$89.00\n\nDispatched: January 17, 2026\nEstimated Delivery: January 20, 2026\n\nReturns\nFree returns within 28 days of delivery.\nStart a return at asos.com/returns\n\nASOS | Unsubscribe | Privacy Policy",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "asos.com",
+      "has_order_number": true,
+      "order_number": "987654321",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "international",
+      "order_confirmation",
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-amaz-news-021",
     "from_address": "deals@amazon.com",
-    "subject": "This week's deals you don't want to miss!",
-    "body": "SALE! Up to 50% off selected items.\n\nShop now at our biggest sale of the year.\nFree shipping on orders over $50.\n\nUnsubscribe | View in browser",
+    "subject": "CLEARANCE: Up to 70% off at Amazon.com!",
+    "body": "CLEARANCE EVENT\nUp to 70% off thousands of items!\n\nSHOP NOW >\n\nPlus, get free shipping on orders over $35.\nHurry \u2014 sale ends Monday!\n\nNew arrivals | Women's | Men's | Home\n\nAmazon.com | Unsubscribe | Privacy Policy | Terms",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -903,16 +485,17 @@
       "must_not": []
     },
     "tags": [
+      "amazon",
       "edge_case",
       "newsletter",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-newsletter-042",
+    "id": "syn-targ-news-022",
     "from_address": "deals@target.com",
-    "subject": "This week's deals you don't want to miss!",
-    "body": "SALE! Up to 50% off selected items.\n\nShop now at our biggest sale of the year.\nFree shipping on orders over $50.\n\nUnsubscribe | View in browser",
+    "subject": "CLEARANCE: Up to 70% off at Target!",
+    "body": "CLEARANCE EVENT\nUp to 70% off thousands of items!\n\nSHOP NOW >\n\nPlus, get free shipping on orders over $35.\nHurry \u2014 sale ends Monday!\n\nNew arrivals | Women's | Men's | Home\n\nTarget | Unsubscribe | Privacy Policy | Terms",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -925,20 +508,21 @@
       "must_not": []
     },
     "tags": [
+      "target",
       "edge_case",
       "newsletter",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-marketing-043",
-    "from_address": "hello@shopify.com",
-    "subject": "Grow your business with Shopify",
-    "body": "Start your free trial today.\n\nJoin millions of entrepreneurs who trust Shopify.\nNo credit card required.\n\nStart Free Trial",
+    "id": "syn-nike-news-023",
+    "from_address": "deals@nike.com",
+    "subject": "CLEARANCE: Up to 70% off at Nike!",
+    "body": "CLEARANCE EVENT\nUp to 70% off thousands of items!\n\nSHOP NOW >\n\nPlus, get free shipping on orders over $35.\nHurry \u2014 sale ends Monday!\n\nNew arrivals | Women's | Men's | Home\n\nNike | Unsubscribe | Privacy Policy | Terms",
     "body_html": null,
     "expected": {
       "should_extract": false,
-      "merchant_domain": "shopify.com",
+      "merchant_domain": "nike.com",
       "has_order_number": false,
       "order_number": null,
       "has_return_date": false,
@@ -947,16 +531,111 @@
       "must_not": []
     },
     "tags": [
+      "nike",
       "edge_case",
-      "marketing",
+      "newsletter",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-subscription-044",
-    "from_address": "no-reply@netflix.com",
+    "id": "syn-amaz-review-024",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "How was your recent Amazon.com purchase?",
+    "body": "How did we do?\n\nTell us about your recent purchase. Your feedback helps us improve.\n\nRate your experience:\nhttps://amazon.com/review?ref=email\n\nThank you for being a Amazon.com customer.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "review_request",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-targ-review-025",
+    "from_address": "no-reply@target.com",
+    "subject": "How was your recent Target purchase?",
+    "body": "How did we do?\n\nTell us about your recent purchase. Your feedback helps us improve.\n\nRate your experience:\nhttps://target.com/review?ref=email\n\nThank you for being a Target customer.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "edge_case",
+      "review_request",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-pwreset-026",
+    "from_address": "account-update@amazon.com",
+    "subject": "Reset your Amazon.com password",
+    "body": "Hello,\n\nWe received a request to reset the password for your Amazon account.\n\nClick the link below to reset your password:\nhttps://www.amazon.com/ap/forgotpassword?arb=abc123\n\nIf you didn't request this change, you can ignore this email.\nYour password won't be changed until you click the link above.\n\nAmazon.com Customer Service",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "password_reset",
+      "false_positive_risk",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-giftcard-027",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com Gift Card order",
+    "body": "Hello,\n\nThank you for purchasing an Amazon.com Gift Card!\n\nGift Card Amount: $50.00\nDelivery Method: Email\nRecipient: jane@example.com\n\nThe gift card has been delivered to the recipient's email address.\n\nOrder #112-9876543-1234567\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "gift_card",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-netflix-028",
+    "from_address": "info@mailer.netflix.com",
     "subject": "Your Netflix payment receipt",
-    "body": "Payment Confirmation\n\nAmount: $15.49\nPlan: Standard\nBilling Date: January 15, 2026\nNext Billing Date: February 15, 2026\n\nManage your subscription at netflix.com/account",
+    "body": "Payment Confirmation\n\nHi John,\n\nThanks for your payment of $15.49.\n\nPlan: Standard\nBilling period: Jan 15, 2026 - Feb 15, 2026\nPayment method: Visa ending in 4242\n\nManage your account at netflix.com/account",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -971,15 +650,40 @@
     "tags": [
       "edge_case",
       "subscription",
+      "blocklisted",
       "non_returnable",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-digital-045",
+    "id": "syn-edge-spotify-029",
+    "from_address": "no-reply@spotify.com",
+    "subject": "Your Spotify receipt",
+    "body": "Your receipt from Spotify\n\nSpotify Premium\nIndividual Plan\nAmount: $10.99\nDate: January 15, 2026\nPayment method: PayPal\n\nView your account | Get help",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "spotify.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "blocklisted",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-steam-030",
     "from_address": "noreply@steampowered.com",
     "subject": "Thank you for your purchase!",
-    "body": "Thank you for your purchase on Steam!\n\nGame: Cyberpunk 2077\nPrice: $59.99\nDate: January 15, 2026\n\nDownload now from your Steam library.",
+    "body": "Thank you for your Steam purchase!\n\nCyberpunk 2077\nCDPROJEKTRED\n$59.99\n\nDate of purchase: Jan 15, 2026\nPayment method: Visa ending in 4242\n\nThis game has been added to your library.\nDownload and play from the Steam client.",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -994,37 +698,16 @@
     "tags": [
       "edge_case",
       "digital",
+      "blocklisted",
       "non_returnable",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-cancellation-046",
-    "from_address": "auto-confirm@amazon.com",
-    "subject": "Your order #112-1234567-7654321 has been cancelled",
-    "body": "Your order has been cancelled.\n\nOrder #112-1234567-7654321\nItem: Wireless Bluetooth Headphones\n\nYour order was cancelled as requested. If you were charged, a refund will be issued within 3-5 business days.\n",
-    "body_html": null,
-    "expected": {
-      "should_extract": false,
-      "merchant_domain": "amazon.com",
-      "has_order_number": true,
-      "order_number": "112-1234567-7654321",
-      "has_return_date": false,
-      "return_window_days": null,
-      "confidence": null,
-      "must_not": []
-    },
-    "tags": [
-      "edge_case",
-      "cancellation",
-      "should_reject"
-    ]
-  },
-  {
-    "id": "syn-edge-ride-047",
+    "id": "syn-edge-uber-031",
     "from_address": "no-reply@uber.com",
-    "subject": "Your trip receipt from Uber",
-    "body": "Thanks for riding with Uber\n\nTrip: Downtown to Airport\nDate: January 15, 2026\nTotal: $32.45\nPayment: Visa ending in 4242\n",
+    "subject": "Your Tuesday evening trip with Uber",
+    "body": "Thanks for riding, John\n\nJan 15, 2026\n\nTrip fare\nDistance: 8.3 mi\nTime: 22 min\n\nBase fare: $3.50\nDistance: $12.80\nTime: $5.40\nBooking fee: $3.08\nTip: $4.00\n\nTotal: $28.78\nVisa ****4242\n\nRate your driver: 5 stars | 4 stars | 3 stars",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -1038,16 +721,17 @@
     },
     "tags": [
       "edge_case",
-      "service",
+      "ride_receipt",
+      "blocklisted",
       "non_returnable",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-food-048",
+    "id": "syn-edge-doordash-032",
     "from_address": "no-reply@doordash.com",
-    "subject": "Your DoorDash order is confirmed",
-    "body": "Your order from Chipotle is confirmed!\n\nItems:\n  Burrito Bowl ($11.50)\n  Chips and Guac ($4.25)\n\nTotal: $15.75\nEstimated Delivery: 30-40 minutes\n",
+    "subject": "Your DoorDash order from Chipotle Mexican Grill",
+    "body": "Your DoorDash order is confirmed!\n\nFrom: Chipotle Mexican Grill\n\n1x Burrito Bowl - Chicken, Brown Rice, Black Beans\n  $11.50\n1x Chips & Guacamole\n  $4.25\n\nSubtotal: $15.75\nDelivery Fee: $3.99\nService Fee: $2.36\nTip: $3.00\nTotal: $25.10\n\nEstimated arrival: 30-40 minutes",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -1062,37 +746,252 @@
     "tags": [
       "edge_case",
       "food_delivery",
+      "blocklisted",
       "non_returnable",
       "should_reject"
     ]
   },
   {
-    "id": "syn-edge-international-049",
-    "from_address": "order@asos.com",
-    "subject": "Your ASOS order #987654321 has been dispatched",
-    "body": "Your order has been dispatched!\n\nOrder #987654321\nItem: Oversized Denim Jacket - Size M\nDispatched: January 17, 2026\nEstimated Delivery: January 24, 2026\nTotal: $89.00\n\nFree returns within 28 days of delivery.",
+    "id": "syn-edge-venmo-033",
+    "from_address": "venmo@venmo.com",
+    "subject": "You paid Mike S. $42.00",
+    "body": "You paid Mike S. $42.00\n\nNote: Dinner \ud83c\udf55\n\nDate: January 15, 2026\nPayment method: Venmo balance\n\nView transaction in the Venmo app",
     "body_html": null,
     "expected": {
-      "should_extract": true,
-      "merchant_domain": "asos.com",
-      "has_order_number": true,
-      "order_number": "987654321",
-      "has_return_date": true,
-      "return_window_days": 30,
-      "confidence": "estimated",
+      "should_extract": false,
+      "merchant_domain": "venmo.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
       "must_not": []
     },
     "tags": [
       "edge_case",
-      "international",
-      "with_order_number"
+      "financial",
+      "blocklisted",
+      "non_returnable",
+      "should_reject"
     ]
   },
   {
-    "id": "syn-amazon-050",
+    "id": "syn-edge-travel-034",
+    "from_address": "bookings@expedia.com",
+    "subject": "Booking confirmed - Hotel Americano, Jan 20-22",
+    "body": "Your booking is confirmed!\n\nConfirmation #: 84729163\n\nHotel Americano\n518 W 27th St, New York, NY 10001\n\nCheck-in: January 20, 2026\nCheck-out: January 22, 2026\n2 nights | 1 room\n\nTotal: $489.00\n\nManage your booking at expedia.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "expedia.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "travel",
+      "blocklisted",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-ticket-035",
+    "from_address": "orders@ticketmaster.com",
+    "subject": "Your tickets to Radiohead at MSG",
+    "body": "You're going!\n\nOrder #TM-91827364\n\nRadiohead\nMadison Square Garden\nMarch 15, 2026 - 8:00 PM\n\nSection: 204\nRow: E\nSeats: 7-8\n\n2 tickets x $125.00 = $250.00\nService Fee: $48.50\nTotal: $298.50\n\nYour tickets will be available in the Ticketmaster app.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "ticketmaster.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "event_ticket",
+      "blocklisted",
+      "non_returnable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-cancel-036",
     "from_address": "auto-confirm@amazon.com",
-    "subject": "Your Amazon order has been placed",
-    "body": "Thanks for your order!\n\nYour order has been placed. We'll send tracking info once it ships.\n\nThank you for shopping with Amazon.",
+    "subject": "Your order #112-1234567-7654321 has been cancelled",
+    "body": "Hello,\n\nAs you requested, we've cancelled item(s) in order #112-1234567-7654321.\n\nCancelled item:\nSony WH-1000XM5 Wireless Headphones\n$348.00\n\nYour payment method has not been charged for this item.\n\nIf you still need this item, you can place a new order at amazon.com.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "cancellation",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-refund-037",
+    "from_address": "returns@amazon.com",
+    "subject": "Your Amazon.com refund of $348.00",
+    "body": "Hello,\n\nWe've processed your return for the following item:\n\nSony WH-1000XM5 Wireless Headphones\n\nRefund amount: $348.00\nRefund method: Visa ending in 4242\nExpected: 3-5 business days\n\nOrder #112-7654321-1234567\n\nThank you for returning this item.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "refund",
+      "return_confirmation",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-ups-038",
+    "from_address": "auto-notify@ups.com",
+    "subject": "UPS Update: Package Scheduled for Delivery Today",
+    "body": "UPS Delivery Notification\n\nA package is scheduled to be delivered today.\n\nTracking Number: 1Z999AA10123456784\nScheduled Delivery: January 20, 2026\nShip To: JOHN D\n          NEW YORK, NY 10001\n\nDelivered By: End of Day\n\nTrack your package at ups.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "ups.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "carrier",
+      "not_merchant",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-fresh-039",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon Fresh order is on the way",
+    "body": "Your Amazon Fresh order is on the way!\n\nDelivery window: Today, 2:00 PM - 4:00 PM\n\nYour items:\n- Organic Whole Milk, 1 gallon\n- Fresh Atlantic Salmon, 1 lb\n- Avocados, bag of 5\n- Dave's Killer Bread, Whole Wheat\n\nSubtotal: $32.47\nDelivery: Free\nTotal: $34.63\n\nYour order was placed through Amazon Fresh.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "grocery",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-mktg-order-040",
+    "from_address": "recommendations@amazon.com",
+    "subject": "Your next order: Top picks for you",
+    "body": "Your next order is waiting!\n\nBased on your recent purchases, we think you'll love:\n\n- Bose QuietComfort Ultra Headphones \u2014 $379.00\n- Apple Watch Series 9 \u2014 $399.00\n- Sonos Move 2 \u2014 $449.00\n\nShop these personalized picks at amazon.com\n\nUnsubscribe | Privacy Policy",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "marketing_disguised",
+      "false_positive_risk",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-pricedrop-041",
+    "from_address": "store-news@amazon.com",
+    "subject": "Price drop! Sony WH-1000XM5 is now $298.00",
+    "body": "Price drop on your wishlist item!\n\nSony WH-1000XM5 Wireless Headphones\nWas: $399.99\nNow: $298.00\nSave: $101.99 (26%)\n\nAdd to cart >\n\nYou're getting this email because this item is on your Amazon Wish List.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "price_alert",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-minimal-042",
+    "from_address": "info@nike.com",
+    "subject": "Order confirmation",
+    "body": "Your order has been placed.\n\nNike Air Max 90\n$130.00\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nike.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "edge_case",
+      "minimal_body",
+      "without_order_number"
+    ]
+  },
+  {
+    "id": "syn-amaz-boiler-043",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order has been placed",
+    "body": "Thanks for your order!\n\nYour order has been placed. We'll send you shipping updates soon.\n\nThank you for shopping with Amazon.com.",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -1112,10 +1011,10 @@
     ]
   },
   {
-    "id": "syn-target-051",
+    "id": "syn-targ-boiler-044",
     "from_address": "no-reply@target.com",
     "subject": "Your Target order has been placed",
-    "body": "Thanks for your order!\n\nYour order has been placed. We'll send tracking info once it ships.\n\nThank you for shopping with Target.",
+    "body": "Thanks for your order!\n\nYour order has been placed. We'll send you shipping updates soon.\n\nThank you for shopping with Target.",
     "body_html": null,
     "expected": {
       "should_extract": false,
@@ -1131,6 +1030,1802 @@
       "target",
       "edge_case",
       "empty_card",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-narvar-045",
+    "from_address": "nike@ship.narvar.com",
+    "subject": "Your Nike order is on the way",
+    "body": "Your order is on the way!\n\nNike Air Max 90 - Men's - Size 10.5\n\nEstimated delivery: January 20, 2026\n\nTrack your shipment:\nhttps://nike.narvar.com/tracking/nike/usps?tracking=9400111899223\n\nOrder #C1000042",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "",
+      "has_order_number": true,
+      "order_number": "C1000042",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "edge_case",
+      "narvar",
+      "shipping_service",
+      "shipping_notification",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-gap-order-046",
+    "from_address": "orders@gap.com",
+    "subject": "Your Gap order #1NRV1000046 is confirmed",
+    "body": "Thanks for shopping with us!\n\nOrder #1NRV1000046\nPlaced on January 15, 2026\n\n1x Relaxed Taper GapFlex Jeans with Washwell - Dark Wash - 32x32\n$69.95\n\nEstimated delivery: January 20, 2026\n\nFree returns within 30 days at any Gap, Old Navy, or Banana Republic store.\n\nGap Inc. | Manage your order at gap.com/orders\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "gap.com",
+      "has_order_number": true,
+      "order_number": "1NRV1000046",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "gap",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-on-order-047",
+    "from_address": "orders@oldnavy.com",
+    "subject": "Order confirmed! #1NRV1000047",
+    "body": "Yay! Your order is confirmed.\n\nOrder Number: 1NRV1000047\n\nPowerSoft Cropped Tank Top - Active - Black - XS\n$16.99\n\nEstimated delivery: January 20, 2026\nShipping: FREE on orders $50+\n\nOld Navy | Gap Inc.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "oldnavy.com",
+      "has_order_number": true,
+      "order_number": "1NRV1000047",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "oldnavy",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-jcrew-order-048",
+    "from_address": "jcrew@order.jcrew.com",
+    "subject": "Your J.Crew order #1000048",
+    "body": "We've received your order.\n\nOrder 1000048\n\n1 x Ludlow Slim-Fit Suit Jacket in Italian Wool - Navy - 40R\n$398.00\n\nShips by: January 17, 2026\nEstimated arrival: January 20, 2026\n\nFree returns within 30 days \u2014 in stores or by mail.\n\nJ.Crew Group, Inc. | 225 Liberty Street, New York, NY 10281\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "jcrew.com",
+      "has_order_number": true,
+      "order_number": "1000048",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "jcrew",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-athl-order-049",
+    "from_address": "orders@athleta.com",
+    "subject": "Athleta order confirmed #1NRV1000049",
+    "body": "Your order is confirmed!\n\nOrder #1NRV1000049\n\n1x Salutation Stash Pocket II Tight - Black - M\n$109.00\n\nEstimated delivery: January 20, 2026\n\nGive-It-A-Workout Guarantee:\nWork out in it, wash it, and if it doesn't perform, return it within 60 days \u2014 no questions asked.\n\nAthleta | A Gap Inc. Brand\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "athleta.com",
+      "has_order_number": true,
+      "order_number": "1NRV1000049",
+      "has_return_date": true,
+      "return_window_days": 60,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "athleta",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-uq-order-050",
+    "from_address": "info@mail.uniqlo.com",
+    "subject": "UNIQLO: Order Confirmation #UQ1000050",
+    "body": "Thank you for your order.\n\nOrder Number: UQ1000050\n\nUltra Light Down Jacket - Navy - M\n$79.90\n\nEstimated Delivery: January 20, 2026\n\nYou may return unworn items with tags within 30 days.\n\nUNIQLO USA LLC\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "uniqlo.com",
+      "has_order_number": true,
+      "order_number": "UQ1000050",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "uniqlo",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-zara-order-051",
+    "from_address": "info@e.zara.com",
+    "subject": "Your order is on its way | 1000051",
+    "body": "YOUR ORDER IS ON ITS WAY\n\nOrder: 1000051\n\nOversize Biker Jacket - Black - M\n89.90 USD\n\nEstimated delivery: January 20, 2026\n\nYou have 30 days from the shipping date to make a return.\nIn store or by mail \u2014 it's up to you.\n\nZARA | Industria de Dise\u00f1o Textil, S.A.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "zara.com",
+      "has_order_number": true,
+      "order_number": "1000051",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "zara",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-hm-order-052",
+    "from_address": "no-reply@email.hm.com",
+    "subject": "H&M order confirmation #1000052",
+    "body": "Order Confirmation\n\nHi there,\n\nThank you for your order at hm.com.\n\nOrder number: 1000052\n\nRelaxed Fit Cotton T-shirt (3-pack) - White - M\n$29.97\n\nDelivery: Standard Shipping\nEstimated delivery date: January 20, 2026\n\nH&M Hennes & Mauritz | hm.com/returns\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "hm.com",
+      "has_order_number": true,
+      "order_number": "1000052",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "hm",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-adi-order-053",
+    "from_address": "confirm@adidas.com",
+    "subject": "adidas order confirmation #AD1000053",
+    "body": "ORDER CONFIRMED\n\nThanks for your order.\n\nORDER NUMBER: AD1000053\nORDER DATE: 01/15/2026\n\nUltraboost Light Running Shoes - Core Black - Size 10\n$190.00\n\nESTIMATED DELIVERY: January 20, 2026\n\nFREE RETURNS\nNot the right fit? Return for free within 30 days.\n\nadidas America, Inc.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "adidas.com",
+      "has_order_number": true,
+      "order_number": "AD1000053",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "adidas",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-ikea-order-054",
+    "from_address": "no-reply@order.ikea.com",
+    "subject": "IKEA order confirmation #1000054",
+    "body": "Tack! Your order has been placed.\n\nOrder number: 1000054\n\nKALLAX Shelf Unit, 4x4 - White\n$179.00\n\nDelivery method: Home Delivery\nEstimated delivery: January 20, 2026\n\n365-day return policy\nChanged your mind? Return new, unopened products within 365 days with your receipt for a full refund.\n\nIKEA | Inter IKEA Systems B.V.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "ikea.com",
+      "has_order_number": true,
+      "order_number": "1000054",
+      "has_return_date": true,
+      "return_window_days": 365,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "ikea",
+      "order_confirmation",
+      "with_order_number",
+      "realistic",
+      "large_item",
+      "long_return_window"
+    ]
+  },
+  {
+    "id": "syn-wfr-order-055",
+    "from_address": "orders@wayfair.com",
+    "subject": "Your Wayfair order #1000055 is confirmed!",
+    "body": "Your Wayfair order is confirmed!\n\nOrder Number: 1000055\n\nMercer41 Velvet Sofa - Navy Blue\n$629.99\n\nEstimated Delivery: January 20, 2026\n\nMost items can be returned within 30 days of delivery.\nStart a return at wayfair.com/myaccount\n\nWayfair LLC | 4 Copley Place, Boston, MA 02116\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "wayfair.com",
+      "has_order_number": true,
+      "order_number": "1000055",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "wayfair",
+      "order_confirmation",
+      "with_order_number",
+      "realistic",
+      "large_item"
+    ]
+  },
+  {
+    "id": "syn-cost-order-056",
+    "from_address": "costco@online.costco.com",
+    "subject": "Costco.com Order Confirmation #1000056",
+    "body": "Thank you for your Costco.com order.\n\nOrder #: 1000056\nDate: January 15, 2026\n\nKitchenAid Professional 5 Plus Stand Mixer - Silver\n$379.99\n\nShipping Method: Standard\nEstimated Delivery: January 20, 2026\n\nCostco's return policy: We guarantee your satisfaction on every product we sell, with a full refund.\n\nCostco Wholesale | costco.com\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "costco.com",
+      "has_order_number": true,
+      "order_number": "1000056",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "costco",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-ebay-buy-057",
+    "from_address": "ebay@ebay.com",
+    "subject": "You bought Canon EOS R6 Mark II Mirrorless Camera Body",
+    "body": "You bought an item!\n\nCanon EOS R6 Mark II Mirrorless Camera Body\nItem price: $2,299.00\nShipping: FREE\n\nSeller: camera-outlet-deals (99.8% positive)\n\nOrder number: 12-34567-89012\n\nEstimated delivery: January 20, 2026\n\neBay Buyer Protection covers your purchase.\nIf the item doesn't match the listing, you can return it.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "ebay.com",
+      "has_order_number": true,
+      "order_number": "12-34567-89012",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "ebay",
+      "marketplace",
+      "order_confirmation",
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-posh-buy-058",
+    "from_address": "support@poshmark.com",
+    "subject": "You purchased Lululemon Align High-Rise Pant",
+    "body": "Congratulations on your purchase!\n\nOrder #PM-5678901234\n\nLululemon Align High-Rise Pant 25\" - Black - Size 6\n$48.00\n\nSeller: @fashionista_nyc\nCondition: Like New\n\nOrder Date: January 15, 2026\nThe seller will ship your order soon.\nEstimated delivery: January 20, 2026\n\nPoshmark Buyer Protection: If the item isn't as described, you can open a case after delivery.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "poshmark.com",
+      "has_order_number": true,
+      "order_number": "PM-5678901234",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "poshmark",
+      "marketplace",
+      "secondhand",
+      "order_confirmation",
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-tgt-pickup-059",
+    "from_address": "no-reply@target.com",
+    "subject": "Your order #101000059 is ready for pickup!",
+    "body": "Your order is ready for pickup!\n\nOrder number: 101000059\n\nPick up at:\nTarget - Brooklyn Junction\n139 Flatbush Ave, Brooklyn, NY 11217\n\nItems ready:\nDyson V8 Cordless Vacuum\n$349.99\n\nPlease pick up by January 20, 2026.\nBring a valid photo ID.\n\n---\nTarget Corporation | 1000 Nicollet Mall, Minneapolis, MN 55403\nManage your communication preferences | Unsubscribe\nPrivacy Policy | CA Privacy Rights | Terms & Conditions\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "target.com",
+      "has_order_number": true,
+      "order_number": "101000059",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "unknown",
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "store_pickup",
+      "bopis",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-nord-ship-060",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Your Nordstrom.com order #31000060 has shipped",
+    "body": "Your order is on its way!\n\nOrder #31000060\n\nVince Cashmere Crewneck Sweater - Navy - Size L\n$198.00\n\nShipped via UPS\nTracking: 1Z9999W99999999999\n\nEstimated arrival: January 20, 2026\n\nFree shipping. Free returns. All the time.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": true,
+      "order_number": "31000060",
+      "has_return_date": true,
+      "return_window_days": 45,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "shipping_notification",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-wmt-deliv-061",
+    "from_address": "help@walmart.com",
+    "subject": "Delivered: Your Walmart.com order #2001000061-2000061",
+    "body": "Your Walmart.com order has been delivered!\n\nOrder # 2001000061-2000061\n\nSamsung 55\" Class 4K UHD Smart LED TV\n\nDelivered on January 20, 2026\nLeft at: Front Door\n\nNot satisfied? Start a return at walmart.com/returns\nMost items can be returned within 90 days.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "walmart.com",
+      "has_order_number": true,
+      "order_number": "2001000061-2000061",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "delivery_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-amz-preorder-062",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com pre-order of PlayStation 6...",
+    "body": "Hello,\n\nThank you for pre-ordering with Amazon.\n\nPre-order Confirmed\nOrder# 112-1000062-2000062\n\nPlayStation 6 DualSense Wireless Controller - Volcanic Red\n$74.99\n\nExpected release date: March 15, 2026\nWe'll charge your payment method and ship when the item is released.\nYou can cancel your pre-order at any time before it ships.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000062-2000062",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "pre_order",
+      "order_confirmation",
+      "with_order_number"
+    ]
+  },
+  {
+    "id": "syn-stitchfix-063",
+    "from_address": "fix@stitchfix.com",
+    "subject": "Your Fix is on the way!",
+    "body": "Your Fix is on the way!\n\nFix #87654\n\nYour stylist picked 5 items for you:\n1. Kut from the Kloth Diana Skinny Jean\n2. Market & Spruce Corwin Textured Pullover\n3. 41Hawthorn Breyson Polka Dot Blouse\n4. Liverpool Kelsey Knit Trouser\n5. Fate Danna V-Neck Sweater\n\nTotal if you keep all 5: $289.00 (25% styling discount)\n\nEstimated delivery: January 20, 2026\n\nTry everything on at home. Keep what you love, return the rest.\nReturns are always free \u2014 just use the prepaid bag.",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "stitchfix.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "unknown_merchant",
+      "subscription_box",
+      "physical_items",
+      "order_confirmation",
+      "heuristic_path"
+    ]
+  },
+  {
+    "id": "syn-edge-amzsec-064",
+    "from_address": "account-update@amazon.com",
+    "subject": "Amazon.com sign-in alert: new device detected",
+    "body": "Hello,\n\nWe noticed a new sign-in to your Amazon account.\n\nWhen: January 16, 2026, 3:42 PM EST\nDevice: Chrome browser on Windows\nNear: New York, NY\n\nIf this was you, you can disregard this message.\nIf this WASN'T you, click here to secure your account:\nhttps://www.amazon.com/ap/signin\n\nAmazon.com Security",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "security_alert",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-tgtcircle-065",
+    "from_address": "no-reply@target.com",
+    "subject": "You earned a Target Circle reward!",
+    "body": "You've earned a reward!\n\nCongratulations \u2014 you've reached Target Circle Gold status!\n\nYour rewards:\n- 2% earnings on every purchase\n- Free same-day delivery on orders $35+\n- Exclusive offers just for you\n\nStart shopping: target.com\n\nThanks for being a loyal Target shopper!\n\n---\nTarget Corporation | 1000 Nicollet Mall, Minneapolis, MN 55403\nManage your communication preferences | Unsubscribe\nPrivacy Policy | CA Privacy Rights | Terms & Conditions\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "edge_case",
+      "loyalty_program",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-nikemem-066",
+    "from_address": "info@nike.com",
+    "subject": "Welcome to Nike Membership",
+    "body": "WELCOME TO NIKE MEMBERSHIP\n\nYou're in. As a Nike Member, you get:\n\n- Free shipping on every order\n- Birthday rewards\n- Early access to new releases\n- Member-only products\n\nDownload the Nike App to get started.\n\nJUST DO IT",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "nike.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "nike",
+      "edge_case",
+      "membership",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-amzdelay-067",
+    "from_address": "shipment-tracking@amazon.com",
+    "subject": "Update on your Amazon.com order #112-7777777-8888888",
+    "body": "Hello,\n\nWe're writing to let you know that your delivery is running behind schedule.\n\nOrder #112-7777777-8888888\n\nSony WH-1000XM5 Wireless Headphones\n\nOriginal delivery estimate: January 20, 2026\nNew delivery estimate: January 25, 2026\n\nWe're sorry for the inconvenience. You don't need to take any action \u2014 your order is still on its way.\n\nIf you'd like to cancel, visit Your Orders.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "shipping_delay",
+      "order_update",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-wmtsave-068",
+    "from_address": "help@walmart.com",
+    "subject": "This week's biggest savings at Walmart!",
+    "body": "WEEKLY AD\n\nGreat Savings This Week!\n\nRollback: Samsung 65\" TV \u2014 Was $599.99, Now $449.99\nRollback: Dyson V15 Vacuum \u2014 Was $749.99, Now $549.99\nNew Low Price: KitchenAid Mixer \u2014 $299.99\n\nShop these deals at walmart.com\n\nValid through January 25, 2026\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "walmart.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "edge_case",
+      "newsletter",
+      "marketing",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-nordsale-069",
+    "from_address": "nordstrom@e.nordstrom.com",
+    "subject": "Nordstrom Anniversary Sale: Early Access!",
+    "body": "NORDSTROM ANNIVERSARY SALE\n\nEarly Access starts now!\n\nUp to 40% off new fall arrivals:\n- Cashmere sweaters from $89.90\n- Leather boots from $129.90\n- Designer handbags from $199.90\n\nShop the sale: nordstrom.com/anniversary\n\nPrices go up August 6.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "nordstrom.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "nordstrom",
+      "edge_case",
+      "newsletter",
+      "sale",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-amzretrem-070",
+    "from_address": "returns@amazon.com",
+    "subject": "Reminder: Return window closing for your order",
+    "body": "Hello,\n\nReminder: Your return window is closing soon.\n\nOrder #112-5555555-6666666\nSony WH-1000XM5 Wireless Headphones\n\nReturn by: January 30, 2026\n\nIf you'd like to return this item, start the process at:\nhttps://www.amazon.com/returns\n\nAfter the return window closes, this item will no longer be eligible for return.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "return_reminder",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-amzwish-071",
+    "from_address": "store-news@amazon.com",
+    "subject": "Price drops on 2 items in your Wish List",
+    "body": "Items on your Wish List are on sale!\n\n2 items on your list have price drops:\n\nBose QuietComfort Ultra Headphones\nWas: $429.00 | Now: $329.00 | Save 23%\n\nKindle Scribe (64 GB)\nWas: $389.99 | Now: $289.99 | Save 26%\n\nView your Wish List: amazon.com/wishlist\n\nPrices and availability are subject to change.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "wishlist",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-hfresh-072",
+    "from_address": "info@hellofresh.com",
+    "subject": "Your HelloFresh box ships tomorrow!",
+    "body": "Your HelloFresh box is on the way!\n\nBox #HF-98765\n\nThis week's meals:\n- One-Pan Southwest Chicken\n- Firecracker Meatballs with Sesame Rice\n- Crispy Parmesan Chicken with Lemon Butter Pasta\n\nDelivering: Thursday, January 16, 2026\nCarrier: FedEx\n\nKeep refrigerated upon arrival.\n\nHelloFresh | Manage your subscription at hellofresh.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "hellofresh.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "meal_kit",
+      "perishable",
+      "subscription",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-amzsupp-073",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order of Garden of Life...",
+    "body": "Hello,\n\nThank you for your order.\n\nOrder# 112-1000073-2000073\n\nGarden of Life Raw Organic Protein Powder - Vanilla - 20 oz\nQty: 1\n$32.99\n\nNature Made Multivitamin Gummies, 150 count\nQty: 1\n$14.49\n\nArriving January 20, 2026\nOrder Total: $47.48\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "supplements",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-wfm-074",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Whole Foods Market order is on its way",
+    "body": "Your Whole Foods Market order is confirmed!\n\nDelivery window: Today, 10:00 AM - 12:00 PM\n\nOrder summary:\n- 365 Organic Baby Spinach, 5 oz\n- Wild-caught Sockeye Salmon, 1 lb\n- Organic Avocados, 4 ct\n- 365 Organic Whole Milk, half gallon\n- Siggi's Vanilla Yogurt, 5.3 oz (x3)\n\nSubtotal: $48.73\nDelivery: Free (Prime)\nTotal: $52.15\n\nWhole Foods Market | An Amazon company\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "grocery",
+      "whole_foods",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-tgtgroc-075",
+    "from_address": "no-reply@target.com",
+    "subject": "Your Target grocery order is on the way!",
+    "body": "Your Target Same Day Delivery order is on the way!\n\nOrder #1099887766\n\nGood & Gather Organic Bananas\nGood & Gather 2% Reduced Fat Milk, 1 gal\nMarket Pantry Large White Eggs, 12 ct\nGood & Gather Sharp Cheddar Cheese, 8 oz\nCoca-Cola, 12-pack cans\n\nDelivery window: 4:00 PM - 5:00 PM\nSubtotal: $24.67\nSame Day Delivery fee: $9.99\n\n---\nTarget Corporation | 1000 Nicollet Mall, Minneapolis, MN 55403\nManage your communication preferences | Unsubscribe\nPrivacy Policy | CA Privacy Rights | Terms & Conditions\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "target.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "target",
+      "edge_case",
+      "grocery",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-flowers-076",
+    "from_address": "orders@1800flowers.com",
+    "subject": "Your 1-800-Flowers order confirmation",
+    "body": "Order Confirmation\n\nThank you for your 1-800-Flowers order!\n\nOrder #W123456789\n\nAbundant Rose Bouquet\nDeluxe (24 stems)\n$79.99\n\nDelivery Date: January 20, 2026\nRecipient: Jane Smith\nMessage: Happy Birthday!\n\n1-800-Flowers.com, Inc.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "1800flowers.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "flowers",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-instacart-077",
+    "from_address": "no-reply@instacart.com",
+    "subject": "Your Trader Joe's order is being shopped",
+    "body": "Your Instacart order is being shopped!\n\nFrom: Trader Joe's\n\nItems:\n- Everything But The Bagel Seasoning\n- Mandarin Orange Chicken\n- Triple Ginger Snaps\n- Unexpected Cheddar Cheese\n\nDelivery window: 2:00 PM - 3:00 PM\n\nYour shopper is Sarah L.\nTip: $5.00",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "instacart.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "grocery",
+      "blocklisted",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-wmtgroc-078",
+    "from_address": "help@walmart.com",
+    "subject": "Your Walmart Grocery pickup order is confirmed",
+    "body": "Your Walmart Grocery order is confirmed!\n\nPickup: Today, 4:00 PM - 5:00 PM\nStore: Walmart Supercenter #1234\n\nGreat Value Whole Milk, 1 gal \u2014 $3.36\nBananas, bunch \u2014 $0.58\nFoster Farms Chicken Breast, 2 lb \u2014 $7.98\nLay's Classic Potato Chips, 10 oz \u2014 $4.98\nWonder Classic White Bread \u2014 $3.12\n\nSubtotal: $20.02\n\nWe'll text you when your order is ready.\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "walmart.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "walmart",
+      "edge_case",
+      "grocery",
+      "perishable",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-airbnb-079",
+    "from_address": "automated@airbnb.com",
+    "subject": "Reservation confirmed - Sunny Studio in Williamsburg",
+    "body": "Reservation confirmed\n\nYou're going to Brooklyn!\n\nSunny Studio in Williamsburg\nHosted by Maria\n\nCheck-in: January 20, 2026 (3:00 PM)\nCheck-out: January 23, 2026 (11:00 AM)\n3 nights\n\nTotal: $487.50\n\nConfirmation code: HMKX9B7Z\n\nMessage your host",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "airbnb.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "travel",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-sbux-080",
+    "from_address": "starbucks@e.starbucks.com",
+    "subject": "Your Starbucks order is ready for pickup",
+    "body": "Your order is ready!\n\nPick up at: Starbucks - 7th Ave & 23rd St\n\n1x Iced Caramel Macchiato (Grande)\n  Oat Milk, Extra Shot\n  $6.45\n\n1x Butter Croissant\n  $3.95\n\nTotal: $10.40\nPaid with: Starbucks Card ****1234\n\nEarn Stars with every purchase!",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "starbucks.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "food",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-adobe-081",
+    "from_address": "mail@mail.adobe.com",
+    "subject": "Your Adobe invoice is ready",
+    "body": "Invoice for your Adobe subscription\n\nAdobe Creative Cloud - All Apps\n\nBilling period: Jan 15, 2026 \u2014 Feb 14, 2026\nAmount: $54.99\nPayment: Visa ending in 4242\n\nManage your plan: account.adobe.com\n\nAdobe Inc. | 345 Park Avenue, San Jose, CA 95110",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "adobe.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "software",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-kick-082",
+    "from_address": "no-reply@kickstarter.com",
+    "subject": "You backed Minimal Titanium EDC Pen",
+    "body": "You're a backer!\n\nYou just backed: Minimal Titanium EDC Pen\nby Workshop Studios\n\nPledge: $45.00 (Early Bird)\nEstimated Delivery: April 2026\n\nReward: 1x Titanium Pen + Carrying Case\n\nThis is a crowdfunded project. Rewards are not guaranteed.\nKickstarter does not guarantee projects or investigate a creator's ability to complete their project.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "kickstarter.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "crowdfunding",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-gfm-083",
+    "from_address": "info@gofundme.com",
+    "subject": "Thank you for your donation to Help the Johnson Family...",
+    "body": "Thank you for your donation!\n\nYou donated $25.00 to:\nHelp the Johnson Family Rebuild After Fire\n\nOrganized by: Mike Johnson\nYour donation brings the total to $12,450 of $20,000 goal.\n\nShare this fundraiser to help spread the word.\n\nReceipt #GFM-87654321\nYour donation may be tax-deductible.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "gofundme.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "donation",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-chipotle-084",
+    "from_address": "no-reply@chipotle.com",
+    "subject": "Your Chipotle order is confirmed",
+    "body": "Your Chipotle order is confirmed!\n\nOrder #ABC123\n\n1x Chicken Burrito Bowl\n  White Rice, Black Beans, Fresh Tomato Salsa,\n  Sour Cream, Cheese, Guacamole\n  $11.75\n\n1x Chips & Guacamole\n  $4.70\n\nSubtotal: $16.45\nTax: $1.48\nTotal: $17.93\n\nPickup at: Chipotle - Union Square",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "chipotle.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "food",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-asurion-085",
+    "from_address": "no-reply@asurion.com",
+    "subject": "Your Asurion protection plan is active",
+    "body": "Your protection plan is confirmed.\n\nAsurion Complete Protect\nCovered device: iPhone 15 Pro Max\n\nPlan: $14.99/month\nCoverage: Accidental damage, loss, theft\nDeductible: $99\n\nFile a claim at asurion.com/claims\n\nTerms and conditions apply.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "asurion.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "warranty",
+      "service",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-kindle-086",
+    "from_address": "digital-no-reply@amazon.com",
+    "subject": "Your Kindle purchase: Project Hail Mary",
+    "body": "Hello,\n\nThank you for your purchase.\n\nDigital Order: D01-1234567-8901234\n\nProject Hail Mary: A Novel\nby Andy Weir\nKindle Edition\n$13.99\n\nYour book is ready to read. Open the Kindle app or go to:\nhttps://read.amazon.com\n\nThis is a digital item. It has been added to your Kindle library.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "digital",
+      "ebook",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-fedex-087",
+    "from_address": "TrackingUpdates@fedex.com",
+    "subject": "FedEx: Your package is scheduled for delivery tomorrow",
+    "body": "FedEx Delivery Manager\n\nYour package is scheduled for delivery tomorrow.\n\nTracking Number: 7489274892748927\nStatus: In Transit\nEstimated Delivery: January 20, 2026 by end of day\n\nShip To:\nJOHN D.\nNEW YORK, NY 10001\n\nShipment Facts:\nWeight: 3.2 lbs\nService: FedEx Home Delivery\n\nCustomize your delivery at fedex.com/delivery-manager",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "fedex.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "carrier",
+      "not_merchant",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-retappr-088",
+    "from_address": "returns@amazon.com",
+    "subject": "Your return is approved \u2014 ship by January 25",
+    "body": "Hello,\n\nYour return has been approved!\n\nOrder #112-3333333-4444444\nItem: Nike Air Max 90 - Men's - Size 10.5\n\nReturn method: UPS Drop-off\nReturn label: Print from Your Orders\n\nPlease ship the item within 7 days.\nYour refund of $130.00 will be processed within 3-5 business days after we receive the item.\n\nNeed help? Contact us at amazon.com/help\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "return_approved",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-addrchg-089",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Address updated for your Amazon order #112-9999999-0000000",
+    "body": "Hello,\n\nYour shipping address has been updated.\n\nOrder #112-9999999-0000000\n\nNew shipping address:\nJohn D.\n456 Broadway, Apt 7B\nNew York, NY 10013\n\nEstimated delivery: January 20, 2026\n\nIf you didn't make this change, please contact us immediately.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "order_update",
+      "address_change",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-primevid-090",
+    "from_address": "digital-no-reply@amazon.com",
+    "subject": "Your Prime Video rental: Dune: Part Two",
+    "body": "Thank you for renting with Prime Video.\n\nDune: Part Two (2024)\nRental: $5.99\n\nYou have 30 days to start watching and 48 hours to finish once you start.\n\nWatch now: primevideo.com\n\nThis is a digital rental. No physical item will be shipped.\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "digital",
+      "video_rental",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-amz-3p-091",
+    "from_address": "auto-confirm@amazon.com",
+    "subject": "Your Amazon.com order #112-1000091-2000091",
+    "body": "Hello,\n\nThank you for your order.\n\nOrder# 112-1000091-2000091\n\nAnker 313 Charger (Ace, 45W) USB C Charger\nSold by: AnkerDirect\nFulfilled by Amazon\n$15.99\n\nArriving January 20, 2026\n\nOrder Total: $17.03\n\n---\nIf you were not expecting this order, or if you believe an unauthorized person has accessed your account, you can go to Your Orders in Your Account to view, edit, or cancel orders.\n\nThis email was sent from a notification-only address that cannot accept incoming email. Please do not reply to this message.\n\nAmazon.com, Inc. | 410 Terry Ave N, Seattle, WA 98109\n1-888-280-4331 | Conditions of Use | Privacy Notice\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "amazon.com",
+      "has_order_number": true,
+      "order_number": "112-1000091-2000091",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "third_party_seller",
+      "order_confirmation",
+      "with_order_number",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-bkmkt-order-092",
+    "from_address": "no-reply@backmarket.com",
+    "subject": "Order confirmed: iPhone 14 Pro",
+    "body": "Your order is confirmed!\n\nOrder #BM-789012345\n\niPhone 14 Pro - 256GB - Space Black\nCondition: Excellent \u2014 like new, no visible marks\nSeller: TechRenew Pro\n$699.00\n\n1-year warranty included\n30-day money-back guarantee\n\nEstimated delivery: January 20, 2026\n\nBack Market | The best deals on refurbished tech",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "backmarket.com",
+      "has_order_number": true,
+      "order_number": "BM-789012345",
+      "has_return_date": true,
+      "return_window_days": 30,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "backmarket",
+      "refurbished",
+      "marketplace",
+      "order_confirmation",
+      "with_order_number",
+      "heuristic_path",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-edge-usps-093",
+    "from_address": "USPSInformedDelivery@usps.gov",
+    "subject": "USPS: Your package is arriving today",
+    "body": "USPS Tracking Update\n\nYour package is arriving today!\n\nTracking Number: 9400111899223033005282\n\nStatus: Out for Delivery\nExpected Delivery: January 20, 2026\n\nDelivery Address:\nJOHN D\nNEW YORK, NY 10001\n\nSign up for Informed Delivery at informeddelivery.usps.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "usps.gov",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "carrier",
+      "not_merchant",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-square-094",
+    "from_address": "receipts@squareup.com",
+    "subject": "Receipt from Blue Bottle Coffee",
+    "body": "Receipt from Blue Bottle Coffee\n\nJanuary 15, 2026 at 8:42 AM\n\n1x New Orleans Iced Coffee (Large)\n   $6.50\n1x Giant Step Espresso Blend (12oz bag)\n   $22.00\n\nSubtotal: $28.50\nTax: $2.53\nTotal: $31.03\n\nVisa ****4242\n\nPowered by Square\nView receipt: squareup.com/receipt/...",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "squareup.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "instore_receipt",
+      "pos",
+      "food",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-cost-elec-095",
+    "from_address": "costco@online.costco.com",
+    "subject": "Costco.com Order Confirmation #1000095",
+    "body": "Thank you for your Costco.com order.\n\nOrder #: 1000095\nDate: January 15, 2026\n\nSamsung 75\" Class QN85D Neo QLED 4K Smart TV\n$1,599.99\n\nShipping: White Glove Delivery & Setup\nEstimated Delivery: January 20, 2026\n\nElectronics have a 90-day return policy.\nCostco.com | Member Services: 1-800-955-2292\n\n---\nIf you have questions about your order, please contact customer service.\nManage email preferences | Unsubscribe\n",
+    "body_html": null,
+    "expected": {
+      "should_extract": true,
+      "merchant_domain": "costco.com",
+      "has_order_number": true,
+      "order_number": "1000095",
+      "has_return_date": true,
+      "return_window_days": 90,
+      "confidence": "estimated",
+      "must_not": []
+    },
+    "tags": [
+      "costco",
+      "order_confirmation",
+      "electronics",
+      "with_order_number",
+      "large_item",
+      "realistic"
+    ]
+  },
+  {
+    "id": "syn-edge-barber-096",
+    "from_address": "appointments@blindbarber.com",
+    "subject": "Your haircut is booked \u2014 Saturday at 2:00 PM",
+    "body": "Appointment Confirmed\n\nHi John,\n\nYour appointment is booked!\n\nService: Men's Haircut + Beard Trim\nBarber: Tony V.\nDate: Saturday, January 18, 2026 at 2:00 PM\nDuration: 45 minutes\n\nLocation:\nBlind Barber\n339 E 10th St, New York, NY 10009\n\nPrice: $55.00 + tip\n\nNeed to cancel or reschedule? Do so at least 4 hours in advance.\nBook again: blindbarber.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "blindbarber.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "appointment",
+      "service",
+      "local_business",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-dentist-097",
+    "from_address": "no-reply@downtowndental.com",
+    "subject": "Reminder: Dental appointment Monday 9:30 AM",
+    "body": "Appointment Reminder\n\nHi John,\n\nThis is a reminder for your upcoming dental appointment.\n\nProvider: Dr. Sarah Chen, DDS\nDate: Monday, January 20, 2026\nTime: 9:30 AM\nService: Cleaning & Exam\n\nLocation:\nDowntown Dental Associates\n123 Broadway, Suite 4F, New York, NY 10006\n\nInsurance: Aetna PPO\nEstimated copay: $25.00\n\nPlease arrive 10 minutes early. Cancel 24 hours in advance to avoid a $50 cancellation fee.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "downtowndental.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "appointment",
+      "healthcare",
+      "service",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-autorepair-098",
+    "from_address": "service@midas.com",
+    "subject": "Your Midas service receipt \u2014 Invoice MID-2026-45678",
+    "body": "Service Complete \u2014 Invoice\n\nThank you for choosing Midas!\n\nInvoice #: MID-2026-45678\nDate: January 16, 2026\n\nVehicle: 2022 Honda Civic LX\n\nServices performed:\n- Full Synthetic Oil Change (0W-20) ............ $69.99\n- Tire Rotation ............................... $29.99\n- Brake Inspection (no charge) ................ $0.00\n- Multi-point Vehicle Inspection .............. $0.00\n\nParts:\n- Oil Filter .................................. $12.99\n- 5 qt Mobil 1 Synthetic ...................... (incl.)\n\nSubtotal: $112.97\nTax: $10.17\nTotal: $123.14\nPaid: Visa ****4242\n\nNext service due: April 2026 or 5,000 miles",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "midas.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "service",
+      "auto_repair",
+      "receipt",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-groom-099",
+    "from_address": "no-reply@petsmart.com",
+    "subject": "Grooming appointment confirmed for Max",
+    "body": "Appointment Confirmed!\n\nPetSmart Grooming Salon\n\nPet: Max (Golden Retriever)\nService: Full Grooming Package\nDate: Saturday, January 18, 2026 at 10:00 AM\nLocation: PetSmart - Union Square\n\nIncludes: Bath, haircut, nail trim, ear cleaning, teeth brushing\nPrice: $75.00\n\nPlease bring Max in at least 10 minutes early.\nDrop-off window: 10:00 AM - 10:30 AM\nEstimated pickup: 1:00 PM",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "petsmart.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "appointment",
+      "service",
+      "pet",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-cleaning-100",
+    "from_address": "bookings@handy.com",
+    "subject": "Your cleaning is booked for Thursday",
+    "body": "Booking Confirmed\n\nYour cleaning is scheduled!\n\nService: Standard Cleaning (2 bedrooms, 1 bathroom)\nProfessional: Maria R. (4.9 stars, 312 cleans)\nDate: Thursday, January 16, 2026\nTime: 10:00 AM - 12:30 PM\n\nTotal: $120.00\nService fee: $18.00\nTip (suggested): $24.00\n\nSpecial instructions: Please use products under the kitchen sink.\n\nHandy | Cancel up to 24 hours in advance for a full refund.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "handy.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "appointment",
+      "service",
+      "home_service",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-claude-101",
+    "from_address": "billing@anthropic.com",
+    "subject": "Your Claude Pro subscription has renewed",
+    "body": "Your subscription has renewed\n\nHi John,\n\nYour Claude Pro subscription has been renewed.\n\nPlan: Claude Pro\nAmount: $20.00/month\nBilling date: January 15, 2026\nNext billing date: February 15, 2026\nPayment method: Visa ending in 4242\n\nManage your subscription at claude.ai/settings\n\nAnthropic, PBC | San Francisco, CA",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "anthropic.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "ai_saas",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-chatgpt-102",
+    "from_address": "noreply@openai.com",
+    "subject": "Receipt for your ChatGPT Plus subscription",
+    "body": "Payment receipt\n\nOpenAI\n\nThank you for your payment.\n\nChatGPT Plus\nAmount: $20.00\nDate: January 15, 2026\nPayment method: Mastercard ending in 5678\n\nYour subscription will auto-renew on February 15, 2026.\n\nManage subscription: chat.openai.com/settings",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "openai.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "ai_saas",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-ghcopilot-103",
+    "from_address": "noreply@github.com",
+    "subject": "Your receipt from GitHub \u2014 $10.00",
+    "body": "Thanks for your payment\n\nGitHub\n\nHere's your receipt for GitHub Copilot.\n\nGitHub Copilot Individual\n$10.00/month\nBilling period: Jan 15 - Feb 15, 2026\nPayment method: Visa ****4242\n\nReceipt #: GH-REC-9876543\n\nDownload your receipt: github.com/settings/billing\n\nGitHub, Inc. | 88 Colin P Kelly Jr St, San Francisco, CA 94107",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "github.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "developer_tool",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-1pass-104",
+    "from_address": "billing@1password.com",
+    "subject": "Your 1Password receipt \u2014 $4.99",
+    "body": "Payment receipt\n\n1Password\n\nSubscription: 1Password Families\nAmount: $4.99/month\nNext billing date: February 15, 2026\nPayment method: Apple Pay\n\nThank you for keeping your passwords safe.\n\nManage your account: my.1password.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "1password.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "software",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-notion-105",
+    "from_address": "team@makenotion.com",
+    "subject": "Your Notion invoice for January 2026",
+    "body": "Invoice from Notion\n\nNotion Plus Plan\nWorkspace: John's Projects\n\nAmount: $10.00/month\nPeriod: Jan 15, 2026 - Feb 14, 2026\nPayment: Visa ****4242\n\nInvoice #NOT-2026-00456\n\nView invoice: notion.so/settings/billing\n\nNotion Labs, Inc.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "makenotion.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "saas",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-icloud-106",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your receipt from Apple \u2014 iCloud+ 200 GB",
+    "body": "Your receipt from Apple.\n\niCloud+ 200 GB\n$2.99/month\n\nBilled to: Visa ****4242\nDate: January 15, 2026\nOrder ID: MN5P9K4HTC\n\nManage your iCloud storage at appleid.apple.com\n\nApple Distribution International Ltd.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "apple.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "cloud_storage",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-aws-107",
+    "from_address": "aws-billing@amazon.com",
+    "subject": "Your AWS bill for December 2025 \u2014 $47.23",
+    "body": "Amazon Web Services Billing Statement\n\nAccount: 123456789012\nPeriod: December 1-31, 2025\n\nTotal charges: $47.23\n\nService breakdown:\nEC2 .............. $18.40\nS3 ............... $3.21\nRDS .............. $15.80\nCloudFront ....... $2.45\nRoute 53 ......... $1.50\nOther ............ $5.87\n\nPayment will be charged to Visa ****4242.\n\nView your bill: console.aws.amazon.com/billing",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "amazon.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "amazon",
+      "edge_case",
+      "cloud_hosting",
+      "bill",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-vercel-108",
+    "from_address": "billing@vercel.com",
+    "subject": "Vercel Pro invoice \u2014 January 2026",
+    "body": "Invoice from Vercel\n\nVercel Pro Plan\nTeam: john-personal\n\nAmount: $20.00/month\nPeriod: January 2026\nPayment: Visa ****4242\n\nUsage this month:\nBandwidth: 124 GB / 1 TB\nServerless Function Invocations: 890K / 1M\nBuild Minutes: 450 / 6,000\n\nVercel Inc.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "vercel.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "cloud_hosting",
+      "developer_tool",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-domain-109",
+    "from_address": "support@namecheap.com",
+    "subject": "Domain renewal confirmation: myproject.dev",
+    "body": "Domain Renewal Confirmation\n\nHi John,\n\nYour domain has been renewed successfully.\n\nDomain: myproject.dev\nRenewal period: 1 year\nNew expiration: January 15, 2027\nAmount: $12.98\n\nReceipt #: NMC-2026-1234567\n\nManage your domains: namecheap.com/myaccount\n\nNamecheap, Inc.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "namecheap.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "domain_hosting",
+      "digital",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-coursera-110",
+    "from_address": "no-reply@coursera.org",
+    "subject": "You're enrolled in Machine Learning Specialization",
+    "body": "You're enrolled!\n\nMachine Learning Specialization\nby Andrew Ng | Stanford University & DeepLearning.AI\n\nYou've enrolled in this 3-course specialization.\n\nCourse 1: Supervised Machine Learning\nStarts: January 20, 2026\nDuration: ~4 weeks\n\nCoursera Plus: $59.00/month\nPayment: Visa ****4242\n\nStart learning: coursera.org/learn/machine-learning",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "coursera.org",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "education",
+      "subscription",
+      "digital",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-masterclass-111",
+    "from_address": "support@masterclass.com",
+    "subject": "Welcome to MasterClass \u2014 your membership is active",
+    "body": "Welcome to MasterClass!\n\nYour annual membership is active.\n\nPlan: MasterClass Standard\nAmount: $120.00/year\nStarted: January 15, 2026\nRenews: January 15, 2027\n\nStart watching:\n- Gordon Ramsay Teaches Cooking\n- Martin Scorsese Teaches Filmmaking\n- Serena Williams Teaches Tennis\n\nMasterClass | Stream anytime on any device",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "masterclass.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "education",
+      "subscription",
+      "streaming",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-classpass-112",
+    "from_address": "hello@classpass.com",
+    "subject": "Your credits have refreshed \u2014 48 credits available",
+    "body": "Your ClassPass credits have refreshed!\n\nPlan: 40 credits/month\nAmount charged: $79.00\nNew billing cycle: Jan 15 - Feb 14, 2026\n\nCredits available: 40\nRollover credits: 8\nTotal: 48 credits\n\nTop studios near you:\n- Barry's Bootcamp (12 credits)\n- Y7 Studio Yoga (8 credits)\n- SoulCycle (14 credits)\n\nBook a class: classpass.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "classpass.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "fitness",
+      "subscription",
+      "service",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-peloton-113",
+    "from_address": "no-reply@onepeloton.com",
+    "subject": "Your Peloton membership payment \u2014 $44.00",
+    "body": "Payment confirmation\n\nPeloton All-Access Membership\n$44.00/month\n\nBilling date: January 15, 2026\nPayment: Visa ****4242\n\nThis month's featured classes:\n- 30 min HIIT Ride with Robin Arz\u00f3n\n- 45 min Power Zone with Matt Wilpers\n- 20 min Full Body Strength with Jess Sims\n\nPeloton Interactive, Inc.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "onepeloton.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "fitness",
+      "subscription",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-turbotax-114",
+    "from_address": "no-reply@intuit.com",
+    "subject": "Your TurboTax purchase confirmation",
+    "body": "Thank you for your purchase!\n\nTurboTax Deluxe 2025\nFederal + State\n$69.00\n\nOrder #: TT-2026-8765432\n\nYour software is ready. Sign in to start your return:\nturbotax.intuit.com\n\nImportant: File by April 15, 2026.\n\nIntuit Inc. | Mountain View, CA",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "intuit.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "digital",
+      "software",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-insurance-115",
+    "from_address": "support@lemonade.com",
+    "subject": "Your Lemonade renters insurance is active",
+    "body": "Policy Active\n\nWelcome to Lemonade, John!\n\nYour Renters Insurance policy is now active.\n\nPolicy #: LM-2026-12345\nCoverage: $50,000 personal property\nDeductible: $500\nMonthly premium: $12.00\n\nEffective: January 15, 2026\nRenews: January 15, 2027\n\nFile a claim in 3 minutes: lemonade.com/claims\n\nLemonade Insurance Company",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "lemonade.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "insurance",
+      "service",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-parking-116",
+    "from_address": "no-reply@spothero.com",
+    "subject": "Parking confirmed \u2014 Icon Parking, Sat 6 PM",
+    "body": "Reservation Confirmed\n\nSpotHero\n\nParking at: Icon Parking - 303 W 42nd St\nDate: Saturday, January 18, 2026\nTime: 6:00 PM - 11:59 PM\n\nTotal: $28.95\nBooking #: SH-9876543\n\nShow this email or the SpotHero app on arrival.\n\nCancel up to 1 hour before for a full refund.",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "spothero.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "parking",
+      "service",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-carwash-117",
+    "from_address": "noreply@mistercarwash.com",
+    "subject": "Your car wash receipt",
+    "body": "Receipt\n\nMister Car Wash\nLocation: 7th Ave, NYC\n\nService: Ultimate Wash\nDate: January 16, 2026\nTime: 11:23 AM\n\nPrice: $24.99\nTax: $2.22\nTotal: $27.21\nPaid: Visa ****4242\n\nJoin Unlimited Wash Club \u2014 $39.99/month\nmistercarwash.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "mistercarwash.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "service",
+      "car_wash",
+      "receipt",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-appstore-118",
+    "from_address": "no_reply@email.apple.com",
+    "subject": "Your receipt from Apple",
+    "body": "Your receipt from Apple.\n\nApple ID: john@example.com\n\nProcreate\nIn-App Purchase: Brush Pack - Watercolors\n$4.99\n\nHalide Mark II \u2014 Pro Camera\n$2.99/month (subscription)\n\nDate: January 15, 2026\nOrder ID: MXKL9N4HBT\n\nReport a Problem: reportaproblem.apple.com",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "apple.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "digital",
+      "app_store",
+      "blocklisted",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-gplay-119",
+    "from_address": "googleplay-noreply@google.com",
+    "subject": "Your Google Play order receipt",
+    "body": "Google Play receipt\n\nThanks for your purchase.\n\nMonument Valley 3\n$4.99\n\nOrder number: GPA.3398-1234-5678-90123\nDate: January 15, 2026\nPayment: Google Pay (Visa ****4242)\n\nView order: play.google.com/store/account/orderhistory\n\nGoogle LLC | 1600 Amphitheatre Parkway, Mountain View, CA 94043",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "google.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "digital",
+      "app_store",
+      "should_reject"
+    ]
+  },
+  {
+    "id": "syn-edge-vpn-120",
+    "from_address": "support@nordvpn.com",
+    "subject": "NordVPN subscription renewed \u2014 $83.76",
+    "body": "Subscription renewed\n\nNordVPN\n\nYour NordVPN subscription has been renewed.\n\nPlan: 2-Year Plan\nAmount: $83.76 ($3.49/month)\nNext billing: January 15, 2028\n\nYour account:\nDevices connected: 3 of 6\nServer: United States #4521\n\nDownload the app: nordvpn.com/download\n\nNord Security | Panama",
+    "body_html": null,
+    "expected": {
+      "should_extract": false,
+      "merchant_domain": "nordvpn.com",
+      "has_order_number": false,
+      "order_number": null,
+      "has_return_date": false,
+      "return_window_days": null,
+      "confidence": null,
+      "must_not": []
+    },
+    "tags": [
+      "edge_case",
+      "subscription",
+      "software",
+      "vpn",
       "should_reject"
     ]
   }

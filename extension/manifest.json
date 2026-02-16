@@ -21,12 +21,12 @@
     "https://gmail.googleapis.com/*",
     "https://www.googleapis.com/gmail/*",
     "https://www.googleapis.com/oauth2/*",
-    "https://reclaim-api-488078904670.us-central1.run.app/*",
+    "https://reclaim-api-142227390702.us-central1.run.app/*",
     "https://*.inboxsdk.com/*"
   ],
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; default-src 'self'; connect-src 'self' https://reclaim-api-488078904670.us-central1.run.app https://www.googleapis.com https://gmail.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'none'"
+    "extension_pages": "script-src 'self'; object-src 'self'; default-src 'self'; connect-src 'self' https://reclaim-api-142227390702.us-central1.run.app https://www.googleapis.com https://gmail.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'none'"
   },
 
   "background": {

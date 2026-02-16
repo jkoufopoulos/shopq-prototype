@@ -59,7 +59,7 @@ async def validation_exception_handler(
 # CORS - Restrict to specific origins for security
 ALLOWED_ORIGINS = [
     "https://mail.google.com",
-    "https://reclaim-api-488078904670.us-central1.run.app",
+    "https://reclaim-api-142227390702.us-central1.run.app",
     CHROME_EXTENSION_ORIGIN,
 ]
 

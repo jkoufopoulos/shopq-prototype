@@ -1,0 +1,33 @@
+# Cloud Build upload ignore list
+# Explicit .gcloudignore overrides .gitignore for gcloud deploys
+
+.git
+.venv
+venv/
+.gcloud/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Don't upload extension or tests to Cloud Run
+extension/
+extension-v2/
+tests/
+docs/
+backups/
+credentials/
+node_modules/
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Non-essential root files
+*.md
+*.html
+*.csv
+Makefile
+LICENSE

@@ -12,6 +12,9 @@ COPY reclaim/ ./reclaim/
 # Copy config for runtime policy
 COPY config/ ./config/
 
+# Ensure all source files are readable (local file perms can be restrictive)
+RUN chmod -R a+rX reclaim/ config/
+
 # Set Python path
 ENV PYTHONPATH=/app
 

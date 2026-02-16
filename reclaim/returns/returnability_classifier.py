@@ -90,6 +90,142 @@ class ReturnabilitySchema(BaseModel):
     )
 
 
+# Gemini structured output schema — reason comes first to encourage
+# chain-of-thought reasoning before the classification decision.
+CLASSIFIER_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "reason": {
+            "type": "string",
+            "description": "Brief explanation of classification (10 words max). Write this first.",
+        },
+        "is_returnable": {
+            "type": "boolean",
+            "description": "true if this is a returnable physical product, false otherwise",
+        },
+        "confidence": {
+            "type": "number",
+            "description": "Classification confidence from 0.0 (uncertain) to 1.0 (certain)",
+        },
+        "receipt_type": {
+            "type": "string",
+            "description": "Category of transaction",
+            "enum": [
+                "product_order",
+                "service",
+                "subscription",
+                "digital",
+                "donation",
+                "ticket",
+                "bill",
+                "unknown",
+            ],
+        },
+    },
+    "required": ["reason", "is_returnable", "confidence", "receipt_type"],
+    "propertyOrdering": ["reason", "is_returnable", "confidence", "receipt_type"],
+}
+
+
+# System instruction — cached by Gemini, reduces per-call latency.
+CLASSIFIER_SYSTEM_INSTRUCTION = """You classify email receipts and confirmations.
+
+Your task: determine whether an email represents a RETURNABLE PHYSICAL PRODUCT purchase.
+
+## RETURNABLE (is_returnable=true, receipt_type="product_order")
+Physical products with shipping or delivery: clothing, electronics, furniture, appliances, toys, accessories. Store pickup orders for physical goods. Items that come in a box or package you could send back.
+
+## NOT RETURNABLE
+
+Groceries and perishables (receipt_type="service"):
+- Grocery orders from any retailer: Whole Foods, Amazon Fresh, Instacart, Walmart Grocery, Target groceries
+- Food delivery: DoorDash, Grubhub, Uber Eats, Postmates
+- Meal kits: HelloFresh, Blue Apron, Factor, Home Chef
+- Perishable items: flowers, plants, fresh food, prepared meals
+- Consumable health/nutrition products: protein shakes, protein bars, supplements, vitamins — these are perishable even when shipped by retailers like Amazon
+
+Cancelled or refunded orders (receipt_type="service"):
+- Emails containing "cancelled", "cancellation", or "item cancelled" — nothing to return
+- Pre-orders cancelled before shipping
+- Refund confirmations for cancelled items
+
+Return processing emails (receipt_type="service"):
+- "Your return is approved", "return has been processed"
+- Emails from return services: Happy Returns, Returnly, Loop
+- Refund confirmations — outgoing, not incoming products
+
+Warranty and protection plans (receipt_type="service"):
+- Extended warranties: Asurion, Allstate, SquareTrade
+- Protection plans, care plans, insurance add-ons — service contracts, not physical products
+
+Services (receipt_type="service"):
+- Rides: Uber, Lyft
+- Haircuts, cleaning, repairs, professional services
+
+Subscriptions (receipt_type="subscription"):
+- Streaming: Netflix, Spotify, Hulu
+- Software subscriptions: Adobe, Microsoft 365
+- Gym memberships, news subscriptions
+
+Digital goods (receipt_type="digital"):
+- Ebooks, audiobooks, video games (Steam, PlayStation Store)
+- In-app purchases, gift cards, software licenses
+
+Donations (receipt_type="donation"):
+- Charity contributions, crowdfunding (Kickstarter, GoFundMe), tips
+
+Tickets (receipt_type="ticket"):
+- Concert/event tickets, airline tickets, movie tickets (separate refund policies)
+
+Bills (receipt_type="bill"):
+- Utility bills, insurance payments, phone bills
+
+## Few-shot examples
+
+Email:
+Subject: Your Amazon.com order of Bose QuietComfort 45 Headphones
+From: auto-confirm@amazon.com
+Snippet: Your order has been placed. Estimated delivery: Jan 15. Order #112-3456789-0123456.
+
+Classification:
+{"reason": "Physical electronics product with shipping", "is_returnable": true, "confidence": 0.95, "receipt_type": "product_order"}
+
+Email:
+Subject: Your Amazon Fresh order has been delivered
+From: no-reply@amazon.com
+Snippet: Your grocery delivery is at your door. Bananas, milk, chicken breast, and 5 other items.
+
+Classification:
+{"reason": "Grocery delivery is perishable", "is_returnable": false, "confidence": 0.95, "receipt_type": "service"}
+
+Email:
+Subject: Your Spotify Premium receipt
+From: no-reply@spotify.com
+Snippet: Thanks for your payment. Your monthly Spotify Premium subscription renewed for $10.99.
+
+Classification:
+{"reason": "Streaming music subscription renewal", "is_returnable": false, "confidence": 0.95, "receipt_type": "subscription"}
+
+Email:
+Subject: Your order has been cancelled
+From: auto-confirm@amazon.com
+Snippet: We've cancelled your order #112-9862455-9195428 as requested. A refund of $45.99 will be issued.
+
+Classification:
+{"reason": "Cancelled order, nothing to return", "is_returnable": false, "confidence": 0.95, "receipt_type": "service"}
+
+Email:
+Subject: Your Allstate Protection Plan
+From: noreply@squaretrade.com
+Snippet: Thank you for purchasing the 3-Year Protection Plan for your laptop. Your plan ID is SQ-88291.
+
+Classification:
+{"reason": "Protection plan is a service contract", "is_returnable": false, "confidence": 0.95, "receipt_type": "service"}
+
+## Output format
+Write the reason field first — explain your reasoning before giving the classification."""
+
+
 class ReturnabilityClassifier:
     """
     LLM-based classifier for purchase returnability.
@@ -98,98 +234,34 @@ class ReturnabilityClassifier:
     vs non-returnable transactions (services, subscriptions, digital goods, etc.)
     """
 
-    # Classification prompt template
-    PROMPT_TEMPLATE = """Classify if this receipt/confirmation is for a RETURNABLE PHYSICAL PRODUCT.
-
-Subject: {subject}
+    # User message template — only the per-email data
+    PROMPT_TEMPLATE = """Subject: {subject}
 From: {from_address}
-Snippet: {snippet}
-
-## RETURNABLE (is_returnable=true, receipt_type="product_order"):
-- Physical products with shipping/delivery: clothing, electronics, furniture, appliances, toys
-- Store pickup orders for physical goods
-- Items that come in a box/package you could send back
-
-## NOT RETURNABLE:
-
-### IMPORTANT: Groceries and Perishables are NEVER returnable (receipt_type="service"):
-- ANY grocery order: Whole Foods, Amazon Fresh, Instacart, Walmart Grocery, Target groceries
-- ANY food delivery: DoorDash, Grubhub, Uber Eats, Postmates
-- ANY meal kits: HelloFresh, Blue Apron, Factor, Home Chef
-- ANY perishable items: flowers, plants, fresh food, prepared meals
-- Protein shakes, protein bars, supplements, vitamins from ANY retailer (including Amazon)
-- Consumable health/nutrition products are PERISHABLE even if shipped
-- These are CONSUMED or PERISHABLE - they cannot be returned like physical products
-
-### IMPORTANT: Cancelled orders are NOT returnable (receipt_type="service"):
-- If email says "cancelled", "cancellation", or "item cancelled" — there is NO product to return
-- Pre-orders that were cancelled before shipping
-- Refund confirmations for cancelled items
-
-### Return processing emails are NOT new purchases (receipt_type="service"):
-- "Your return is approved", "return has been processed"
-- Emails from return services (Happy Returns, Returnly, Loop)
-- Refund confirmations — these are OUTGOING, not incoming products
-
-### Warranty and protection plans are services (receipt_type="service"):
-- Extended warranties (Asurion, Allstate, SquareTrade)
-- Protection plans, care plans, insurance add-ons
-- These are SERVICE CONTRACTS, not physical products
-
-### Services (receipt_type="service"):
-- Rides: Uber, Lyft
-- Haircuts, cleaning, repairs, professional services
-
-### Subscriptions (receipt_type="subscription"):
-- Streaming: Netflix, Spotify, Hulu
-- Software subscriptions: Adobe, Microsoft 365
-- Gym memberships, news subscriptions
-
-### Digital goods (receipt_type="digital"):
-- Ebooks, audiobooks
-- Video games (Steam, PlayStation Store)
-- In-app purchases, gift cards
-- Software licenses
-
-### Donations (receipt_type="donation"):
-- Charity contributions
-- Crowdfunding (Kickstarter, GoFundMe)
-- Tips, gratuity
-
-### Tickets (receipt_type="ticket"):
-- Concert/event tickets
-- Airline tickets
-- Movie tickets
-(These have separate refund policies, not standard returns)
-
-### Bills (receipt_type="bill"):
-- Utility bills
-- Insurance payments
-- Phone bills
-
-## Output JSON:
-{{
-  "is_returnable": true/false,
-  "confidence": 0.0-1.0,
-  "reason": "brief explanation (10 words max)",
-  "receipt_type": "product_order|service|subscription|digital|donation|ticket|bill|unknown"
-}}
-
-Respond with ONLY the JSON, no other text."""
+Snippet: {snippet}"""
 
     def __init__(self):
         """Initialize classifier with Gemini model."""
         # CODE-011: Model is now obtained from shared singleton
         pass
 
-    def _call_llm_with_retry(self, prompt: str) -> str:
+    def _call_llm_with_retry(
+        self,
+        prompt: str,
+        system_instruction: str | None = None,
+        response_schema: dict | None = None,
+    ) -> str:
         """Call LLM with retry logic and timeout.
 
         CODE-003: Delegates to shared call_llm() with classifier-specific counter prefix.
         """
         from reclaim.llm.retry import call_llm
 
-        return call_llm(prompt, counter_prefix="classifier")
+        return call_llm(
+            prompt,
+            counter_prefix="classifier",
+            system_instruction=system_instruction,
+            response_schema=response_schema,
+        )
 
     def classify(
         self,
@@ -235,7 +307,11 @@ Respond with ONLY the JSON, no other text."""
             logger.info(
                 "LLM CLASSIFIER: Calling %s for subject='%s'", GEMINI_MODEL, redact_subject(subject)
             )
-            response_text = self._call_llm_with_retry(prompt)
+            response_text = self._call_llm_with_retry(
+                prompt,
+                system_instruction=CLASSIFIER_SYSTEM_INSTRUCTION,
+                response_schema=CLASSIFIER_RESPONSE_SCHEMA,
+            )
 
             # Parse response
             result = self._parse_response(response_text)
@@ -302,7 +378,9 @@ Respond with ONLY the JSON, no other text."""
             # Extract JSON from response (handle markdown code blocks)
             json_text = response_text.strip()
             if json_text.startswith("```"):
-                # Remove markdown code fence
+                # Remove markdown code fence — should not trigger with response_schema
+                counter("returns.classifier.code_fence_fallback")
+                logger.warning("Classifier response contained code fences (unexpected with schema)")
                 json_text = re.sub(r"^```(?:json)?\n?", "", json_text)
                 json_text = re.sub(r"\n?```$", "", json_text)
 

@@ -177,13 +177,15 @@ def stage_consistency(result: dict) -> dict:
     if not stage:
         return _result("stage_consistency", True, "no stage_reached in response — skipped")
 
-    if success and stage != "complete":
+    # The API returns "extractor" for successful extractions (route-level convention)
+    # and "complete" from the internal pipeline. Both are valid for success=True.
+    if success and stage not in ("complete", "extractor"):
         return _result("stage_consistency", False,
-                        f"success=True but stage_reached='{stage}' (expected 'complete')")
+                        f"success=True but stage_reached='{stage}' (expected 'complete' or 'extractor')")
 
-    if not success and stage == "complete":
+    if not success and stage in ("complete", "extractor"):
         return _result("stage_consistency", False,
-                        "success=False but stage_reached='complete'")
+                        f"success=False but stage_reached='{stage}'")
 
     if stage not in _VALID_STAGES:
         return _result("stage_consistency", False, f"unknown stage: '{stage}'")
