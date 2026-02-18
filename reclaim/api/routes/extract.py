@@ -6,9 +6,11 @@ and returns structured JSON. No database writes, no user data stored.
 
 from __future__ import annotations
 
+import time
 from datetime import datetime
 from typing import Any
 
+from cachetools import TTLCache
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
@@ -20,6 +22,28 @@ from reclaim.utils.validators import validate_email_id
 
 router = APIRouter(prefix="/api", tags=["extract"])
 logger = get_logger(__name__)
+
+# Per-user rate limit for LLM endpoints (separate from global IP rate limit).
+# Limits each authenticated user to 10 LLM calls per minute to prevent cost abuse.
+_LLM_RATE_LIMIT_PER_MIN = 10
+_llm_user_buckets: TTLCache[str, list[float]] = TTLCache(maxsize=1000, ttl=120)
+
+
+async def _check_llm_rate_limit(
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> AuthenticatedUser:
+    """Dependency that enforces per-user rate limiting on LLM endpoints."""
+    now = time.time()
+    uid = user.user_id
+    bucket = [ts for ts in _llm_user_buckets.get(uid, []) if now - ts < 60]
+    if len(bucket) >= _LLM_RATE_LIMIT_PER_MIN:
+        raise HTTPException(
+            status_code=429,
+            detail=f"LLM rate limit exceeded. Maximum {_LLM_RATE_LIMIT_PER_MIN} requests per minute.",
+        )
+    bucket.append(now)
+    _llm_user_buckets[uid] = bucket
+    return user
 
 
 # ============================================================================
@@ -34,7 +58,7 @@ class ExtractEmail(BaseModel):
     from_address: str = Field(..., max_length=500)
     subject: str = Field(..., max_length=2000)
     body: str = Field(..., max_length=50000)
-    body_html: str | None = Field(None, max_length=100000)
+    body_html: str | None = Field(None, max_length=500000)
     received_at: str | None = None  # ISO format
 
     @field_validator("email_id")
@@ -260,7 +284,7 @@ class ExtractPolicyResponse(BaseModel):
 @router.post("/extract-policy", response_model=ExtractPolicyResponse)
 async def extract_policy(
     request: ExtractPolicyRequest,
-    user: AuthenticatedUser = Depends(get_current_user),  # noqa: ARG001
+    user: AuthenticatedUser = Depends(_check_llm_rate_limit),  # noqa: ARG001
 ) -> ExtractPolicyResponse:
     """
     Extract return policy from email context (stateless).

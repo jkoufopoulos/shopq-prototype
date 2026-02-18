@@ -1,8 +1,18 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-PROJECT_ID="shopq-467118"
+PROJECT_ID="relaim"
+
+# Validate required env vars before deploying
+REQUIRED_VARS=(GOOGLE_API_KEY GOOGLE_OAUTH_CLIENT_ID RECLAIM_EXTENSION_IDS)
+for var in "${REQUIRED_VARS[@]}"; do
+  if [ -z "${!var:-}" ]; then
+    echo "ERROR: Required environment variable $var is not set."
+    echo "Set it before running: export $var=<value>"
+    exit 1
+  fi
+done
 REGION="us-central1"
 SERVICE_NAME="reclaim-api"
 

@@ -6,7 +6,8 @@ use this function. Each stage wraps it in its own try/except to implement
 its specific final-failure policy (reject vs fallback).
 
 CODE-003: Retries up to LLM_MAX_RETRIES times with exponential backoff.
-CODE-004: Handles Vertex AI-specific exceptions (DeadlineExceeded, ServiceUnavailable).
+CODE-004: Handles Vertex AI-specific exceptions (DeadlineExceeded, ServiceUnavailable,
+          ResourceExhausted, InternalServerError).
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from reclaim.config import LLM_MAX_RETRIES, LLM_TIMEOUT_SECONDS
 from reclaim.infrastructure.settings import GEMINI_MAX_TOKENS, GEMINI_TEMPERATURE
-from reclaim.llm.gemini import get_gemini_model, get_gemini_model_with_options
+from reclaim.llm.gemini import get_gemini_model_with_options
 from reclaim.observability.logging import get_logger
 from reclaim.observability.telemetry import counter
 
@@ -48,10 +49,16 @@ def call_llm(
 
     Raises:
         TimeoutError: On deadline exceeded (retryable).
-        ConnectionError: On service unavailable (retryable).
+        ConnectionError: On service unavailable or internal error (retryable).
+        OSError: On resource exhausted / rate limited (retryable).
         Exception: On other errors (not retried, caller handles).
     """
-    from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
+    from google.api_core.exceptions import (
+        DeadlineExceeded,
+        InternalServerError,
+        ResourceExhausted,
+        ServiceUnavailable,
+    )
 
     model = get_gemini_model_with_options(system_instruction=system_instruction)
 
@@ -61,10 +68,14 @@ def call_llm(
         "max_output_tokens": GEMINI_MAX_TOKENS,
     }
 
-    # Add structured output when response_schema is provided
+    # Request JSON output when a response schema is provided.
+    # We intentionally omit response_schema from generation_config because
+    # the Vertex AI SDK requires protobuf Schema objects (not raw dicts),
+    # and the enum types vary across SDK versions. The prompt already
+    # specifies the JSON format, and both classifier and extractor have
+    # robust JSON parsing fallbacks.
     if response_schema is not None:
         generation_config["response_mime_type"] = "application/json"
-        generation_config["response_schema"] = response_schema
 
     try:
         response = model.generate_content(prompt, generation_config=generation_config)
@@ -77,6 +88,14 @@ def call_llm(
         counter(f"returns.{counter_prefix}.service_unavailable")
         logger.warning("LLM service unavailable, will retry: %s", e)
         raise ConnectionError(f"LLM service unavailable: {e}") from e
+    except ResourceExhausted as e:
+        counter(f"returns.{counter_prefix}.rate_limited")
+        logger.warning("LLM rate limited (429), will retry: %s", e)
+        raise OSError(f"LLM rate limited: {e}") from e
+    except InternalServerError as e:
+        counter(f"returns.{counter_prefix}.internal_error")
+        logger.warning("LLM internal error (500), will retry: %s", e)
+        raise ConnectionError(f"LLM internal error: {e}") from e
     except Exception as e:
         logger.error("LLM call failed: %s", e)
         raise

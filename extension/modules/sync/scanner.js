@@ -526,10 +526,26 @@ async function scanPurchases(options = {}) {
   beginResolutionStats();
 
   try {
-  // Get auth token
-  const token = await getAuthToken();
-  if (!token) {
+  // Get auth token with mid-scan refresh support.
+  // OAuth tokens expire after 1 hour; long scans over many emails can exceed
+  // that. Re-obtain the token every 45 minutes to stay well within the window.
+  const TOKEN_REFRESH_INTERVAL_MS = 45 * 60 * 1000;
+  let _scanToken = await getAuthToken();
+  let _tokenObtainedAt = Date.now();
+  if (!_scanToken) {
     throw new Error('No auth token available');
+  }
+
+  async function getValidToken() {
+    if (Date.now() - _tokenObtainedAt > TOKEN_REFRESH_INTERVAL_MS) {
+      console.log(SCANNER_LOG_PREFIX, 'TOKEN_REFRESH', 'refreshing token mid-scan');
+      _scanToken = await getAuthToken({ forceRefresh: true });
+      _tokenObtainedAt = Date.now();
+      if (!_scanToken) {
+        throw new Error('Token refresh failed mid-scan');
+      }
+    }
+    return _scanToken;
   }
 
   // SEC-002: Get authenticated user ID (never use default_user)
@@ -548,7 +564,7 @@ async function scanPurchases(options = {}) {
     const query = `${baseQuery} ${dateQuery}`;
     console.log(SCANNER_LOG_PREFIX, 'SEARCH', query);
 
-    const messages = await searchMessages(token, query);
+    const messages = await searchMessages(await getValidToken(), query);
     console.log(SCANNER_LOG_PREFIX, 'FOUND', messages.length, 'messages');
 
     for (const msg of messages) {
@@ -578,7 +594,7 @@ async function scanPurchases(options = {}) {
   for (const messageId of allMessageIds) {
     try {
       // Get message metadata
-      const message = await getMessageMetadata(token, messageId);
+      const message = await getMessageMetadata(await getValidToken(), messageId);
 
       const subject = getHeader(message, 'Subject');
       const from_address = getHeader(message, 'From');
@@ -619,7 +635,7 @@ async function scanPurchases(options = {}) {
       let body = '';
       let body_html = null;
       try {
-        const fullMessage = await getFullMessage(token, messageId);
+        const fullMessage = await getFullMessage(await getValidToken(), messageId);
         body = extractBodyFromPayload(fullMessage.payload);
         // Also extract HTML body for better extraction
         body_html = extractHtmlBodyFromPayload(fullMessage.payload);
