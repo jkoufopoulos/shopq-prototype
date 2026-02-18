@@ -536,7 +536,7 @@ async function scanPurchases(options = {}) {
     throw new Error('No auth token available');
   }
 
-  async function getValidToken() {
+  const getValidToken = async () => {
     if (Date.now() - _tokenObtainedAt > TOKEN_REFRESH_INTERVAL_MS) {
       console.log(SCANNER_LOG_PREFIX, 'TOKEN_REFRESH', 'refreshing token mid-scan');
       _scanToken = await getAuthToken({ forceRefresh: true });
@@ -546,7 +546,7 @@ async function scanPurchases(options = {}) {
       }
     }
     return _scanToken;
-  }
+  };
 
   // SEC-002: Get authenticated user ID (never use default_user)
   const user_id = await getAuthenticatedUserId();
