@@ -418,8 +418,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
     if (details.reason === 'install') {
       console.log('🎉 Reclaim installed');
-      // Open onboarding page for new users
-      chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+      // Onboarding now handled in-sidebar (returns-sidebar-inner.js)
       // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
       // Don't set default_user - proper user isolation requires real Google user ID
       // Initial scan will be triggered by refresh system when Gmail is opened

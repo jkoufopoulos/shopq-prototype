@@ -23,7 +23,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 
 # Google Cloud / Gemini
-GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "shopq-467118")
+GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "relaim")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-001")  # Vertex AI model
 GEMINI_LOCATION = os.getenv("GEMINI_LOCATION", "us-central1")

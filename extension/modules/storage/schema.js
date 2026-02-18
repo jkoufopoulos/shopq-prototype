@@ -116,6 +116,8 @@ const STORAGE_KEYS = {
   TEMPLATE_CACHE: 'template_cache',
   // Merchant index for entity resolution
   ORDER_KEYS_BY_MERCHANT: 'order_keys_by_merchant',
+  // Onboarding
+  ONBOARDING_COMPLETED: 'onboarding_completed',
 };
 
 // Order status values
