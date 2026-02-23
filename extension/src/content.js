@@ -379,6 +379,11 @@ class SidebarController {
     this._router.register('RECLAIM_RETURNS_SIDEBAR_READY', async () => {
       console.log('Reclaim: Returns sidebar iframe ready');
       ctrl._iframeReady = true;
+
+      // Parse Gmail account index from URL (e.g. /mail/u/1/ → '1')
+      const accountMatch = window.location.pathname.match(/\/mail\/u\/(\d+)/);
+      const gmailAccountIndex = accountMatch ? accountMatch[1] : '0';
+
       ctrl.postToSidebar({
         type: 'RECLAIM_CONFIG_INIT',
         config: {
@@ -387,6 +392,7 @@ class SidebarController {
           TOAST_FADEOUT_MS,
           EXPIRING_SOON_DAYS,
           CRITICAL_DAYS,
+          GMAIL_ACCOUNT_INDEX: gmailAccountIndex,
         }
       });
       // Flush any scan notifications that arrived before iframe was ready
@@ -677,6 +683,24 @@ async function initializeVisualLayer() {
   try {
     const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
     console.log('Reclaim: InboxSDK loaded successfully');
+
+    // Account gating: only show sidebar for the authorized Gmail account
+    const tabEmail = sdk.User.getEmailAddress();
+    if (tabEmail) {
+      try {
+        const stored = await chrome.storage.local.get(['userEmail', 'onboarding_completed']);
+        if (stored.userEmail && stored.onboarding_completed) {
+          if (tabEmail.toLowerCase() !== stored.userEmail.toLowerCase()) {
+            console.log(`Reclaim: Skipping sidebar — tab account (${tabEmail}) ≠ authorized account (${stored.userEmail})`);
+            return;
+          }
+        }
+        // If userEmail not stored yet (pre-onboarding), allow sidebar so onboarding can complete
+      } catch (e) {
+        console.warn('Reclaim: Could not check account gating, allowing sidebar:', e);
+      }
+    }
+    // If tabEmail is empty/null, fail-open and allow sidebar
 
     // Initialize returns sidebar
     const extensionOrigin = chrome.runtime.getURL('').slice(0, -1);

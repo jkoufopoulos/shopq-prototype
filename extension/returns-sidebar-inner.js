@@ -19,6 +19,7 @@ window.ReclaimSidebar = {
     TOAST_FADEOUT_MS: 300,
     EXPIRING_SOON_DAYS: 7,
     CRITICAL_DAYS: 3,
+    GMAIL_ACCOUNT_INDEX: '0',
   },
   state: {
     visibleOrders: [],
@@ -702,7 +703,7 @@ function renderDetailView(order, needsEnrichment) {
       <div class="detail-merchant">${escapeHtml(order.merchant_display_name)}</div>
       <div class="detail-item">${escapeHtml(order.item_summary)}</div>
       ${order.source_email_ids && order.source_email_ids.length > 0 ? `
-      <a href="https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(order.source_email_ids[0])}"
+      <a href="https://mail.google.com/mail/u/${ReclaimSidebar.config.GMAIL_ACCOUNT_INDEX}/#inbox/${encodeURIComponent(order.source_email_ids[0])}"
          target="_top"
          class="detail-email-link">
         View Order Email ${externalLinkIcon}
@@ -1001,6 +1002,7 @@ window.addEventListener('message', (event) => {
     if (c.TOAST_FADEOUT_MS) ReclaimSidebar.config.TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
     if (c.EXPIRING_SOON_DAYS) ReclaimSidebar.config.EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
     if (c.CRITICAL_DAYS) ReclaimSidebar.config.CRITICAL_DAYS = c.CRITICAL_DAYS;
+    if (c.GMAIL_ACCOUNT_INDEX != null) ReclaimSidebar.config.GMAIL_ACCOUNT_INDEX = c.GMAIL_ACCOUNT_INDEX;
   }
 
   // Handle unified visible orders
