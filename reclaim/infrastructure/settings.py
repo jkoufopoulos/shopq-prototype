@@ -23,12 +23,12 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 
 # Google Cloud / Gemini
-GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "shopq-467118")
+GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "relaim")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-001")  # Vertex AI model
 GEMINI_LOCATION = os.getenv("GEMINI_LOCATION", "us-central1")
 GEMINI_MAX_TOKENS = int(os.getenv("GEMINI_MAX_TOKENS", "1024"))
-GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "0.1"))
+GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "1.0"))
 
 # OpenAI (optional)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -66,7 +66,7 @@ LOG_FILE = RECLAIM_ROOT / "logs" / "reclaim.log"
 MODEL_VERSION = "v2025-10-05"
 
 # API URL (matches extension config.js)
-RECLAIM_API_URL = "https://reclaim-api-488078904670.us-central1.run.app"
+RECLAIM_API_URL = "https://reclaim-api-142227390702.us-central1.run.app"
 
 
 def is_production() -> bool:

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reclaim — Track Return Deadlines Automatically</title>
+  <meta name="description" content="Reclaim scans your Gmail for purchases and tracks return deadlines so you get your money back before time runs out.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#0d9488"/>
+          <path d="M9 16.5L14 21.5L23 11.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Reclaim
+      </a>
+
+      <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <ul class="nav__links">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+        <!-- Replace # with your actual waitlist form URL -->
+        <li><a href="#waitlist" class="nav__cta">Join the Waitlist</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="container">
+      <h1><span class="hero__gradient-text">The return window is closing</span></h1>
+      <p class="hero__subtitle">If you shop online regularly, you've already lost money to a return you didn't make in time. Reclaim lives in your Gmail and tracks every return deadline &mdash; counting down to the day each window closes.</p>
+      <div class="hero__cta-row">
+        <!-- Replace # with your actual waitlist form URL -->
+        <a href="#waitlist" class="btn btn--primary btn--large">Join the Waitlist</a>
+        <a href="#how-it-works" class="btn btn--ghost btn--large">See how it works</a>
+      </div>
+
+      <!-- Replace VIDEO_ID with your YouTube video ID -->
+      <div class="hero__video">
+        <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="Reclaim demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section id="how-it-works" class="section section--alt animate-on-scroll">
+    <div class="container text-center">
+      <span class="badge">How It Works</span>
+      <h2 style="margin-top: 12px;">Install once. Returns tracked forever.</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step__number">1</div>
+          <h3>Connect your Gmail</h3>
+          <p>Reclaim finds order confirmations and shipping emails. Only purchase-related messages &mdash; nothing else.</p>
+        </div>
+        <div class="step">
+          <div class="step__number">2</div>
+          <h3>AI extracts the details</h3>
+          <p>Gemini AI pulls out the merchant, items, order date, and return policy from each email automatically.</p>
+        </div>
+        <div class="step">
+          <div class="step__number">3</div>
+          <h3>Watch the countdown</h3>
+          <p>A sidebar in Gmail shows live return deadlines. You'll see them every time you open your inbox.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section id="features" class="section animate-on-scroll">
+    <div class="container text-center">
+      <h2>What you get</h2>
+
+      <div class="features-grid">
+        <div class="card">
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7L12 13L2 7"/></svg>
+          </div>
+          <h3>Built into Gmail</h3>
+          <p>No new app. No new tab. No new habit. Reclaim adds a sidebar right where you already read email.</p>
+        </div>
+
+        <div class="card">
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>Knows retailer policies</h3>
+          <p>Amazon gives you 30 days. Nordstrom gives you 40. Target gives you 90. Reclaim looks up return windows automatically &mdash; even when the email doesn't mention one.</p>
+        </div>
+
+        <div class="card">
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          </div>
+          <h3>Reads messy emails</h3>
+          <p>Order confirmations come in every format imaginable. Gemini AI parses them the way a person would &mdash; pulling structured data from marketing HTML and plain text.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PRIVACY ===== -->
+  <section class="section section--accent">
+    <div class="container">
+      <div class="privacy-highlight">
+        <div class="privacy-highlight__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="privacy-highlight__content">
+          <h2>Your data stays on your device</h2>
+          <p>Order details live in Chrome's local storage on your machine. When Reclaim processes an email, the content passes through our server to Gemini AI and the result comes right back &mdash; nothing is stored, nothing is logged, nothing is sold.</p>
+          <ul class="privacy-highlight__list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              All data stored locally in Chrome
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Server processing is completely transient
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              No ads, no tracking, no data monetization
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Delete everything with one click
+            </li>
+          </ul>
+          <a href="privacy.html" class="btn btn--primary">Read the full privacy policy</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section id="waitlist" class="cta-banner">
+    <div class="container">
+      <h2>Get notified when Reclaim launches</h2>
+      <p>Free Chrome extension. No account required.</p>
+      <!-- Replace # with your actual waitlist form URL -->
+      <a href="#" class="btn btn--primary btn--large">Join the Waitlist</a>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__top">
+        <a href="index.html" class="footer__brand">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="#0d9488"/>
+            <path d="M9 16.5L14 21.5L23 11.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Reclaim
+        </a>
+        <ul class="footer__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms of Service</a></li>
+          <li><a href="https://github.com/jkoufopoulos/shopq-prototype">GitHub</a></li>
+        </ul>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">&copy; 2026 Justin Koufopoulos</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>

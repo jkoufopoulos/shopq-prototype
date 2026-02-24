@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
+
 from reclaim.config import (
     PIPELINE_BODY_TRUNCATION,
     PIPELINE_DATE_WINDOW_DAYS,
@@ -65,6 +66,115 @@ class LLMExtractionSchema(BaseModel):
     )
 
 
+# Gemini structured output schema
+EXTRACTOR_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "merchant_name": {
+            "type": "string",
+            "nullable": True,
+            "description": "Retailer or store name (e.g. Amazon, Target, Nike)",
+        },
+        "item_summary": {
+            "type": "string",
+            "nullable": True,
+            "description": "Actual product names purchased, comma-separated. null if no specific product name found.",
+        },
+        "order_number": {
+            "type": "string",
+            "nullable": True,
+            "description": "Order or confirmation number. null if not visible in the email.",
+        },
+        "amount": {
+            "type": "number",
+            "nullable": True,
+            "description": "Total purchase amount as a number, no currency symbol. null if not stated.",
+        },
+        "currency": {
+            "type": "string",
+            "description": "ISO currency code, default USD",
+        },
+        "order_date": {
+            "type": "string",
+            "nullable": True,
+            "description": "Date the order was placed in YYYY-MM-DD format. null if not stated.",
+        },
+        "delivery_date": {
+            "type": "string",
+            "nullable": True,
+            "description": "Expected or actual delivery date in YYYY-MM-DD format. null if not stated.",
+        },
+        "explicit_return_by": {
+            "type": "string",
+            "nullable": True,
+            "description": "Return deadline date in YYYY-MM-DD format. Only if the email states a specific date. null otherwise.",
+        },
+        "return_window_days": {
+            "type": "integer",
+            "nullable": True,
+            "description": "Number of days for returns if mentioned (e.g. 30 for '30-day returns'). null if not stated.",
+        },
+        "return_policy_quote": {
+            "type": "string",
+            "nullable": True,
+            "description": "Verbatim quote from the email about return policy. Copy exact text. null if no return info.",
+        },
+    },
+    "required": ["merchant_name", "item_summary"],
+    "propertyOrdering": [
+        "merchant_name", "item_summary", "order_number", "amount", "currency",
+        "order_date", "delivery_date", "explicit_return_by", "return_window_days",
+        "return_policy_quote",
+    ],
+}
+
+
+# System instruction — cached by Gemini, reduces per-call latency.
+EXTRACTOR_SYSTEM_INSTRUCTION = """You extract structured purchase details from order/shipping emails.
+
+## Fields to extract
+
+1. merchant_name: The retailer or store name (e.g., "Amazon", "Target", "Nike").
+2. item_summary: The actual product names purchased, comma-separated. Extract specific product names from the email body. Do not use generic phrases like "your package" or "some of the items". Include all items if multiple are listed. null if no specific product name can be found.
+3. order_number: Order or confirmation number. null if not visible in the email.
+4. amount: Total purchase amount as a number (no currency symbol). null if not stated.
+5. currency: Currency code. Default "USD" if not specified.
+6. order_date: Date the order was placed, YYYY-MM-DD format. null if not stated.
+7. delivery_date: Expected or actual delivery date, YYYY-MM-DD format. null if not stated.
+8. explicit_return_by: Return deadline date, YYYY-MM-DD format. Only if the email states a specific return-by date. null otherwise.
+9. return_window_days: Number of days for returns if mentioned (e.g., 30 for "30-day returns"). null if not stated.
+10. return_policy_quote: Verbatim quote from the email mentioning return policy. Copy the exact text. null if no return info exists.
+
+## Few-shot examples
+
+Email:
+Date this email was sent: 2025-01-10
+Subject: Your Nike.com Order Confirmation
+From: nikeonline@nike.com
+Body:
+Thanks for your order! Order #C02849371 placed on January 10, 2025.
+Nike Air Max 90 - Men's Size 10 - White/Black — $130.00
+Estimated delivery: January 16, 2025
+Free returns within 30 days of delivery. Start a return at nike.com/returns.
+
+Extraction:
+{"merchant_name": "Nike", "item_summary": "Nike Air Max 90 - Men's Size 10 - White/Black", "order_number": "C02849371", "amount": 130.00, "currency": "USD", "order_date": "2025-01-10", "delivery_date": "2025-01-16", "explicit_return_by": null, "return_window_days": 30, "return_policy_quote": "Free returns within 30 days of delivery."}
+
+Email:
+Date this email was sent: 2025-02-05
+Subject: Your package has been delivered
+From: delivery-notification@amazon.com
+Body:
+Your package was delivered today at 2:15 PM. It was left at your front door.
+Items in this shipment: 1 package
+
+Extraction:
+{"merchant_name": "Amazon", "item_summary": null, "order_number": null, "amount": null, "currency": "USD", "order_date": null, "delivery_date": "2025-02-05", "explicit_return_by": null, "return_window_days": null, "return_policy_quote": null}
+
+## Output format
+Extract all available fields. Use null for any field not found in the email."""
+
+
 class ReturnFieldExtractor:
     """
     Extract structured fields from returnable purchase emails.
@@ -97,54 +207,12 @@ class ReturnFieldExtractor:
         r"(https?://[^\s]*(?:return|refund)[^\s]*)",
     ]
 
-    # LLM prompt for field extraction
-    EXTRACTION_PROMPT = """Extract purchase details from this email.
-
-Date this email was sent: {today}
-
+    # User message template — only per-email data
+    EXTRACTION_PROMPT = """Date this email was sent: {today}
 Subject: {subject}
 From: {from_address}
 Body:
-{body}
-
-Extract these fields:
-1. merchant_name: The retailer/store name (e.g., "Amazon", "Target", "Nike")
-2. item_summary: The ACTUAL PRODUCT NAMES purchased, comma-separated.
-   Example: "Wireless headphones, Phone case"
-   RULES: Extract specific product names from the email body.
-   Do NOT use generic phrases like "your package", "some of the items",
-   or "package has been delivered". Include ALL items if multiple are listed.
-   If no specific product name can be found, use null.
-3. order_number: Order/confirmation number if present
-4. amount: Total purchase amount (number only, no currency symbol)
-5. currency: Currency code (default USD)
-6. order_date: When order was placed (YYYY-MM-DD format)
-7. delivery_date: Expected or actual delivery date (YYYY-MM-DD format)
-8. explicit_return_by: ONLY if email explicitly states a return deadline date (YYYY-MM-DD format)
-9. return_window_days: Number of days for returns if mentioned (e.g., 30 for "30-day returns")
-10. return_policy_quote: VERBATIM quote from email mentioning return policy (copy exact text)
-
-IMPORTANT for return fields:
-- If the email mentions a return policy, copy the EXACT text into return_policy_quote
-- Only fill explicit_return_by if a specific date appears in the quote
-- Only fill return_window_days if a specific number of days appears in the quote
-- Do NOT guess. If no return info exists, leave these fields null.
-
-Output JSON:
-{{
-  "merchant_name": "...",
-  "item_summary": "...",
-  "order_number": "..." or null,
-  "amount": 123.45 or null,
-  "currency": "USD",
-  "order_date": "YYYY-MM-DD" or null,
-  "delivery_date": "YYYY-MM-DD" or null,
-  "explicit_return_by": "YYYY-MM-DD" or null,
-  "return_window_days": 30 or null,
-  "return_policy_quote": "exact text from email about returns" or null
-}}
-
-Respond with ONLY the JSON."""
+{body}"""
 
     def __init__(self, merchant_rules: dict | None = None):
         """
@@ -156,14 +224,24 @@ Respond with ONLY the JSON."""
         self.merchant_rules = merchant_rules or {}
         # CODE-011: Model is now obtained from shared singleton
 
-    def _call_llm_with_retry(self, prompt: str) -> str:
+    def _call_llm_with_retry(
+        self,
+        prompt: str,
+        system_instruction: str | None = None,
+        response_schema: dict | None = None,
+    ) -> str:
         """Call LLM with retry logic and timeout.
 
         CODE-003: Delegates to shared call_llm() with extractor-specific counter prefix.
         """
         from reclaim.llm.retry import call_llm
 
-        return call_llm(prompt, counter_prefix="extractor")
+        return call_llm(
+            prompt,
+            counter_prefix="extractor",
+            system_instruction=system_instruction,
+            response_schema=response_schema,
+        )
 
     # Common garbage values the LLM or regex may extract as order numbers
     _GARBAGE_ORDER_WORDS = frozenset(
@@ -362,6 +440,9 @@ Respond with ONLY the JSON."""
         )
         # NOTE: Body content not logged to prevent PII exposure
 
+        # Privacy: Redact PII from body before sending to Gemini
+        body_redacted = redact_pii(body_truncated, max_length=PIPELINE_BODY_TRUNCATION)
+
         # Use the email's received date as "today" so the LLM correctly interprets
         # relative dates like "Delivered today" or "Arriving tomorrow"
         context_date = received_at or datetime.now()
@@ -369,11 +450,15 @@ Respond with ONLY the JSON."""
             today=context_date.strftime("%Y-%m-%d"),
             subject=self._sanitize(subject, 200),
             from_address=self._sanitize(from_address, 100),
-            body=self._sanitize(body_truncated, PIPELINE_BODY_TRUNCATION),
+            body=self._sanitize(body_redacted, PIPELINE_BODY_TRUNCATION),
         )
 
-        # Call LLM with retry and timeout (CODE-003, CODE-004)
-        response_text = self._call_llm_with_retry(prompt)
+        # Call LLM with retry, system instruction, and structured output
+        response_text = self._call_llm_with_retry(
+            prompt,
+            system_instruction=EXTRACTOR_SYSTEM_INSTRUCTION,
+            response_schema=EXTRACTOR_RESPONSE_SCHEMA,
+        )
 
         # Parse JSON response
         result = self._parse_llm_response(response_text)
@@ -397,6 +482,9 @@ Respond with ONLY the JSON."""
             # Handle markdown code blocks
             json_text = response_text.strip()
             if json_text.startswith("```"):
+                # Should not trigger with response_schema
+                counter("returns.extractor.code_fence_fallback")
+                logger.warning("Extractor response contained code fences (unexpected with schema)")
                 json_text = re.sub(r"^```(?:json)?\n?", "", json_text)
                 json_text = re.sub(r"\n?```$", "", json_text)
 

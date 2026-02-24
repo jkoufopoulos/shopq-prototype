@@ -1,8 +1,18 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-PROJECT_ID="mailq-467118"
+PROJECT_ID="relaim"
+
+# Validate required env vars before deploying
+REQUIRED_VARS=(GOOGLE_API_KEY GOOGLE_OAUTH_CLIENT_ID RECLAIM_EXTENSION_IDS)
+for var in "${REQUIRED_VARS[@]}"; do
+  if [ -z "${!var:-}" ]; then
+    echo "ERROR: Required environment variable $var is not set."
+    echo "Set it before running: export $var=<value>"
+    exit 1
+  fi
+done
 REGION="us-central1"
 SERVICE_NAME="reclaim-api"
 
@@ -41,8 +51,11 @@ gcloud run deploy $SERVICE_NAME \
   --allow-unauthenticated \
   --set-env-vars GOOGLE_CLOUD_PROJECT=$PROJECT_ID,\
 GOOGLE_API_KEY=${GOOGLE_API_KEY},\
+GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID},\
+RECLAIM_EXTENSION_IDS=${RECLAIM_EXTENSION_IDS},\
 GEMINI_MODEL=gemini-2.0-flash,\
-GEMINI_LOCATION=us-central1 \
+GEMINI_LOCATION=us-central1,\
+RECLAIM_ENV=production \
   --memory 512Mi \
   --timeout 300s \
   --cpu 1 \

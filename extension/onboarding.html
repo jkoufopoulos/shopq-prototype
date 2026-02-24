@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Reclaim</title>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme-sync.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--rc-bg-primary);
+      color: var(--rc-text-primary);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .logo img { width: 40px; height: 40px; }
+    .logo h1 { font-size: 24px; font-weight: 600; }
+
+    .hero {
+      margin-bottom: 40px;
+    }
+    .hero h2 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    .hero p {
+      font-size: 16px;
+      color: var(--rc-text-secondary);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-number {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--rc-accent-primary);
+      color: var(--rc-accent-btn-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .step-content h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .step-content p {
+      font-size: 14px;
+      color: var(--rc-text-secondary);
+    }
+
+    .privacy-section {
+      background: var(--rc-bg-secondary);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .privacy-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .privacy-section ul {
+      list-style: none;
+      padding: 0;
+    }
+    .privacy-section li {
+      font-size: 14px;
+      color: var(--rc-text-secondary);
+      padding: 6px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+    .privacy-section li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rc-status-success-text);
+    }
+
+    .cta-section {
+      text-align: center;
+    }
+    .cta-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: var(--rc-accent-primary);
+      color: var(--rc-accent-btn-text);
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .cta-btn:hover {
+      background: var(--rc-accent-primary-hover);
+    }
+    .cta-hint {
+      font-size: 13px;
+      color: var(--rc-text-tertiary);
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="icons/icon48.png" alt="Reclaim">
+      <h1>Reclaim</h1>
+    </div>
+
+    <div class="hero">
+      <h2>Never miss a return window again</h2>
+      <p>Reclaim automatically finds your online purchases in Gmail and tracks return deadlines so you can return items before it's too late.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Scan your emails</h3>
+          <p>Reclaim searches your recent Gmail messages for order confirmations and shipping notifications.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Extract return dates</h3>
+          <p>AI identifies the merchant, purchase details, and calculates when your return window closes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Track deadlines</h3>
+          <p>See all your return windows in a sidebar right inside Gmail. Get alerts before deadlines expire.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="privacy-section" id="privacy">
+      <h3>Your privacy matters</h3>
+      <ul>
+        <li>Your purchase data stays in your browser. We don't store your emails or personal information on our servers.</li>
+        <li>Email content from purchase-related emails is sent to Google's Gemini AI for extraction, then immediately discarded. No data is retained server-side.</li>
+        <li>Personal details (phone numbers, addresses, credit card numbers) are redacted before AI processing.</li>
+        <li>All communication uses encrypted HTTPS connections.</li>
+      </ul>
+    </div>
+
+    <div class="cta-section">
+      <button class="cta-btn" id="get-started">Open Gmail to get started</button>
+      <p class="cta-hint">Reclaim will appear as a sidebar in Gmail</p>
+    </div>
+  </div>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>

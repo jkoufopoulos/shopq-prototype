@@ -106,7 +106,7 @@ async function simulatePipelineProcess(email) {
   const merchant_domain = filterResult.merchant_domain;
   const display_name = extractMerchantDisplayName(from);
 
-  const order_key = generateOrderKey(
+  const order_key = hashOrderKey(
     'test_user',
     merchant_domain,
     order_id || tracking_number || email.id

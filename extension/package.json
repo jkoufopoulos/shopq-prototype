@@ -2,8 +2,9 @@
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "watch": "webpack --config webpack.config.js --watch",
-    "test": "node tests/utils.test.js && node tests/verifier.test.js && node tests/network.test.js",
-    "test:e2e": "node tests/e2e-live.js"
+    "test": "node tests/unit/run-unit-tests.js",
+    "test:e2e": "node tests/e2e-live.js",
+    "package": "npm run build && rm -rf build && mkdir build && cp manifest.json background.js popup.html popup.js pageWorld.js onboarding.html onboarding.js returns-sidebar-inner.js returns-sidebar.css returns-sidebar.html theme-sync.js theme.css styles.css build/ && cp -r dist icons modules build/ && cd build && zip -r ../reclaim-extension.zip . && cd .. && rm -rf build && echo 'Packaged: reclaim-extension.zip'"
   },
   "devDependencies": {
     "eslint": "^9.38.0",

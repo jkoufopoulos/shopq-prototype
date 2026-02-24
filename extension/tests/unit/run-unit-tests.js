@@ -148,22 +148,51 @@ function initSharedContext() {
     Promise,
     Set,
     Map,
+    Infinity,
+    setTimeout,
+    encodeURIComponent,
+    decodeURIComponent,
+    escape,
     atob: (str) => Buffer.from(str, 'base64').toString('binary'),
     btoa: (str) => Buffer.from(str, 'binary').toString('base64'),
     fetch: async () => ({ ok: false }),
     chrome: {
       storage: { local: { get: async () => ({}), set: async () => {} } },
       alarms: { create: () => {}, clear: () => {} },
-      tabs: { get: async () => ({}) },
+      tabs: { get: async () => ({}), sendMessage: async () => {} },
+      runtime: { id: 'test-extension-id' },
+    },
+    // Minimal CONFIG stub for modules that reference config constants
+    CONFIG: {
+      VERSION: '0.0.0-test',
+      API_BASE_URL: 'http://localhost:8000',
+      GMAIL_API_BASE: 'https://www.googleapis.com/gmail/v1/users/me',
+      API_REQUEST_DELAY_MS: 0,
+      MAX_MESSAGES_PER_QUERY: 100,
+      BATCH_CHUNK_SIZE: 10,
+      MESSAGE_RATE_LIMIT_MAX: 100,
+      MESSAGE_RATE_LIMIT_WINDOW_MS: 1000,
+      VERBOSE_LOGGING: false,
     },
   };
+
+  // Load utils.js to get shared helpers (getToday, etc.)
+  const utilsPath = path.resolve(__dirname, '../../modules/shared/utils.js');
+  const utilsCode = fs.readFileSync(utilsPath, 'utf-8');
+  const utilsWrapped = `
+    ${utilsCode}
+    return { getToday, extractDomain, redactForLog, sleep, logVerbose };
+  `;
+  const utilsFn = new Function(...Object.keys(baseContext), utilsWrapped);
+  const utilsExports = utilsFn(...Object.values(baseContext));
+  Object.assign(baseContext, utilsExports);
 
   // Load schema.js to get constants
   const schemaPath = path.resolve(__dirname, '../../modules/storage/schema.js');
   const schemaCode = fs.readFileSync(schemaPath, 'utf-8');
   const schemaWrapped = `
     ${schemaCode}
-    return { STORAGE_KEYS, ORDER_STATUS, DEADLINE_CONFIDENCE, EMAIL_TYPE, generateOrderKey, createOrder, createOrderEmail };
+    return { STORAGE_KEYS, ORDER_STATUS, DEADLINE_CONFIDENCE, EMAIL_TYPE, generateOrderKey: hashOrderKey, createOrder, createOrderEmail };
   `;
   const schemaFn = new Function(...Object.keys(baseContext), schemaWrapped);
   const schemaExports = schemaFn(...Object.values(baseContext));
@@ -183,6 +212,32 @@ function initSharedContext() {
 
   // Add linker exports to context
   Object.assign(baseContext, linkerExports);
+
+  // Stub for computeNormalizedMerchant (defined in store.js, used by resolution.js + scanner.js).
+  baseContext.computeNormalizedMerchant = function(order) {
+    if (order.normalized_merchant) return order.normalized_merchant;
+    let domain = (order.merchant_domain || '').toLowerCase().trim();
+    domain = domain.replace(/^(www\.|shop\.|store\.|mail\.|email\.|orders?\.)/, '');
+    return domain || (order.merchant_display_name || '').toLowerCase().replace(/[^a-z0-9]/g, '') || null;
+  };
+
+  // Stubs for scanner.js dependencies (only needed for module loading, not for pure function tests)
+  baseContext.refreshState = { gmailTabId: null };
+  baseContext.filterEmail = () => ({ blocked: false });
+  baseContext.getAuthToken = async () => null;
+  baseContext.getAuthenticatedUserId = async () => 'test-user';
+  baseContext.getLastScanState = async () => ({ epoch_ms: 0, internal_date_ms: 0, window_days: 14 });
+  baseContext.isEmailProcessed = async () => false;
+  baseContext.markEmailProcessed = async () => {};
+  baseContext.upsertOrder = async (o) => o;
+  baseContext.cancelOrderByOrderId = async () => null;
+  baseContext.processEmailBatch = async () => ({ success: false });
+  baseContext.updateLastScanState = async () => {};
+  baseContext.beginResolutionStats = () => {};
+  baseContext.endResolutionStats = () => {};
+  baseContext.getResolutionStats = () => null;
+  baseContext.deduplicateStoredOrders = async () => ({ merged: 0 });
+  baseContext.broadcastScanProgress = () => {};
 
   sharedContext = baseContext;
   return sharedContext;
@@ -250,6 +305,8 @@ async function runAllTests() {
     'extractor.test.js',
     'evidence.test.js',
     'lifecycle.test.js',
+    'resolution.test.js',
+    'scanner.test.js',
   ];
 
   for (const file of testFiles) {

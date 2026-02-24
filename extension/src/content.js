@@ -234,6 +234,7 @@ class SidebarController {
     this._panelEl = null;
     this._iframe = null;
     this._iframeReady = false;
+    this._pendingMessages = [];  // Queue for messages sent before iframe is ready
     this._refreshInterval = null;
     this._shouldBeOpen = true;
     this._isNavigating = false;
@@ -243,6 +244,17 @@ class SidebarController {
   postToSidebar(message) {
     if (this._iframeReady && this._iframe?.contentWindow) {
       this._iframe.contentWindow.postMessage(message, this._extensionOrigin);
+    } else {
+      // Queue messages until iframe is ready — prevents lost scan notifications
+      this._pendingMessages.push(message);
+    }
+  }
+
+  _flushPendingMessages() {
+    if (!this._iframeReady || !this._iframe?.contentWindow) return;
+    const pending = this._pendingMessages.splice(0);
+    for (const msg of pending) {
+      this._iframe.contentWindow.postMessage(msg, this._extensionOrigin);
     }
   }
 
@@ -367,6 +379,11 @@ class SidebarController {
     this._router.register('RECLAIM_RETURNS_SIDEBAR_READY', async () => {
       console.log('Reclaim: Returns sidebar iframe ready');
       ctrl._iframeReady = true;
+
+      // Parse Gmail account index from URL (e.g. /mail/u/1/ → '1')
+      const accountMatch = window.location.pathname.match(/\/mail\/u\/(\d+)/);
+      const gmailAccountIndex = accountMatch ? accountMatch[1] : '0';
+
       ctrl.postToSidebar({
         type: 'RECLAIM_CONFIG_INIT',
         config: {
@@ -375,8 +392,11 @@ class SidebarController {
           TOAST_FADEOUT_MS,
           EXPIRING_SOON_DAYS,
           CRITICAL_DAYS,
+          GMAIL_ACCOUNT_INDEX: gmailAccountIndex,
         }
       });
+      // Flush any scan notifications that arrived before iframe was ready
+      ctrl._flushPendingMessages();
       await ctrl._fetchVisibleOrders();
     });
 
@@ -483,88 +503,6 @@ class SidebarController {
       }
     });
 
-    // Delivery modal message handlers
-    this._router.register('RECLAIM_GET_USER_ADDRESS', async () => {
-      try {
-        const result = await chrome.runtime.sendMessage({ type: 'GET_USER_ADDRESS' });
-        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: result?.address || null });
-      } catch (err) {
-        console.error('Reclaim: Failed to get user address:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_USER_ADDRESS', address: null });
-      }
-    });
-
-    this._router.register('RECLAIM_SET_USER_ADDRESS', async (data) => {
-      try {
-        await chrome.runtime.sendMessage({ type: 'SET_USER_ADDRESS', address: data.address });
-      } catch (err) {
-        console.error('Reclaim: Failed to save address:', err);
-      }
-    });
-
-    this._router.register('RECLAIM_GET_DELIVERY_LOCATIONS', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'GET_DELIVERY_LOCATIONS',
-          address: data.address
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: result?.locations || [] });
-      } catch (err) {
-        console.error('Reclaim: Failed to get delivery locations:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_LOCATIONS', locations: [], error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_GET_DELIVERY_QUOTE', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'GET_DELIVERY_QUOTE',
-          order_key: data.order_key,
-          pickup_address: data.pickup_address,
-          dropoff_location_id: data.dropoff_location_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', quote: result?.quote || result, error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to get delivery quote:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_QUOTE', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_CONFIRM_DELIVERY', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'CONFIRM_DELIVERY',
-          delivery_id: data.delivery_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', delivery: result?.delivery || result, error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to confirm delivery:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CONFIRMED', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_CANCEL_DELIVERY', async (data) => {
-      try {
-        const result = await chrome.runtime.sendMessage({
-          type: 'CANCEL_DELIVERY',
-          delivery_id: data.delivery_id
-        });
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: result?.error });
-      } catch (err) {
-        console.error('Reclaim: Failed to cancel delivery:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_DELIVERY_CANCELED', error: err.message });
-      }
-    });
-
-    this._router.register('RECLAIM_GET_ACTIVE_DELIVERIES', async () => {
-      try {
-        const result = await chrome.runtime.sendMessage({ type: 'GET_ACTIVE_DELIVERIES' });
-        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: result?.deliveries || [] });
-      } catch (err) {
-        console.error('Reclaim: Failed to get active deliveries:', err);
-        ctrl.postToSidebar({ type: 'RECLAIM_ACTIVE_DELIVERIES', deliveries: [] });
-      }
-    });
   }
 
   async _fetchVisibleOrders() {
@@ -698,11 +636,71 @@ async function initializeVisualLayer() {
   }, 30000);
   globalDisposeBag.addInterval(contextCheckInterval);
 
+  // Register background scan listener BEFORE InboxSDK loads — the scan can
+  // complete while InboxSDK is still initializing. Messages are queued by
+  // postToSidebar() and flushed when the iframe becomes ready.
+  // If sidebarController doesn't exist yet, we queue the raw messages and
+  // replay them once the controller is initialized.
+  const pendingBackgroundMessages = [];
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type !== 'SCAN_COMPLETE_NOTIFICATION' &&
+        message.type !== 'SCAN_PROGRESS_NOTIFICATION') return;
+
+    if (!sidebarController) {
+      // Controller not ready yet — queue for replay after init
+      pendingBackgroundMessages.push(message);
+      return;
+    }
+
+    handleBackgroundScanMessage(message);
+  });
+
+  function handleBackgroundScanMessage(message) {
+    if (message.type === 'SCAN_COMPLETE_NOTIFICATION') {
+      console.log('Reclaim: Auto-scan complete, refreshing sidebar');
+      sidebarController.postToSidebar({
+        type: 'RECLAIM_SCAN_COMPLETE',
+        result: { stats: message.stats },
+      });
+      sidebarController._fetchVisibleOrders();
+    }
+
+    if (message.type === 'SCAN_PROGRESS_NOTIFICATION') {
+      sidebarController.postToSidebar({
+        type: 'RECLAIM_SCAN_PROGRESS',
+        phase: message.phase,
+        checked: message.checked,
+        processed: message.processed,
+        pending: message.pending,
+        found: message.found,
+      });
+    }
+  }
+
   console.log('Reclaim: Attempting InboxSDK.load with app ID:', SHOPQ_APP_ID);
 
   try {
     const sdk = await InboxSDK.load(2, SHOPQ_APP_ID);
     console.log('Reclaim: InboxSDK loaded successfully');
+
+    // Account gating: only show sidebar for the authorized Gmail account
+    const tabEmail = sdk.User.getEmailAddress();
+    if (tabEmail) {
+      try {
+        const stored = await chrome.storage.local.get(['userEmail', 'onboarding_completed']);
+        if (stored.userEmail && stored.onboarding_completed) {
+          if (tabEmail.toLowerCase() !== stored.userEmail.toLowerCase()) {
+            console.log(`Reclaim: Skipping sidebar — tab account (${tabEmail}) ≠ authorized account (${stored.userEmail})`);
+            return;
+          }
+        }
+        // If userEmail not stored yet (pre-onboarding), allow sidebar so onboarding can complete
+      } catch (e) {
+        console.warn('Reclaim: Could not check account gating, allowing sidebar:', e);
+      }
+    }
+    // If tabEmail is empty/null, fail-open and allow sidebar
 
     // Initialize returns sidebar
     const extensionOrigin = chrome.runtime.getURL('').slice(0, -1);
@@ -710,17 +708,14 @@ async function initializeVisualLayer() {
     sidebarController = new SidebarController(router);
     await sidebarController.init(sdk);
 
-    // Listen for background scan completion notifications (auto-scans)
-    chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === 'SCAN_COMPLETE_NOTIFICATION' && sidebarController) {
-        console.log('Reclaim: Auto-scan complete, refreshing sidebar');
-        sidebarController.postToSidebar({
-          type: 'RECLAIM_SCAN_COMPLETE',
-          result: { stats: message.stats },
-        });
-        sidebarController._fetchVisibleOrders();
+    // Replay any scan messages that arrived while InboxSDK was loading
+    if (pendingBackgroundMessages.length > 0) {
+      console.log('Reclaim: Replaying', pendingBackgroundMessages.length, 'queued scan messages');
+      for (const msg of pendingBackgroundMessages) {
+        handleBackgroundScanMessage(msg);
       }
-    });
+      pendingBackgroundMessages.length = 0;
+    }
   } catch (error) {
     console.error('Reclaim: Failed to load InboxSDK:', error.message);
     if (!isExtensionContextValid() || error.message?.includes('Extension context invalidated')) {

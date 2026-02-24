@@ -83,7 +83,7 @@ async function initializeStorage() {
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
     [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.MERCHANT_RULES_BY_DOMAIN]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
@@ -236,125 +236,7 @@ async function findOrderByTracking(tracking_number) {
   return orders[order_key] || null;
 }
 
-/**
- * Resolve whether a new order matches an existing stored order.
- *
- * Matching hierarchy:
- * 1. Identity match: order_id index → tracking_number index (O(1))
- * 2. Fuzzy match: merchant-scoped Jaccard similarity (O(k) where k is small)
- *
- * Guards against bad merges:
- * - Order ID conflict: both have different order_ids → REJECT
- * - Time window: created_at must be within 14 days
- * - Jaccard threshold: item tokens must have ≥ 0.60 similarity
- *
- * @param {Order} newOrder - Incoming order to match
- * @param {Object} orders - Current orders map
- * @param {Object} orderIdIndex - order_id → order_key index
- * @param {Object} trackingIndex - tracking_number → order_key index
- * @param {Object} merchantIndex - normalized_merchant → [order_key, ...] index
- * @param {Object} [stats] - Optional stats counters to increment
- * @returns {string|null} Matched order_key, or null if no match
- */
-function resolveMatchingOrder(newOrder, orders, orderIdIndex, trackingIndex, merchantIndex, stats) {
-  const FUZZY_TIME_WINDOW_DAYS = 14;
-  const MIN_TOKENS_FOR_FUZZY = 2;
-  const JACCARD_THRESHOLD_HIGH = 0.60;  // 4+ tokens on smaller side
-  const JACCARD_THRESHOLD_LOW = 0.75;   // 2-3 tokens on smaller side
-  const LOW_TOKEN_CEILING = 3;
-
-  // --- Match 1: Identity match (O(1) index lookups) ---
-  if (newOrder.order_id) {
-    const matchKey = orderIdIndex[newOrder.order_id];
-    if (matchKey && orders[matchKey]) {
-      if (stats) stats.identity_order_id = (stats.identity_order_id || 0) + 1;
-      console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
-        'order_id:', newOrder.order_id, 'matched:', matchKey);
-      return matchKey;
-    }
-  }
-
-  if (newOrder.tracking_number) {
-    const matchKey = trackingIndex[newOrder.tracking_number];
-    if (matchKey && orders[matchKey]) {
-      if (stats) stats.identity_tracking = (stats.identity_tracking || 0) + 1;
-      console.log(STORE_LOG_PREFIX, 'RESOLVE_IDENTITY_MATCH',
-        'tracking:', newOrder.tracking_number, 'matched:', matchKey);
-      return matchKey;
-    }
-  }
-
-  // --- Match 2: Fuzzy match (merchant-scoped) ---
-  const merchant = computeNormalizedMerchant(newOrder);
-  if (!merchant) {
-    console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH', 'no merchant for fuzzy');
-    return null;
-  }
-
-  const candidateKeys = merchantIndex[merchant];
-  if (!candidateKeys || candidateKeys.length === 0) {
-    console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH', 'no candidates for merchant:', merchant);
-    return null;
-  }
-
-  const newTokens = normalizeItemTokens(newOrder.item_summary);
-  const newMatchTime = getEffectiveMatchTime(newOrder);
-
-  let bestMatch = null;
-  let bestScore = 0;
-
-  for (const candidateKey of candidateKeys) {
-    // Skip self
-    if (candidateKey === newOrder.order_key) continue;
-
-    const candidate = orders[candidateKey];
-    if (!candidate) continue;
-
-    // Order ID conflict guard: both have different order_ids → REJECT
-    const newId = (newOrder.order_id || '').trim().toUpperCase();
-    const candId = (candidate.order_id || '').trim().toUpperCase();
-    if (newId && candId && newId !== candId) {
-      if (stats) stats.conflict_reject = (stats.conflict_reject || 0) + 1;
-      console.log(STORE_LOG_PREFIX, 'RESOLVE_CONFLICT_REJECT',
-        'order_id conflict:', newId, 'vs', candId);
-      continue;
-    }
-
-    // Time window check (using stable match_time, not scan wall-clock)
-    const candMatchTime = getEffectiveMatchTime(candidate);
-    const daysDiff = Math.abs(newMatchTime - candMatchTime) / (1000 * 60 * 60 * 24);
-    if (daysDiff > FUZZY_TIME_WINDOW_DAYS) {
-      continue;
-    }
-
-    // Jaccard similarity on item tokens — require minimum tokens on both sides
-    const candTokens = normalizeItemTokens(candidate.item_summary);
-
-    if (newTokens.size < MIN_TOKENS_FOR_FUZZY || candTokens.size < MIN_TOKENS_FOR_FUZZY) {
-      continue;
-    }
-
-    const score = jaccardSimilarity(newTokens, candTokens);
-    const minTokens = Math.min(newTokens.size, candTokens.size);
-    const threshold = minTokens <= LOW_TOKEN_CEILING ? JACCARD_THRESHOLD_LOW : JACCARD_THRESHOLD_HIGH;
-    if (score >= threshold && score > bestScore) {
-      bestScore = score;
-      bestMatch = candidateKey;
-    }
-  }
-
-  if (bestMatch) {
-    if (stats) stats.fuzzy_match = (stats.fuzzy_match || 0) + 1;
-    console.log(STORE_LOG_PREFIX, 'RESOLVE_FUZZY_MATCH',
-      'merchant:', merchant, 'score:', bestScore.toFixed(2), 'matched:', bestMatch);
-    return bestMatch;
-  }
-
-  if (stats) stats.no_match = (stats.no_match || 0) + 1;
-  console.log(STORE_LOG_PREFIX, 'RESOLVE_NO_MATCH',
-    'merchant:', merchant, 'candidates:', candidateKeys.length);
-  return null;
-}
+// resolveMatchingOrder() is provided by resolution.js (loaded earlier via importScripts)
 
 /**
  * Upsert (create or update) an Order.
@@ -757,15 +639,33 @@ async function updateOrderEmailLLM(email_id, llm_extraction) {
 // ============================================================
 
 /**
- * Check if an email has already been processed.
+ * Read processed email IDs as an object map.
+ * Handles backward compat: migrates legacy array format to object on read.
+ *
+ * @returns {Promise<Object>} Map of email_id -> true
+ */
+async function _getProcessedMap() {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
+  const raw = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS];
+  if (!raw) return {};
+  // Backward compat: migrate array to object
+  if (Array.isArray(raw)) {
+    const obj = {};
+    for (const id of raw) obj[id] = 1;
+    return obj;
+  }
+  return raw;
+}
+
+/**
+ * Check if an email has already been processed. O(1) lookup.
  *
  * @param {string} email_id
  * @returns {Promise<boolean>}
  */
 async function isEmailProcessed(email_id) {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
-  return processed.includes(email_id);
+  const processed = await _getProcessedMap();
+  return email_id in processed;
 }
 
 /**
@@ -776,11 +676,9 @@ async function isEmailProcessed(email_id) {
  */
 async function markEmailProcessed(email_id) {
   return withStorageLock(async () => {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-    const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
-
-    if (!processed.includes(email_id)) {
-      processed.push(email_id);
+    const processed = await _getProcessedMap();
+    if (!(email_id in processed)) {
+      processed[email_id] = 1;
       await chrome.storage.local.set({
         [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
       });
@@ -796,15 +694,12 @@ async function markEmailProcessed(email_id) {
  */
 async function markEmailsProcessed(email_ids) {
   return withStorageLock(async () => {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.PROCESSED_EMAIL_IDS);
-    const processed = new Set(result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || []);
-
+    const processed = await _getProcessedMap();
     for (const id of email_ids) {
-      processed.add(id);
+      processed[id] = 1;
     }
-
     await chrome.storage.local.set({
-      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: Array.from(processed),
+      [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: processed,
     });
   });
 }
@@ -954,66 +849,6 @@ async function deleteMerchantRule(merchant_domain) {
 }
 
 // ============================================================
-// USER ADDRESS (for Uber Delivery)
-// ============================================================
-
-/**
- * Get saved user pickup address.
- *
- * @typedef {Object} UserAddress
- * @property {string} street - Street address
- * @property {string} city - City
- * @property {string} state - State code (e.g., "CA")
- * @property {string} zip_code - ZIP code
- * @property {string} [country] - Country code (default "US")
- * @property {number} [lat] - Latitude
- * @property {number} [lng] - Longitude
- *
- * @returns {Promise<UserAddress|null>}
- */
-async function getUserAddress() {
-  const result = await chrome.storage.local.get(STORAGE_KEYS.USER_ADDRESS);
-  return result[STORAGE_KEYS.USER_ADDRESS] || null;
-}
-
-/**
- * Save user pickup address.
- *
- * @param {UserAddress} address
- * @returns {Promise<void>}
- */
-async function setUserAddress(address) {
-  if (!address || !address.street || !address.city || !address.state || !address.zip_code) {
-    console.warn(STORE_LOG_PREFIX, 'Invalid address - missing required fields');
-    return;
-  }
-
-  await chrome.storage.local.set({
-    [STORAGE_KEYS.USER_ADDRESS]: {
-      street: address.street,
-      city: address.city,
-      state: address.state,
-      zip_code: address.zip_code,
-      country: address.country || 'US',
-      lat: address.lat || null,
-      lng: address.lng || null,
-    },
-  });
-
-  console.log(STORE_LOG_PREFIX, 'Saved user address:', address.city, address.state);
-}
-
-/**
- * Clear saved user address.
- *
- * @returns {Promise<void>}
- */
-async function clearUserAddress() {
-  await chrome.storage.local.remove(STORAGE_KEYS.USER_ADDRESS);
-  console.log(STORE_LOG_PREFIX, 'Cleared user address');
-}
-
-// ============================================================
 // UTILITIES
 // ============================================================
 
@@ -1041,7 +876,7 @@ async function resetPipelineData() {
     [STORAGE_KEYS.ORDER_KEY_BY_TRACKING]: {},
     [STORAGE_KEYS.ORDER_KEYS_BY_MERCHANT]: {},
     [STORAGE_KEYS.ORDER_EMAILS_BY_ID]: {},
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.TEMPLATE_CACHE]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
@@ -1061,7 +896,7 @@ async function resetPipelineData() {
  */
 async function resetScanState() {
   await chrome.storage.local.set({
-    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: [],
+    [STORAGE_KEYS.PROCESSED_EMAIL_IDS]: {},
     [STORAGE_KEYS.LAST_SCAN_EPOCH_MS]: 0,
     [STORAGE_KEYS.LAST_SCAN_INTERNAL_DATE_MS]: 0,
     [STORAGE_KEYS.TEMPLATE_CACHE]: {},
@@ -1148,14 +983,15 @@ async function getStorageStats() {
 
   const orders = Object.values(result[STORAGE_KEYS.ORDERS_BY_KEY] || {});
   const emails = Object.keys(result[STORAGE_KEYS.ORDER_EMAILS_BY_ID] || {});
-  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || [];
+  const processed = result[STORAGE_KEYS.PROCESSED_EMAIL_IDS] || {};
+  const processedCount = Array.isArray(processed) ? processed.length : Object.keys(processed).length;
 
   return {
     order_count: orders.length,
     active_orders: orders.filter(o => o.order_status === ORDER_STATUS.ACTIVE).length,
     deadline_known: orders.filter(o => o.deadline_confidence !== DEADLINE_CONFIDENCE.UNKNOWN).length,
     email_count: emails.length,
-    processed_count: processed.length,
+    processed_count: processedCount,
     last_scan: new Date(result[STORAGE_KEYS.LAST_SCAN_EPOCH_MS] || 0).toISOString(),
   };
 }
@@ -1291,20 +1127,10 @@ async function updateTrackingIndex(tracking_number, order_key) {
 
 // ============================================================
 // ENTITY RESOLUTION HELPERS
+// Pure matching functions (getEffectiveMatchTime, normalizeItemTokens,
+// jaccardSimilarity, orderRichness, resolveMatchingOrder) are in
+// resolution.js, loaded earlier via importScripts.
 // ============================================================
-
-/**
- * Get the effective match time for an order (stable across rescans).
- * Fallback chain: match_time → purchase_date → created_at → now.
- *
- * @param {Order} order
- * @returns {number} Timestamp in milliseconds
- */
-function getEffectiveMatchTime(order) {
-  const raw = order.match_time || order.purchase_date || order.created_at;
-  if (!raw) return Date.now();
-  return new Date(raw).getTime() || Date.now();
-}
 
 /**
  * Compute a normalized merchant identity for an order.
@@ -1349,69 +1175,6 @@ function computeNormalizedMerchant(order) {
   }
 
   return domain;
-}
-
-/**
- * Tokenize an item summary for fuzzy comparison.
- * Lowercase, split on whitespace/punctuation, remove stop words and short tokens.
- *
- * @param {string} summary
- * @returns {Set<string>}
- */
-function normalizeItemTokens(summary) {
-  if (!summary) return new Set();
-
-  const STOP_WORDS = new Set([
-    'the', 'a', 'an', 'and', 'or', 'for', 'of', 'in', 'to', 'with',
-    'by', 'on', 'at', 'from', 'is', 'it', 'its', 'your', 'my', 'this',
-    'that', 'x', 'oz', 'ct', 'pk', 'pack', 'count', 'size', 'color', 'qty',
-  ]);
-
-  const normalized = summary.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-  const tokens = normalized.split(/[\s,;/|&()\-]+/);
-  return new Set(tokens.filter(w => w.length >= 3 && !STOP_WORDS.has(w)));
-}
-
-/**
- * Compute Jaccard similarity between two sets.
- *
- * @param {Set<string>} setA
- * @param {Set<string>} setB
- * @returns {number} Value between 0 and 1
- */
-function jaccardSimilarity(setA, setB) {
-  if (setA.size === 0 && setB.size === 0) return 1.0;
-  if (setA.size === 0 || setB.size === 0) return 0.0;
-
-  let intersection = 0;
-  for (const item of setA) {
-    if (setB.has(item)) intersection++;
-  }
-
-  const union = setA.size + setB.size - intersection;
-  return union === 0 ? 0.0 : intersection / union;
-}
-
-/**
- * Count how many "richness" fields an order has populated.
- * Used to pick the best card when merging duplicate clusters.
- *
- * @param {Order} order
- * @returns {number}
- */
-function orderRichness(order) {
-  let score = 0;
-  if (order.delivery_date) score += 3;
-  if (order.return_by_date) score += 3;
-  if (order.order_id) score += 2;
-  if (order.ship_date) score += 1;
-  if (order.estimated_delivery_date) score += 1;
-  if (order.amount) score += 1;
-  if (order.return_portal_link) score += 1;
-  if (order.tracking_number) score += 1;
-  if (order.explicit_return_by_date) score += 2;
-  if (order.return_window_days) score += 1;
-  return score;
 }
 
 /**

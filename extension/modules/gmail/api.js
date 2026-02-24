@@ -268,6 +268,14 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
   // Filter out digest emails (catches race condition where digest just sent but not labeled yet)
   // Primary detection: X-ShopQ-Digest header (new digests)
   // Fallback detection: from yourself + "Your Inbox --" subject (old digests)
+  let storedUserEmail = null;
+  try {
+    const stored = await chrome.storage.local.get('userEmail');
+    storedUserEmail = stored.userEmail || null;
+  } catch (e) {
+    // Storage not available — skip self-send filter
+  }
+
   const finalFiltered = filteredEmails.filter(email => {
     // Check custom header first (most reliable for new digests)
     if (email.isReclaimDigest) {
@@ -276,7 +284,7 @@ async function getUnlabeledEmails(token, maxResults = CONFIG.MAX_EMAILS_PER_BATC
     }
 
     // Fallback: Check sender + subject for old digest emails
-    const fromYourself = email.from && email.from.toLowerCase().includes('jkoufopoulos@gmail.com');
+    const fromYourself = storedUserEmail && email.from && email.from.toLowerCase().includes(storedUserEmail.toLowerCase());
     const hasDigestSubject = email.subject && email.subject.startsWith('Your Inbox --');
     const isOldDigest = fromYourself && hasDigestSubject;
 

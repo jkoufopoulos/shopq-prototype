@@ -20,10 +20,26 @@ venv
 
 # Don't copy these to Cloud Run
 extension/
+extension-v2/
 tests/
+reclaim/tests/
+docs/
 backups/
 credentials/
 code-graph/
 .vscode/
+
+# Non-essential data
+reclaim/data/backups/
+reclaim/exports/
+reclaim/logs/
+
+# Non-essential root files
+*.md
+*.html
+*.csv
+Makefile
+deploy.sh
+LICENSE
 
 # scripts/ needed for init_db_standalone.py and migrate_to_central_database.py

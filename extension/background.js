@@ -27,21 +27,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Load dependencies - only modules that exist for Reclaim
+// Load dependencies — order matters (later files can shadow earlier globals)
 importScripts(
   'modules/shared/config.js',
   'modules/shared/utils.js',
   'modules/gmail/auth.js',
   'modules/storage/schema.js',
+  'modules/storage/resolution.js',
   'modules/storage/store.js',
-  // Pipeline P1-P4: Core
+  // Pipeline: Domain filter (P1) + Lifecycle/deadline computation (P8)
   'modules/pipeline/filter.js',
-  'modules/pipeline/linker.js',
-  'modules/pipeline/hints.js',
-  'modules/pipeline/classifier.js',
-  // Pipeline P5-P8: Resolution
-  'modules/pipeline/extractor.js',
-  'modules/pipeline/resolver.js',
   'modules/pipeline/lifecycle.js',
   // Sync: Scanner & Refresh
   'modules/sync/scanner.js',
@@ -52,6 +47,9 @@ importScripts(
   // Diagnostics
   'modules/diagnostics/logger.js',
   'modules/returns/api.js'
+  // NOTE: linker.js, hints.js, classifier.js, extractor.js are NOT loaded.
+  // They define the old local extraction pipeline (P2-P5), superseded by
+  // the stateless backend API. Files are preserved for tests and reference.
 );
 
 console.log(`🛒 Reclaim: Background service worker loaded v${CONFIG.VERSION}`);
@@ -159,13 +157,6 @@ function isTrustedSender(sender) {
     }
   }
 
-  // Allow InboxSDK pageWorld injection message (has sender.tab but no url check needed)
-  // This is the initial injection message that happens once per page load
-  if (sender.tab && sender.frameId !== undefined) {
-    // Content script context - allow if it's from a tab
-    return true;
-  }
-
   return false;
 }
 
@@ -232,19 +223,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, orders });
       }
       else if (message.type === 'RECOMPUTE_ORDER_DEADLINE') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await recomputeOrderDeadline(message.order_key);
         sendResponse({ success: true, order });
       }
       else if (message.type === 'RECOMPUTE_MERCHANT_DEADLINES') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         const count = await recomputeMerchantDeadlines(message.merchant_domain);
         sendResponse({ success: true, updated_count: count });
       }
       // On-demand enrichment
       else if (message.type === 'ENRICH_ORDER') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const result = await enrichOrder(message.order_key);
         sendResponse({ success: true, ...result });
       }
       else if (message.type === 'NEEDS_ENRICHMENT') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await getOrder(message.order_key);
         const needs = order ? needsEnrichment(order) : false;
         sendResponse({ success: true, needs_enrichment: needs });
@@ -264,14 +271,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: true, hasToken: !!token });
         } catch (error) {
           sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_AUTH_TOKEN') {
-        try {
-          const token = await getAuthToken();
-          sendResponse({ token });
-        } catch (error) {
-          sendResponse({ error: error.message });
         }
       }
       else if (message.type === 'SHOW_NOTIFICATION') {
@@ -294,10 +293,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, orders });
       }
       else if (message.type === 'GET_ORDER') {
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
         const order = await getOrder(message.order_key);
         sendResponse({ success: true, order });
       }
       else if (message.type === 'UPDATE_ORDER_STATUS') {
+        const VALID_STATUSES = ['active', 'returned', 'dismissed'];
+        if (!message.order_key || typeof message.order_key !== 'string') {
+          sendResponse({ success: false, error: 'Invalid order_key' });
+          return;
+        }
+        if (!VALID_STATUSES.includes(message.status)) {
+          sendResponse({ success: false, error: 'Invalid status. Must be one of: ' + VALID_STATUSES.join(', ') });
+          return;
+        }
         const order = await updateOrderStatus(message.order_key, message.status);
         sendResponse({ success: true, order });
       }
@@ -307,11 +319,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       // Merchant rules operations
       else if (message.type === 'GET_MERCHANT_RULE') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         const rule = await getMerchantRule(message.merchant_domain);
         sendResponse({ success: true, window_days: rule });
       }
       else if (message.type === 'SET_MERCHANT_RULE') {
-        await setMerchantRule(message.merchant_domain, message.window_days);
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
+        const days = parseInt(message.window_days, 10);
+        if (isNaN(days) || days < 1 || days > 365) {
+          sendResponse({ success: false, error: 'Invalid window_days. Must be 1-365.' });
+          return;
+        }
+        await setMerchantRule(message.merchant_domain, days);
         sendResponse({ success: true });
       }
       else if (message.type === 'GET_ALL_MERCHANT_RULES') {
@@ -319,89 +344,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, rules });
       }
       else if (message.type === 'DELETE_MERCHANT_RULE') {
+        if (!message.merchant_domain || typeof message.merchant_domain !== 'string') {
+          sendResponse({ success: false, error: 'Invalid merchant_domain' });
+          return;
+        }
         await deleteMerchantRule(message.merchant_domain);
         sendResponse({ success: true });
-      }
-      // ============================================================
-      // DELIVERY OPERATIONS (Uber Direct Integration)
-      // ============================================================
-      else if (message.type === 'GET_USER_ADDRESS') {
-        const address = await getUserAddress();
-        sendResponse({ success: true, address });
-      }
-      else if (message.type === 'SET_USER_ADDRESS') {
-        await setUserAddress(message.address);
-        sendResponse({ success: true });
-      }
-      else if (message.type === 'GET_DELIVERY_LOCATIONS') {
-        try {
-          const result = await fetchDeliveryLocations(message.options || {});
-          sendResponse({ success: true, ...result });
-        } catch (error) {
-          console.error('❌ Failed to fetch delivery locations:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_DELIVERY_QUOTE') {
-        try {
-          const quoteData = message.quoteData || {
-            order_key: message.order_key,
-            pickup_address: message.pickup_address,
-            dropoff_location_id: message.dropoff_location_id,
-          };
-          const result = await requestDeliveryQuote(quoteData);
-          sendResponse({ success: true, ...result });
-        } catch (error) {
-          console.error('❌ Failed to get delivery quote:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'CONFIRM_DELIVERY') {
-        try {
-          const deliveryId = message.deliveryId || message.delivery_id;
-          const result = await confirmDelivery(deliveryId);
-          sendResponse({ success: true, ...result });
-        } catch (error) {
-          console.error('❌ Failed to confirm delivery:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_DELIVERY_STATUS') {
-        try {
-          const result = await getDeliveryStatus(message.deliveryId);
-          sendResponse({ success: true, ...result });
-        } catch (error) {
-          console.error('❌ Failed to get delivery status:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_DELIVERY_FOR_ORDER') {
-        try {
-          const result = await getDeliveryForOrder(message.orderKey);
-          sendResponse({ success: true, delivery: result });
-        } catch (error) {
-          console.error('❌ Failed to get delivery for order:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'CANCEL_DELIVERY') {
-        try {
-          const deliveryId = message.deliveryId || message.delivery_id;
-          const result = await cancelDelivery(deliveryId);
-          sendResponse({ success: true, ...result });
-        } catch (error) {
-          console.error('❌ Failed to cancel delivery:', error);
-          sendResponse({ success: false, error: error.message });
-        }
-      }
-      else if (message.type === 'GET_ACTIVE_DELIVERIES') {
-        try {
-          const deliveries = await fetchActiveDeliveries();
-          sendResponse({ success: true, deliveries });
-        } catch (error) {
-          console.error('❌ Failed to fetch active deliveries:', error);
-          sendResponse({ success: false, error: error.message });
-        }
       }
       // Run backfill migration for estimated_delivery_date
       else if (message.type === 'BACKFILL_ESTIMATED_DELIVERY_DATES') {
@@ -421,6 +369,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Update a single order's return date directly (local storage)
       else if (message.type === 'UPDATE_ORDER_RETURN_DATE') {
         try {
+          if (!message.order_key || typeof message.order_key !== 'string') {
+            sendResponse({ success: false, error: 'Invalid order_key' });
+            return;
+          }
+          // Validate date format (YYYY-MM-DD)
+          if (!message.return_by_date || !/^\d{4}-\d{2}-\d{2}$/.test(message.return_by_date)) {
+            sendResponse({ success: false, error: 'Invalid return_by_date. Must be YYYY-MM-DD.' });
+            return;
+          }
+          const parsedDate = new Date(message.return_by_date + 'T00:00:00');
+          if (isNaN(parsedDate.getTime())) {
+            sendResponse({ success: false, error: 'Invalid date value' });
+            return;
+          }
           const order = await getOrder(message.order_key);
           if (!order) {
             throw new Error('Order not found');
@@ -431,10 +393,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           order.deadline_confidence = 'exact';
           // Save the updated order
           const updatedOrder = await upsertOrder(order);
-          console.log('✅ Updated order return date:', message.order_key, '->', message.return_by_date);
           sendResponse({ success: true, order: updatedOrder });
         } catch (error) {
-          console.error('❌ Failed to update order return date:', error);
+          console.error('Failed to update order return date:', error);
           sendResponse({ success: false, error: error.message });
         }
       }
@@ -457,6 +418,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
     if (details.reason === 'install') {
       console.log('🎉 Reclaim installed');
+      // Onboarding now handled in-sidebar (returns-sidebar-inner.js)
       // SEC-002: User ID will be set lazily when auth happens via getAuthenticatedUserId()
       // Don't set default_user - proper user isolation requires real Google user ID
       // Initial scan will be triggered by refresh system when Gmail is opened

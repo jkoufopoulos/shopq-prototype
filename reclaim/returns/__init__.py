@@ -8,30 +8,23 @@ from reclaim.returns.extractor import (
 )
 from reclaim.returns.field_extractor import ReturnFieldExtractor
 from reclaim.returns.filters import MerchantDomainFilter
-from reclaim.returns.types import ExtractionResult, ExtractionStage, ExtractedFields, FilterResult
 from reclaim.returns.models import (
     ReturnCard,
-    ReturnCardCreate,
-    ReturnCardUpdate,
     ReturnConfidence,
     ReturnStatus,
 )
-from reclaim.returns.repository import ReturnCardRepository
 from reclaim.returns.returnability_classifier import (
     ReceiptType,
     ReturnabilityClassifier,
     ReturnabilityResult,
 )
+from reclaim.returns.types import ExtractedFields, ExtractionResult, ExtractionStage, FilterResult
 
 __all__ = [
     # Models
     "ReturnCard",
-    "ReturnCardCreate",
-    "ReturnCardUpdate",
     "ReturnConfidence",
     "ReturnStatus",
-    # Repository
-    "ReturnCardRepository",
     # Filters
     "FilterResult",
     "MerchantDomainFilter",

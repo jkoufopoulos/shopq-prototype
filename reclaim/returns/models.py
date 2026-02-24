@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -158,73 +157,6 @@ class ReturnCard(BaseModel):
             return ReturnStatus.EXPIRING_SOON
         return ReturnStatus.ACTIVE
 
-    def to_db_dict(self) -> dict[str, Any]:
-        """Convert to dict for database storage."""
-        import json
-
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "version": self.version,
-            "merchant": self.merchant,
-            "merchant_domain": self.merchant_domain,
-            "item_summary": self.item_summary,
-            "status": self.status if isinstance(self.status, str) else self.status.value,
-            "confidence": self.confidence
-            if isinstance(self.confidence, str)
-            else self.confidence.value,
-            "source_email_ids": json.dumps(self.source_email_ids),
-            "order_number": self.order_number,
-            "tracking_number": self.tracking_number,
-            "amount": self.amount,
-            "currency": self.currency,
-            "order_date": self.order_date.isoformat() if self.order_date else None,
-            "delivery_date": self.delivery_date.isoformat() if self.delivery_date else None,
-            "return_by_date": self.return_by_date.isoformat() if self.return_by_date else None,
-            "return_portal_link": self.return_portal_link,
-            "shipping_tracking_link": self.shipping_tracking_link,
-            "evidence_snippet": self.evidence_snippet,
-            "notes": self.notes,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "alerted_at": self.alerted_at.isoformat() if self.alerted_at else None,
-        }
-
-    @classmethod
-    def from_db_row(cls, row: dict[str, Any]) -> ReturnCard:
-        """Create ReturnCard from database row."""
-        import json
-
-        def parse_dt(val: str | None) -> datetime | None:
-            if val is None:
-                return None
-            return datetime.fromisoformat(val)
-
-        return cls(
-            id=row["id"],
-            user_id=row["user_id"],
-            version=row.get("version", "v1"),
-            merchant=row["merchant"],
-            merchant_domain=row.get("merchant_domain", ""),
-            item_summary=row["item_summary"],
-            status=ReturnStatus(row["status"]),
-            confidence=ReturnConfidence(row["confidence"]),
-            source_email_ids=json.loads(row["source_email_ids"]) if row["source_email_ids"] else [],
-            order_number=row.get("order_number"),
-            tracking_number=row.get("tracking_number"),
-            amount=row.get("amount"),
-            currency=row.get("currency", "USD"),
-            order_date=parse_dt(row.get("order_date")),
-            delivery_date=parse_dt(row.get("delivery_date")),
-            return_by_date=parse_dt(row.get("return_by_date")),
-            return_portal_link=row.get("return_portal_link"),
-            shipping_tracking_link=row.get("shipping_tracking_link"),
-            evidence_snippet=row.get("evidence_snippet"),
-            notes=row.get("notes"),
-            created_at=parse_dt(row.get("created_at")) or utc_now(),
-            updated_at=parse_dt(row.get("updated_at")) or utc_now(),
-            alerted_at=parse_dt(row.get("alerted_at")),
-        )
 
 
 class ReturnCardCreate(BaseModel):

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Reclaim</title>
+  <meta name="description" content="Reclaim privacy policy. Your data stays in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#0d9488"/>
+          <path d="M9 16.5L14 21.5L23 11.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Reclaim
+      </a>
+
+      <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <ul class="nav__links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="terms.html">Terms</a></li>
+        <li><a href="https://github.com/jkoufopoulos/shopq-prototype" class="nav__cta">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== CONTENT ===== -->
+  <main class="legal-page">
+    <div class="container--narrow">
+
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Home
+      </a>
+
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last Updated: February 17, 2026</p>
+
+      <p>Reclaim is a browser extension that helps you track return windows on online purchases. This privacy policy explains what data we collect, how we use it, and your rights.</p>
+
+      <div class="summary-card">
+        <ul>
+          <li>We read your Gmail to find order confirmation emails</li>
+          <li>We extract order details (merchant, items, dates) to calculate return deadlines</li>
+          <li><strong>All order data is stored locally in your browser</strong> &mdash; nothing is saved on any server</li>
+          <li>We never sell your data or show you ads</li>
+          <li>You can delete your data at any time</li>
+        </ul>
+      </div>
+
+      <div class="callout">
+        <strong>AI Processing Disclosure:</strong> Email content from purchase-related emails is sent to Google's Gemini AI for analysis. Content is processed in real-time and not stored on any server.
+      </div>
+
+      <hr>
+
+      <h2>What Data We Collect</h2>
+
+      <h3>Email Data</h3>
+      <p>When you use Reclaim, we access your Gmail to find purchase-related emails. We collect:</p>
+      <ul>
+        <li><strong>Email metadata:</strong> Subject line, sender, date received</li>
+        <li><strong>Order information:</strong> Merchant name, items purchased, order numbers, delivery dates</li>
+        <li><strong>Return policy details:</strong> Return deadlines extracted from emails</li>
+      </ul>
+      <p>We do <strong>NOT</strong> collect:</p>
+      <ul>
+        <li>Email content unrelated to purchases</li>
+        <li>Attachments</li>
+        <li>Your contacts or address book</li>
+        <li>Emails you send</li>
+      </ul>
+
+      <h3>Account Information</h3>
+      <ul>
+        <li>Your Google account email address (for authentication)</li>
+        <li>No passwords are ever collected or stored</li>
+      </ul>
+
+      <h3>Usage Data</h3>
+      <ul>
+        <li>Extension feature usage (anonymized)</li>
+        <li>Error logs for debugging (no personal data)</li>
+      </ul>
+
+      <hr>
+
+      <h2>How We Use Your Data</h2>
+      <ol>
+        <li><strong>Calculate return deadlines</strong> &mdash; We analyze order emails to determine when return windows expire</li>
+        <li><strong>Send reminders</strong> &mdash; We notify you before return deadlines pass</li>
+        <li><strong>Improve the service</strong> &mdash; Anonymized usage data helps us fix bugs and add features</li>
+      </ol>
+      <p>We do <strong>NOT</strong>:</p>
+      <ul>
+        <li>Sell your data to third parties</li>
+        <li>Use your data for advertising</li>
+        <li>Share your data with marketers</li>
+        <li>Train AI models on your personal data</li>
+      </ul>
+
+      <hr>
+
+      <h2>Where Data Is Stored</h2>
+
+      <h3>On Your Device (Primary Storage)</h3>
+      <p>All extracted order data &mdash; return cards, merchant details, deadlines, and order metadata &mdash; is stored locally in your browser using <code>chrome.storage.local</code>. This data never leaves your device except during email processing (described below).</p>
+
+      <h3>Transient Server Processing</h3>
+      <p>When scanning emails, the extension sends email content to our backend server for AI-powered extraction. The server:</p>
+      <ul>
+        <li>Receives email content, processes it through the extraction pipeline, and returns structured order data</li>
+        <li><strong>Does not store any email content or order data</strong> &mdash; processing is entirely transient</li>
+        <li>Runs on Google Cloud Run (US region) with TLS 1.3 encryption in transit</li>
+      </ul>
+
+      <h3>Third-Party Services</h3>
+      <table>
+        <thead>
+          <tr><th>Service</th><th>Purpose</th><th>Data Shared</th><th>Retention</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Google Gmail API</td><td>Read order emails</td><td>Email content (read-only)</td><td>None &mdash; read in real-time</td></tr>
+          <tr><td>Google Gemini AI</td><td>Extract order details</td><td>Email text for processing</td><td>None &mdash; processed transiently</td></tr>
+          <tr><td>Google Cloud Run</td><td>Host extraction API</td><td>Email text passed through</td><td>None &mdash; stateless</td></tr>
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h2>Data Retention</h2>
+      <ul>
+        <li><strong>Local data:</strong> Kept in your browser until you clear it or uninstall the extension</li>
+        <li><strong>Server-side:</strong> No data is retained &mdash; all processing is transient</li>
+        <li><strong>Account deletion:</strong> Clear all local data from Settings &gt; Clear Data, then revoke Gmail access</li>
+      </ul>
+
+      <hr>
+
+      <h2>Your Rights</h2>
+      <p>You have the right to:</p>
+      <ol>
+        <li><strong>Access your data</strong> &mdash; View all data in the extension sidebar</li>
+        <li><strong>Delete your data</strong> &mdash; Remove all stored data from Settings &gt; Clear Data</li>
+        <li><strong>Revoke access</strong> &mdash; Disconnect Gmail access from your Google Account settings</li>
+      </ol>
+
+      <h3>How to Delete Your Data</h3>
+      <ol>
+        <li>Open the Reclaim extension</li>
+        <li>Click Settings (gear icon)</li>
+        <li>Click "Clear All Data"</li>
+        <li>Confirm deletion</li>
+      </ol>
+      <p>To also revoke Gmail access:</p>
+      <ol>
+        <li>Go to <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a></li>
+        <li>Find "Reclaim" in the list</li>
+        <li>Click "Remove Access"</li>
+      </ol>
+
+      <hr>
+
+      <h2>Children's Privacy</h2>
+      <p>Reclaim is not intended for users under 13 years of age. We do not knowingly collect data from children.</p>
+
+      <hr>
+
+      <h2>Changes to This Policy</h2>
+      <p>We may update this privacy policy from time to time. We will notify you of significant changes through the extension.</p>
+
+      <hr>
+
+      <h2>Contact Us</h2>
+      <p>For privacy questions or data requests:</p>
+      <ul>
+        <li><strong>GitHub Issues:</strong> <a href="https://github.com/jkoufopoulos/shopq-prototype/issues">github.com/jkoufopoulos/shopq-prototype/issues</a></li>
+      </ul>
+
+      <hr>
+
+      <h2>California Privacy Rights (CCPA)</h2>
+      <ul>
+        <li>Right to know what data is collected</li>
+        <li>Right to delete personal information</li>
+        <li>Right to opt-out of data sales (we don't sell data)</li>
+        <li>Right to non-discrimination for exercising privacy rights</li>
+      </ul>
+
+      <hr>
+
+      <h2>European Privacy Rights (GDPR)</h2>
+      <p>EU residents have additional rights under GDPR:</p>
+      <ul>
+        <li>Right to access, rectification, and erasure</li>
+        <li>Right to restrict processing</li>
+        <li>Right to data portability</li>
+        <li>Right to object to processing</li>
+        <li>Right to lodge a complaint with a supervisory authority</li>
+      </ul>
+      <p><strong>Legal Basis for Processing:</strong> Legitimate interest (providing the service you requested)</p>
+      <p><strong>Data Controller:</strong> Justin Koufopoulos</p>
+      <p><strong>Contact:</strong> <a href="https://github.com/jkoufopoulos/shopq-prototype/issues">github.com/jkoufopoulos/shopq-prototype/issues</a></p>
+
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__top">
+        <a href="index.html" class="footer__brand">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="#0d9488"/>
+            <path d="M9 16.5L14 21.5L23 11.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Reclaim
+        </a>
+        <ul class="footer__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms of Service</a></li>
+          <li><a href="https://github.com/jkoufopoulos/shopq-prototype">GitHub</a></li>
+        </ul>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copyright">&copy; 2026 Justin Koufopoulos</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>

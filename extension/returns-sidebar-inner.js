@@ -19,6 +19,7 @@ window.ReclaimSidebar = {
     TOAST_FADEOUT_MS: 300,
     EXPIRING_SOON_DAYS: 7,
     CRITICAL_DAYS: 3,
+    GMAIL_ACCOUNT_INDEX: '0',
   },
   state: {
     visibleOrders: [],
@@ -29,19 +30,11 @@ window.ReclaimSidebar = {
     demoMode: false,
     expiredAccordionOpen: false,
     returnedAccordionOpen: false,
-    deliveryModal: null,
-    activeDeliveries: {},
     isEditingDate: false,
-    deliveryState: {
-      step: 'address',
-      address: null,
-      locations: [],
-      selectedLocation: null,
-      quote: null,
-      delivery: null,
-      loading: false,
-      error: null,
-    },
+    pendingScanToast: null, // deferred toast data from scan complete (shown after orders load)
+    // Onboarding
+    onboardingCompleted: true, // assume true; flipped to false after async storage check
+    onboardingWizardStep: 0,   // 0=inactive, 1-4=wizard steps
   },
   timers: {
     dateRefreshInterval: null,
@@ -51,7 +44,7 @@ window.ReclaimSidebar = {
 
 // =============================================================================
 // DEMO MODE — masks PII (order IDs) for screen recordings
-// Toggle via DevTools console: toggleDemoMode()
+// Toggle via DevTools console in the sidebar iframe: toggleDemoMode()
 // =============================================================================
 
 const _demoMaskCache = new Map();
@@ -334,6 +327,11 @@ function undoReturnOrder(orderKey) {
  * Render the returns list view — active orders + expired accordion
  */
 function renderListView() {
+  // Guard: don't overwrite scanning animation during onboarding
+  if (!ReclaimSidebar.state.onboardingCompleted && !ReclaimSidebar.state.hasCompletedFirstScan) {
+    return;
+  }
+
   const { active, expired } = getOrdersByStatus();
 
   // Empty state - no orders at all
@@ -466,50 +464,6 @@ function renderListView() {
     });
   });
 
-  // Add delivery badge click handlers
-  listView.querySelectorAll('.delivery-badge').forEach(badge => {
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const orderKey = badge.dataset.orderKey;
-      const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
-      if (delivery) {
-        showDeliveryStatus(delivery);
-      }
-    });
-  });
-}
-
-/**
- * Build delivery badge HTML for an order
- */
-function getDeliveryBadge(orderKey) {
-  const delivery = ReclaimSidebar.state.activeDeliveries[orderKey];
-  if (!delivery) return '';
-
-  const statusLabels = {
-    'quote_pending': 'Getting quote',
-    'quoted': 'Quote ready',
-    'pending': 'Finding driver',
-    'pickup': 'Driver en route',
-    'pickup_complete': 'Picked up',
-    'dropoff': 'In transit',
-    'delivered': 'Delivered',
-    'canceled': 'Canceled',
-    'failed': 'Failed',
-  };
-
-  const statusClasses = {
-    'delivered': 'delivery-badge-success',
-    'canceled': 'delivery-badge-error',
-    'failed': 'delivery-badge-error',
-  };
-
-  const statusClass = statusClasses[delivery.status] || 'delivery-badge-active';
-  const label = statusLabels[delivery.status] || delivery.status;
-
-  const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
-
-  return `<span class="delivery-badge ${statusClass}" data-order-key="${escapeHtml(orderKey)}">${truckIcon} ${escapeHtml(label)}</span>`;
 }
 
 /**
@@ -526,7 +480,6 @@ function renderOrderCard(order, isReturned = false) {
   let dateText = 'No deadline';
   let dateClass = '';
   let urgentBadge = '';
-  const deliveryBadge = getDeliveryBadge(order.order_key);
 
   if (order.return_by_date) {
     if (daysUntil < 0) {
@@ -573,7 +526,7 @@ function renderOrderCard(order, isReturned = false) {
     <div class="return-card ${cardClass} ${isReturned ? 'returned' : ''}" data-id="${escapeHtml(order.order_key)}" data-returned="${isReturned}">
       <div class="card-header">
         <span class="merchant">${escapeHtml(order.merchant_display_name)}</span>
-        ${statusBadge || deliveryBadge || urgentBadge}
+        ${statusBadge || urgentBadge}
       </div>
       <div class="item-summary">${escapeHtml(order.item_summary)}</div>
       <div class="card-footer">
@@ -659,7 +612,6 @@ function renderDetailView(order, needsEnrichment) {
 
   // Icons
   const externalLinkIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>`;
-  const truckIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
   const editIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
 
   // Determine deadline basis text (what date the deadline is calculated from)
@@ -751,7 +703,7 @@ function renderDetailView(order, needsEnrichment) {
       <div class="detail-merchant">${escapeHtml(order.merchant_display_name)}</div>
       <div class="detail-item">${escapeHtml(order.item_summary)}</div>
       ${order.source_email_ids && order.source_email_ids.length > 0 ? `
-      <a href="https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(order.source_email_ids[0])}"
+      <a href="https://mail.google.com/mail/u/${ReclaimSidebar.config.GMAIL_ACCOUNT_INDEX}/#inbox/${encodeURIComponent(order.source_email_ids[0])}"
          target="_top"
          class="detail-email-link">
         View Order Email ${externalLinkIcon}
@@ -769,10 +721,6 @@ function renderDetailView(order, needsEnrichment) {
 
     ${order.order_status === 'active' ? `
     <div class="detail-actions">
-      <button class="action-btn uber" id="deliver-carrier-btn">
-        ${truckIcon}
-        Courier Pickup with Uber
-      </button>
       <button class="action-btn secondary" id="mark-returned-btn">
         Mark as Returned
       </button>
@@ -795,7 +743,6 @@ function renderDetailView(order, needsEnrichment) {
   const markActiveBtn = document.getElementById('mark-active-btn');
   const setRuleBtn = document.getElementById('set-rule-btn');
   const dismissOrderBtn = document.getElementById('dismiss-order-btn');
-  const deliverCarrierBtn = document.getElementById('deliver-carrier-btn');
 
   // Date editing handlers
   const editDateBtn = document.getElementById('edit-date-btn');
@@ -877,11 +824,6 @@ function renderDetailView(order, needsEnrichment) {
     });
   }
 
-  if (deliverCarrierBtn) {
-    deliverCarrierBtn.addEventListener('click', () => {
-      showDeliveryModal(order);
-    });
-  }
 }
 
 /**
@@ -897,9 +839,6 @@ function showMerchantRuleDialog(merchantDomain, merchantName) {
     setMerchantRule(merchantDomain, parseInt(windowDays));
   }
 }
-
-// Delivery modal functions: see returns-sidebar-delivery.js
-// (loaded after this file via <script> tag in returns-sidebar.html)
 
 /**
  * Show the list view (hide detail view)
@@ -1041,7 +980,20 @@ function renderError(message) {
 // MESSAGE HANDLING
 // =============================================================================
 
+// SEC: Expected parent origin — set from config init or derived from document.referrer
+let _trustedParentOrigin = null;
+
 window.addEventListener('message', (event) => {
+  // SEC: Only accept messages from Gmail (where our content script runs).
+  // First message sets the trusted origin; subsequent messages must match.
+  const origin = event.origin;
+  if (origin !== 'https://mail.google.com') {
+    return;
+  }
+  if (!_trustedParentOrigin) {
+    _trustedParentOrigin = origin;
+  }
+
   // Receive config from parent (content script) — overrides defaults
   if (event.data?.type === 'RECLAIM_CONFIG_INIT') {
     const c = event.data.config || {};
@@ -1050,27 +1002,54 @@ window.addEventListener('message', (event) => {
     if (c.TOAST_FADEOUT_MS) ReclaimSidebar.config.TOAST_FADEOUT_MS = c.TOAST_FADEOUT_MS;
     if (c.EXPIRING_SOON_DAYS) ReclaimSidebar.config.EXPIRING_SOON_DAYS = c.EXPIRING_SOON_DAYS;
     if (c.CRITICAL_DAYS) ReclaimSidebar.config.CRITICAL_DAYS = c.CRITICAL_DAYS;
-  }
-
-  // Handle demo mode toggle from parent (main console)
-  if (event.data?.type === 'RECLAIM_TOGGLE_DEMO_MODE') {
-    window.toggleDemoMode();
+    if (c.GMAIL_ACCOUNT_INDEX != null) ReclaimSidebar.config.GMAIL_ACCOUNT_INDEX = c.GMAIL_ACCOUNT_INDEX;
   }
 
   // Handle unified visible orders
   if (event.data?.type === 'RECLAIM_ORDERS_DATA') {
     ReclaimSidebar.state.visibleOrders = event.data.orders || [];
-    if (ReclaimSidebar.state.visibleOrders.length > 0) {
-      ReclaimSidebar.state.hasCompletedFirstScan = true;
-      startDateRefreshTimer();
+
+    // During onboarding, store data but don't render — preserve scanning animation
+    // until RECLAIM_SCAN_COMPLETE sets hasCompletedFirstScan
+    if (!ReclaimSidebar.state.onboardingCompleted && !ReclaimSidebar.state.hasCompletedFirstScan) {
+      // Just store orders for wizard to use later; don't render yet
+    } else {
+      if (ReclaimSidebar.state.visibleOrders.length > 0) {
+        ReclaimSidebar.state.hasCompletedFirstScan = true;
+        startDateRefreshTimer();
+      }
+      renderListView();
     }
-    renderListView();
+
+    // Show deferred scan-complete toast now that we have order data
+    if (ReclaimSidebar.state.pendingScanToast) {
+      const toast = ReclaimSidebar.state.pendingScanToast;
+      ReclaimSidebar.state.pendingScanToast = null;
+
+      const { active, expired } = getOrdersByStatus();
+      const expiringSoon = active.filter(o => {
+        const d = getDaysUntil(o.return_by_date);
+        return d !== null && d >= 0 && d <= ReclaimSidebar.config.EXPIRING_SOON_DAYS;
+      });
+
+      if (active.length === 0 && expired.length === 0) {
+        showToast('Scan complete — no returns to track', 'info');
+      } else if (expiringSoon.length > 0) {
+        showToast(`${active.length} active return${active.length === 1 ? '' : 's'}, ${expiringSoon.length} expiring soon`, 'success', 5000);
+      } else if (active.length > 0) {
+        showToast(`${active.length} active return${active.length === 1 ? '' : 's'} tracked`, 'success');
+      } else {
+        showToast('Scan complete', 'info');
+      }
+    }
   }
 
   // Handle returned orders data (for undo drawer)
   if (event.data?.type === 'RECLAIM_RETURNED_ORDERS_DATA') {
     ReclaimSidebar.state.returnedOrders = event.data.orders || [];
-    renderListView();
+    if (ReclaimSidebar.state.onboardingCompleted || ReclaimSidebar.state.hasCompletedFirstScan) {
+      renderListView();
+    }
   }
 
   // Handle API error
@@ -1084,26 +1063,54 @@ window.addEventListener('message', (event) => {
     fetchReturns();
   }
 
+  // Handle scan progress updates
+  if (event.data?.type === 'RECLAIM_SCAN_PROGRESS') {
+    // During onboarding, suppress the bottom status bar — the scanning animation is enough
+    if (!ReclaimSidebar.state.onboardingCompleted) return;
+
+    const { checked, processed, found, pending } = event.data;
+    let progressText = 'Scanning...';
+    if (typeof checked === 'number' && typeof found === 'number') {
+      progressText = `Scanning... checked ${checked} emails, found ${found} purchase${found === 1 ? '' : 's'}`;
+    } else if (typeof pending === 'number') {
+      progressText = `Processing ${pending} email${pending === 1 ? '' : 's'}...`;
+    }
+    refreshStatus.textContent = progressText;
+    if (!refreshBtn.classList.contains('scanning')) {
+      refreshBtn.classList.add('scanning');
+    }
+  }
+
   // Handle scan complete notification
   if (event.data?.type === 'RECLAIM_SCAN_COMPLETE') {
     console.log('Reclaim Returns: Scan complete', event.data);
     ReclaimSidebar.state.hasCompletedFirstScan = true;
     refreshBtn.classList.remove('scanning');
     refreshStatus.textContent = '';
+    // Stop rotating subtitle timer
+    if (_scanSubtitleTimer) { clearInterval(_scanSubtitleTimer); _scanSubtitleTimer = null; }
 
-    // Show toast with results
-    const newCount = event.data.new_orders || 0;
-    const processedCount = event.data.processed || 0;
-    if (newCount > 0) {
-      showToast(`Found ${newCount} new return${newCount === 1 ? '' : 's'}`, 'success');
-    } else if (processedCount > 0) {
-      showToast('Scan complete - no new returns found', 'info');
-    } else {
-      showToast('Scan complete', 'info');
+    // Check if this is the first scan during onboarding
+    const isOnboarding = !ReclaimSidebar.state.onboardingCompleted;
+
+    if (!isOnboarding) {
+      // Defer toast until orders data arrives so we can include expiring count
+      ReclaimSidebar.state.pendingScanToast = {
+        newCount: event.data.new_orders || 0,
+        processedCount: event.data.processed || 0,
+      };
     }
 
     // Refresh the returns list
+    // Guard in renderListView passes because hasCompletedFirstScan is now true
     fetchReturns();
+
+    // After scan, start wizard (delayed to let list render via RECLAIM_ORDERS_DATA)
+    if (isOnboarding) {
+      setTimeout(() => {
+        startWizard();
+      }, 800);
+    }
   }
 
   // Handle enrichment result (v0.6.2)
@@ -1171,97 +1178,6 @@ window.addEventListener('message', (event) => {
     }
   }
 
-  // =========================================================================
-  // DELIVERY MODAL MESSAGE HANDLERS
-  // =========================================================================
-
-  // Handle user address response
-  if (event.data?.type === 'RECLAIM_USER_ADDRESS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.address = event.data.address || null;
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery locations response
-  if (event.data?.type === 'RECLAIM_DELIVERY_LOCATIONS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.locations = event.data.locations || [];
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery quote response
-  if (event.data?.type === 'RECLAIM_DELIVERY_QUOTE') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-        ReclaimSidebar.state.deliveryState.loading = false;
-      } else {
-        ReclaimSidebar.state.deliveryState.quote = event.data.quote;
-        ReclaimSidebar.state.deliveryState.step = 'quote';
-        ReclaimSidebar.state.deliveryState.loading = false;
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery confirmation response
-  if (event.data?.type === 'RECLAIM_DELIVERY_CONFIRMED') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-        ReclaimSidebar.state.deliveryState.loading = false;
-      } else {
-        ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
-        ReclaimSidebar.state.deliveryState.step = 'confirmed';
-        ReclaimSidebar.state.deliveryState.loading = false;
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery status response
-  if (event.data?.type === 'RECLAIM_DELIVERY_STATUS') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.delivery = event.data.delivery;
-      ReclaimSidebar.state.deliveryState.step = 'status';
-      ReclaimSidebar.state.deliveryState.loading = false;
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle delivery cancel response
-  if (event.data?.type === 'RECLAIM_DELIVERY_CANCELED') {
-    if (ReclaimSidebar.state.deliveryModal) {
-      ReclaimSidebar.state.deliveryState.loading = false;
-      if (event.data.error) {
-        ReclaimSidebar.state.deliveryState.error = event.data.error;
-      } else {
-        // Remove from active deliveries
-        if (ReclaimSidebar.state.deliveryState.delivery) {
-          delete ReclaimSidebar.state.activeDeliveries[ReclaimSidebar.state.deliveryState.delivery.order_key];
-        }
-        closeDeliveryModal();
-        renderListView();
-      }
-      renderDeliveryModal();
-    }
-  }
-
-  // Handle active deliveries response
-  if (event.data?.type === 'RECLAIM_ACTIVE_DELIVERIES') {
-    const deliveries = event.data.deliveries || [];
-    ReclaimSidebar.state.activeDeliveries = {};
-    for (const delivery of deliveries) {
-      if (delivery.order_key) {
-        ReclaimSidebar.state.activeDeliveries[delivery.order_key] = delivery;
-      }
-    }
-    renderListView();
-  }
 });
 
 // =============================================================================
@@ -1289,6 +1205,267 @@ refreshBtn.addEventListener('click', () => {
 // Expired orders now shown in accordion at top of list
 
 // =============================================================================
+// ONBOARDING — Scanning Animation + Wizard
+// =============================================================================
+
+const SCAN_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
+
+const SCAN_SUBTITLES = [
+  'Looking for upcoming return deadlines in your recent purchases.',
+  'Checking merchant return policies...',
+  'Detecting return time frames...',
+  'Almost there, just a little longer...',
+  'Matching orders with return windows...',
+];
+
+let _scanSubtitleIndex = 0;
+let _scanSubtitleTimer = null;
+
+/**
+ * Render the first-scan animation in the list view area
+ */
+function renderScanningAnimation() {
+  _scanSubtitleIndex = 0;
+  listView.innerHTML = `
+    <div class="onboarding-scan">
+      <div class="onboarding-scan-icon">${SCAN_ICON_SVG}</div>
+      <div class="onboarding-scan-title">Finding return windows...</div>
+      <div class="onboarding-scan-subtitle" id="scan-subtitle">${SCAN_SUBTITLES[0]}</div>
+    </div>
+  `;
+  // Hide the bottom status bar during onboarding scan
+  refreshStatus.textContent = '';
+
+  // Rotate subtitle every 6 seconds
+  if (_scanSubtitleTimer) clearInterval(_scanSubtitleTimer);
+  _scanSubtitleTimer = setInterval(() => {
+    _scanSubtitleIndex = (_scanSubtitleIndex + 1) % SCAN_SUBTITLES.length;
+    const el = document.getElementById('scan-subtitle');
+    if (el) {
+      el.style.opacity = '0';
+      setTimeout(() => {
+        el.textContent = SCAN_SUBTITLES[_scanSubtitleIndex];
+        el.style.opacity = '1';
+      }, 300);
+    } else {
+      clearInterval(_scanSubtitleTimer);
+    }
+  }, 6000);
+}
+
+// ----- Wizard -----
+
+const WIZARD_STEPS = [
+  {
+    target: '.return-card',
+    title: 'Your inbox, scanned',
+    copy: 'Reclaim just checked your last 60 days of email and found your recent purchases. It rescans automatically.',
+    view: 'list',
+  },
+  {
+    target: '.expired-accordion',
+    fallbackTarget: '.return-card:last-child',
+    title: 'Expired orders fade away',
+    copy: "When a return window passes, the order moves here. No action needed \u2014 Reclaim handles it.",
+    view: 'list',
+  },
+  {
+    target: '.detail-section',
+    title: 'How deadlines work',
+    copy: "The return window is calculated from the merchant's policy and your delivery date. Edit it anytime.",
+    view: 'detail',
+  },
+  {
+    target: '.detail-email-link',
+    title: 'Jump to the original email',
+    copy: 'Need to start a return? This link opens the order confirmation right in Gmail.',
+    view: 'detail',
+    skippable: true, // skip if target missing
+  },
+];
+
+/**
+ * Start the onboarding wizard
+ */
+function startWizard() {
+  // Edge case: 0 orders
+  if (ReclaimSidebar.state.visibleOrders.length === 0) {
+    completeOnboarding('No recent purchases found. Reclaim will check automatically.');
+    return;
+  }
+  ReclaimSidebar.state.onboardingWizardStep = 1;
+  showWizardStep(1);
+}
+
+// Persistent overlay elements (created once, updated per step)
+let _wizardOverlay = null;
+let _wizardSpotlight = null;
+let _wizardTooltip = null;
+
+/**
+ * Show a specific wizard step
+ */
+function showWizardStep(step) {
+  if (step < 1 || step > WIZARD_STEPS.length) {
+    completeOnboarding();
+    return;
+  }
+
+  const def = WIZARD_STEPS[step - 1];
+
+  // Navigate to correct view if needed
+  if (def.view === 'detail' && !ReclaimSidebar.state.currentDetailOrder) {
+    const firstOrder = ReclaimSidebar.state.visibleOrders[0];
+    if (firstOrder) {
+      showDetailView(firstOrder);
+    }
+  } else if (def.view === 'list' && ReclaimSidebar.state.currentDetailOrder) {
+    showListView();
+  }
+
+  // Small delay to let view render
+  requestAnimationFrame(() => {
+    const targetEl = document.querySelector(def.target) ||
+                     (def.fallbackTarget && document.querySelector(def.fallbackTarget));
+
+    if (!targetEl && def.skippable) { advanceWizard(); return; }
+    if (!targetEl) { advanceWizard(); return; }
+
+    updateWizardOverlay(targetEl, def, step);
+  });
+}
+
+/**
+ * Create or update the wizard overlay with spotlight and tooltip
+ */
+function updateWizardOverlay(targetEl, def, step) {
+  const totalSteps = getActualStepCount();
+  const displayStep = getDisplayStepNumber(step);
+  const rect = targetEl.getBoundingClientRect();
+  const pad = 6;
+
+  const isLast = step === WIZARD_STEPS.length ||
+    (step === WIZARD_STEPS.length - 1 && WIZARD_STEPS[WIZARD_STEPS.length - 1].skippable && !document.querySelector(WIZARD_STEPS[WIZARD_STEPS.length - 1].target));
+
+  // First step: create overlay elements
+  if (!_wizardOverlay) {
+    _wizardOverlay = document.createElement('div');
+    _wizardOverlay.className = 'wizard-overlay';
+    _wizardOverlay.addEventListener('click', (e) => {
+      if (e.target === _wizardOverlay) advanceWizard();
+    });
+
+    _wizardSpotlight = document.createElement('div');
+    _wizardSpotlight.className = 'wizard-spotlight';
+
+    _wizardTooltip = document.createElement('div');
+    _wizardTooltip.className = 'wizard-tooltip';
+
+    _wizardOverlay.appendChild(_wizardSpotlight);
+    _wizardOverlay.appendChild(_wizardTooltip);
+    document.body.appendChild(_wizardOverlay);
+
+    // Fade in on first step
+    requestAnimationFrame(() => _wizardOverlay.classList.add('visible'));
+  }
+
+  // Update spotlight position (CSS transition handles animation)
+  _wizardSpotlight.style.top = `${rect.top - pad}px`;
+  _wizardSpotlight.style.left = `${rect.left - pad}px`;
+  _wizardSpotlight.style.width = `${rect.width + pad * 2}px`;
+  _wizardSpotlight.style.height = `${rect.height + pad * 2}px`;
+
+  // Update tooltip content
+  _wizardTooltip.innerHTML = `
+    <div class="wizard-tooltip-title">${escapeHtml(def.title)}</div>
+    <div class="wizard-tooltip-copy">${escapeHtml(def.copy)}</div>
+    <div class="wizard-tooltip-footer">
+      <span class="wizard-step-indicator">${displayStep} of ${totalSteps}</span>
+      <button class="wizard-next-btn">${isLast ? 'Got it' : 'Next'}</button>
+    </div>
+  `;
+
+  // Position tooltip below or above the spotlight
+  _wizardTooltip.style.top = '';
+  _wizardTooltip.style.bottom = '';
+  const viewportHeight = window.innerHeight;
+  if (rect.bottom + 180 < viewportHeight) {
+    _wizardTooltip.style.top = `${rect.bottom + 12}px`;
+  } else {
+    _wizardTooltip.style.bottom = `${viewportHeight - rect.top + 12}px`;
+  }
+
+  // Wire up next button
+  _wizardTooltip.querySelector('.wizard-next-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    advanceWizard();
+  });
+}
+
+/**
+ * Count how many steps will actually show (excluding skippable ones with no target)
+ */
+function getActualStepCount() {
+  let count = 0;
+  for (const s of WIZARD_STEPS) {
+    if (s.skippable) {
+      // Only count if target exists (check in list or detail view context)
+      // For simplicity, just count all non-skippable + assume email link exists
+      count++;
+    } else {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Get display step number (adjusting for any earlier skipped steps)
+ */
+function getDisplayStepNumber(step) {
+  return step;
+}
+
+/**
+ * Advance to the next wizard step
+ */
+function advanceWizard() {
+  const current = ReclaimSidebar.state.onboardingWizardStep;
+  const next = current + 1;
+
+  if (next > WIZARD_STEPS.length) {
+    completeOnboarding();
+    return;
+  }
+
+  ReclaimSidebar.state.onboardingWizardStep = next;
+  showWizardStep(next);
+}
+
+/**
+ * Remove wizard overlay from DOM and clear references
+ */
+function removeWizardOverlay() {
+  if (_wizardOverlay) {
+    _wizardOverlay.remove();
+    _wizardOverlay = null;
+    _wizardSpotlight = null;
+    _wizardTooltip = null;
+  }
+}
+
+/**
+ * Complete the onboarding process
+ */
+function completeOnboarding(customMessage) {
+  removeWizardOverlay();
+  ReclaimSidebar.state.onboardingCompleted = true;
+  ReclaimSidebar.state.onboardingWizardStep = 0;
+  chrome.storage.local.set({ onboarding_completed: true });
+  showToast(customMessage || 'You\'re all set!', customMessage ? 'info' : 'success');
+}
+
+// =============================================================================
 // INITIALIZATION
 // =============================================================================
 
@@ -1306,6 +1483,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Check onboarding status before rendering
+  try {
+    const result = await chrome.storage.local.get('onboarding_completed');
+    if (!result.onboarding_completed) {
+      ReclaimSidebar.state.onboardingCompleted = false;
+      renderScanningAnimation();
+    }
+  } catch (e) {
+    // Storage API not available (e.g. in tests) — treat as completed
+    console.warn('Reclaim: Could not check onboarding status:', e);
+  }
+
   // Signal ready to parent
   window.parent.postMessage({ type: 'RECLAIM_RETURNS_SIDEBAR_READY' }, '*');
 
@@ -1314,9 +1503,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Fetch returned orders for undo drawer
   window.parent.postMessage({ type: 'RECLAIM_GET_RETURNED_ORDERS' }, '*');
-
-  // Fetch active deliveries
-  window.parent.postMessage({ type: 'RECLAIM_GET_ACTIVE_DELIVERIES' }, '*');
 });
 
 // Refresh when tab becomes visible (user switches back to Gmail)

@@ -13,11 +13,16 @@ function extractDomain(email) {
 }
 
 /**
- * Get today's date as YYYY-MM-DD
+ * Get today's date as YYYY-MM-DD (local timezone).
+ * Uses local timezone so 11pm local = "today", not tomorrow (UTC).
  * @returns {string} Today's date
  */
 function getToday() {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

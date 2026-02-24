@@ -116,8 +116,8 @@ const STORAGE_KEYS = {
   TEMPLATE_CACHE: 'template_cache',
   // Merchant index for entity resolution
   ORDER_KEYS_BY_MERCHANT: 'order_keys_by_merchant',
-  // User settings for delivery
-  USER_ADDRESS: 'user_address',  // Saved pickup address for Uber delivery
+  // Onboarding
+  ONBOARDING_COMPLETED: 'onboarding_completed',
 };
 
 // Order status values
@@ -145,15 +145,16 @@ const EMAIL_TYPE = {
 };
 
 /**
- * Generate a stable order key from components.
- * Uses simple hash for consistency.
+ * Generate a stable order key by hashing components.
+ * Used by tests for creating fixture order keys.
+ * Production code uses generateOrderKey() from scanner.js instead.
  *
  * @param {string} user_id
  * @param {string} merchant_domain
  * @param {string} identifier - order_id, tracking_number, or email_id
  * @returns {string} Stable hash key
  */
-function generateOrderKey(user_id, merchant_domain, identifier) {
+function hashOrderKey(user_id, merchant_domain, identifier) {
   const input = `${user_id}:${merchant_domain}:${identifier}`;
   // Simple hash function (djb2)
   let hash = 5381;

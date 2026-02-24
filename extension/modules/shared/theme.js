@@ -15,7 +15,7 @@ function getSystemTheme() {
 async function getThemePreference() {
   try {
     const result = await chrome.storage.local.get(THEME_STORAGE_KEY);
-    return result[THEME_STORAGE_KEY] || 'system';
+    return result[THEME_STORAGE_KEY] || 'light';
   } catch {
     return 'system';
   }

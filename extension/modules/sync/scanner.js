@@ -13,6 +13,20 @@
 
 const SCANNER_LOG_PREFIX = '[ReturnWatch:Scanner]';
 
+/**
+ * Broadcast scan progress to active Gmail tabs so the sidebar can display it.
+ * Non-blocking — silently ignores errors if no tab is listening.
+ */
+function broadcastScanProgress(progress) {
+  // refreshState is defined in refresh.js (loaded in same service worker)
+  if (typeof refreshState !== 'undefined' && refreshState.gmailTabId) {
+    chrome.tabs.sendMessage(refreshState.gmailTabId, {
+      type: 'SCAN_PROGRESS_NOTIFICATION',
+      ...progress,
+    }).catch(() => {});
+  }
+}
+
 // ============================================================
 // CONSTANTS
 // ============================================================
@@ -40,6 +54,26 @@ const PURCHASE_SEARCH_QUERIES = [
 // ============================================================
 // CANCELLATION DETECTION
 // ============================================================
+
+/**
+ * Cancellation signal keywords — moved here from classifier.js since the
+ * classifier is no longer loaded at runtime (stateless migration).
+ */
+const CANCELLATION_SUBJECT_KEYWORDS = [
+  'cancelled',
+  'cancellation',
+  'advance refund issued',
+  'refund issued',
+];
+
+const CANCELLATION_BODY_KEYWORDS = [
+  'your order was cancelled',
+  'has been cancelled',
+  'item cancelled successfully',
+  'being returned to us by the carrier',
+  'we\'ve issued your refund',
+  'we have issued your refund',
+];
 
 /**
  * Amazon order number pattern: 3-7-7 digits.
@@ -458,97 +492,7 @@ function convertReturnCardToOrder(card, user_id) {
   };
 }
 
-/**
- * Process a single email through the backend LLM pipeline.
- *
- * Sends the email to POST /api/returns/process which runs the
- * validated 3-stage pipeline (filter → classifier → extractor).
- * Converts the resulting ReturnCard to a local Order for storage.
- *
- * @param {Object} params
- * @param {string} params.user_id
- * @param {Object} params.message - Gmail message metadata object
- * @param {string} params.token - OAuth token for fetching body
- * @returns {Promise<{processed: boolean, order: Order|null, action: string}>}
- */
-async function processEmailThroughPipeline({ user_id, message, token }) {
-  const email_id = message.id;
-
-  // Check if already processed
-  if (await isEmailProcessed(email_id)) {
-    console.log(SCANNER_LOG_PREFIX, 'SKIP_ALREADY_PROCESSED', email_id);
-    return { processed: false, order: null, action: 'skip_processed' };
-  }
-
-  // Extract metadata
-  const from_address = getHeader(message, 'From');
-  const subject = getHeader(message, 'Subject');
-  const snippet = message.snippet || '';
-
-  console.log(SCANNER_LOG_PREFIX, 'PROCESSING', email_id, subject.substring(0, 50));
-
-  // P1: Local domain filter (free, avoids unnecessary API calls)
-  const filterResult = filterEmail(from_address, subject, snippet);
-  if (filterResult.blocked) {
-    console.log(SCANNER_LOG_PREFIX, 'FILTER_BLOCKED', email_id, filterResult.reason);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'blocked' };
-  }
-
-  // Fetch full email body (backend pipeline needs it)
-  let body = '';
-  try {
-    const fullMessage = await getFullMessage(token, email_id);
-    body = extractBodyFromPayload(fullMessage.payload);
-  } catch (error) {
-    console.warn(SCANNER_LOG_PREFIX, 'Failed to fetch body:', email_id, error.message);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'body_fetch_failed' };
-  }
-
-  if (!body) {
-    console.log(SCANNER_LOG_PREFIX, 'SKIP_EMPTY_BODY', email_id);
-    await markEmailProcessed(email_id);
-    return { processed: true, order: null, action: 'empty_body' };
-  }
-
-  // Send to backend LLM pipeline
-  console.log(SCANNER_LOG_PREFIX, 'BACKEND_PROCESS', email_id);
-  let response;
-  try {
-    response = await processEmail({
-      id: email_id,
-      from: from_address,
-      subject,
-      body,
-    });
-  } catch (error) {
-    console.error(SCANNER_LOG_PREFIX, 'BACKEND_API_ERROR', email_id, error.message);
-    // Don't mark as processed so it can be retried on next scan
-    return { processed: false, order: null, action: 'backend_api_error' };
-  }
-
-  await markEmailProcessed(email_id);
-
-  // Backend rejected the email (not a returnable purchase)
-  if (!response.success || !response.card) {
-    console.log(SCANNER_LOG_PREFIX, 'BACKEND_REJECTED', email_id,
-      'stage:', response.stage_reached,
-      'reason:', response.rejection_reason);
-    return { processed: true, order: null, action: 'backend_rejected' };
-  }
-
-  // Convert backend ReturnCard to local Order and store
-  const order = convertReturnCardToOrder(response.card, user_id);
-  await upsertOrder(order);
-
-  console.log(SCANNER_LOG_PREFIX, 'PIPELINE_COMPLETE', email_id,
-    'order:', order.order_key,
-    'merchant:', order.merchant_display_name,
-    'deadline:', order.return_by_date || 'unknown');
-
-  return { processed: true, order, action: 'backend_created' };
-}
+// Single-email processing removed — all extraction goes through batch endpoint.
 
 // ============================================================
 // MAIN SCANNER
@@ -566,14 +510,12 @@ async function processEmailThroughPipeline({ user_id, message, token }) {
  * @param {Object} options
  * @param {number} [options.window_days=14] - How many days back to scan
  * @param {boolean} [options.incremental=true] - Use incremental scanning
- * @param {boolean} [options.skipPersistence=false] - Skip backend DB save/dedup
  * @returns {Promise<ScanResult>}
  */
 async function scanPurchases(options = {}) {
   const {
     window_days = 14,
     incremental = true,
-    skipPersistence = false,
   } = options;
 
   console.log(SCANNER_LOG_PREFIX, '='.repeat(60));
@@ -584,11 +526,27 @@ async function scanPurchases(options = {}) {
   beginResolutionStats();
 
   try {
-  // Get auth token
-  const token = await getAuthToken();
-  if (!token) {
+  // Get auth token with mid-scan refresh support.
+  // OAuth tokens expire after 1 hour; long scans over many emails can exceed
+  // that. Re-obtain the token every 45 minutes to stay well within the window.
+  const TOKEN_REFRESH_INTERVAL_MS = 45 * 60 * 1000;
+  let _scanToken = await getAuthToken();
+  let _tokenObtainedAt = Date.now();
+  if (!_scanToken) {
     throw new Error('No auth token available');
   }
+
+  const getValidToken = async () => {
+    if (Date.now() - _tokenObtainedAt > TOKEN_REFRESH_INTERVAL_MS) {
+      console.log(SCANNER_LOG_PREFIX, 'TOKEN_REFRESH', 'refreshing token mid-scan');
+      _scanToken = await getAuthToken({ forceRefresh: true });
+      _tokenObtainedAt = Date.now();
+      if (!_scanToken) {
+        throw new Error('Token refresh failed mid-scan');
+      }
+    }
+    return _scanToken;
+  };
 
   // SEC-002: Get authenticated user ID (never use default_user)
   const user_id = await getAuthenticatedUserId();
@@ -606,7 +564,7 @@ async function scanPurchases(options = {}) {
     const query = `${baseQuery} ${dateQuery}`;
     console.log(SCANNER_LOG_PREFIX, 'SEARCH', query);
 
-    const messages = await searchMessages(token, query);
+    const messages = await searchMessages(await getValidToken(), query);
     console.log(SCANNER_LOG_PREFIX, 'FOUND', messages.length, 'messages');
 
     for (const msg of messages) {
@@ -636,7 +594,7 @@ async function scanPurchases(options = {}) {
   for (const messageId of allMessageIds) {
     try {
       // Get message metadata
-      const message = await getMessageMetadata(token, messageId);
+      const message = await getMessageMetadata(await getValidToken(), messageId);
 
       const subject = getHeader(message, 'Subject');
       const from_address = getHeader(message, 'From');
@@ -677,7 +635,7 @@ async function scanPurchases(options = {}) {
       let body = '';
       let body_html = null;
       try {
-        const fullMessage = await getFullMessage(token, messageId);
+        const fullMessage = await getFullMessage(await getValidToken(), messageId);
         body = extractBodyFromPayload(fullMessage.payload);
         // Also extract HTML body for better extraction
         body_html = extractHtmlBodyFromPayload(fullMessage.payload);
@@ -702,6 +660,7 @@ async function scanPurchases(options = {}) {
         body,
         body_html,
         received_at: receivedAt,
+        _internal_date_ms: parseInt(message.internalDate || '0'),
       });
 
       // Rate limiting between Gmail API calls
@@ -716,12 +675,23 @@ async function scanPurchases(options = {}) {
   console.log(SCANNER_LOG_PREFIX, 'COLLECT_COMPLETE',
     emailsForBackend.length, 'emails ready for batch processing');
 
+  broadcastScanProgress({
+    phase: 'processing',
+    checked: stats.total,
+    pending: emailsForBackend.length,
+    found: 0,
+  });
+
   // ---- Phase 2+3: Send to backend in chunks, store results after each ----
   const BATCH_CHUNK_SIZE = CONFIG.BATCH_CHUNK_SIZE;
   let batchCards = [];
   const affectedMerchants = new Set();
 
   if (emailsForBackend.length > 0) {
+    // Sort by internalDate ascending so progressive checkpoints can safely
+    // advance the date cursor after each chunk (oldest emails processed first)
+    emailsForBackend.sort((a, b) => (a._internal_date_ms || 0) - (b._internal_date_ms || 0));
+
     // Split into chunks to avoid service worker timeout (~5 min limit)
     const chunks = [];
     for (let i = 0; i < emailsForBackend.length; i += BATCH_CHUNK_SIZE) {
@@ -737,7 +707,7 @@ async function scanPurchases(options = {}) {
         console.log(SCANNER_LOG_PREFIX, 'BATCH_CHUNK',
           `${ci + 1}/${chunks.length}`, chunk.length, 'emails');
 
-        const batchResponse = await processEmailBatch(chunk, { skipPersistence });
+        const batchResponse = await processEmailBatch(chunk);
 
         if (batchResponse.success) {
           const chunkCards = batchResponse.cards || [];
@@ -764,6 +734,33 @@ async function scanPurchases(options = {}) {
             `${ci + 1}/${chunks.length}`,
             'cards:', chunkCards.length,
             'total:', batchCards.length);
+
+          broadcastScanProgress({
+            phase: 'processing',
+            checked: stats.total,
+            processed: stats.processed,
+            found: batchCards.length,
+          });
+
+          // Progressive checkpoint: advance internal_date_ms cursor so a
+          // restart skips emails we've already fully processed. Since emails
+          // are sorted by date, remaining chunks contain only newer emails.
+          if (ci < chunks.length - 1) {
+            // Find the lowest date in the next unprocessed chunk
+            const nextChunk = chunks[ci + 1];
+            let minPending = Infinity;
+            for (const email of nextChunk) {
+              if (email._internal_date_ms > 0 && email._internal_date_ms < minPending) {
+                minPending = email._internal_date_ms;
+              }
+            }
+            if (minPending < Infinity) {
+              await updateLastScanState(Date.now(), minPending - 1, window_days);
+              console.log(SCANNER_LOG_PREFIX, 'CHECKPOINT',
+                `chunk ${ci + 1}/${chunks.length}`,
+                'cursor:', new Date(minPending - 1).toISOString());
+            }
+          }
         } else {
           console.error(SCANNER_LOG_PREFIX, 'BATCH_CHUNK_FAILED',
             `${ci + 1}/${chunks.length}`, 'success=false — emails will retry next scan');
